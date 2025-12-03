@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "atualizado": "2025-12-03 13:31"
+  },
+  "ano": 2025,
+  "dep": 189.59,
+  "inss": [],
+  "irrf": {
+    "tabela": [],
+    "simplificado": 564.8
+  },
+  "taxas": {
+    "selic": 15.0,
+    "cdi": 14.9
+  }
+}
