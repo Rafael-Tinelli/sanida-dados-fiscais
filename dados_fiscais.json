@@ -1,6 +1,6 @@
 {
   "meta": {
-    "atualizado": "2025-12-03 14:17"
+    "atualizado": "2025-12-03 14:21"
   },
   "ano": 2025,
   "dep": 189.59,
@@ -10,39 +10,39 @@
       "aliquota": 0.075
     },
     {
-      "limite": 1518.01,
+      "limite": 2793.88,
       "aliquota": 0.09
     },
     {
-      "limite": 2793.89,
+      "limite": 4190.83,
       "aliquota": 0.12
     },
     {
-      "limite": 4190.84,
+      "limite": 8157.41,
       "aliquota": 0.14
     }
   ],
   "irrf": {
     "tabela": [
       {
-        "limite": 2428.81,
+        "limite": 2826.65,
         "aliquota": 0.075,
-        "deducao": 0.0
+        "deducao": 182.16
       },
       {
-        "limite": 2826.66,
+        "limite": 3751.05,
         "aliquota": 0.15,
-        "deducao": 0.0
-      },
-      {
-        "limite": 3751.06,
-        "aliquota": 0.225,
-        "deducao": 0.0
+        "deducao": 394.16
       },
       {
         "limite": 4664.68,
+        "aliquota": 0.225,
+        "deducao": 675.49
+      },
+      {
+        "limite": 999999999.0,
         "aliquota": 0.275,
-        "deducao": 0.0
+        "deducao": 908.73
       }
     ],
     "simplificado": 607.2
