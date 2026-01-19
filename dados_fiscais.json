@@ -1,24 +1,24 @@
 {
   "meta": {
-    "atualizado": "2026-01-12 09:22"
+    "atualizado": "2026-01-19 09:24"
   },
   "ano": 2026,
   "dep": 189.59,
   "inss": [
     {
-      "limite": 1518.0,
+      "limite": 1621.0,
       "aliquota": 0.075
     },
     {
-      "limite": 2793.88,
+      "limite": 2902.84,
       "aliquota": 0.09
     },
     {
-      "limite": 4190.83,
+      "limite": 4354.27,
       "aliquota": 0.12
     },
     {
-      "limite": 8157.41,
+      "limite": 8475.55,
       "aliquota": 0.14
     }
   ],
