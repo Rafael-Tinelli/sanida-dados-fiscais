@@ -108,29 +108,10 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
     # ...
     brackets: List[Dict[str, float]] = []
 
-    # --- FIX: manter SOMENTE tabela mensal ---
-    # Remove faixas anuais (limites muito altos como 33k/45k/55k)
-    brackets = sorted(brackets, key=lambda x: x["limite"])
-    
-    monthly = [b for b in brackets if (b["limite"] <= 10000) or (b["limite"] >= 1e9)]
-    monthly = sorted(monthly, key=lambda x: x["limite"])
-    
-    # Sanidade: tabela mensal costuma ter 5 linhas (isenta + 3 faixas + 27,5%)
-    if len(monthly) < 5:
-        raise RuntimeError(f"IRRF: tabela mensal inválida após filtro (len={len(monthly)})")
-    
-    # Sanidade: precisa ter a última faixa 27,5% infinita
-    has_top = any(abs(b.get("aliquota", 0) - 0.275) < 1e-9 and b.get("limite", 0) >= 1e9 for b in monthly)
-    if not has_top:
-        raise RuntimeError("IRRF: não encontrei a faixa final 27,5% (infinita) na tabela mensal")
-    
-    brackets = monthly
-
     m0 = re.search(r"Até\s*R\$\s*([\d\.\,]+)\s*-\s*-", text, re.IGNORECASE)
     if m0:
         brackets.append({"limite": br_money_to_float(m0.group(1)), "aliquota": 0.0, "deducao": 0.0})
 
-    # Faixas "De ... até ..."
     for m in re.finditer(
         r"De\s*R\$\s*([\d\.\,]+)\s*até\s*R\$\s*([\d\.\,]+)\s*([\d\.\,]+)%\s*R\$\s*([\d\.\,]+)",
         text,
@@ -141,7 +122,6 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
         ded = br_money_to_float(m.group(4))
         brackets.append({"limite": upper, "aliquota": rate, "deducao": ded})
 
-    # Faixa "Acima de ..."
     m_last = re.search(
         r"Acima\s*de\s*R\$\s*([\d\.\,]+)\s*([\d\.\,]+)%\s*R\$\s*([\d\.\,]+)",
         text,
@@ -157,6 +137,20 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
 
     # Ordena por limite
     brackets = sorted(brackets, key=lambda x: x["limite"])
+
+    # --- FIX: manter SOMENTE tabela mensal ---
+    # Remove faixas anuais (limites muito altos como 33k/45k/55k)
+    monthly = [b for b in brackets if (b["limite"] <= 10000) or (b["limite"] >= 1e9)]
+    monthly = sorted(monthly, key=lambda x: x["limite"])
+
+    if len(monthly) < 5:
+        raise RuntimeError(f"IRRF: tabela mensal inválida após filtro (len={len(monthly)})")
+
+    has_top = any(abs(b.get("aliquota", 0) - 0.275) < 1e-9 and b.get("limite", 0) >= 1e9 for b in monthly)
+    if not has_top:
+        raise RuntimeError("IRRF: não encontrei a faixa final 27,5% (infinita) na tabela mensal")
+
+    brackets = monthly
 
     # Dependente e simplificado
     dep = None
@@ -294,11 +288,14 @@ def validate_payload(d: Dict[str, Any]) -> Tuple[bool, List[str]]:
     errs: List[str] = []
 
     # trava anti-tabela-anual misturada
-    for f in irrf.get("tabela", []):
-        lim = f.get("limite")
-        if isinstance(lim, (int, float)) and (10000 < lim < 1e9):
-            errs.append("irrf.tabela:contains_annual_rows")
-            break
+    irrf = d.get("irrf", {})
+    if isinstance(irrf, dict):
+        tab_check = irrf.get("tabela", [])
+        for f in tab_check if isinstance(tab_check, list) else []:
+            lim = f.get("limite")
+            if isinstance(lim, (int, float)) and (10000 < lim < 1e9):
+                errs.append("irrf.tabela:contains_annual_rows")
+                break
 
     # campos base exigidos pelo plugin atual
     for k in ("ano", "dep", "inss", "irrf", "taxas"):
@@ -477,4 +474,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
