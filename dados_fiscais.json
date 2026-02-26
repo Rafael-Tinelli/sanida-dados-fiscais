@@ -1,7 +1,7 @@
 {
   "schema_version": "2.1.0",
   "meta": {
-    "generated_at_utc": "2026-02-26T01:33:05Z",
+    "generated_at_utc": "2026-02-26T03:02:55Z",
     "sources": {
       "irrf": {
         "url": "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/tabelas/2026",
@@ -62,21 +62,6 @@
         "limite": 4664.68,
         "aliquota": 0.225,
         "deducao": 675.49
-      },
-      {
-        "limite": 33919.8,
-        "aliquota": 0.075,
-        "deducao": 2185.92
-      },
-      {
-        "limite": 45012.6,
-        "aliquota": 0.15,
-        "deducao": 4729.91
-      },
-      {
-        "limite": 55976.16,
-        "aliquota": 0.225,
-        "deducao": 8105.85
       },
       {
         "limite": 9000000000.0,
