@@ -1,6 +1,25 @@
 {
+  "schema_version": "2.1.0",
   "meta": {
-    "atualizado": "2026-02-23 09:42"
+    "generated_at_utc": "2026-02-26T01:33:05Z",
+    "sources": {
+      "irrf": {
+        "url": "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/tabelas/2026",
+        "http_code": 200
+      },
+      "inss": {
+        "url": "https://www.gov.br/inss/pt-br/assuntos/com-reajuste-de-3-9-teto-do-inss-chega-a-r-8-475-55-em-2026",
+        "http_code": 200
+      },
+      "bcb": {
+        "sgs": {
+          "selic": "sgs_432",
+          "cdi_daily": "sgs_12"
+        }
+      }
+    },
+    "errors": [],
+    "warnings": []
   },
   "ano": 2026,
   "dep": 189.59,
@@ -25,6 +44,11 @@
   "irrf": {
     "tabela": [
       {
+        "limite": 2428.8,
+        "aliquota": 0.0,
+        "deducao": 0.0
+      },
+      {
         "limite": 2826.65,
         "aliquota": 0.075,
         "deducao": 182.16
@@ -40,15 +64,38 @@
         "deducao": 675.49
       },
       {
-        "limite": 999999999.0,
+        "limite": 33919.8,
+        "aliquota": 0.075,
+        "deducao": 2185.92
+      },
+      {
+        "limite": 45012.6,
+        "aliquota": 0.15,
+        "deducao": 4729.91
+      },
+      {
+        "limite": 55976.16,
+        "aliquota": 0.225,
+        "deducao": 8105.85
+      },
+      {
+        "limite": 9000000000.0,
         "aliquota": 0.275,
         "deducao": 908.73
       }
     ],
-    "simplificado": 607.2
+    "simplificado": 607.2,
+    "reducao_mensal": {
+      "isenta_ate": 5000.0,
+      "reduz_ate": 7350.0,
+      "max_reducao_ate_5000": 312.89,
+      "a": 978.62,
+      "b": 0.133145
+    }
   },
   "taxas": {
     "selic": 15.0,
-    "cdi": 14.9
+    "cdi": 14.9,
+    "cdi_basis": "sgs_12_daily_annualized_252"
   }
 }
