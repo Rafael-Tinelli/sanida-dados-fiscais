@@ -200,8 +200,6 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
         "reducao_mensal": red,
     }
 
-return {"url": url, "http_code": code, "tabela": brackets}
-
 def find_inss_article_url(year: int) -> str:
     """
     Busca ano-específica via pesquisa interna do portal gov.br/INSS.
