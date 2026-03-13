@@ -97,6 +97,8 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
     if not ok:
         raise RuntimeError(f"IRRF: falha ao buscar {url} (status={code})")
 
+    return {"url": url, "http_code": code, "tabela": brackets}
+
     soup = BeautifulSoup(html, "html.parser")
     text = soup.get_text(" ", strip=True)
     text = re.sub(r"\s+", " ", text)
@@ -201,11 +203,47 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
     }
 
 
-def parse_inss_gov_2026() -> Dict[str, Any]:
+def find_inss_article_url(year: int) -> str:
     """
-    Fonte oficial (INSS): notícia com teto e faixas 2026.
+    Busca ano-específica via pesquisa interna do portal gov.br/INSS.
+    Usa o endpoint @@search do próprio portal e tenta achar a notícia anual
+    sobre reajuste/teto/faixas do INSS.
     """
-    url = "https://www.gov.br/inss/pt-br/assuntos/com-reajuste-de-3-9-teto-do-inss-chega-a-r-8-475-55-em-2026"
+    queries = [
+        f"teto do INSS {year}",
+        f"reajuste teto do INSS {year}",
+        f"faixas de contribuição INSS {year}",
+        f"com reajuste teto do INSS chega em {year}",
+    ]
+
+    patterns = [
+        rf"https://www\.gov\.br/inss/pt-br/assuntos/[^\"'\s<>]*{year}[^\"'\s<>]*",
+        rf"https://www\.gov\.br/inss/pt-br/noticias/[^\"'\s<>]*{year}[^\"'\s<>]*",
+    ]
+
+    for q in queries:
+        search_url = f"https://www.gov.br/inss/@@search?SearchableText={requests.utils.quote(q)}"
+        ok, code, html = fetch(search_url)
+        if not ok:
+            continue
+
+        hrefs = re.findall(r'https://www\.gov\.br/inss/[^\"\']+', html)
+        for href in hrefs:
+            href = href.replace('&amp;', '&')
+            if any(re.search(p, href, re.IGNORECASE) for p in patterns):
+                return href
+
+    if year == 2026:
+        return "https://www.gov.br/inss/pt-br/assuntos/com-reajuste-de-3-9-teto-do-inss-chega-a-r-8-475-55-em-2026"
+
+    raise RuntimeError(f"INSS: não encontrei a notícia oficial do ano {year} via @@search")
+
+
+def parse_inss_gov(year: int) -> Dict[str, Any]:
+    """
+    Fonte oficial (INSS): encontra dinamicamente a notícia anual com teto e faixas.
+    """
+    url = find_inss_article_url(year)
     ok, code, html = fetch(url)
     if not ok:
         raise RuntimeError(f"INSS: falha ao buscar {url} (status={code})")
@@ -390,7 +428,7 @@ def main():
         irrf = None
 
     try:
-        inss = parse_inss_gov_2026()
+        inss = parse_inss_gov(year)
         sources["inss"] = {"url": inss["url"], "http_code": inss["http_code"]}
     except Exception as e:
         errors.append(f"inss:{e}")
