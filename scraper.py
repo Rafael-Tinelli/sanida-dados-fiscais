@@ -1,10 +1,10 @@
 import os
 import re
 import json
-import math
 import time
 import datetime as dt
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import quote
 
 import requests
 from bs4 import BeautifulSoup
@@ -26,7 +26,7 @@ RETRIES = int(os.getenv("SFA_RETRIES", "3").strip())
 
 
 def now_utc_iso() -> str:
-    return dt.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+    return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def br_money_to_float(s: str) -> float:
@@ -138,8 +138,8 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
     # Ordena por limite
     brackets = sorted(brackets, key=lambda x: x["limite"])
 
-    # --- FIX: manter SOMENTE tabela mensal ---
-    # Remove faixas anuais (limites muito altos como 33k/45k/55k)
+    # Mantém SOMENTE tabela mensal:
+    # remove faixas anuais (limites muito altos como 33k/45k/55k)
     monthly = [b for b in brackets if (b["limite"] <= 10000) or (b["limite"] >= 1e9)]
     monthly = sorted(monthly, key=lambda x: x["limite"])
 
@@ -185,12 +185,10 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
     mr2 = re.search(r"R\$\s*([\d\.\,]+)\s*-\s*\(\s*([\d\.\,]+)\s*x\s*rendimentos", text, re.IGNORECASE)
     if mr2:
         red["a"] = br_money_to_float(mr2.group(1))
-        # b pode vir como "0,133145"
         btxt = mr2.group(2).replace(",", ".")
         red["b"] = float(re.sub(r"[^0-9\.]", "", btxt)) if btxt else None
 
-    # Não torna obrigatório, mas ajuda muito para 2026
-    # Se não conseguir, ainda mantemos incidência + simplificado + dependentes.
+    # Não torna obrigatório, mas ajuda muito quando houver regra de redução mensal.
     return {
         "url": url,
         "http_code": code,
@@ -199,6 +197,7 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
         "simplificado": simpl,
         "reducao_mensal": red,
     }
+
 
 def find_inss_article_url(year: int) -> str:
     """
@@ -211,27 +210,31 @@ def find_inss_article_url(year: int) -> str:
         f"reajuste teto do INSS {year}",
         f"faixas de contribuição INSS {year}",
         f"com reajuste teto do INSS chega em {year}",
+        f"benefícios acima do salário mínimo {year}",
     ]
 
-    patterns = [
+    url_patterns = [
         rf"https://www\.gov\.br/inss/pt-br/assuntos/[^\"'\s<>]*{year}[^\"'\s<>]*",
         rf"https://www\.gov\.br/inss/pt-br/noticias/[^\"'\s<>]*{year}[^\"'\s<>]*",
     ]
 
+    seen = set()
+
     for q in queries:
-        search_url = f"https://www.gov.br/inss/@@search?SearchableText={requests.utils.quote(q)}"
+        search_url = f"https://www.gov.br/inss/@@search?SearchableText={quote(q)}"
         ok, code, html = fetch(search_url)
         if not ok:
             continue
 
-        hrefs = re.findall(r'https://www\.gov\.br/inss/[^\"\']+', html)
+        hrefs = re.findall(r'https://www\.gov\.br/inss/[^"\']+', html)
         for href in hrefs:
-            href = href.replace('&amp;', '&')
-            if any(re.search(p, href, re.IGNORECASE) for p in patterns):
-                return href
+            href = href.replace("&amp;", "&")
+            if href in seen:
+                continue
+            seen.add(href)
 
-    if year == 2026:
-        return "https://www.gov.br/inss/pt-br/assuntos/com-reajuste-de-3-9-teto-do-inss-chega-a-r-8-475-55-em-2026"
+            if any(re.search(p, href, re.IGNORECASE) for p in url_patterns):
+                return href
 
     raise RuntimeError(f"INSS: não encontrei a notícia oficial do ano {year} via @@search")
 
@@ -412,10 +415,10 @@ def main():
     if isinstance(existing, dict):
         existing_ok, _ = validate_payload(existing)
 
-    year = int(dt.datetime.utcnow().year)
+    year = int(dt.datetime.now(dt.timezone.utc).year)
 
-    errors = []
-    sources = {}
+    errors: List[str] = []
+    sources: Dict[str, Any] = {}
 
     try:
         irrf = parse_irrf_receita(year)
@@ -478,10 +481,15 @@ def main():
         return
 
     # fallback final (primeira execução sem last-good): cria um mínimo funcional para não quebrar.
-    # (Mantém 2026 por segurança; você ainda terá o Action rodando para substituir por dados oficiais)
+    # Mantém valores de referência estáticos apenas para emergência extrema.
     minimal = {
         "schema_version": "2.1.0",
-        "meta": {"generated_at_utc": now_utc_iso(), "sources": sources, "errors": errors, "warnings": ["minimal_fallback_written"]},
+        "meta": {
+            "generated_at_utc": now_utc_iso(),
+            "sources": sources,
+            "errors": errors,
+            "warnings": ["minimal_fallback_written", "static_reference_values"],
+        },
         "ano": year,
         "dep": 189.59,
         "inss": [
@@ -499,15 +507,20 @@ def main():
                 {"limite": 9e9, "aliquota": 0.275, "deducao": 908.73},
             ],
             "simplificado": 607.20,
-            "reducao_mensal": {"isenta_ate": 5000.00, "reduz_ate": 7350.00, "max_reducao_ate_5000": 312.89, "a": 978.62, "b": 0.133145},
+            "reducao_mensal": {
+                "isenta_ate": 5000.00,
+                "reduz_ate": 7350.00,
+                "max_reducao_ate_5000": 312.89,
+                "a": 978.62,
+                "b": 0.133145,
+            },
         },
         "taxas": {"selic": 15.00, "cdi": 14.90, "cdi_basis": "fallback"},
     }
+
     write_json_atomic(minimal)
     print("WARN: sem last-good; escrevi fallback mínimo para evitar quebra.")
 
 
 if __name__ == "__main__":
     main()
-
-
