@@ -97,8 +97,6 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
     if not ok:
         raise RuntimeError(f"IRRF: falha ao buscar {url} (status={code})")
 
-    return {"url": url, "http_code": code, "tabela": brackets}
-
     soup = BeautifulSoup(html, "html.parser")
     text = soup.get_text(" ", strip=True)
     text = re.sub(r"\s+", " ", text)
@@ -202,6 +200,7 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
         "reducao_mensal": red,
     }
 
+return {"url": url, "http_code": code, "tabela": brackets}
 
 def find_inss_article_url(year: int) -> str:
     """
