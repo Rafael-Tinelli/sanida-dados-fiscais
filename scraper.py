@@ -19,7 +19,6 @@ HEADERS = {
     "Connection": "keep-alive",
 }
 
-# Em Actions, SSL ok. Mantemos verify=True por padrão.
 SSLVERIFY = os.getenv("SFA_SSLVERIFY", "1").strip() not in ("0", "false", "False")
 TIMEOUT = int(os.getenv("SFA_TIMEOUT", "25").strip())
 RETRIES = int(os.getenv("SFA_RETRIES", "3").strip())
@@ -30,7 +29,6 @@ def now_utc_iso() -> str:
 
 
 def br_money_to_float(s: str) -> float:
-    # "1.234,56" -> 1234.56
     s = (s or "").strip()
     s = s.replace("\xa0", " ")
     s = s.replace("R$", "").strip()
@@ -40,7 +38,6 @@ def br_money_to_float(s: str) -> float:
 
 
 def br_percent_to_rate(s: str) -> float:
-    # "7,5%" -> 0.075
     s = (s or "").strip()
     s = s.replace(",", ".")
     s = re.sub(r"[^0-9\.]", "", s)
@@ -48,11 +45,21 @@ def br_percent_to_rate(s: str) -> float:
     return v / 100.0
 
 
+def round_fiscal_number(x):
+    if isinstance(x, float):
+        return round(x, 6)
+    return x
+
+
+def round_fiscal_tree(obj):
+    if isinstance(obj, dict):
+        return {k: round_fiscal_tree(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [round_fiscal_tree(v) for v in obj]
+    return round_fiscal_number(obj)
+
+
 def fetch(url: str, expect: str = "text") -> Tuple[bool, int, str]:
-    """
-    Return: (ok, status_code, body_text)
-    Retry on 5xx and network errors.
-    """
     last_err = ""
     for i in range(1, RETRIES + 1):
         try:
@@ -64,7 +71,6 @@ def fetch(url: str, expect: str = "text") -> Tuple[bool, int, str]:
                 last_err = f"http_{code}"
                 time.sleep(0.4 * i)
                 continue
-            # 4xx: não adianta retry infinito
             return False, code, r.text[:500]
         except Exception as e:
             last_err = f"exc_{type(e).__name__}"
@@ -84,14 +90,6 @@ def fetch_json(url: str) -> Tuple[bool, int, Any]:
 
 
 def parse_irrf_receita(year: int) -> Dict[str, Any]:
-    """
-    Fonte oficial: Receita Federal - Tabelas do ano.
-    Extrai:
-      - Tabela de Incidência Mensal (limite, aliquota, deducao)
-      - Dedução mensal por dependente
-      - Limite mensal de desconto simplificado
-      - Tabela de Redução Mensal (parâmetros)
-    """
     url = f"https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/tabelas/{year}"
     ok, code, html = fetch(url)
     if not ok:
@@ -101,11 +99,6 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
     text = soup.get_text(" ", strip=True)
     text = re.sub(r"\s+", " ", text)
 
-    # Incidência Mensal (linhas na página, não necessariamente <table>)
-    # Ex:
-    # "Até R$ 2.428,80 - -"
-    # "De R$ 2.428,81 até R$ 2.826,65 7,5% R$ 182,16"
-    # ...
     brackets: List[Dict[str, float]] = []
 
     m0 = re.search(r"Até\s*R\$\s*([\d\.\,]+)\s*-\s*-", text, re.IGNORECASE)
@@ -135,11 +128,8 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
     if len(brackets) < 4:
         raise RuntimeError("IRRF: não consegui extrair as faixas de incidência mensal")
 
-    # Ordena por limite
     brackets = sorted(brackets, key=lambda x: x["limite"])
 
-    # Mantém SOMENTE tabela mensal:
-    # remove faixas anuais (limites muito altos como 33k/45k/55k)
     monthly = [b for b in brackets if (b["limite"] <= 10000) or (b["limite"] >= 1e9)]
     monthly = sorted(monthly, key=lambda x: x["limite"])
 
@@ -152,7 +142,6 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
 
     brackets = monthly
 
-    # Dependente e simplificado
     dep = None
     simpl = None
 
@@ -167,9 +156,6 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
     if dep is None or simpl is None:
         raise RuntimeError("IRRF: falha ao extrair dep/simplificado")
 
-    # Redução mensal
-    # "até R$ 5.000,00 até R$ 312,89 ..."
-    # "de R$ 5.000,01 até R$ 7.350,00 R$ 978,62 - (0,133145 x rendimentos ...)"
     red = {
         "isenta_ate": 5000.00,
         "reduz_ate": 7350.00,
@@ -188,7 +174,6 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
         btxt = mr2.group(2).replace(",", ".")
         red["b"] = float(re.sub(r"[^0-9\.]", "", btxt)) if btxt else None
 
-    # Não torna obrigatório, mas ajuda muito quando houver regra de redução mensal.
     return {
         "url": url,
         "http_code": code,
@@ -200,11 +185,6 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
 
 
 def find_inss_article_url(year: int) -> str:
-    """
-    Busca ano-específica via pesquisa interna do portal gov.br/INSS.
-    Usa o endpoint @@search do próprio portal e tenta achar a notícia anual
-    sobre reajuste/teto/faixas do INSS.
-    """
     queries = [
         f"teto do INSS {year}",
         f"reajuste teto do INSS {year}",
@@ -240,9 +220,6 @@ def find_inss_article_url(year: int) -> str:
 
 
 def parse_inss_gov(year: int) -> Dict[str, Any]:
-    """
-    Fonte oficial (INSS): encontra dinamicamente a notícia anual com teto e faixas.
-    """
     url = find_inss_article_url(year)
     ok, code, html = fetch(url)
     if not ok:
@@ -252,11 +229,6 @@ def parse_inss_gov(year: int) -> Dict[str, Any]:
     text = soup.get_text(" ", strip=True)
     text = re.sub(r"\s+", " ", text)
 
-    # Captura faixas em formato textual
-    # "7,5% para quem ganha até R$ 1.621,00"
-    # "9% para quem ganha entre R$ 1.621,01 e R$ 2.902,84"
-    # "12% para quem ganha entre R$ 2.902,85 e R$ 4.354,27"
-    # "14% para quem ganha de R$ 4.354,28 até R$ 8.475,55"
     brackets: List[Dict[str, float]] = []
 
     m1 = re.search(r"([\d\.,]+)%\s*para\s*quem\s*ganha\s*até\s*R\$\s*([\d\.\,]+)", text, re.IGNORECASE)
@@ -296,9 +268,6 @@ def parse_inss_gov(year: int) -> Dict[str, Any]:
 
 
 def fetch_bcb_rates() -> Dict[str, Any]:
-    """
-    Selic meta anual (SGS 432) e CDI diário (SGS 12) anualizado em 252 dias úteis.
-    """
     def sgs_last(code: int) -> float:
         url = f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.{code}/dados/ultimos/1?formato=json"
         ok, http_code, data = fetch_json(url)
@@ -325,7 +294,6 @@ def fetch_bcb_rates() -> Dict[str, Any]:
 def validate_payload(d: Dict[str, Any]) -> Tuple[bool, List[str]]:
     errs: List[str] = []
 
-    # trava anti-tabela-anual misturada
     irrf = d.get("irrf", {})
     if isinstance(irrf, dict):
         tab_check = irrf.get("tabela", [])
@@ -335,7 +303,6 @@ def validate_payload(d: Dict[str, Any]) -> Tuple[bool, List[str]]:
                 errs.append("irrf.tabela:contains_annual_rows")
                 break
 
-    # campos base exigidos pelo plugin atual
     for k in ("ano", "dep", "inss", "irrf", "taxas"):
         if k not in d:
             errs.append(f"missing:{k}")
@@ -361,11 +328,9 @@ def validate_payload(d: Dict[str, Any]) -> Tuple[bool, List[str]]:
             if k not in taxas or not isinstance(taxas.get(k), (int, float)):
                 errs.append(f"taxas.{k}:missing_or_bad")
 
-    # sanidade
     if isinstance(d.get("dep"), (int, float)) and not (0 < d["dep"] < 500):
         errs.append("dep:out_of_range")
 
-    # INSS sanidade
     if isinstance(d.get("inss"), list):
         for f in d["inss"]:
             if not (isinstance(f.get("limite"), (int, float)) and isinstance(f.get("aliquota"), (int, float))):
@@ -375,14 +340,12 @@ def validate_payload(d: Dict[str, Any]) -> Tuple[bool, List[str]]:
                 errs.append("inss:aliquota_out_of_range")
                 break
 
-    # IRRF sanidade
     if isinstance(irrf, dict) and isinstance(irrf.get("tabela"), list):
         for f in irrf["tabela"]:
             if not all(k in f for k in ("limite", "aliquota", "deducao")):
                 errs.append("irrf:tabela_row_missing")
                 break
 
-    # taxas sanidade
     if isinstance(taxas, dict):
         if isinstance(taxas.get("selic"), (int, float)) and not (0 <= taxas["selic"] <= 60):
             errs.append("selic:out_of_range")
@@ -465,6 +428,8 @@ def main():
             },
         }
 
+        payload = round_fiscal_tree(payload)
+
         ok, verrs = validate_payload(payload)
         if ok:
             write_json_atomic(payload)
@@ -474,14 +439,11 @@ def main():
         print("ERRO: payload inválido -> NÃO sobrescrevi o last-good.")
         print("Detalhes:", verrs)
 
-    # fallback: não sobrescreve arquivo bom
     if existing_ok:
         print("WARN: coleta falhou, mantendo last-good (nenhuma alteração no JSON).")
         print("Erros:", errors)
         return
 
-    # fallback final (primeira execução sem last-good): cria um mínimo funcional para não quebrar.
-    # Mantém valores de referência estáticos apenas para emergência extrema.
     minimal = {
         "schema_version": "2.1.0",
         "meta": {
@@ -518,7 +480,7 @@ def main():
         "taxas": {"selic": 15.00, "cdi": 14.90, "cdi_basis": "fallback"},
     }
 
-    write_json_atomic(minimal)
+    write_json_atomic(round_fiscal_tree(minimal))
     print("WARN: sem last-good; escrevi fallback mínimo para evitar quebra.")
 
 
