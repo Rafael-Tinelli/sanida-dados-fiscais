@@ -23,6 +23,10 @@ SSLVERIFY = os.getenv("SFA_SSLVERIFY", "1").strip() not in ("0", "false", "False
 TIMEOUT = int(os.getenv("SFA_TIMEOUT", "25").strip())
 RETRIES = int(os.getenv("SFA_RETRIES", "3").strip())
 
+PINNED_INSS_URLS = {
+    2026: "https://www.gov.br/inss/pt-br/assuntos/com-reajuste-de-3-9-teto-do-inss-chega-a-r-8-475-55-em-2026",
+}
+
 
 def now_utc_iso() -> str:
     return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
@@ -185,6 +189,12 @@ def parse_irrf_receita(year: int) -> Dict[str, Any]:
 
 
 def find_inss_article_url(year: int) -> str:
+    pinned = PINNED_INSS_URLS.get(year)
+    if pinned:
+        ok, code, _html = fetch(pinned)
+        if ok and code == 200:
+            return pinned
+
     queries = [
         f"teto do INSS {year}",
         f"reajuste teto do INSS {year}",
@@ -216,7 +226,7 @@ def find_inss_article_url(year: int) -> str:
             if any(re.search(p, href, re.IGNORECASE) for p in url_patterns):
                 return href
 
-    raise RuntimeError(f"INSS: não encontrei a notícia oficial do ano {year} via @@search")
+    raise RuntimeError(f"INSS: não encontrei a notícia oficial do ano {year} via @@search/pinned")
 
 
 def parse_inss_gov(year: int) -> Dict[str, Any]:
