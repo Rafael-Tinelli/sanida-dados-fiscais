@@ -4,16 +4,16 @@ import json
 import time
 import datetime as dt
 from typing import Any, Dict, List, Optional, Tuple
+from ftplib import FTP
 
 import requests
-from bs4 import BeautifulSoup
 
 
 OUTPUT_FILE = "taxas_bacen.json"
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; SanidaTaxasBot/1.1; +https://sanida.com.br)",
-    "Accept": "application/json,text/plain,text/html,application/xhtml+xml,*/*",
+    "User-Agent": "Mozilla/5.0 (compatible; SanidaTaxasBot/1.2; +https://sanida.com.br)",
+    "Accept": "application/json,text/plain,*/*",
     "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
     "Connection": "keep-alive",
 }
@@ -82,76 +82,79 @@ def sgs_last(code: int) -> float:
     return float(v)
 
 
-def parse_percent_number(text: str) -> Optional[float]:
-    s = (text or "").strip()
-    s = s.replace("\xa0", " ")
-    s = s.replace("%", "").strip()
-    s = s.replace(".", "").replace(",", ".")
-    s = re.sub(r"[^0-9.]", "", s)
-    if not s:
-        return None
-    try:
-        return float(s)
-    except Exception:
-        return None
+def fetch_b3_cdi_ftp() -> Dict[str, Any]:
+    """
+    Busca a Taxa DI Over no FTP público da Cetip/B3.
+    A documentação oficial da B3 informa:
+    - pasta pública via ftp.cetip.com.br/Public
+    - arquivo diário nomeado como AAAAMMDD.txt
+    - conteúdo numérico sem vírgula, ex.: 000002320 = 23,20%
+    """
+    host = "ftp.cetip.com.br"
+    base_dir = "/Public"
 
+    last_exc = None
 
-def fetch_b3_cdi_aa() -> Dict[str, Any]:
-    url = "https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/consultas/mercado-de-derivativos/indicadores/indicadores-financeiros/"
-    ok, code, html = fetch(url)
-    if not ok:
-        raise RuntimeError(f"B3: falha ao buscar indicadores financeiros (status={code})")
+    # Tenta os últimos 10 dias corridos para cobrir fins de semana/feriados/defasagem de fechamento.
+    for days_back in range(0, 10):
+        target_date = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days_back)).date()
+        filename = target_date.strftime("%Y%m%d") + ".txt"
 
-    soup = BeautifulSoup(html, "html.parser")
-    text = soup.get_text(" ", strip=True)
-    text = re.sub(r"\s+", " ", text)
+        try:
+            ftp = FTP()
+            ftp.connect(host=host, port=21, timeout=TIMEOUT)
+            ftp.login()
+            ftp.cwd(base_dir)
 
-    # Ex.: "TAXA CDI CETIP - (a.a.). 14,65 %. Atualizado em: 19/03/2026."
-    m = re.search(
-        r"TAXA\s+CDI\s+CETIP\s*-\s*\(a\.a\.\)\.?\s*([\d\.,]+)\s*%\s*\.?\s*Atualizado\s+em:\s*([0-9]{2}/[0-9]{2}/[0-9]{4})",
-        text,
-        re.IGNORECASE,
-    )
+            chunks: List[bytes] = []
+            ftp.retrbinary(f"RETR {filename}", chunks.append)
+            ftp.quit()
 
-    if not m:
-        # fallback mais tolerante
-        m = re.search(
-            r"TAXA\s+CDI\s+CETIP.*?([\d\.,]+)\s*%.*?Atualizado\s+em:\s*([0-9]{2}/[0-9]{2}/[0-9]{4})",
-            text,
-            re.IGNORECASE,
-        )
+            raw = b"".join(chunks).decode("latin-1", errors="ignore").strip()
 
-    if not m:
-        raise RuntimeError("B3: não consegui localizar a TAXA CDI CETIP (a.a.) na página")
+            if not raw:
+                raise RuntimeError(f"B3 FTP: arquivo vazio ({filename})")
 
-    value = parse_percent_number(m.group(1))
-    updated_at = m.group(2)
+            # Ex.: 000002320 = 23,20%
+            m = re.search(r"(\d{7,9})", raw)
+            if not m:
+                raise RuntimeError(f"B3 FTP: formato inesperado em {filename}: {raw[:120]!r}")
 
-    if value is None:
-        raise RuntimeError("B3: valor do CDI inválido")
+            value = int(m.group(1)) / 100.0
 
-    return {
-        "value": round(value, 2),
-        "updated_at_brt": updated_at,
-        "url": url,
-    }
+            if not (0 <= value <= 60):
+                raise RuntimeError(f"B3 FTP: CDI fora de faixa em {filename}: {value}")
+
+            return {
+                "value": round(value, 2),
+                "ftp_host": host,
+                "ftp_dir": base_dir,
+                "ftp_filename": filename,
+            }
+
+        except Exception as e:
+            last_exc = e
+            continue
+
+    raise RuntimeError(f"B3 FTP: não consegui obter a Taxa DI Over nos últimos 10 dias ({last_exc})")
 
 
 def fetch_rates() -> Dict[str, Any]:
     selic = sgs_last(432)
-    cdi_info = fetch_b3_cdi_aa()
+    cdi_info = fetch_b3_cdi_ftp()
 
     return {
         "selic": round(selic, 2),
         "cdi": round(float(cdi_info["value"]), 2),
-        "cdi_basis": "b3_cdi_cetip_aa",
+        "cdi_basis": "b3_di_over_ftp_aa",
         "sources": {
             "selic": "sgs_432",
-            "cdi": "b3_indicadores_financeiros",
+            "cdi": "b3_ftp_di_over",
         },
         "source_meta": {
-            "cdi_updated_at_brt": cdi_info["updated_at_brt"],
-            "cdi_url": cdi_info["url"],
+            "cdi_ftp_host": cdi_info["ftp_host"],
+            "cdi_ftp_dir": cdi_info["ftp_dir"],
+            "cdi_ftp_filename": cdi_info["ftp_filename"],
         },
     }
 
@@ -218,12 +221,13 @@ def main():
         sources["selic"] = {"source": taxas["sources"]["selic"]}
         sources["cdi"] = {
             "source": taxas["sources"]["cdi"],
-            "url": taxas["source_meta"]["cdi_url"],
-            "updated_at_brt": taxas["source_meta"]["cdi_updated_at_brt"],
+            "ftp_host": taxas["source_meta"]["cdi_ftp_host"],
+            "ftp_dir": taxas["source_meta"]["cdi_ftp_dir"],
+            "ftp_filename": taxas["source_meta"]["cdi_ftp_filename"],
         }
 
         payload = {
-            "schema_version": "1.1.0",
+            "schema_version": "1.2.0",
             "meta": {
                 "generated_at_utc": now_utc_iso(),
                 "sources": sources,
@@ -255,7 +259,7 @@ def main():
         return
 
     fallback_payload = {
-        "schema_version": "1.1.0",
+        "schema_version": "1.2.0",
         "meta": {
             "generated_at_utc": now_utc_iso(),
             "sources": sources,
