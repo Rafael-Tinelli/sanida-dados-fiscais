@@ -116,102 +116,49 @@ def ftp_read_text(host: str, path: str, filename: str) -> str:
 def fetch_b3_cdi_ftp() -> Dict[str, Any]:
     host = "ftp.cetip.com.br"
 
-    def list_dir(ftp, path: str) -> List[str]:
-        items: List[str] = []
+    def read_file(ftp: FTP, path: str, filename: str) -> str:
         ftp.cwd(path)
-        ftp.retrlines("NLST", items.append)
-        return items
+        chunks: List[bytes] = []
+        ftp.retrbinary(f"RETR {filename}", chunks.append)
+        return b"".join(chunks).decode("latin-1", errors="ignore").strip()
 
     last_exc = None
-    debug = {}
 
-    # 1) Lista raiz
-    try:
-        ftp = FTP()
-        ftp.connect(host=host, port=21, timeout=TIMEOUT)
-        ftp.login()
+    candidate_paths = ["/", "/MediaCDI"]
 
-        root_items: List[str] = []
-        ftp.retrlines("NLST", root_items.append)
-        debug["root"] = root_items[:200]
+    candidate_files: List[str] = []
+    for days_back in range(0, 15):
+        target_date = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days_back)).date()
+        candidate_files.append(target_date.strftime("%Y%m%d") + ".txt")
 
-        candidate_dirs = []
-        for item in root_items:
-            low = item.lower()
-            if "cdi" in low or "media" in low or "public" in low or "taxa" in low:
-                candidate_dirs.append(item)
+    for path in candidate_paths:
+        for filename in candidate_files:
+            for i in range(1, RETRIES + 1):
+                try:
+                    ftp = FTP()
+                    ftp.connect(host=host, port=21, timeout=TIMEOUT)
+                    ftp.login()
 
-        # força alguns palpites também
-        for forced in ["/MediaCDI", "/Public", "/"]:
-            if forced not in candidate_dirs:
-                candidate_dirs.append(forced)
+                    raw = read_file(ftp, path, filename)
+                    ftp.quit()
 
-        # 2) Lista diretórios candidatos
-        dir_map = {}
-        for path in candidate_dirs:
-            try:
-                items = list_dir(ftp, path)
-                dir_map[path] = items[:200]
-            except Exception as e:
-                dir_map[path] = [f"ERR: {e}"]
+                    if not raw:
+                        raise RuntimeError(f"B3 FTP: arquivo vazio em {path}{filename}")
 
-        debug["dirs"] = dir_map
+                    value = parse_b3_numeric_rate(raw)
 
-        # 3) Tenta achar TAXA_DI.TXT ou algo parecido
-        possible_paths = []
+                    return {
+                        "value": value,
+                        "ftp_host": host,
+                        "ftp_path": path,
+                        "ftp_filename": filename,
+                        "raw_sample": raw[:120],
+                    }
 
-        for path, items in dir_map.items():
-            for name in items:
-                nlow = name.lower()
-                if "taxa" in nlow and "di" in nlow and nlow.endswith(".txt"):
-                    possible_paths.append((path, name))
-
-        # tenta também nomes fixos
-        possible_paths.extend([
-            ("/MediaCDI", "TAXA_DI.TXT"),
-            ("/Public", "TAXA_DI.TXT"),
-            ("/", "TAXA_DI.TXT"),
-        ])
-
-        seen = set()
-        for path, filename in possible_paths:
-            key = (path, filename)
-            if key in seen:
-                continue
-            seen.add(key)
-
-            try:
-                ftp.cwd(path)
-                chunks: List[bytes] = []
-                ftp.retrbinary(f"RETR {filename}", chunks.append)
-                raw = b"".join(chunks).decode("latin-1", errors="ignore").strip()
-
-                if not raw:
-                    raise RuntimeError(f"arquivo vazio em {path}/{filename}")
-
-                value = parse_b3_numeric_rate(raw)
-
-                ftp.quit()
-                return {
-                    "value": value,
-                    "ftp_host": host,
-                    "ftp_path": path,
-                    "ftp_filename": filename,
-                    "raw_sample": raw[:120],
-                }
-            except Exception as e:
-                last_exc = e
-                continue
-
-        ftp.quit()
-
-        raise RuntimeError(
-            "B3 FTP: não encontrei arquivo válido. "
-            f"Dirs inspecionados: {json.dumps(debug, ensure_ascii=False)[:3000]}"
-        )
-
-    except Exception as e:
-        last_exc = e
+                except Exception as e:
+                    last_exc = e
+                    time.sleep(0.2 * i)
+                    continue
 
     raise RuntimeError(f"B3 FTP: não consegui obter a Taxa DI Over ({last_exc})")
 
