@@ -11,10 +11,12 @@ from bs4 import BeautifulSoup
 
 
 OUTPUT_FILE = "dados_fiscais.json"
+TAXAS_FILE_LOCAL = "taxas_bacen.json"
+TAXAS_JSON_URL_DEFAULT = "https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/main/taxas_bacen.json"
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; SanidaFiscaisBot/2.1; +https://sanida.com.br)",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "User-Agent": "Mozilla/5.0 (compatible; SanidaFiscaisBot/2.2; +https://sanida.com.br)",
+    "Accept": "text/html,application/xhtml+xml,application/xml,application/json;q=0.9,*/*;q=0.8",
     "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
     "Connection": "keep-alive",
 }
@@ -63,6 +65,10 @@ def round_fiscal_tree(obj):
     return round_fiscal_number(obj)
 
 
+def taxas_json_url() -> str:
+    return os.getenv("SFA_TAXAS_JSON_URL", TAXAS_JSON_URL_DEFAULT).strip()
+
+
 def fetch(url: str, expect: str = "text") -> Tuple[bool, int, str]:
     last_err = ""
     for i in range(1, RETRIES + 1):
@@ -91,6 +97,66 @@ def fetch_json(url: str) -> Tuple[bool, int, Any]:
         return True, code, json.loads(body)
     except Exception:
         return False, code, {"error": "invalid_json", "body_sample": body[:200]}
+
+
+def read_json_file(path: str) -> Optional[Dict[str, Any]]:
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
+
+
+def validate_taxas_payload(d: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    errs: List[str] = []
+
+    if not isinstance(d, dict):
+        return False, ["taxas_payload:not_dict"]
+
+    taxas = d.get("taxas")
+    if not isinstance(taxas, dict):
+        errs.append("taxas:missing_or_bad")
+    else:
+        if not isinstance(taxas.get("selic"), (int, float)):
+            errs.append("taxas.selic:missing_or_bad")
+        if not isinstance(taxas.get("cdi"), (int, float)):
+            errs.append("taxas.cdi:missing_or_bad")
+
+        if isinstance(taxas.get("selic"), (int, float)) and not (0 <= taxas["selic"] <= 60):
+            errs.append("taxas.selic:out_of_range")
+        if isinstance(taxas.get("cdi"), (int, float)) and not (0 <= taxas["cdi"] <= 60):
+            errs.append("taxas.cdi:out_of_range")
+
+    meta = d.get("meta")
+    if meta is not None and not isinstance(meta, dict):
+        errs.append("meta:bad_shape")
+
+    return (len(errs) == 0), errs
+
+
+def load_taxas_payload() -> Tuple[Dict[str, Any], str, str]:
+    """
+    Fonte prioritária:
+    1) arquivo local taxas_bacen.json (commitado no repo)
+    2) raw GitHub do mesmo arquivo
+    """
+    local = read_json_file(TAXAS_FILE_LOCAL)
+    ok_local, errs_local = validate_taxas_payload(local) if isinstance(local, dict) else (False, ["local:not_found_or_bad"])
+    if ok_local:
+        return local, "local_file", TAXAS_FILE_LOCAL
+
+    remote_url = taxas_json_url()
+    ok_remote, http_code, remote_data = fetch_json(remote_url)
+    if ok_remote and isinstance(remote_data, dict):
+        ok_payload, errs_payload = validate_taxas_payload(remote_data)
+        if ok_payload:
+            return remote_data, "remote_url", remote_url
+        raise RuntimeError(f"taxas remoto inválido: {errs_payload}")
+
+    raise RuntimeError(f"taxas indisponível: local={errs_local}; remote_status={http_code}; remote_error={remote_data}")
 
 
 def parse_irrf_receita(year: int) -> Dict[str, Any]:
@@ -277,30 +343,6 @@ def parse_inss_gov(year: int) -> Dict[str, Any]:
     }
 
 
-def fetch_bcb_rates() -> Dict[str, Any]:
-    def sgs_last(code: int) -> float:
-        url = f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.{code}/dados/ultimos/1?formato=json"
-        ok, http_code, data = fetch_json(url)
-        if not ok:
-            raise RuntimeError(f"BCB: falha SGS {code} (status={http_code})")
-        v = str(data[0]["valor"]).replace(",", ".")
-        return float(v)
-
-    selic = sgs_last(432)
-    cdi_d = sgs_last(12)
-    cdi_aa = (pow(1.0 + (cdi_d / 100.0), 252) - 1.0) * 100.0
-
-    return {
-        "selic": round(selic, 2),
-        "cdi": round(cdi_aa, 2),
-        "cdi_basis": "sgs_12_daily_annualized_252",
-        "sources": {
-            "selic": "sgs_432",
-            "cdi_daily": "sgs_12",
-        },
-    }
-
-
 def validate_payload(d: Dict[str, Any]) -> Tuple[bool, List[str]]:
     errs: List[str] = []
 
@@ -391,6 +433,7 @@ def main():
     year = int(dt.datetime.now(dt.timezone.utc).year)
 
     errors: List[str] = []
+    warnings: List[str] = []
     sources: Dict[str, Any] = {}
 
     try:
@@ -408,20 +451,31 @@ def main():
         inss = None
 
     try:
-        taxas = fetch_bcb_rates()
-        sources["bcb"] = {"sgs": taxas.get("sources", {})}
+        taxas_doc, taxas_origin, taxas_ref = load_taxas_payload()
+
+        taxas_meta = taxas_doc.get("meta", {}) if isinstance(taxas_doc.get("meta"), dict) else {}
+        taxas_sources = taxas_meta.get("sources", {}) if isinstance(taxas_meta.get("sources"), dict) else {}
+
+        sources["taxas"] = {
+            "origin": taxas_origin,
+            "origin_ref": taxas_ref,
+            "generated_at_utc": taxas_meta.get("generated_at_utc"),
+            "source_meta": taxas_sources,
+        }
+
+        taxas = taxas_doc.get("taxas", {})
     except Exception as e:
-        errors.append(f"bcb:{e}")
+        errors.append(f"taxas:{e}")
         taxas = None
 
     if irrf and inss and taxas:
         payload = {
-            "schema_version": "2.1.0",
+            "schema_version": "2.2.0",
             "meta": {
                 "generated_at_utc": now_utc_iso(),
                 "sources": sources,
                 "errors": [],
-                "warnings": [],
+                "warnings": warnings,
             },
             "ano": year,
             "dep": float(irrf["dep"]),
@@ -455,12 +509,12 @@ def main():
         return
 
     minimal = {
-        "schema_version": "2.1.0",
+        "schema_version": "2.2.0",
         "meta": {
             "generated_at_utc": now_utc_iso(),
             "sources": sources,
             "errors": errors,
-            "warnings": ["minimal_fallback_written", "static_reference_values"],
+            "warnings": warnings + ["minimal_fallback_written", "static_reference_values"],
         },
         "ano": year,
         "dep": 189.59,
@@ -487,7 +541,11 @@ def main():
                 "b": 0.133145,
             },
         },
-        "taxas": {"selic": 15.00, "cdi": 14.90, "cdi_basis": "fallback"},
+        "taxas": {
+            "selic": 15.00,
+            "cdi": 14.90,
+            "cdi_basis": "fallback",
+        },
     }
 
     write_json_atomic(round_fiscal_tree(minimal))
