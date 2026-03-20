@@ -1,7 +1,7 @@
 {
-  "schema_version": "2.1.0",
+  "schema_version": "2.2.0",
   "meta": {
-    "generated_at_utc": "2026-03-20T12:46:58Z",
+    "generated_at_utc": "2026-03-20T18:54:01Z",
     "sources": {
       "irrf": {
         "url": "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/tabelas/2026",
@@ -11,10 +11,21 @@
         "url": "https://www.gov.br/inss/pt-br/assuntos/com-reajuste-de-3-9-teto-do-inss-chega-a-r-8-475-55-em-2026",
         "http_code": 200
       },
-      "bcb": {
-        "sgs": {
-          "selic": "sgs_432",
-          "cdi_daily": "sgs_12"
+      "taxas": {
+        "origin": "local_file",
+        "origin_ref": "taxas_bacen.json",
+        "generated_at_utc": "2026-03-20T17:53:53Z",
+        "source_meta": {
+          "selic": {
+            "source": "sgs_432"
+          },
+          "cdi": {
+            "source": "b3_ftp_taxa_di_txt",
+            "ftp_host": "ftp.cetip.com.br",
+            "ftp_path": "/MediaCDI",
+            "ftp_filename": "20260319.txt",
+            "raw_sample": "000001465"
+          }
         }
       }
     },
@@ -81,6 +92,6 @@
   "taxas": {
     "selic": 14.75,
     "cdi": 14.65,
-    "cdi_basis": "sgs_12_daily_annualized_252"
+    "cdi_basis": "b3_ftp_taxa_di_txt_aa"
   }
 }
