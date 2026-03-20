@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0.0",
+  "meta": {
+    "generated_at_utc": "2026-03-20T12:06:40Z",
+    "sources": {
+      "bcb": {
+        "sgs": {
+          "selic": "sgs_432",
+          "cdi_daily": "sgs_12"
+        }
+      }
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "taxas": {
+    "selic": 14.75,
+    "cdi": 14.9,
+    "cdi_basis": "sgs_12_daily_annualized_252"
+  }
+}
