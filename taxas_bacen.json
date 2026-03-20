@@ -1,13 +1,17 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.3.0",
   "meta": {
-    "generated_at_utc": "2026-03-20T12:06:40Z",
+    "generated_at_utc": "2026-03-20T14:04:33Z",
     "sources": {
-      "bcb": {
-        "sgs": {
-          "selic": "sgs_432",
-          "cdi_daily": "sgs_12"
-        }
+      "selic": {
+        "source": "sgs_432"
+      },
+      "cdi": {
+        "source": "b3_ftp_taxa_di_txt",
+        "ftp_host": "ftp.cetip.com.br",
+        "ftp_path": "/MediaCDI",
+        "ftp_filename": "20260319.txt",
+        "raw_sample": "000001465"
       }
     },
     "errors": [],
@@ -15,7 +19,7 @@
   },
   "taxas": {
     "selic": 14.75,
-    "cdi": 14.9,
-    "cdi_basis": "sgs_12_daily_annualized_252"
+    "cdi": 14.65,
+    "cdi_basis": "b3_ftp_taxa_di_txt_aa"
   }
 }
