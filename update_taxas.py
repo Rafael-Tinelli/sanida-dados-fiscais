@@ -12,7 +12,7 @@ import requests
 OUTPUT_FILE = "taxas_bacen.json"
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; SanidaTaxasBot/1.2; +https://sanida.com.br)",
+    "User-Agent": "Mozilla/5.0 (compatible; SanidaTaxasBot/1.3; +https://sanida.com.br)",
     "Accept": "application/json,text/plain,*/*",
     "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
     "Connection": "keep-alive",
@@ -82,61 +82,76 @@ def sgs_last(code: int) -> float:
     return float(v)
 
 
+def parse_b3_numeric_rate(raw: str) -> float:
+    """
+    Exemplo esperado:
+    000002320  -> 23,20%
+    000001465  -> 14,65%
+    """
+    text = (raw or "").strip()
+    m = re.search(r"(\d{7,9})", text)
+    if not m:
+        raise RuntimeError(f"B3 FTP: formato inesperado: {text[:120]!r}")
+
+    value = int(m.group(1)) / 100.0
+    if not (0 <= value <= 60):
+        raise RuntimeError(f"B3 FTP: CDI fora de faixa: {value}")
+
+    return round(value, 2)
+
+
+def ftp_read_text(host: str, path: str, filename: str) -> str:
+    ftp = FTP()
+    ftp.connect(host=host, port=21, timeout=TIMEOUT)
+    ftp.login()
+    ftp.cwd(path)
+
+    chunks: List[bytes] = []
+    ftp.retrbinary(f"RETR {filename}", chunks.append)
+    ftp.quit()
+
+    return b"".join(chunks).decode("latin-1", errors="ignore").strip()
+
+
 def fetch_b3_cdi_ftp() -> Dict[str, Any]:
     """
-    Busca a Taxa DI Over no FTP público da Cetip/B3.
-    A documentação oficial da B3 informa:
-    - pasta pública via ftp.cetip.com.br/Public
-    - arquivo diário nomeado como AAAAMMDD.txt
-    - conteúdo numérico sem vírgula, ex.: 000002320 = 23,20%
+    Teste objetivo:
+    ftp://ftp.cetip.com.br/MediaCDI/TAXA_DI.TXT
+
+    Se falhar, tenta /Public/TAXA_DI.TXT só por segurança.
     """
     host = "ftp.cetip.com.br"
-    base_dir = "/Public"
+
+    candidates = [
+        ("/MediaCDI", "TAXA_DI.TXT"),
+        ("/Public", "TAXA_DI.TXT"),
+    ]
 
     last_exc = None
 
-    # Tenta os últimos 10 dias corridos para cobrir fins de semana/feriados/defasagem de fechamento.
-    for days_back in range(0, 10):
-        target_date = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days_back)).date()
-        filename = target_date.strftime("%Y%m%d") + ".txt"
+    for path, filename in candidates:
+        for i in range(1, RETRIES + 1):
+            try:
+                raw = ftp_read_text(host, path, filename)
+                if not raw:
+                    raise RuntimeError(f"B3 FTP: arquivo vazio em {path}/{filename}")
 
-        try:
-            ftp = FTP()
-            ftp.connect(host=host, port=21, timeout=TIMEOUT)
-            ftp.login()
-            ftp.cwd(base_dir)
+                value = parse_b3_numeric_rate(raw)
 
-            chunks: List[bytes] = []
-            ftp.retrbinary(f"RETR {filename}", chunks.append)
-            ftp.quit()
+                return {
+                    "value": value,
+                    "ftp_host": host,
+                    "ftp_path": path,
+                    "ftp_filename": filename,
+                    "raw_sample": raw[:120],
+                }
 
-            raw = b"".join(chunks).decode("latin-1", errors="ignore").strip()
+            except Exception as e:
+                last_exc = e
+                time.sleep(0.4 * i)
+                continue
 
-            if not raw:
-                raise RuntimeError(f"B3 FTP: arquivo vazio ({filename})")
-
-            # Ex.: 000002320 = 23,20%
-            m = re.search(r"(\d{7,9})", raw)
-            if not m:
-                raise RuntimeError(f"B3 FTP: formato inesperado em {filename}: {raw[:120]!r}")
-
-            value = int(m.group(1)) / 100.0
-
-            if not (0 <= value <= 60):
-                raise RuntimeError(f"B3 FTP: CDI fora de faixa em {filename}: {value}")
-
-            return {
-                "value": round(value, 2),
-                "ftp_host": host,
-                "ftp_dir": base_dir,
-                "ftp_filename": filename,
-            }
-
-        except Exception as e:
-            last_exc = e
-            continue
-
-    raise RuntimeError(f"B3 FTP: não consegui obter a Taxa DI Over nos últimos 10 dias ({last_exc})")
+    raise RuntimeError(f"B3 FTP: não consegui obter a Taxa DI Over ({last_exc})")
 
 
 def fetch_rates() -> Dict[str, Any]:
@@ -146,15 +161,16 @@ def fetch_rates() -> Dict[str, Any]:
     return {
         "selic": round(selic, 2),
         "cdi": round(float(cdi_info["value"]), 2),
-        "cdi_basis": "b3_di_over_ftp_aa",
+        "cdi_basis": "b3_ftp_taxa_di_txt_aa",
         "sources": {
             "selic": "sgs_432",
-            "cdi": "b3_ftp_di_over",
+            "cdi": "b3_ftp_taxa_di_txt",
         },
         "source_meta": {
             "cdi_ftp_host": cdi_info["ftp_host"],
-            "cdi_ftp_dir": cdi_info["ftp_dir"],
+            "cdi_ftp_path": cdi_info["ftp_path"],
             "cdi_ftp_filename": cdi_info["ftp_filename"],
+            "cdi_raw_sample": cdi_info["raw_sample"],
         },
     }
 
@@ -222,12 +238,13 @@ def main():
         sources["cdi"] = {
             "source": taxas["sources"]["cdi"],
             "ftp_host": taxas["source_meta"]["cdi_ftp_host"],
-            "ftp_dir": taxas["source_meta"]["cdi_ftp_dir"],
+            "ftp_path": taxas["source_meta"]["cdi_ftp_path"],
             "ftp_filename": taxas["source_meta"]["cdi_ftp_filename"],
+            "raw_sample": taxas["source_meta"]["cdi_raw_sample"],
         }
 
         payload = {
-            "schema_version": "1.2.0",
+            "schema_version": "1.3.0",
             "meta": {
                 "generated_at_utc": now_utc_iso(),
                 "sources": sources,
@@ -259,7 +276,7 @@ def main():
         return
 
     fallback_payload = {
-        "schema_version": "1.2.0",
+        "schema_version": "1.3.0",
         "meta": {
             "generated_at_utc": now_utc_iso(),
             "sources": sources,
