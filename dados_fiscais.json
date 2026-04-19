@@ -1,7 +1,7 @@
 {
   "schema_version": "2.2.0",
   "meta": {
-    "generated_at_utc": "2026-04-18T10:03:39Z",
+    "generated_at_utc": "2026-04-19T10:03:25Z",
     "sources": {
       "irrf": {
         "url": "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/tabelas/2026",
@@ -14,7 +14,7 @@
       "taxas": {
         "origin": "local_file",
         "origin_ref": "taxas_bacen.json",
-        "generated_at_utc": "2026-04-18T09:33:53Z",
+        "generated_at_utc": "2026-04-19T09:36:52Z",
         "source_meta": {
           "selic": {
             "source": "sgs_432"
