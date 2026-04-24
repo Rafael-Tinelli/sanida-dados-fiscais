@@ -1,7 +1,7 @@
 {
   "schema_version": "2.2.0",
   "meta": {
-    "generated_at_utc": "2026-04-23T10:49:19Z",
+    "generated_at_utc": "2026-04-24T10:46:10Z",
     "sources": {
       "irrf": {
         "url": "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/tabelas/2026",
@@ -14,7 +14,7 @@
       "taxas": {
         "origin": "local_file",
         "origin_ref": "taxas_bacen.json",
-        "generated_at_utc": "2026-04-23T10:01:06Z",
+        "generated_at_utc": "2026-04-24T09:59:47Z",
         "source_meta": {
           "selic": {
             "source": "sgs_432"
@@ -23,7 +23,7 @@
             "source": "b3_ftp_taxa_di_txt",
             "ftp_host": "ftp.cetip.com.br",
             "ftp_path": "/MediaCDI",
-            "ftp_filename": "20260422.txt",
+            "ftp_filename": "20260423.txt",
             "raw_sample": "000001465"
           }
         }
