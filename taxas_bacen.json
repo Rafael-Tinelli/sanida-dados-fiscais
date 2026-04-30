@@ -1,7 +1,7 @@
 {
   "schema_version": "1.3.0",
   "meta": {
-    "generated_at_utc": "2026-04-30T11:52:01Z",
+    "generated_at_utc": "2026-04-30T13:22:22Z",
     "sources": {
       "selic": {
         "source": "sgs_432"
@@ -10,7 +10,7 @@
         "source": "b3_ftp_taxa_di_txt",
         "ftp_host": "ftp.cetip.com.br",
         "ftp_path": "/MediaCDI",
-        "ftp_filename": "20260429.txt",
+        "ftp_filename": "20260417.txt",
         "raw_sample": "000001465"
       }
     },
