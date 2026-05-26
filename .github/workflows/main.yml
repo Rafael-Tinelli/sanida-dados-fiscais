@@ -39,13 +39,17 @@ jobs:
 
       - name: Commit if changed
         run: |
-          if git diff --quiet; then
+          git add dados_fiscais.json
+
+          if git diff --cached --quiet -- dados_fiscais.json; then
             echo "No changes to commit."
             exit 0
           fi
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add dados_fiscais.json
+
           git commit -m "chore(data): atualizar dados_fiscais.json"
+
           git pull --rebase origin main
           git push origin main
