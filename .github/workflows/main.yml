@@ -7,8 +7,9 @@ on:
     - cron: "20 9 * * *"
 
 concurrency:
-  group: dados-fiscais-update
-  cancel-in-progress: true
+  group: sanida-dados-fiscais-writes-main
+  cancel-in-progress: false
+  queue: max
 
 jobs:
   update:
