@@ -1,7 +1,7 @@
 {
   "schema_version": "1.3.0",
   "meta": {
-    "generated_at_utc": "2026-06-22T11:21:51Z",
+    "generated_at_utc": "2026-06-22T16:08:41Z",
     "sources": {
       "selic": {
         "source": "sgs_432"
@@ -10,8 +10,8 @@
         "source": "b3_ftp_taxa_di_txt",
         "ftp_host": "ftp.cetip.com.br",
         "ftp_path": "/MediaCDI",
-        "ftp_filename": "20260619.txt",
-        "raw_sample": "000001415"
+        "ftp_filename": "20260612.txt",
+        "raw_sample": "000001440"
       }
     },
     "errors": [],
@@ -19,7 +19,7 @@
   },
   "taxas": {
     "selic": 14.25,
-    "cdi": 14.15,
+    "cdi": 14.4,
     "cdi_basis": "b3_ftp_taxa_di_txt_aa"
   }
 }
