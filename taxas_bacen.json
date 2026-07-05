@@ -1,7 +1,7 @@
 {
   "schema_version": "1.3.0",
   "meta": {
-    "generated_at_utc": "2026-07-05T10:50:07Z",
+    "generated_at_utc": "2026-07-05T12:07:10Z",
     "sources": {
       "selic": {
         "source": "sgs_432"
