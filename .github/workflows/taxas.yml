@@ -9,11 +9,11 @@ on:
 concurrency:
   group: sanida-dados-fiscais-writes-main
   cancel-in-progress: false
-  queue: max
 
 jobs:
   update:
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
 
@@ -45,9 +45,19 @@ jobs:
           with open("taxas_bacen.json", "r", encoding="utf-8") as f:
               d = json.load(f)
 
-          assert isinstance(d.get("meta", {}).get("generated_at_utc"), str)
-          assert isinstance(d.get("taxas", {}).get("selic"), (int, float))
-          assert isinstance(d.get("taxas", {}).get("cdi"), (int, float))
+          assert isinstance(
+              d.get("meta", {}).get("generated_at_utc"),
+              str
+          )
+          assert isinstance(
+              d.get("taxas", {}).get("selic"),
+              (int, float)
+          )
+          assert isinstance(
+              d.get("taxas", {}).get("cdi"),
+              (int, float)
+          )
+
           print("Output OK")
           PY
 
@@ -66,7 +76,8 @@ jobs:
           fi
 
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email \
+            "github-actions[bot]@users.noreply.github.com"
 
           git commit -m "chore(data): atualizar taxas_bacen.json"
 
