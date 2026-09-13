@@ -516,7 +516,7 @@ def test_reader_compatibility_is_exact_and_unknown_versions_fail() -> None:
         )
     with pytest.raises(ContractCompatibilityError, match="contract API mismatch"):
         contract.assert_reader_compatible(
-            consumer="H26", schema_version="1.0.0", contract_api_version="1.1.0"
+            consumer="H26", schema_version="1.1.0", contract_api_version="1.0.0"
         )
 
 

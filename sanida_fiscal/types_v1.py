@@ -678,6 +678,10 @@ class PeriodRulePayload(StrictModel):
         "one_twelfth_per_acquisition_month_or_fraction_gte_days"
     ] = "one_twelfth_per_acquisition_month_or_fraction_gte_days"
     proportional_qualifying_days: Literal[15] = 15
+    proportional_accrual_method: Literal[
+        "one_twelfth_per_acquisition_month_or_fraction_gte_days"
+    ] = "one_twelfth_per_acquisition_month_or_fraction_gte_days"
+    proportional_qualifying_days: Literal[15] = 15
 
 
 class FormulaComponent(StrictModel):
