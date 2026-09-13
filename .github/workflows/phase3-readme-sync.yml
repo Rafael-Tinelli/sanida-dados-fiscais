@@ -1,0 +1,34 @@
+name: Phase 3 README Sync
+
+on:
+  push:
+    branches:
+      - refactor/fiscal-engine-v1
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+        with:
+          ref: refactor/fiscal-engine-v1
+          fetch-depth: 0
+
+      - name: Sync README
+        run: python scripts/sync_readme_phase3_start.py
+
+      - name: Commit README if changed
+        run: |
+          if git diff --quiet -- README.md; then
+            echo "README already synchronized."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "docs: registrar inicio da Fase 3 no README"
+          git push origin HEAD:refactor/fiscal-engine-v1
