@@ -11,9 +11,13 @@ from hypothesis import given, strategies as st
 from sanida_fiscal.contract_v1 import FiscalContractV1
 from sanida_fiscal.engine_v1 import (
     FiscalEngineError,
+    IrrfAssessmentIdentity,
+    IrrfIncomeType,
     assess_irrf_2026,
+    build_irrf_legal_deductions,
     calculate_affine_reduction,
     calculate_progressive,
+    select_irrf_rule_bundle,
 )
 from sanida_fiscal.money import DecimalInputError, as_decimal
 from sanida_fiscal.types_v1 import (
@@ -28,6 +32,7 @@ from sanida_fiscal.types_v1 import (
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE_PATH = ROOT / "contracts" / "examples" / "fiscal-contract-v1.example.json"
 REFERENCE_CASES_PATH = ROOT / "tests" / "reference_cases" / "phase1_reference_cases.json"
+TARGET_DATE = date(2026, 9, 13)
 
 
 def D(value: str | int) -> Decimal:
@@ -45,18 +50,44 @@ def reference_cases() -> dict[str, dict]:
     return {case["case_id"]: case for case in payload["cases"]}
 
 
-def irrf_rules():
-    contract = load_candidate()
-    target = date(2026, 9, 13)
-    table_rule = contract.select_rule(
-        "irrf.monthly.progressive_table", target, AssessmentContext.MONTHLY
+def monthly_assessment() -> IrrfAssessmentIdentity:
+    return IrrfAssessmentIdentity(
+        income_type=IrrfIncomeType.MONTHLY,
+        origin_context=AssessmentContext.MONTHLY,
     )
-    reduction_rule = contract.select_rule(
-        "irrf.reduction.2026", target, AssessmentContext.MONTHLY
+
+
+def dependent_payload_for(
+    contract: FiscalContractV1, assessment: IrrfAssessmentIdentity
+) -> ScalarPayload:
+    rule = contract.select_rule(
+        "irrf.dependent_deduction", TARGET_DATE, assessment.rule_context
     )
-    assert table_rule.rounding_policy is not None
-    assert reduction_rule.rounding_policy is not None
-    return table_rule, reduction_rule
+    assert isinstance(rule.payload, ScalarPayload)
+    return rule.payload
+
+
+def simplified_discount() -> ScalarPayload:
+    # The scalar family/value is frozen in Phase 1. It is intentionally passed
+    # to each assessment instead of kept as global mutable engine state.
+    return ScalarPayload(value=D("607.20"), unit=ScalarUnit.BRL)
+
+
+def assessment_deductions(
+    contract: FiscalContractV1,
+    assessment: IrrfAssessmentIdentity,
+    *,
+    social_security: Decimal,
+    dependent_count: int = 0,
+    pension: Decimal = D("0"),
+):
+    return build_irrf_legal_deductions(
+        assessment=assessment,
+        social_security=social_security,
+        dependent_count=dependent_count,
+        dependent_deduction=dependent_payload_for(contract, assessment),
+        pension=pension,
+    )
 
 
 @pytest.mark.parametrize(
@@ -72,25 +103,25 @@ def irrf_rules():
 def test_official_rfb_2026_irrf_reference_cases(case_id: str) -> None:
     cases = reference_cases()
     case = cases[case_id]
-    table_rule, reduction_rule = irrf_rules()
+    contract = load_candidate()
+    assessment = monthly_assessment()
+    rules = select_irrf_rule_bundle(contract, TARGET_DATE, assessment)
 
-    legal = []
-    if "official_social_security_deduction" in case["inputs"]:
-        legal.append(D(case["inputs"]["official_social_security_deduction"]))
+    social_security = D(case["inputs"].get("official_social_security_deduction", "0"))
+    deductions = assessment_deductions(
+        contract, assessment, social_security=social_security
+    )
 
     result = assess_irrf_2026(
+        assessment=assessment,
         gross_taxable_income=D(case["inputs"]["taxable_income"]),
-        legal_deductions=legal,
-        simplified_discount=ScalarPayload(
-            value=D("607.20"), unit=ScalarUnit.BRL
-        ),
-        progressive_table=table_rule.payload,
-        progressive_rounding=table_rule.rounding_policy,
-        reduction=reduction_rule.payload,
-        reduction_rounding=reduction_rule.rounding_policy,
+        legal_deductions=deductions,
+        simplified_discount=simplified_discount(),
+        rules=rules,
     )
 
     expected = case["expected"]
+    assert result.assessment == assessment
     assert result.deduction_mode == expected["deduction_mode"]
     assert result.irrf_tax_base == D(expected["irrf_tax_base"])
     assert result.pre_reduction_irrf == D(expected["pre_reduction_irrf"])
@@ -104,16 +135,19 @@ def test_official_rfb_2026_irrf_reference_cases(case_id: str) -> None:
 
 def test_A01_reduction_input_never_collapses_to_irrf_tax_base() -> None:
     case = reference_cases()["rfd_irrf_2026_salary_6000_A01_regression"]
-    table_rule, reduction_rule = irrf_rules()
+    contract = load_candidate()
+    assessment = monthly_assessment()
+    rules = select_irrf_rule_bundle(contract, TARGET_DATE, assessment)
+    deductions = assessment_deductions(
+        contract, assessment, social_security=D("649.60")
+    )
 
     result = assess_irrf_2026(
+        assessment=assessment,
         gross_taxable_income=D("6000.00"),
-        legal_deductions=[D("649.60")],
-        simplified_discount=ScalarPayload(value=D("607.20"), unit=ScalarUnit.BRL),
-        progressive_table=table_rule.payload,
-        progressive_rounding=table_rule.rounding_policy,
-        reduction=reduction_rule.payload,
-        reduction_rounding=reduction_rule.rounding_policy,
+        legal_deductions=deductions,
+        simplified_discount=simplified_discount(),
+        rules=rules,
     )
 
     assert case["invariant"] == "reduction_input_income != irrf_tax_base"
@@ -121,6 +155,230 @@ def test_A01_reduction_input_never_collapses_to_irrf_tax_base() -> None:
     assert result.irrf_tax_base == D("5350.40")
     assert result.reduction_input_income != result.irrf_tax_base
     assert result.final_irrf == D("382.88")
+
+
+def test_legal_deduction_components_are_explicit_and_context_bound() -> None:
+    contract = load_candidate()
+    assessment = monthly_assessment()
+    deductions = assessment_deductions(
+        contract,
+        assessment,
+        social_security=D("500.00"),
+        dependent_count=2,
+        pension=D("100.00"),
+    )
+
+    assert deductions.social_security == D("500.00")
+    assert deductions.dependent_unit == D("189.59")
+    assert deductions.dependents == D("379.18")
+    assert deductions.pension == D("100.00")
+    assert deductions.total == D("979.18")
+    assert deductions.assessment == assessment
+
+
+def test_dependent_scalar_must_be_per_dependent() -> None:
+    assessment = monthly_assessment()
+    with pytest.raises(FiscalEngineError, match="BRL_per_dependent"):
+        build_irrf_legal_deductions(
+            assessment=assessment,
+            social_security=D("0"),
+            dependent_count=1,
+            dependent_deduction=ScalarPayload(value=D("189.59"), unit=ScalarUnit.BRL),
+            pension=D("0"),
+        )
+
+
+def test_wrong_income_type_for_origin_context_is_rejected() -> None:
+    with pytest.raises(FiscalEngineError, match="incompatible with origin context"):
+        IrrfAssessmentIdentity(
+            income_type=IrrfIncomeType.THIRTEENTH,
+            origin_context=AssessmentContext.MONTHLY,
+        )
+
+
+def test_termination_is_origin_not_a_fourth_irrf_income_type() -> None:
+    salary_balance = IrrfAssessmentIdentity(
+        income_type=IrrfIncomeType.MONTHLY,
+        origin_context=AssessmentContext.TERMINATION,
+    )
+    thirteenth = IrrfAssessmentIdentity(
+        income_type=IrrfIncomeType.THIRTEENTH,
+        origin_context=AssessmentContext.TERMINATION,
+    )
+
+    assert salary_balance.rule_context == AssessmentContext.MONTHLY
+    assert thirteenth.rule_context == AssessmentContext.THIRTEENTH
+
+    with pytest.raises(FiscalEngineError, match="incompatible with origin context"):
+        IrrfAssessmentIdentity(
+            income_type=IrrfIncomeType.VACATION,
+            origin_context=AssessmentContext.TERMINATION,
+        )
+
+
+def test_rule_selection_is_income_type_specific_even_inside_termination() -> None:
+    contract = load_candidate()
+    salary_balance = IrrfAssessmentIdentity(
+        income_type=IrrfIncomeType.MONTHLY,
+        origin_context=AssessmentContext.TERMINATION,
+    )
+    thirteenth = IrrfAssessmentIdentity(
+        income_type=IrrfIncomeType.THIRTEENTH,
+        origin_context=AssessmentContext.TERMINATION,
+    )
+
+    salary_rules = select_irrf_rule_bundle(contract, TARGET_DATE, salary_balance)
+    thirteenth_rules = select_irrf_rule_bundle(contract, TARGET_DATE, thirteenth)
+
+    assert salary_rules.reduction_rule_id == "irrf.reduction.2026"
+    assert thirteenth_rules.reduction_rule_id == "thirteenth.irrf.reduction.2026"
+    assert salary_rules.assessment.rule_context == AssessmentContext.MONTHLY
+    assert thirteenth_rules.assessment.rule_context == AssessmentContext.THIRTEENTH
+
+
+def test_monthly_deductions_cannot_leak_into_thirteenth_assessment() -> None:
+    contract = load_candidate()
+    monthly = monthly_assessment()
+    thirteenth = IrrfAssessmentIdentity(
+        income_type=IrrfIncomeType.THIRTEENTH,
+        origin_context=AssessmentContext.THIRTEENTH,
+    )
+    monthly_deductions = assessment_deductions(
+        contract, monthly, social_security=D("700.00"), pension=D("50.00")
+    )
+    thirteenth_rules = select_irrf_rule_bundle(contract, TARGET_DATE, thirteenth)
+
+    with pytest.raises(FiscalEngineError, match="different IRRF assessment context"):
+        assess_irrf_2026(
+            assessment=thirteenth,
+            gross_taxable_income=D("6000.00"),
+            legal_deductions=monthly_deductions,
+            simplified_discount=simplified_discount(),
+            rules=thirteenth_rules,
+        )
+
+
+def test_rule_bundle_cannot_be_reused_across_assessments() -> None:
+    contract = load_candidate()
+    monthly = monthly_assessment()
+    vacation = IrrfAssessmentIdentity(
+        income_type=IrrfIncomeType.VACATION,
+        origin_context=AssessmentContext.VACATION_ENJOYED,
+    )
+    deductions = assessment_deductions(
+        contract, monthly, social_security=D("700.00")
+    )
+    vacation_rules = select_irrf_rule_bundle(contract, TARGET_DATE, vacation)
+
+    with pytest.raises(FiscalEngineError, match="rule bundle belongs to a different assessment"):
+        assess_irrf_2026(
+            assessment=monthly,
+            gross_taxable_income=D("6000.00"),
+            legal_deductions=deductions,
+            simplified_discount=simplified_discount(),
+            rules=vacation_rules,
+        )
+
+
+def test_termination_monthly_and_thirteenth_keep_distinct_deduction_memories() -> None:
+    contract = load_candidate()
+    salary_balance = IrrfAssessmentIdentity(
+        income_type=IrrfIncomeType.MONTHLY,
+        origin_context=AssessmentContext.TERMINATION,
+    )
+    thirteenth = IrrfAssessmentIdentity(
+        income_type=IrrfIncomeType.THIRTEENTH,
+        origin_context=AssessmentContext.TERMINATION,
+    )
+
+    salary_deductions = assessment_deductions(
+        contract,
+        salary_balance,
+        social_security=D("700.00"),
+        pension=D("0"),
+    )
+    thirteenth_deductions = assessment_deductions(
+        contract,
+        thirteenth,
+        social_security=D("800.00"),
+        pension=D("100.00"),
+    )
+
+    salary_result = assess_irrf_2026(
+        assessment=salary_balance,
+        gross_taxable_income=D("6000.00"),
+        legal_deductions=salary_deductions,
+        simplified_discount=simplified_discount(),
+        rules=select_irrf_rule_bundle(contract, TARGET_DATE, salary_balance),
+    )
+    thirteenth_result = assess_irrf_2026(
+        assessment=thirteenth,
+        gross_taxable_income=D("6000.00"),
+        legal_deductions=thirteenth_deductions,
+        simplified_discount=simplified_discount(),
+        rules=select_irrf_rule_bundle(contract, TARGET_DATE, thirteenth),
+    )
+
+    assert salary_result.assessment.origin_context == AssessmentContext.TERMINATION
+    assert thirteenth_result.assessment.origin_context == AssessmentContext.TERMINATION
+    assert salary_result.assessment.income_type == IrrfIncomeType.MONTHLY
+    assert thirteenth_result.assessment.income_type == IrrfIncomeType.THIRTEENTH
+    assert salary_result.legal_deductions == D("700.00")
+    assert thirteenth_result.legal_deductions == D("900.00")
+    assert salary_result.deduction_components != thirteenth_result.deduction_components
+
+
+def test_thirteenth_assessment_uses_own_reduction_rule() -> None:
+    contract = load_candidate()
+    assessment = IrrfAssessmentIdentity(
+        income_type=IrrfIncomeType.THIRTEENTH,
+        origin_context=AssessmentContext.THIRTEENTH,
+    )
+    deductions = assessment_deductions(
+        contract, assessment, social_security=D("649.60")
+    )
+    rules = select_irrf_rule_bundle(contract, TARGET_DATE, assessment)
+
+    result = assess_irrf_2026(
+        assessment=assessment,
+        gross_taxable_income=D("6000.00"),
+        legal_deductions=deductions,
+        simplified_discount=simplified_discount(),
+        rules=rules,
+    )
+
+    assert rules.reduction_rule_id == "thirteenth.irrf.reduction.2026"
+    assert result.reduction_input_income == D("6000.00")
+    assert result.irrf_tax_base == D("5350.40")
+    assert result.final_irrf == D("382.88")
+
+
+def test_vacation_assessment_is_separate_from_monthly_payroll() -> None:
+    contract = load_candidate()
+    vacation = IrrfAssessmentIdentity(
+        income_type=IrrfIncomeType.VACATION,
+        origin_context=AssessmentContext.VACATION_ENJOYED,
+    )
+    deductions = assessment_deductions(
+        contract,
+        vacation,
+        social_security=D("650.00"),
+        dependent_count=1,
+        pension=D("0"),
+    )
+    rules = select_irrf_rule_bundle(contract, TARGET_DATE, vacation)
+
+    result = assess_irrf_2026(
+        assessment=vacation,
+        gross_taxable_income=D("6000.00"),
+        legal_deductions=deductions,
+        simplified_discount=simplified_discount(),
+        rules=rules,
+    )
+
+    assert result.assessment.rule_context == AssessmentContext.VACATION_ENJOYED
+    assert result.deduction_components.dependents == D("189.59")
+    assert rules.reduction_rule_id == "irrf.reduction.2026"
 
 
 def marginal_payload() -> ProgressiveTablePayload:
@@ -186,13 +444,15 @@ def test_marginal_progressive_assessment_is_monotonic(a_cents: int, b_cents: int
 
 @given(st.integers(min_value=0, max_value=1_000_000))
 def test_affine_reduction_never_makes_tax_negative(income_cents: int) -> None:
-    _, reduction_rule = irrf_rules()
+    contract = load_candidate()
+    assessment = monthly_assessment()
+    rules = select_irrf_rule_bundle(contract, TARGET_DATE, assessment)
     pre_tax = D("1000.00")
     result = calculate_affine_reduction(
         D(income_cents) / 100,
         pre_tax,
-        reduction_rule.payload,
-        reduction_rule.rounding_policy,
+        rules.reduction,
+        rules.reduction_rounding,
     )
     assert D("0") <= result.final_tax <= pre_tax
     assert D("0") <= result.applied_reduction <= pre_tax
