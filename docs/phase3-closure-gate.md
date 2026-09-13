@@ -108,7 +108,7 @@ O primeiro run com o gate integrado e todas as novas invariantes foi o `Remake C
 - suíte integral: **150 testes verdes**;
 - `scripts/validate_phase3_gate.py`: `PASS`.
 
-Depois desse run, README e `docs/phase3-library-v1.md` foram sincronizados com o checkpoint e o workflow/helper temporário usado apenas para essa sincronização foi removido. O `Remake CI` do head documental limpo é a evidência final a ser lida no checkpoint formal de promoção da fase.
+README e `docs/phase3-library-v1.md` foram então sincronizados com o checkpoint e o workflow/helper temporário usado apenas para essa sincronização foi removido. A validação do head documental limpo também ficou verde no `Remake CI` **34775483791**, novamente com **150 testes** e `Phase 3 closure gate: PASS`.
 
 ## Critério para marcar a Fase 3 como CONCLUÍDA
 
