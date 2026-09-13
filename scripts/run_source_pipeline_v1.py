@@ -25,6 +25,7 @@ def main() -> int:
     parser.add_argument("--registry", type=Path, default=Path("docs/source-registry-v1.json"))
     parser.add_argument("--snapshot-root", type=Path, default=Path(".source-runtime/snapshots"))
     parser.add_argument("--state-root", type=Path, default=Path(".source-runtime/state"))
+    parser.add_argument("--candidate-root", type=Path, default=Path(".source-runtime/candidates"))
     parser.add_argument("--timeout", type=float, default=20.0)
     parser.add_argument("--attempts", type=int, default=3)
     args = parser.parse_args()
@@ -35,6 +36,7 @@ def main() -> int:
         registry_path=args.registry,
         snapshot_root=args.snapshot_root,
         state_root=args.state_root,
+        candidate_root=args.candidate_root,
         timeout_seconds=args.timeout,
         max_attempts=args.attempts,
     )
@@ -45,7 +47,10 @@ def main() -> int:
         "collection_status": result.collection.status.value,
         "parse_status": result.candidate.status.value if result.candidate else result.state.last_parse_status.value if result.state.last_parse_status else None,
         "snapshot_sha256": result.state.last_collected_snapshot_sha256,
+        "last_parsed_snapshot_sha256": result.state.last_parsed_snapshot_sha256,
+        "last_parsed_snapshot_path": result.state.last_parsed_snapshot_path,
         "candidate_sha256": result.state.last_candidate_sha256,
+        "candidate_path": result.state.last_candidate_path,
         "raw_snapshot_unchanged": result.raw_snapshot_unchanged,
         "candidate_fingerprint_unchanged": result.candidate_fingerprint_unchanged,
         "consecutive_source_failures": result.state.consecutive_source_failures,
