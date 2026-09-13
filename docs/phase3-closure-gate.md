@@ -98,7 +98,7 @@ Esses limites não impedem o gate enquanto o engine os rejeitar ou os mantiver e
 
 ## Evidência executável do checkpoint
 
-A evidência é o próprio `Remake CI` do head corrente do PR. O estado exigido e reproduzido neste checkpoint é:
+A evidência é o próprio `Remake CI` do head corrente do PR. O estado de aceite é:
 
 ```text
 Repository baseline       PASS
@@ -113,7 +113,7 @@ Phase 3 closure gate      PASS
 150 passed
 ```
 
-O histórico de GitHub Actions preserva os IDs e logs de cada execução. Este documento registra somente os invariantes de aceite, para que não seja necessário alterá-lo a cada novo run disparado por mudanças documentais.
+O histórico de GitHub Actions preserva os IDs e logs de cada execução. Este documento registra somente os invariantes de aceite, para que permaneça estável e não precise ser alterado quando um novo run é disparado.
 
 Não houve alteração de produção nem migração de consumidores neste checkpoint.
 
