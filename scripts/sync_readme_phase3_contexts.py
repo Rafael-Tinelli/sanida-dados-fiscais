@@ -27,8 +27,8 @@ new = '''Estado dos checkpoints executados:
 - suíte completa: **73 testes verdes** após o checkpoint de deduções por contexto.
 '''
 
-old_next = '''Próximos checkpoints: deduções por contexto e apurações separadas; 13º/avos; período aquisitivo e férias; saldo salarial e matriz H29 limitada; memória de cálculo comum; expansão dos property-based tests nas fronteiras legais e monetárias.'''
-new_next = '''Próximos checkpoints: 13º/avos; período aquisitivo e férias; saldo salarial e matriz H29 limitada; memória de cálculo comum; expansão dos property-based tests nas fronteiras legais e monetárias.'''
+old_next = '''Próximos checkpoints: deduções por contexto e apurações separadas; 13º/avos; período aquisitivo e férias; saldo salarial e matriz H29 limitada; memória de cálculo comum; expansão dos property-based tests. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.'''
+new_next = '''Próximos checkpoints: 13º/avos; período aquisitivo e férias; saldo salarial e matriz H29 limitada; memória de cálculo comum; expansão dos property-based tests. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.'''
 
 if old in text:
     text = text.replace(old, new, 1)
