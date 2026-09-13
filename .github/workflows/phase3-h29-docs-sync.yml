@@ -19,9 +19,7 @@ jobs:
           fetch-depth: 0
 
       - name: Sync README and Phase 3 docs
-        run: |
-          sed -i 's/34767270494/34767468990/g' scripts/sync_docs_phase3_h29.py
-          python scripts/sync_docs_phase3_h29.py
+        run: python scripts/sync_docs_phase3_h29_v2.py
 
       - name: Commit docs if changed
         run: |
