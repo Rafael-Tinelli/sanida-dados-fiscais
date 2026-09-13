@@ -690,7 +690,7 @@ Artefatos adicionais do checkpoint:
 
 ### Fase 3 — Biblioteca fiscal e testes
 
-**Status: EM ANDAMENTO**
+**Status: CONCLUÍDA**
 
 Objetivos:
 
@@ -704,9 +704,9 @@ Primeira rodada executável:
 - `sanida_fiscal/money.py` — entrada decimal estrita e quantização por `RoundingPolicy`;
 - `sanida_fiscal/engine_v1.py` — tabelas progressivas, redutor afim e memória de IRRF;
 - `tests/test_engine_v1.py` — casos RFB, regressão A01 e property-based tests;
-- `docs/phase3-library-v1.md` — escopo e checkpoints da biblioteca fiscal.
+- `docs/phase3-library-v1.md` — escopo, checkpoints e handoff da biblioteca fiscal.
 
-Estado dos checkpoints executados:
+Estado final da Fase 3:
 
 - cinco casos oficiais RFB de 2026 executados contra o engine;
 - A01 reproduz `382.88` para renda tributável de `6000.00`;
@@ -734,8 +734,17 @@ Estado dos checkpoints executados:
 - `sanida_fiscal/memory_v1.py` introduz um envelope comum de memória auditável sem fundir semânticas fiscais: IRRF, 13º, férias e H29 continuam preservando identidade/contexto e podem ser compostos como memórias-filhas;
 - valores monetários da memória comum partem de `Decimal` e são serializados como texto canônico, sem reintroduzir `float` no caminho fiscal;
 - property-based tests foram ampliados para fronteiras do redutor de 2026, denominadores civis do saldo salarial, monotonicidade de 13º/férias, matriz H29 fechada e separação tributária do abono;
-- `scripts/validate_phase3_gate.py` tornou o gate de fechamento da Fase 3 executável no `Remake CI`, cobrindo A01, H29, abono, artefatos obrigatórios e higiene de workflows;
-- suíte completa: **150 testes verdes** no checkpoint de memória comum/invariantes, com gate de fechamento da Fase 3 verde.
+- `scripts/validate_phase3_gate.py` tornou o gate de fechamento executável e permanente no `Remake CI`;
+- revisão formal dos sete critérios do gate concluída sem aresta objetiva bloqueante;
+- suíte integral do fechamento: **150 testes verdes**;
+- `docs/phase3-closure-gate.md` registra a decisão formal de encerramento.
+
+Critério de conclusão atendido:
+
+- validação do repositório, contrato, suíte integral e gate executável verdes no mesmo head de fechamento;
+- README e documentação da fase sincronizados;
+- ausência de helper/workflow temporário residual;
+- ausência de mudança de produção/consumidor misturada à biblioteca.
 
 ### Fase 4 — Fontes e sensores
 
@@ -818,14 +827,14 @@ Objetivos:
 27. O saldo salarial de H29 v1 não usa divisor 30 universal. O denominador é o número de dias civis do mês de desligamento e o numerador é fornecido explicitamente como dias considerados até o desligamento; regimes fora de mensalista/quinzenalista normalizado ficam fora do escopo.
 28. A memória comum de cálculo é um envelope de representação/auditoria, não uma rules engine nem uma fusão semântica. Bases e identidades de mensal, 13º, férias e rescisão permanecem separadas; composições usam memórias-filhas.
 29. O fechamento da Fase 3 exige, no mesmo head, validação do repositório, Contrato Fiscal Canônico, suíte integral, `scripts/validate_phase3_gate.py`, documentação sincronizada e ausência de helpers/workflows temporários.
+30. A Fase 3 foi formalmente encerrada depois de revisão dos sete critérios do gate; qualquer reabertura da biblioteca deverá decorrer de defeito objetivo ou exigência explícita de uma fase posterior, não de redesign oportunista.
 
 ---
 
 ## 19. Questões em aberto
 
-A Fase 2 permanece formalmente concluída. Se a implementação posterior revelar uma lacuna semântica objetiva, o gate de handoff exige uma emenda explícita e versionada do contrato em vez de hardcode no engine. A primeira ocorrência foi A02, corrigida na Fase 3 como Contrato v1.1. As questões abertas restantes pertencem às fases posteriores:
+As Fases 1, 2 e 3 estão formalmente concluídas. Se a implementação posterior revelar uma lacuna semântica objetiva, o processo exige emenda explícita e versionada do contrato em vez de hardcode no engine. A primeira ocorrência foi A02, corrigida na Fase 3 como Contrato v1.1. As questões abertas restantes pertencem às fases posteriores:
 
-- implementação e propriedades matemáticas do engine fiscal — Fase 3;
 - política exata de retenção de snapshots e resiliência das fontes — Fase 4;
 - critérios de confirmação multi-fonte para mudanças paramétricas — Fase 4/5;
 - mecanismo de semantic diff e promoção — Fase 5;
@@ -836,9 +845,11 @@ A Fase 2 permanece formalmente concluída. Se a implementação posterior revela
 
 ## 20. Próxima etapa
 
-Continuar a **Fase 3 — Biblioteca fiscal e testes** a partir do primeiro núcleo já verde.
+Iniciar a **Fase 4 — Fontes e sensores** sobre o contrato e a biblioteca fiscal já fechados.
 
-Próximo checkpoint: realizar a revisão formal do gate de fechamento da Fase 3 no mesmo head limpo. Se validação do repositório, contrato, suíte integral, gate executável, documentação e higiene do branch permanecerem verdes, a Fase 3 poderá ser promovida para `CONCLUÍDA` em checkpoint próprio e o trabalho seguirá para a Fase 4. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.
+O primeiro checkpoint da Fase 4 deverá inventariar a superfície atual de coleta e desenhar a separação concreta entre **collector → raw snapshot imutável → parser → candidato normalizado**, incluindo estados de indisponibilidade, timeout/retry e proveniência. A fase deve priorizar fonte oficial estruturada quando houver e não deve antecipar semantic diff/publicação da Fase 5 nem migração de consumidores da Fase 6.
+
+Qualquer necessidade de reinterpretar regra jurídica ou alterar a biblioteca da Fase 3 deve voltar explicitamente ao contrato/inventário com evidência concreta, não ser resolvida silenciosamente dentro de collector ou parser.
 
 O pipeline de produção continua congelado: `scraper.py`, `update_taxas.py`, `dados_fiscais.json`, `taxas_bacen.json`, WordPress, `folha-core` e H26–H29 ainda não foram migrados.
 
@@ -859,6 +870,16 @@ Uma fase só deve ser marcada como `CONCLUÍDA` quando seus critérios de conclu
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-13 — fechamento formal da Fase 3
+
+- revisados formalmente os sete critérios de promoção definidos em `docs/phase3-closure-gate.md`;
+- validação do repositório, Contrato Fiscal Canônico v1.1, suíte integral e gate de fechamento permaneceram verdes;
+- suíte de fechamento permaneceu em **150 testes verdes**;
+- confirmada a higiene do branch: apenas `main.yml`, `taxas.yml` e `remake-ci.yml` permanecem como workflows;
+- confirmado pelo diff do PR que `scraper.py`, `update_taxas.py`, `dados_fiscais.json` e `taxas_bacen.json` não foram alterados pela Fase 3 em relação à base do PR;
+- README, `docs/phase3-library-v1.md` e `docs/phase3-closure-gate.md` sincronizados para `CONCLUÍDA`;
+- Fase 4 — Fontes e sensores passa a ser a próxima etapa; produção e consumidores continuam congelados.
 
 ### 2026-09-13 — checkpoint de memória comum, invariantes e gate da Fase 3
 
