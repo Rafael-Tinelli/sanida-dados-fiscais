@@ -690,7 +690,7 @@ Artefatos adicionais do checkpoint:
 
 ### Fase 3 — Biblioteca fiscal e testes
 
-**Status: PENDENTE**
+**Status: EM ANDAMENTO**
 
 Objetivos:
 
@@ -698,6 +698,22 @@ Objetivos:
 - usar `Decimal`;
 - converter exemplos oficiais em testes;
 - criar property-based tests e invariantes.
+
+Primeira rodada executável:
+
+- `sanida_fiscal/money.py` — entrada decimal estrita e quantização por `RoundingPolicy`;
+- `sanida_fiscal/engine_v1.py` — tabelas progressivas, redutor afim e memória de IRRF;
+- `tests/test_engine_v1.py` — casos RFB, regressão A01 e property-based tests;
+- `docs/phase3-library-v1.md` — escopo e checkpoints da biblioteca fiscal.
+
+Estado do primeiro checkpoint:
+
+- cinco casos oficiais RFB de 2026 executados contra o engine;
+- A01 reproduz `382.88` para renda tributável de `6000.00`;
+- executor marginal com teto implementado para a família usada pelo INSS;
+- `float`/`bool` rejeitados no caminho fiscal;
+- Hypothesis integrado ao CI;
+- suíte completa: **63 testes verdes** no primeiro run da Fase 3.
 
 ### Fase 4 — Fontes e sensores
 
@@ -793,9 +809,9 @@ Com a Fase 2 concluída, não restam pendências de design do Contrato Fiscal Ca
 
 ## 20. Próxima etapa
 
-Iniciar a **Fase 3 — Biblioteca fiscal e testes** a partir de `docs/phase2-to-phase3-handoff.md`.
+Continuar a **Fase 3 — Biblioteca fiscal e testes** a partir do primeiro núcleo já verde.
 
-A Fase 3 deverá implementar funções fiscais puras e determinísticas sobre o contrato congelado, com `Decimal`, casos oficiais executáveis e property-based testing. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.
+Próximos checkpoints: deduções por contexto e apurações separadas; 13º/avos; período aquisitivo e férias; saldo salarial e matriz H29 limitada; memória de cálculo comum; expansão dos property-based tests. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.
 
 O pipeline de produção continua congelado: `scraper.py`, `update_taxas.py`, `dados_fiscais.json`, `taxas_bacen.json`, WordPress, `folha-core` e H26–H29 ainda não foram migrados.
 
@@ -816,6 +832,13 @@ Uma fase só deve ser marcada como `CONCLUÍDA` quando seus critérios de conclu
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-13 — início da Fase 3
+
+- aberta a biblioteca fiscal determinística sobre o Contrato v1;
+- primitives de `Decimal`, tabela progressiva e redutor afim implementados;
+- cinco casos oficiais RFB e regressão A01 tornados executáveis;
+- Hypothesis integrado; primeiro checkpoint com 63 testes verdes.
 
 ### 2026-09-13 — fechamento da Fase 2
 
