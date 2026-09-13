@@ -29,6 +29,9 @@ jobs:
       - name: Apply A02 contract amendment
         run: python scripts/phase3_patch_vacation_contract.py
 
+      - name: Align coverage and compatibility tests
+        run: python scripts/phase3_fix_vacation_contract_sync.py
+
       - name: Regenerate JSON Schema
         run: python scripts/generate_contract_schema.py
 
@@ -40,6 +43,6 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add sanida_fiscal/types_v1.py sanida_fiscal/contract_v1.py contracts/fiscal-contract-v1.schema.json contracts/examples/fiscal-contract-v1.example.json docs/rule-inventory-v1.json docs/phase2-to-phase3-handoff.md tests/test_contract_v1.py
-          git commit -m "fix: explicitar limiar proporcional de ferias no contrato v1.1"
+          git add sanida_fiscal/types_v1.py sanida_fiscal/contract_v1.py contracts/fiscal-contract-v1.schema.json contracts/examples/fiscal-contract-v1.example.json docs/rule-inventory-v1.json docs/contract-coverage-v1.json docs/phase2-to-phase3-handoff.md tests/test_contract_v1.py
+          git commit -m "fix: alinhar contrato e coverage de ferias proporcionais v1.1"
           git push origin HEAD:refactor/fiscal-engine-v1
