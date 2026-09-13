@@ -1,0 +1,34 @@
+name: Phase 3 H29 Docs Sync
+
+on:
+  push:
+    branches:
+      - refactor/fiscal-engine-v1
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+        with:
+          ref: refactor/fiscal-engine-v1
+          fetch-depth: 0
+
+      - name: Sync README and Phase 3 docs
+        run: python scripts/sync_docs_phase3_h29.py
+
+      - name: Commit docs if changed
+        run: |
+          if git diff --quiet -- README.md docs/phase3-library-v1.md; then
+            echo "Documentation already synchronized."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md docs/phase3-library-v1.md
+          git commit -m "docs: registrar checkpoint H29 limitado na Fase 3"
+          git push origin HEAD:refactor/fiscal-engine-v1
