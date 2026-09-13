@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "phase": 4,
-  "status": "baseline",
+  "status": "checkpoint_3",
   "as_of": "2026-09-13",
   "entries": [
     {
@@ -23,9 +23,11 @@
       "registry_source_id": "INSS_TABLE_2026",
       "authority_kind": "official_operational",
       "current_behavior": "pinned_or_search_discovery_then_fetch_and_parse",
-      "target_behavior": "registered_source_first_collect_raw_then_parse",
+      "target_behavior": "canonical_registry_url_only_collect_raw_then_parse",
       "priority": "P0",
-      "known_gap": "legacy code may collect a yearly INSS news article instead of the canonical registry URL"
+      "gap_status": "resolved",
+      "resolution_artifact": "docs/phase4-inss-source-resolution-v1.json",
+      "resolution_summary": "new Phase 4 pipeline fetches only the registered canonical contribution-table URL; yearly news and @@search are forbidden as automatic fallbacks"
     },
     {
       "collector_id": "legacy.bcb.selic.sgs432",
@@ -68,6 +70,7 @@
     "raw bytes must be preserved before parser execution",
     "SOURCE_UNAVAILABLE must be distinguishable from PARSER_INCOMPATIBLE",
     "snapshot identity is content-addressed by sha256",
-    "legacy static fiscal/financial fallback must not be promoted as current authoritative data"
+    "legacy static fiscal/financial fallback must not be promoted as current authoritative data",
+    "INSS yearly news/search discovery must not automatically replace the registered canonical contribution-table source"
   ]
 }
