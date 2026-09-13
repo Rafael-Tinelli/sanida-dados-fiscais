@@ -61,6 +61,11 @@
     "INSS @@search discovery",
     "minimal static fiscal fallback"
   ],
+  "checkpoint_hygiene": {
+    "temporary_helper_files_present": false,
+    "temporary_workflows_present": false,
+    "production_activation_requires_merge": true
+  },
   "phase_boundary": {
     "semantic_diff": "phase5",
     "promotion": "phase5",
