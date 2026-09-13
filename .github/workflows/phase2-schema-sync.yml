@@ -6,6 +6,7 @@ on:
       - refactor/fiscal-contract-v1
     paths:
       - scripts/sync_phase2_schema_coverage.py
+      - .github/workflows/phase2-schema-sync.yml
 
 permissions:
   contents: write
