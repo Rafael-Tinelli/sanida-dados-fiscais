@@ -7,6 +7,7 @@ on:
     paths:
       - scripts/finalize_phase2_contract.py
       - scripts/fix_phase2_candidate_targets.py
+      - scripts/fix_phase2_test_expectations.py
       - .github/workflows/phase2-finalize.yml
 
 permissions:
@@ -38,6 +39,7 @@ jobs:
         run: |
           python scripts/finalize_phase2_contract.py
           python scripts/fix_phase2_candidate_targets.py
+          python scripts/fix_phase2_test_expectations.py
 
       - name: Regenerate public JSON Schema
         run: python scripts/generate_contract_schema.py
