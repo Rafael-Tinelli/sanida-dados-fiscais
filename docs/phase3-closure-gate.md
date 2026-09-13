@@ -98,7 +98,7 @@ Esses limites não impedem o gate enquanto o engine os rejeitar ou os mantiver e
 
 ## Evidência executável do checkpoint
 
-A evidência é produzida pelo próprio `Remake CI` do head do PR. O estado esperado e já reproduzido neste checkpoint é:
+A evidência é produzida pelo próprio `Remake CI` do head do PR. O estado esperado e reproduzido neste checkpoint é:
 
 ```text
 Repository baseline       PASS
@@ -113,7 +113,7 @@ Phase 3 closure gate      PASS
 150 passed
 ```
 
-Os IDs de runs concretos permanecem no histórico do GitHub Actions e no PR; este documento deliberadamente não fixa como “final” o ID do run disparado por seu próprio commit, evitando uma referência autorrecursiva impossível de estabilizar.
+Os IDs concretos dos runs permanecem no histórico do GitHub Actions e no PR. Este documento deliberadamente não fixa um run como “final”, porque cada alteração documental dispara nova validação; a fonte operacional dessa evidência é o próprio check do head corrente.
 
 Não houve alteração de produção nem migração de consumidores neste checkpoint.
 
