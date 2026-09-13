@@ -387,7 +387,7 @@ Property-based tests      PASS
 114 passed
 ```
 
-Run de referência: `34767270494`.
+Run de referência: `34767468990` (head limpo, após remoção dos helpers/workflows temporários).
 
 ## 10. Limites preservados
 
