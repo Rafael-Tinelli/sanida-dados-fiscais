@@ -18,7 +18,6 @@ class ContractStatus(str, Enum):
     CANDIDATE = "CANDIDATE"
     VALIDATED = "VALIDATED"
     PUBLISHED = "PUBLISHED"
-    SUPERSEDED = "SUPERSEDED"
     BLOCKED = "BLOCKED"
 
 
@@ -38,6 +37,12 @@ class ChangeClass(str, Enum):
     RULE_REMOVED = "RULE_REMOVED"
     SOURCE_UNAVAILABLE = "SOURCE_UNAVAILABLE"
     PARSER_INCOMPATIBLE = "PARSER_INCOMPATIBLE"
+
+
+class VersionBump(str, Enum):
+    MAJOR = "major"
+    MINOR = "minor"
+    PATCH = "patch"
 
 
 class SourceRole(str, Enum):
@@ -110,6 +115,13 @@ class CompetenceBasis(str, Enum):
     RULE_SPECIFIC = "rule_specific"
 
 
+class RuleSpecificCompetenceKey(str, Enum):
+    THIRTEENTH_ACCRUAL = "thirteenth_accrual_reference_year_or_termination_period"
+    THIRTEENTH_REFERENCE_REMUNERATION = "thirteenth_reference_remuneration_cycle"
+    THIRTEENTH_VARIABLE_REMUNERATION = "thirteenth_variable_remuneration_cycle"
+    TECHNICAL_NON_TEMPORAL = "technical_non_temporal"
+
+
 class PredicateOperator(str, Enum):
     EQ = "eq"
     NE = "ne"
@@ -119,6 +131,11 @@ class PredicateOperator(str, Enum):
     LTE = "lte"
 
 
+class ApplicabilityField(str, Enum):
+    EMPLOYMENT_REGIME = "employment_regime"
+    CONTRACT_TERM = "contract_term"
+
+
 class Incidence(str, Enum):
     YES = "yes"
     NO = "no"
@@ -126,9 +143,37 @@ class Incidence(str, Enum):
     NOT_APPLICABLE = "not_applicable"
 
 
+class IncidenceComponentId(str, Enum):
+    CASH_ALLOWANCE_PRINCIPAL = "cash_allowance_principal"
+    CONSTITUTIONAL_THIRD_ON_CASH_ALLOWANCE = "constitutional_third_on_cash_allowance"
+    ENJOYED_VACATION_REMUNERATION = "enjoyed_vacation_remuneration"
+    ENJOYED_VACATION_CONSTITUTIONAL_THIRD = "enjoyed_vacation_constitutional_third"
+    INDEMNIFIED_VACATION_PRINCIPAL = "indemnified_vacation_principal"
+    INDEMNIFIED_VACATION_CONSTITUTIONAL_THIRD = "indemnified_vacation_constitutional_third"
+
+
 class ReleaseApprovalMode(str, Enum):
     AUTO_VALIDATED = "AUTO_VALIDATED"
     HUMAN_REVIEWED = "HUMAN_REVIEWED"
+
+
+class ProgressiveCalculationMethod(str, Enum):
+    MARGINAL_BY_BRACKET = "marginal_by_bracket"
+    RATE_TIMES_BASE_MINUS_DEDUCTION = "rate_times_base_minus_deduction"
+
+
+class ScalarUnit(str, Enum):
+    BRL = "BRL"
+    BRL_PER_DEPENDENT = "BRL_per_dependent"
+
+
+class RoundingStage(str, Enum):
+    PER_ASSESSMENT_RESULT = "per_assessment_result"
+    AFTER_PRE_REDUCTION_IRRF = "after_pre_reduction_irrf"
+    AFTER_PRE_REDUCTION_THIRTEENTH_IRRF = "after_pre_reduction_thirteenth_irrf"
+    AFTER_PRE_REDUCTION_VACATION_IRRF = "after_pre_reduction_vacation_irrf"
+    PER_COMPONENT = "per_component"
+    SALARY_BALANCE_RESULT = "salary_balance_result"
 
 
 class PolicyKind(str, Enum):
@@ -139,6 +184,83 @@ class PolicyKind(str, Enum):
     SEPARATE_VACATION_IRRF_ASSESSMENT = "separate_vacation_irrf_assessment"
     MONEY_DECIMAL_AND_ROUNDING = "money_decimal_and_rounding"
     CONTRACT_VIGENCY_AND_QUALITY = "contract_vigency_and_quality"
+
+
+class PolicyAssertionId(str, Enum):
+    DEDUCTIONS_MATCH_ASSESSMENT_CONTEXT = "deductions_must_match_assessment_context"
+    PENSION_NOT_SILENTLY_ZEROED = "pension_must_not_be_silently_zeroed_when_applicable"
+    INCOME_TYPES_ARE_SEPARATE = "monthly_thirteenth_and_vacation_are_distinct_assessments"
+    THIRTEENTH_SOCIAL_SECURITY_SEPARATE = "thirteenth_social_security_is_separate_from_monthly"
+    THIRTEENTH_IRRF_EXCLUSIVE = "thirteenth_irrf_is_exclusive_assessment"
+    VACATION_IRRF_SEPARATE = "vacation_irrf_is_separate_assessment"
+    MONEY_USES_DECIMAL = "money_uses_decimal"
+    ROUNDING_EXPLICIT_PER_FORMULA = "rounding_must_be_explicit_per_formula_stage"
+    GENERATED_AT_NOT_VIGENCY = "generated_at_does_not_prove_vigency"
+    CONSUMER_REJECTS_INVALID_STATE = "consumer_rejects_incompatible_vigency_or_quality"
+
+
+POLICY_ASSERTIONS_BY_KIND: dict[PolicyKind, frozenset[PolicyAssertionId]] = {
+    PolicyKind.DEDUCTIONS_BY_INCOME_TYPE: frozenset(
+        {
+            PolicyAssertionId.DEDUCTIONS_MATCH_ASSESSMENT_CONTEXT,
+            PolicyAssertionId.PENSION_NOT_SILENTLY_ZEROED,
+        }
+    ),
+    PolicyKind.INCOME_TYPE_PARTITION: frozenset(
+        {PolicyAssertionId.INCOME_TYPES_ARE_SEPARATE}
+    ),
+    PolicyKind.SEPARATE_SOCIAL_SECURITY_ASSESSMENT: frozenset(
+        {PolicyAssertionId.THIRTEENTH_SOCIAL_SECURITY_SEPARATE}
+    ),
+    PolicyKind.EXCLUSIVE_IRRF_ASSESSMENT: frozenset(
+        {PolicyAssertionId.THIRTEENTH_IRRF_EXCLUSIVE}
+    ),
+    PolicyKind.SEPARATE_VACATION_IRRF_ASSESSMENT: frozenset(
+        {PolicyAssertionId.VACATION_IRRF_SEPARATE}
+    ),
+    PolicyKind.MONEY_DECIMAL_AND_ROUNDING: frozenset(
+        {
+            PolicyAssertionId.MONEY_USES_DECIMAL,
+            PolicyAssertionId.ROUNDING_EXPLICIT_PER_FORMULA,
+        }
+    ),
+    PolicyKind.CONTRACT_VIGENCY_AND_QUALITY: frozenset(
+        {
+            PolicyAssertionId.GENERATED_AT_NOT_VIGENCY,
+            PolicyAssertionId.CONSUMER_REJECTS_INVALID_STATE,
+        }
+    ),
+}
+
+
+class FormulaComponentId(str, Enum):
+    VACATION_REMUNERATION = "vacation_remuneration"
+    CONSTITUTIONAL_THIRD = "constitutional_third"
+
+
+class FormulaBasisId(str, Enum):
+    VACATION_PAY_BASE = "vacation_pay_base"
+    VACATION_REMUNERATION = "vacation_remuneration"
+
+
+class TerminationScopeItem(str, Enum):
+    SALARY_BALANCE = "salary_balance"
+    THIRTEENTH_PROPORTIONAL = "thirteenth_proportional"
+    VACATION_PROPORTIONAL = "vacation_proportional"
+    ACQUIRED_OR_OVERDUE_VACATION = "acquired_or_overdue_vacation"
+    NOTICE_PAY_OR_NOTICE_DISCOUNT = "notice_pay_or_notice_discount"
+    FGTS_TERMINATION_FINE = "fgts_termination_fine"
+    FGTS_WITHDRAWAL = "fgts_withdrawal"
+    UNEMPLOYMENT_INSURANCE = "unemployment_insurance"
+    STABILITY_INDEMNITIES = "stability_indemnities"
+    COLLECTIVE_BARGAINING_SPECIFIC_ITEMS = "collective_bargaining_specific_items"
+    FIXED_TERM_CONTRACT_TERMINATION_RULES = "fixed_term_contract_termination_rules"
+    INDIRECT_TERMINATION_WITHOUT_JUDICIALLY_RESOLVED_CONTEXT = (
+        "indirect_termination_without_judicially_resolved_context"
+    )
+    VARIABLE_TERMINATION_ITEMS_NOT_EXPLICITLY_MODELED = (
+        "variable_termination_items_not_explicitly_modeled"
+    )
 
 
 class VigencyWindow(StrictModel):
@@ -159,22 +281,33 @@ class VigencyWindow(StrictModel):
 
 class CompetencePolicy(StrictModel):
     basis: CompetenceBasis
+    rule_specific_key: RuleSpecificCompetenceKey | None = None
     description: str | None = None
     context_overrides: dict[AssessmentContext, CompetenceBasis] = Field(default_factory=dict)
-    context_descriptions: dict[AssessmentContext, str] = Field(default_factory=dict)
+    context_rule_specific_keys: dict[AssessmentContext, RuleSpecificCompetenceKey] = Field(
+        default_factory=dict
+    )
 
     @model_validator(mode="after")
     def specific(self):
-        if self.basis == CompetenceBasis.RULE_SPECIFIC and not self.description:
-            raise ValueError("rule_specific competence requires description")
+        if self.basis == CompetenceBasis.RULE_SPECIFIC and self.rule_specific_key is None:
+            raise ValueError("rule_specific competence requires rule_specific_key")
+        if self.basis != CompetenceBasis.RULE_SPECIFIC and self.rule_specific_key is not None:
+            raise ValueError("rule_specific_key requires rule_specific competence")
         for context, basis in self.context_overrides.items():
-            if basis == CompetenceBasis.RULE_SPECIFIC and not self.context_descriptions.get(context):
+            if (
+                basis == CompetenceBasis.RULE_SPECIFIC
+                and context not in self.context_rule_specific_keys
+            ):
                 raise ValueError(
-                    f"rule_specific override for {context.value} requires context description"
+                    f"rule_specific override for {context.value} requires typed key"
                 )
-        extra_descriptions = set(self.context_descriptions) - set(self.context_overrides)
-        if extra_descriptions:
-            raise ValueError("context_descriptions require matching context_overrides")
+        extra_keys = set(self.context_rule_specific_keys) - set(self.context_overrides)
+        if extra_keys:
+            raise ValueError("context_rule_specific_keys require matching context_overrides")
+        for context in self.context_rule_specific_keys:
+            if self.context_overrides.get(context) != CompetenceBasis.RULE_SPECIFIC:
+                raise ValueError("typed competence key requires rule_specific override")
         return self
 
     def basis_for(self, context: AssessmentContext) -> CompetenceBasis:
@@ -182,9 +315,24 @@ class CompetencePolicy(StrictModel):
 
 
 class ApplicabilityPredicate(StrictModel):
-    field: str = Field(min_length=1)
+    field: ApplicabilityField
     operator: PredicateOperator
     value: JsonValue
+
+    @model_validator(mode="after")
+    def typed_values(self):
+        if self.operator in {PredicateOperator.GTE, PredicateOperator.LTE}:
+            raise ValueError("categorical applicability fields do not support range operators")
+        values = self.value if isinstance(self.value, list) else [self.value]
+        if self.field == ApplicabilityField.EMPLOYMENT_REGIME:
+            allowed = {"monthly", "biweekly"}
+        elif self.field == ApplicabilityField.CONTRACT_TERM:
+            allowed = {"indefinite"}
+        else:  # defensive for future enum additions
+            raise ValueError("unsupported applicability field")
+        if not values or any(not isinstance(item, str) or item not in allowed for item in values):
+            raise ValueError(f"invalid canonical value for {self.field.value}")
+        return self
 
 
 class RoundingPolicy(StrictModel):
@@ -196,7 +344,7 @@ class RoundingPolicy(StrictModel):
         "ROUND_FLOOR",
         "ROUND_CEILING",
     ] = "ROUND_HALF_UP"
-    stage: str = Field(min_length=1)
+    stage: RoundingStage
 
 
 class EvidenceObservation(StrictModel):
@@ -237,6 +385,15 @@ class RuleQuality(StrictModel):
     reviewed_by_human: bool = False
     notes: str | None = None
 
+    @field_validator("last_validated_at_utc")
+    @classmethod
+    def validation_utc(cls, value):
+        if value is not None and (
+            value.tzinfo is None or value.utcoffset() != timezone.utc.utcoffset(value)
+        ):
+            raise ValueError("last_validated_at_utc must be UTC")
+        return value
+
 
 class UpdatePolicy(StrictModel):
     rule_class: RuleClass
@@ -263,23 +420,43 @@ class LastGoodPolicy(StrictModel):
     on_unknown_vigency: Literal["hard_fail"] = "hard_fail"
 
 
+class VersioningPolicy(StrictModel):
+    schema_versioning: Literal["semver"] = "semver"
+    contract_api_versioning: Literal["semver"] = "semver"
+    rule_versioning: Literal["semver"] = "semver"
+    release_id_strategy: Literal["content_addressed_sha256"] = "content_addressed_sha256"
+    schema_compatibility: Literal["exact"] = "exact"
+    contract_api_compatibility: Literal["exact"] = "exact"
+    backward_compatibility: Literal["explicitly_tested_only"] = "explicitly_tested_only"
+    forward_compatibility: Literal["not_assumed"] = "not_assumed"
+
+
 class ConsumerCompatibility(StrictModel):
-    contract_api_version: str = Field(pattern=r"^\d+\.\d+\.\d+$")
+    schema_version: Literal["1.0.0"] = "1.0.0"
+    contract_api_version: Literal["1.0.0"] = "1.0.0"
     consumers: list[ConsumerId]
+    schema_match: Literal["exact"] = "exact"
+    contract_api_match: Literal["exact"] = "exact"
+    unknown_fields: Literal["reject"] = "reject"
+    unknown_payload_types: Literal["reject"] = "reject"
     unsupported_behavior: Literal["hard_fail"] = "hard_fail"
+
+    @field_validator("consumers")
+    @classmethod
+    def unique_consumers(cls, value):
+        if len(value) != len(set(value)):
+            raise ValueError("duplicate consumers")
+        return value
 
 
 class ReleaseLifecycle(StrictModel):
-    previous_release_id: str | None = None
     validated_at_utc: datetime | None = None
     published_at_utc: datetime | None = None
-    superseded_at_utc: datetime | None = None
-    superseded_by_release_id: str | None = None
     approval_mode: ReleaseApprovalMode | None = None
     approval_reference: str | None = None
     block_reasons: list[str] = Field(default_factory=list)
 
-    @field_validator("validated_at_utc", "published_at_utc", "superseded_at_utc")
+    @field_validator("validated_at_utc", "published_at_utc")
     @classmethod
     def lifecycle_utc(cls, value):
         if value is not None and (
@@ -297,6 +474,7 @@ class ProgressiveBracket(StrictModel):
 
 class ProgressiveTablePayload(StrictModel):
     type: Literal["progressive_table"] = "progressive_table"
+    calculation_method: ProgressiveCalculationMethod
     brackets: list[ProgressiveBracket] = Field(min_length=1)
     cap_base: Decimal | None = Field(default=None, gt=0)
 
@@ -315,13 +493,18 @@ class ProgressiveTablePayload(StrictModel):
                 raise ValueError("bounds must increase")
             if bracket.upper_bound is not None:
                 previous = bracket.upper_bound
+        if (
+            self.calculation_method == ProgressiveCalculationMethod.MARGINAL_BY_BRACKET
+            and any(bracket.deduction != 0 for bracket in self.brackets)
+        ):
+            raise ValueError("marginal_by_bracket cannot use direct table deductions")
         return self
 
 
 class ScalarPayload(StrictModel):
     type: Literal["scalar"] = "scalar"
     value: Decimal
-    unit: str = Field(min_length=1)
+    unit: ScalarUnit
 
 
 class AffineReductionPayload(StrictModel):
@@ -329,6 +512,11 @@ class AffineReductionPayload(StrictModel):
     full_relief_income_limit: Decimal = Field(gt=0)
     phaseout_income_limit: Decimal = Field(gt=0)
     max_reduction: Decimal = Field(ge=0)
+    full_relief_behavior: Literal["max_reduction"] = "max_reduction"
+    phaseout_formula: Literal["intercept_minus_slope_times_input"] = (
+        "intercept_minus_slope_times_input"
+    )
+    above_phaseout_behavior: Literal["zero"] = "zero"
     intercept: Decimal
     slope: Decimal = Field(gt=0)
     input_semantic: str = Field(min_length=1)
@@ -343,6 +531,9 @@ class AffineReductionPayload(StrictModel):
 
 class ThresholdAccrualPayload(StrictModel):
     type: Literal["threshold_accrual"] = "threshold_accrual"
+    method: Literal["one_unit_per_month_if_days_gte_threshold"] = (
+        "one_unit_per_month_if_days_gte_threshold"
+    )
     fraction_numerator: int = Field(gt=0)
     fraction_denominator: int = Field(gt=0)
     qualifying_days: int = Field(gt=0)
@@ -370,6 +561,9 @@ class EntitlementBand(StrictModel):
 
 class EntitlementBandsPayload(StrictModel):
     type: Literal["entitlement_bands"] = "entitlement_bands"
+    input_semantic: Literal["unjustified_absences_in_acquisition_period"] = (
+        "unjustified_absences_in_acquisition_period"
+    )
     bands: list[EntitlementBand] = Field(min_length=1)
     outside_behavior: Literal["UNSUPPORTED"] = "UNSUPPORTED"
 
@@ -400,6 +594,9 @@ class TerminationEligibilityRow(StrictModel):
 
 class EligibilityMatrixPayload(StrictModel):
     type: Literal["eligibility_matrix"] = "eligibility_matrix"
+    code_system: Literal["esocial_table_19_termination_reason"] = (
+        "esocial_table_19_termination_reason"
+    )
     rows: list[TerminationEligibilityRow] = Field(min_length=1)
     unsupported_behavior: Literal["UNSUPPORTED"] = "UNSUPPORTED"
 
@@ -411,7 +608,7 @@ class EligibilityMatrixPayload(StrictModel):
 
 
 class IncidenceComponent(StrictModel):
-    component: str = Field(min_length=1)
+    component: IncidenceComponentId
     irrf: Incidence
     social_security: Incidence
     notes: str | None = None
@@ -421,12 +618,28 @@ class IncidenceProfilePayload(StrictModel):
     type: Literal["incidence_profile"] = "incidence_profile"
     components: list[IncidenceComponent] = Field(min_length=1)
 
+    @model_validator(mode="after")
+    def unique_components(self):
+        if len({component.component for component in self.components}) != len(self.components):
+            raise ValueError("duplicate incidence components")
+        return self
+
 
 class PolicyPayload(StrictModel):
     type: Literal["policy"] = "policy"
     policy_kind: PolicyKind
-    assertions: list[str] = Field(min_length=1)
-    values: dict[str, JsonValue] = Field(default_factory=dict)
+    assertions: list[PolicyAssertionId] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def exact_assertions(self):
+        if len(self.assertions) != len(set(self.assertions)):
+            raise ValueError("duplicate policy assertions")
+        expected = POLICY_ASSERTIONS_BY_KIND[self.policy_kind]
+        if set(self.assertions) != set(expected):
+            raise ValueError(
+                f"policy {self.policy_kind.value} requires canonical assertion set"
+            )
+        return self
 
 
 class RemunerationReferencePayload(StrictModel):
@@ -464,41 +677,68 @@ class PeriodRulePayload(StrictModel):
 
 
 class FormulaComponent(StrictModel):
-    component: str = Field(min_length=1)
-    basis: str = Field(min_length=1)
+    component: FormulaComponentId
+    basis: FormulaBasisId
     multiplier: Decimal = Field(gt=0)
 
 
 class ComponentFormulaPayload(StrictModel):
     type: Literal["component_formula"] = "component_formula"
-    components: list[FormulaComponent] = Field(min_length=1)
+    components: list[FormulaComponent] = Field(min_length=2, max_length=2)
+
+    @model_validator(mode="after")
+    def canonical_vacation_formula(self):
+        by_component = {component.component: component for component in self.components}
+        if set(by_component) != {
+            FormulaComponentId.VACATION_REMUNERATION,
+            FormulaComponentId.CONSTITUTIONAL_THIRD,
+        }:
+            raise ValueError("component_formula requires canonical vacation components")
+        if (
+            by_component[FormulaComponentId.VACATION_REMUNERATION].basis
+            != FormulaBasisId.VACATION_PAY_BASE
+        ):
+            raise ValueError("vacation remuneration must use vacation_pay_base")
+        if (
+            by_component[FormulaComponentId.CONSTITUTIONAL_THIRD].basis
+            != FormulaBasisId.VACATION_REMUNERATION
+        ):
+            raise ValueError("constitutional third must use vacation_remuneration")
+        return self
 
 
 class ScopeDeclarationPayload(StrictModel):
     type: Literal["scope_declaration"] = "scope_declaration"
     promise: Literal["partial_estimate"]
-    included_items: list[str] = Field(min_length=1)
-    excluded_items: list[str] = Field(min_length=1)
+    included_items: list[TerminationScopeItem] = Field(min_length=1)
+    excluded_items: list[TerminationScopeItem] = Field(min_length=1)
     require_user_disclosure: Literal[True] = True
 
     @model_validator(mode="after")
     def disjoint_scope(self):
         if set(self.included_items) & set(self.excluded_items):
             raise ValueError("included and excluded scope items must be disjoint")
+        if len(self.included_items) != len(set(self.included_items)) or len(
+            self.excluded_items
+        ) != len(set(self.excluded_items)):
+            raise ValueError("scope items must be unique")
         return self
 
 
 class ProrationPayload(StrictModel):
     type: Literal["proration"] = "proration"
     formula: Literal["base_times_numerator_over_denominator"]
-    base_semantic: str = Field(min_length=1)
-    numerator_semantic: str = Field(min_length=1)
-    denominator_semantic: str = Field(min_length=1)
+    base_semantic: Literal["monthly_base_salary"]
+    numerator_semantic: Literal["days_counted_through_termination"]
+    denominator_semantic: Literal["calendar_days_in_month"]
     universal_fixed_denominator: Literal[False] = False
 
 
 class CodeEligibilityPayload(StrictModel):
     type: Literal["code_eligibility"] = "code_eligibility"
+    code_system: Literal["esocial_table_19_termination_reason"] = (
+        "esocial_table_19_termination_reason"
+    )
     eligible_codes: list[str] = Field(min_length=1)
     ineligible_codes: list[str] = Field(default_factory=list)
     unsupported_behavior: Literal["UNSUPPORTED"] = "UNSUPPORTED"
