@@ -108,11 +108,11 @@ Política congelada:
 
 ### 4.3 Catálogo único de pipelines
 
-`sanida_fiscal/source_catalog_v1.py` passa a ser o catálogo operacional único de bindings `source_id → parser id/version/reference year/parser`.
+`sanida_fiscal/source_catalog_v1.py` é o catálogo operacional único de bindings `source_id → parser id/version/reference year/parser`.
 
 Tanto o runner manual quanto o produtor de compatibilidade chamam `run_registered_source_pipeline()`. Isso evita que `scraper.py` reimplemente URL, collector ou parser.
 
-`run_source_pipeline()` ganhou apenas uma chave operacional adicional: `use_http_validators`. O runner manual pode manter revalidação condicional; o produtor do artefato legado exige uma observação `PARSED` da execução corrente e, por isso, usa fetch completo.
+O runner manual pode manter revalidação condicional. O produtor do artefato legado exige uma observação `PARSED` da execução corrente e, por isso, usa fetch completo.
 
 ## 5. Quarto checkpoint — fronteira de transição para `dados_fiscais.json`
 
@@ -122,7 +122,7 @@ A transição é formalizada em `docs/phase4-legacy-artifact-boundary-v1.json`.
 
 `dados_fiscais.json` continua temporariamente com `schema_version: 2.2.0` para não quebrar consumidores ainda não migrados.
 
-Ele passa a ser explicitamente classificado como:
+Ele é explicitamente classificado como:
 
 ```text
 compatibility_artifact_for_existing_consumers
@@ -181,15 +181,113 @@ Com isso, o antigo bloco `minimal_fallback` foi removido de `scraper.py`.
 - parser HTML próprio de RFB/INSS;
 - fallback fiscal estático mínimo.
 
-O produtor passa a chamar apenas o catálogo de pipelines da Fase 4 e o bridge de compatibilidade.
+O produtor chama apenas o catálogo de pipelines da Fase 4 e o bridge de compatibilidade.
 
 ### 5.5 Domínio financeiro ainda separado
 
 `taxas_bacen.json` continua sendo validado e consumido como entrada legada de `financial_reference`. Este checkpoint não declara Selic/CDI como migrados nem aplica a eles a semântica jurídica das fontes de folha.
 
-A migração de `update_taxas.py`, a política de CDI e a retenção definitiva dos snapshots são checkpoints posteriores da Fase 4.
+## 6. Quinto checkpoint — persistência real no GitHub Actions de produção
 
-## 6. Estado operacional entre execuções
+A política machine-readable está em `docs/phase4-production-persistence-v1.json`.
+
+O ambiente que executa `main.yml` é um runner efêmero do GitHub Actions. Portanto, `.source-runtime/` local não poderia ser considerado retenção de produção: todo o diretório desapareceria ao fim do job.
+
+A solução v1 usa um backend simples e auditável já disponível no próprio ambiente de produção:
+
+```text
+main branch
+└── evidence/source-runtime-v1/
+    ├── snapshots/
+    │   └── <source_id>/<prefixo>/<sha256>.<ext>
+    ├── candidates/
+    │   └── <source_id>/<prefixo>/<sha256>.json
+    └── state/
+        └── <source_id>.json
+```
+
+O workflow define:
+
+```text
+SFA_SOURCE_RUNTIME_ROOT=evidence/source-runtime-v1
+```
+
+Assim, cada execução começa com o estado/evidência materializado pela execução anterior porque o diretório vem no checkout de `main`.
+
+### 6.1 Snapshots brutos
+
+Snapshots continuam content-addressed por SHA-256. Bytes idênticos não criam duplicatas. Arquivos únicos observados em produção são retidos sem pruning automático na política v1.
+
+Isso garante que `snapshot_sha256` em `dados_fiscais.json` possa ser resolvido para bytes efetivamente preservados fora do runner efêmero.
+
+### 6.2 Candidatos normalizados
+
+`sanida_fiscal/source_runtime_v1.py` passou a incluir `CandidateStore`.
+
+O payload normalizado `PARSED` é serializado canonicamente com chaves ordenadas e separadores estáveis. O SHA-256 desses bytes é exatamente o `candidate_sha256` já usado na proveniência.
+
+O candidato fica armazenado em:
+
+```text
+candidates/<source_id>/<prefixo>/<candidate_sha256>.json
+```
+
+Logo, tanto o hash do snapshot quanto o hash do candidato agora apontam para evidência persistida.
+
+### 6.3 Estado operacional v1.1
+
+`SourcePipelineState` foi ampliado para preservar o par last-good completo, separado do estado da tentativa corrente:
+
+- `last_parsed_at_utc`;
+- `last_parsed_snapshot_sha256`;
+- `last_parsed_snapshot_path`;
+- `last_successful_parser_id`;
+- `last_successful_parser_version`;
+- `last_candidate_sha256`;
+- `last_candidate_path`.
+
+Uma falha corrente de fonte ou parser não pode destruir esses ponteiros last-good. Isso é necessário porque o artefato de compatibilidade pode permanecer inalterado quando a observação nova falha.
+
+### 6.4 Gate de proveniência antes de commit
+
+`sanida_fiscal/production_evidence_v1.py` e `scripts/validate_production_evidence_v1.py` verificam, antes de qualquer commit de um novo `dados_fiscais.json`:
+
+1. `source_id` da proveniência;
+2. URL persistida;
+3. hash do snapshot;
+4. existência e SHA-256 real do arquivo de snapshot;
+5. hash do candidato;
+6. existência e SHA-256 real do arquivo de candidato;
+7. parser id/versão do last-good;
+8. timestamp da observação que gerou o last-good;
+9. confinamento dos caminhos dentro do runtime root.
+
+Um artefato não verificado é restaurado para a versão de `HEAD` e nunca é staged.
+
+### 6.5 Persistência mesmo quando a execução falha
+
+Falha de coleta/parser precisa sobreviver ao runner para que contadores e diagnóstico não recomecem do zero na execução seguinte.
+
+Por isso, `main.yml` captura o resultado do scraper em vez de abortar imediatamente. Se o artefato não passar pelo gate:
+
+- `dados_fiscais.json` não é commitado;
+- snapshots/estado operacional observados na tentativa ainda podem ser commitados;
+- ao final, o workflow falha para manter sinal operacional de erro.
+
+Quando o artefato passa pelo gate, `dados_fiscais.json` e `evidence/source-runtime-v1` são staged juntos. Se apenas estado/evidência mudou, é permitido commit de evidência sem alteração do artefato.
+
+### 6.6 Retenção
+
+Política v1:
+
+- raw snapshots: reter todos os conteúdos únicos;
+- normalized candidates: reter todos os conteúdos únicos;
+- operational state: materializar o estado mais recente por fonte e preservar versões anteriores no histórico Git;
+- automatic pruning: desabilitado.
+
+Não são seedados fixtures nem evidências sintéticas na árvore de produção. Os arquivos reais surgirão apenas depois que `main.yml` atualizado for ativado em `main`.
+
+## 7. Estado operacional entre execuções
 
 `sanida_fiscal/source_runtime_v1.py` persiste:
 
@@ -198,15 +296,15 @@ A migração de `update_taxas.py`, a política de CDI e a retenção definitiva 
 - `ETag` e `Last-Modified`;
 - falhas correntes;
 - último snapshot coletado;
-- parser id/versão;
-- último snapshot parseado;
+- parser id/versão da tentativa corrente;
+- last-good parseado com timestamp, snapshot, parser e candidato;
 - fingerprint do último candidato.
 
 Esse last-good é operacional e não equivale a validade jurídica.
 
 O runner manual pode reutilizar HTTP validators. O produtor do artefato legado, por desenho, não usa 304 para gerar uma nova versão: ele exige candidato atual nesta execução.
 
-## 7. Invariantes executáveis
+## 8. Invariantes executáveis
 
 A Fase 4 agora garante, entre outras:
 
@@ -221,16 +319,19 @@ A Fase 4 agora garante, entre outras:
 9. runtime state/304 sem candidato corrente não pode gerar nova escrita legada;
 10. artefato legado de ano anterior não pode ser mantido como se fosse corrente;
 11. fallback fiscal estático não pode reaparecer em `scraper.py`;
-12. `requirements.txt` instala as dependências runtime da Fase 4.
+12. `requirements.txt` instala as dependências runtime da Fase 4;
+13. snapshot e candidato da proveniência precisam existir e reproduzir seus hashes;
+14. falha corrente não apaga ponteiros last-good;
+15. `main.yml` usa runtime persistente rastreado em Git, não `.source-runtime/` efêmero;
+16. artefato não verificado não pode ser commitado;
+17. evidência operacional de execução falha pode ser persistida sem publicar dados.
 
 `scripts/validate_phase4_foundation.py` ancora essas invariantes no `Remake CI`.
 
-## 8. Limites deliberados
+## 9. Limites deliberados
 
 Ainda não foram fechados:
 
-- backend definitivo e retenção de snapshots de produção;
-- persistência operacional entre runners efêmeros do GitHub Actions;
 - migração de Selic/SGS para collector/parser decimal;
 - política operacional e autoridade final de CDI;
 - remoção de fallback estático eventualmente existente em `update_taxas.py`;
@@ -238,10 +339,11 @@ Ainda não foram fechados:
 - promoção/publicação canônica;
 - migração dos consumidores.
 
-## 9. Próximos checkpoints
+A retenção/persistência de RFB + INSS no workflow de produção está resolvida arquitetural e executavelmente nesta branch, mas só será ativada quando a Fase 4 for mergeada em `main`.
 
-1. resolver retenção/persistência de snapshots e estado operacional no caminho que será ativado em produção;
-2. migrar o domínio `financial_reference`, começando por Selic/SGS e depois CDI;
-3. eliminar qualquer fallback financeiro capaz de fingir atualidade;
-4. revisar a fronteira final do workflow `main.yml` antes do merge da Fase 4;
-5. fechar a Fase 4 com sensores completos e sem antecipar semantic diff da Fase 5.
+## 10. Próximos checkpoints
+
+1. migrar o domínio `financial_reference`, começando por Selic/SGS e depois CDI;
+2. eliminar qualquer fallback financeiro capaz de fingir atualidade;
+3. revisar a fronteira final dos workflows `main.yml` + `taxas.yml` antes do merge da Fase 4;
+4. fechar a Fase 4 com sensores completos e sem antecipar semantic diff da Fase 5.
