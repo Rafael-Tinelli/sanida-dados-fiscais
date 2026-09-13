@@ -1,7 +1,7 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "decision_id": "phase4.financial_reference.source_policy",
-  "status": "migrated_in_branch",
+  "status": "migrated_and_boundary_hardened_in_branch",
   "as_of": "2026-09-13",
   "domain": "financial_reference",
   "canonical_inputs": {
@@ -21,6 +21,20 @@
       "rounding": "ROUND_HALF_UP_2_DECIMALS"
     }
   },
+  "freshness_policy": {
+    "selic_meta": {
+      "semantics": "persistent_until_changed",
+      "max_observation_age_calendar_days": null,
+      "future_observation_allowed": false,
+      "reason": "SGS 432 represents the latest policy-rate observation and can remain current between Copom changes."
+    },
+    "cdi_daily": {
+      "semantics": "daily_business_day_observation",
+      "max_observation_age_calendar_days": 7,
+      "future_observation_allowed": false,
+      "reason": "Phase 4 does not embed a Brazilian holiday calendar; seven calendar days tolerate weekends/ordinary holiday gaps while preventing stale daily data from being relabelled by a new generated_at_utc."
+    }
+  },
   "b3_role": {
     "benchmark_administrator_and_methodology_authority": true,
     "legacy_ftp_is_automatic_fallback": false,
@@ -34,6 +48,18 @@
     "preserve_existing_artifact_bytes": true,
     "write_static_fallback": false,
     "refresh_generated_at_without_new_observation": false
+  },
+  "consumer_boundary": {
+    "scraper_may_consume_only_local_artifact": true,
+    "required_schema_version": "1.4.0",
+    "required_cdi_basis": "bcb_sgs_12_daily_compounded_252",
+    "required_source_ids": [
+      "BCB_SELIC_META_SGS_432",
+      "BCB_CDI_DAILY_SGS_12"
+    ],
+    "financial_evidence_must_validate_before_payroll_consumption": true,
+    "remote_raw_github_fallback_allowed": false,
+    "arbitrary_url_override_allowed": false
   },
   "persistence": {
     "runtime_root": "evidence/source-runtime-v1",
