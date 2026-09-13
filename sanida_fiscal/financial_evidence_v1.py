@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from hashlib import sha256
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from .source_runtime_v1 import CandidateStore, SourceStateStore
 from .sources_v1 import ParseStatus
@@ -59,27 +59,20 @@ def _verify_file_sha256(root: Path, relative_path: str, expected_sha256: str, la
     return target
 
 
-def verify_financial_artifact_evidence(
+def verify_financial_source_provenance(
     *,
-    artifact_path: Path,
+    sources: Mapping[str, Any],
     runtime_root: Path,
 ) -> dict[str, dict[str, str]]:
-    artifact_path = Path(artifact_path)
+    """Verify Selic/CDI provenance against durable snapshot/candidate/state evidence.
+
+    This function intentionally accepts an already-extracted provenance mapping so
+    both `taxas_bacen.json` and the nested financial provenance copied into
+    `dados_fiscais.json` can be verified by the same code path.
+    """
     runtime_root = Path(runtime_root)
-    if not artifact_path.is_file():
-        raise FinancialEvidenceError(f"financial artifact does not exist: {artifact_path}")
-
-    try:
-        artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise FinancialEvidenceError("financial artifact is not readable JSON") from exc
-    if not isinstance(artifact, dict):
-        raise FinancialEvidenceError("financial artifact root must be an object")
-
-    meta = artifact.get("meta")
-    sources = meta.get("sources") if isinstance(meta, dict) else None
-    if not isinstance(sources, dict):
-        raise FinancialEvidenceError("financial artifact has no source provenance")
+    if not isinstance(sources, Mapping):
+        raise FinancialEvidenceError("financial source provenance must be an object")
 
     state_store = SourceStateStore(runtime_root / "state")
     snapshot_root = runtime_root / "snapshots"
@@ -88,7 +81,7 @@ def verify_financial_artifact_evidence(
 
     for provenance_key, source_id in FINANCIAL_PROVENANCE.items():
         provenance = sources.get(provenance_key)
-        if not isinstance(provenance, dict):
+        if not isinstance(provenance, Mapping):
             raise FinancialEvidenceError(f"missing provenance for {provenance_key}")
         if provenance.get("source_id") != source_id:
             raise FinancialEvidenceError(
@@ -140,3 +133,31 @@ def verify_financial_artifact_evidence(
         }
 
     return verified
+
+
+def verify_financial_artifact_evidence(
+    *,
+    artifact_path: Path,
+    runtime_root: Path,
+) -> dict[str, dict[str, str]]:
+    artifact_path = Path(artifact_path)
+    runtime_root = Path(runtime_root)
+    if not artifact_path.is_file():
+        raise FinancialEvidenceError(f"financial artifact does not exist: {artifact_path}")
+
+    try:
+        artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise FinancialEvidenceError("financial artifact is not readable JSON") from exc
+    if not isinstance(artifact, dict):
+        raise FinancialEvidenceError("financial artifact root must be an object")
+
+    meta = artifact.get("meta")
+    sources = meta.get("sources") if isinstance(meta, dict) else None
+    if not isinstance(sources, dict):
+        raise FinancialEvidenceError("financial artifact has no source provenance")
+
+    return verify_financial_source_provenance(
+        sources=sources,
+        runtime_root=runtime_root,
+    )
