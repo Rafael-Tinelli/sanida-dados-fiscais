@@ -264,6 +264,7 @@ def collect_payroll_source_runs(reference_year: int, observed_at_utc: dt.datetim
             registry_path=SOURCE_REGISTRY,
             snapshot_root=SOURCE_RUNTIME_ROOT / "snapshots",
             state_root=SOURCE_RUNTIME_ROOT / "state",
+            candidate_root=SOURCE_RUNTIME_ROOT / "candidates",
             timeout_seconds=float(TIMEOUT),
             max_attempts=RETRIES,
             headers=HEADERS,
