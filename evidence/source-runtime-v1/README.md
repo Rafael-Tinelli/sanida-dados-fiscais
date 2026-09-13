@@ -1,0 +1,26 @@
+# Evidências operacionais de fontes — v1
+
+Este diretório é o backend persistente do runtime de fontes usado pelo workflow de produção `main.yml`.
+
+A árvore real é criada pelas execuções de produção:
+
+```text
+evidence/source-runtime-v1/
+├── snapshots/
+│   └── <source_id>/<sha-prefix>/<sha256>.<ext>
+├── candidates/
+│   └── <source_id>/<sha-prefix>/<sha256>.json
+└── state/
+    └── <source_id>.json
+```
+
+Regras:
+
+- snapshots brutos são imutáveis e content-addressed por SHA-256;
+- candidatos normalizados são imutáveis e content-addressed pelo SHA-256 da serialização canônica do payload;
+- `state/` mantém o estado operacional materializado mais recente de cada fonte; o histórico Git preserva estados anteriores;
+- nenhum fixture ou dado sintético deve ser copiado para esta árvore;
+- uma nova publicação de `dados_fiscais.json` só pode ser commitada depois que `scripts/validate_production_evidence_v1.py` comprovar que os hashes de proveniência resolvem para arquivos realmente persistidos aqui;
+- não há pruning automático na política v1; arquivos únicos observados em produção são retidos.
+
+A política machine-readable está em `docs/phase4-production-persistence-v1.json`.
