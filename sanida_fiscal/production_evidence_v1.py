@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .financial_evidence_v1 import FinancialEvidenceError, verify_financial_source_provenance
 from .source_runtime_v1 import CandidateStore, SourceStateStore
 
 
@@ -63,6 +64,12 @@ def verify_legacy_artifact_evidence(
     artifact_path: Path,
     runtime_root: Path,
 ) -> dict[str, dict[str, str]]:
+    """Verify the full four-source evidence chain of `dados_fiscais.json`.
+
+    Phase 4 requires the compatibility artifact to be backed not only by the
+    current RFB/INSS candidates but also by the exact Selic/CDI provenance that
+    entered through `taxas_bacen.json`.
+    """
     artifact_path = Path(artifact_path)
     runtime_root = Path(runtime_root)
     if not artifact_path.is_file():
@@ -147,5 +154,23 @@ def verify_legacy_artifact_evidence(
             "candidate_sha256": candidate_sha,
             "candidate_path": candidate_path,
         }
+
+    taxas_meta = sources.get("taxas")
+    if not isinstance(taxas_meta, dict):
+        raise ProductionEvidenceError("missing financial provenance envelope in dados_fiscais.json")
+    if taxas_meta.get("origin") != "local_file" or taxas_meta.get("origin_ref") != "taxas_bacen.json":
+        raise ProductionEvidenceError("dados_fiscais.json must consume the local evidence-gated taxas_bacen.json")
+    financial_sources = taxas_meta.get("source_meta")
+    if not isinstance(financial_sources, dict):
+        raise ProductionEvidenceError("dados_fiscais.json has no nested Selic/CDI provenance")
+
+    try:
+        financial_verified = verify_financial_source_provenance(
+            sources=financial_sources,
+            runtime_root=runtime_root,
+        )
+    except FinancialEvidenceError as exc:
+        raise ProductionEvidenceError(f"financial provenance verification failed: {exc}") from exc
+    verified.update(financial_verified)
 
     return verified
