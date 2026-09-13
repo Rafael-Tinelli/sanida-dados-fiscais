@@ -432,8 +432,8 @@ class VersioningPolicy(StrictModel):
 
 
 class ConsumerCompatibility(StrictModel):
-    schema_version: Literal["1.0.0"] = "1.0.0"
-    contract_api_version: Literal["1.0.0"] = "1.0.0"
+    schema_version: Literal["1.1.0"] = "1.1.0"
+    contract_api_version: Literal["1.1.0"] = "1.1.0"
     consumers: list[ConsumerId]
     schema_match: Literal["exact"] = "exact"
     contract_api_match: Literal["exact"] = "exact"
@@ -674,6 +674,10 @@ class PeriodRulePayload(StrictModel):
     duration_months: int = Field(gt=0)
     anchor: Literal["employment_start_anniversary"]
     calendar_year_reset: Literal[False] = False
+    proportional_accrual_method: Literal[
+        "one_twelfth_per_acquisition_month_or_fraction_gte_days"
+    ] = "one_twelfth_per_acquisition_month_or_fraction_gte_days"
+    proportional_qualifying_days: Literal[15] = 15
 
 
 class FormulaComponent(StrictModel):

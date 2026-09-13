@@ -133,7 +133,7 @@ class FiscalRuleV1(StrictModel):
 
 
 class FiscalContractV1(StrictModel):
-    schema_version: Literal["1.0.0"] = "1.0.0"
+    schema_version: Literal["1.1.0"] = "1.1.0"
     contract_id: Literal["br.sanida.fiscal"] = "br.sanida.fiscal"
     release_id: str = Field(min_length=1, pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
     status: ContractStatus

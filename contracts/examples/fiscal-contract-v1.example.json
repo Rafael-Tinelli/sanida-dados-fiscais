@@ -1,14 +1,14 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "contract_id": "br.sanida.fiscal",
   "release_id": "candidate-2026-09-13",
   "status": "CANDIDATE",
   "jurisdiction": "BR",
   "generated_at_utc": "2026-09-13T12:00:00Z",
   "source_registry_version": "1.0.0",
-  "rule_inventory_version": "1.0.0",
+  "rule_inventory_version": "1.1.0",
   "consumer_compatibility": {
-    "contract_api_version": "1.0.0",
+    "contract_api_version": "1.1.0",
     "consumers": [
       "H26",
       "H27",
@@ -16,7 +16,7 @@
       "H29"
     ],
     "unsupported_behavior": "hard_fail",
-    "schema_version": "1.0.0",
+    "schema_version": "1.1.0",
     "schema_match": "exact",
     "contract_api_match": "exact",
     "unknown_fields": "reject",
@@ -913,7 +913,7 @@
     },
     {
       "rule_id": "vacation.acquisition_period",
-      "rule_version": "1.0.0",
+      "rule_version": "1.1.0",
       "domain": "vacation",
       "calculators": [
         "H28",
@@ -924,7 +924,7 @@
         "vacation_indemnified",
         "termination"
       ],
-      "description": "Período aquisitivo de doze meses ancorado no vínculo, sem reset no ano civil.",
+      "description": "Período aquisitivo de doze meses ancorado no vínculo, sem reset no ano civil; proporcionalidade conta 1/12 por mês aquisitivo ou fração de pelo menos 15 dias.",
       "applies_to": "vacation_entitlement_period",
       "applicability": [],
       "dependencies": [],
@@ -939,7 +939,9 @@
         "type": "period_rule",
         "duration_months": 12,
         "anchor": "employment_start_anniversary",
-        "calendar_year_reset": false
+        "calendar_year_reset": false,
+        "proportional_accrual_method": "one_twelfth_per_acquisition_month_or_fraction_gte_days",
+        "proportional_qualifying_days": 15
       },
       "provenance": [
         {
@@ -957,7 +959,7 @@
         ],
         "reviewed_by_human": true
       },
-      "change_class": "RULE_ADDED",
+      "change_class": "STRUCTURAL_CHANGE",
       "update_policy": {
         "rule_class": "structural_rule",
         "auto_publish": false,

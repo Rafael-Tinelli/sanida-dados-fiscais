@@ -226,3 +226,25 @@ A Fase 3 pode usar fixtures e o `CANDIDATE` para testes, mas não deve fabricar 
 A Fase 3 está autorizada a partir do contrato tipado e do inventário fechado. Qualquer necessidade de reinterpretar texto jurídico, inventar fórmula ou adicionar campo semântico ausente deve **interromper o engine** e voltar ao contrato/inventário como mudança explícita, em vez de ser resolvida silenciosamente dentro da função de cálculo.
 
 O primeiro PR/commit da Fase 3 deve partir deste handoff e manter `Remake CI` verde.
+
+## 10. Correção aditiva descoberta na Fase 3 — A02
+
+Ao implementar férias proporcionais, a Fase 3 encontrou uma lacuna objetiva entre o inventário e a forma computacional do payload `period_rule`: o contrato dizia que a contagem era ancorada no período aquisitivo, mas não transportava para a máquina o limiar de 15 dias da fração proporcional.
+
+Aplicando o próprio gate deste handoff, a semântica **não foi hardcoded no engine**. O Contrato v1 foi corrigido de forma aditiva:
+
+```text
+schema_version       1.0.0 -> 1.1.0
+contract_api_version 1.0.0 -> 1.1.0
+rule_inventory       1.0.0 -> 1.1.0
+vacation.acquisition_period.rule_version 1.0.0 -> 1.1.0
+```
+
+O `PeriodRulePayload` passa a declarar explicitamente:
+
+```text
+proportional_accrual_method = one_twelfth_per_acquisition_month_or_fraction_gte_days
+proportional_qualifying_days = 15
+```
+
+A política de compatibilidade continua `exact`: consumidores 1.0.0 não devem aceitar silenciosamente o documento 1.1.0. A mudança é aditiva em capacidade, mas só é consumível depois de teste explícito da versão nova.
