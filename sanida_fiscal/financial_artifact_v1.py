@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from typing import Any, Mapping
 
@@ -9,6 +10,7 @@ from .sources_v1 import ParseStatus
 
 
 FINANCIAL_ARTIFACT_SCHEMA_VERSION = "1.4.0"
+CDI_MAX_OBSERVATION_AGE_DAYS = 7
 
 
 class FinancialArtifactBoundaryError(RuntimeError):
@@ -38,6 +40,60 @@ def _require_decimal(value: Any, label: str) -> Decimal:
     if not parsed.is_finite():
         raise FinancialArtifactBoundaryError(f"{label} must be finite")
     return parsed
+
+
+def _parse_generated_at_utc(value: str) -> datetime:
+    if not isinstance(value, str) or not value:
+        raise FinancialArtifactBoundaryError("generated_at_utc must be a non-empty UTC timestamp")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise FinancialArtifactBoundaryError("generated_at_utc is not ISO-8601") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):
+        raise FinancialArtifactBoundaryError("generated_at_utc must be UTC")
+    return parsed
+
+
+def _parse_observation_date(value: Any, label: str) -> date:
+    if not isinstance(value, str):
+        raise FinancialArtifactBoundaryError(f"{label} must be ISO date string")
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise FinancialArtifactBoundaryError(f"{label} is not ISO date") from exc
+
+
+def _validate_financial_freshness(
+    *,
+    selic: Mapping[str, Any],
+    cdi: Mapping[str, Any],
+    generated_at_utc: str,
+) -> None:
+    """Apply source-specific freshness semantics before publishing compatibility data.
+
+    Selic Meta (SGS 432) is a persistent policy-rate observation: an old latest
+    observation can remain legally/economically current until a new decision, so
+    no maximum age is imposed. A future-dated observation is never accepted.
+
+    CDI (SGS 12) is a daily business-day observation. Without embedding a Brazilian
+    holiday calendar in Phase 4, a conservative seven-calendar-day tolerance covers
+    weekends and ordinary holiday gaps while preventing an unexpectedly old daily
+    observation from being relabeled by a fresh `generated_at_utc`.
+    """
+    generated_date = _parse_generated_at_utc(generated_at_utc).date()
+    selic_date = _parse_observation_date(selic.get("observation_date"), "selic.observation_date")
+    cdi_date = _parse_observation_date(cdi.get("observation_date"), "cdi.observation_date")
+
+    if selic_date > generated_date:
+        raise FinancialArtifactBoundaryError("Selic observation_date cannot be in the future")
+    if cdi_date > generated_date:
+        raise FinancialArtifactBoundaryError("CDI observation_date cannot be in the future")
+
+    cdi_age_days = (generated_date - cdi_date).days
+    if cdi_age_days > CDI_MAX_OBSERVATION_AGE_DAYS:
+        raise FinancialArtifactBoundaryError(
+            f"CDI observation is stale: age_days={cdi_age_days} max={CDI_MAX_OBSERVATION_AGE_DAYS}"
+        )
 
 
 def _source_meta(run: SourcePipelineRun, payload: Mapping[str, Any]) -> dict[str, Any]:
@@ -85,6 +141,12 @@ def build_financial_reference_artifact(
     if cdi.get("annualization_basis_business_days") != 252:
         raise FinancialArtifactBoundaryError("unexpected CDI annualization basis")
 
+    _validate_financial_freshness(
+        selic=selic,
+        cdi=cdi,
+        generated_at_utc=generated_at_utc,
+    )
+
     selic_rate = _require_decimal(selic.get("annual_rate_pct"), "selic.annual_rate_pct")
     cdi_daily = _require_decimal(cdi.get("daily_rate_pct"), "cdi.daily_rate_pct")
     cdi_annual = annualize_cdi_daily_rate_pct(format(cdi_daily, "f"))
@@ -97,12 +159,14 @@ def build_financial_reference_artifact(
     selic_meta = _source_meta(selic_run, selic)
     selic_meta["source_value_pct"] = format(selic_rate, "f")
     selic_meta["source_unit"] = "percent_per_year"
+    selic_meta["freshness_policy"] = "persistent_until_changed_no_max_age"
 
     cdi_meta = _source_meta(cdi_run, cdi)
     cdi_meta["source_value_pct"] = format(cdi_daily, "f")
     cdi_meta["source_unit"] = "percent_per_business_day"
     cdi_meta["annualization_basis_business_days"] = 252
     cdi_meta["annualized_value_pct"] = format(cdi_annual, "f")
+    cdi_meta["max_observation_age_calendar_days"] = CDI_MAX_OBSERVATION_AGE_DAYS
 
     return {
         "schema_version": FINANCIAL_ARTIFACT_SCHEMA_VERSION,
