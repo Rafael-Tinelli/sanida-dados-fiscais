@@ -72,7 +72,7 @@ def set_canonical_release_id(data: dict) -> None:
 
 def test_example_validates_and_materializes_every_payload_family() -> None:
     contract = FiscalContractV1.model_validate(load_example())
-    assert contract.schema_version == "1.0.0"
+    assert contract.schema_version == "1.1.0"
     assert contract.contract_id == "br.sanida.fiscal"
     assert len(contract.rules) >= 18
     assert {rule.payload.type for rule in contract.rules} == RULE_PAYLOAD_TYPES
@@ -83,6 +83,21 @@ def test_phase1_inventory_coverage_is_declared_as_32_rules() -> None:
     assert coverage["rule_count"] == 32
     assert len(coverage["rules"]) == 32
     assert {item["representation_status"] for item in coverage["rules"]} == {"covered"}
+
+
+def test_vacation_period_rule_carries_proportional_15_day_semantics() -> None:
+    contract = FiscalContractV1.model_validate(load_example())
+    rule = contract.select_rule(
+        "vacation.acquisition_period",
+        date(2026, 3, 31),
+        AssessmentContext.TERMINATION,
+    )
+    assert rule.rule_version == "1.1.0"
+    assert (
+        rule.payload.proportional_accrual_method
+        == "one_twelfth_per_acquisition_month_or_fraction_gte_days"
+    )
+    assert rule.payload.proportional_qualifying_days == 15
 
 
 def test_decimal_values_round_trip_as_strings_in_json_mode() -> None:
@@ -493,15 +508,15 @@ def test_semver_bump_classification() -> None:
 def test_reader_compatibility_is_exact_and_unknown_versions_fail() -> None:
     contract = FiscalContractV1.model_validate(load_example())
     contract.assert_reader_compatible(
-        consumer="H26", schema_version="1.0.0", contract_api_version="1.0.0"
+        consumer="H26", schema_version="1.1.0", contract_api_version="1.1.0"
     )
     with pytest.raises(ContractCompatibilityError, match="schema mismatch"):
         contract.assert_reader_compatible(
-            consumer="H26", schema_version="1.0.1", contract_api_version="1.0.0"
+            consumer="H26", schema_version="1.0.0", contract_api_version="1.1.0"
         )
     with pytest.raises(ContractCompatibilityError, match="contract API mismatch"):
         contract.assert_reader_compatible(
-            consumer="H26", schema_version="1.0.0", contract_api_version="1.1.0"
+            consumer="H26", schema_version="1.1.0", contract_api_version="1.0.0"
         )
 
 

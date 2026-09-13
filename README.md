@@ -690,7 +690,7 @@ Artefatos adicionais do checkpoint:
 
 ### Fase 3 — Biblioteca fiscal e testes
 
-**Status: PENDENTE**
+**Status: CONCLUÍDA**
 
 Objetivos:
 
@@ -698,6 +698,53 @@ Objetivos:
 - usar `Decimal`;
 - converter exemplos oficiais em testes;
 - criar property-based tests e invariantes.
+
+Primeira rodada executável:
+
+- `sanida_fiscal/money.py` — entrada decimal estrita e quantização por `RoundingPolicy`;
+- `sanida_fiscal/engine_v1.py` — tabelas progressivas, redutor afim e memória de IRRF;
+- `tests/test_engine_v1.py` — casos RFB, regressão A01 e property-based tests;
+- `docs/phase3-library-v1.md` — escopo, checkpoints e handoff da biblioteca fiscal.
+
+Estado final da Fase 3:
+
+- cinco casos oficiais RFB de 2026 executados contra o engine;
+- A01 reproduz `382.88` para renda tributável de `6000.00`;
+- executor marginal com teto implementado para a família usada pelo INSS;
+- `float`/`bool` rejeitados no caminho fiscal;
+- Hypothesis integrado ao CI;
+- identidade explícita de apuração (`monthly`, `thirteenth`, `vacation`) separada do contexto de origem;
+- `termination` tratado como origem que pode conter apurações mensal e de 13º distintas, nunca como quarto tipo de IRRF;
+- previdência, dependentes e pensão vinculados a uma única apuração e impedidos de vazar entre contextos;
+- bundles de regras selecionados pelo tipo de rendimento, inclusive dentro de H29;
+- 13º com avos, fronteira de 15 dias, referência anual/rescisória, bruto proporcional e adiantamento fixo simples;
+- remuneração variável pré-calculada aceita apenas como entrada externa explicitamente marcada;
+- INSS do 13º e IRRF exclusivo do 13º possuem memórias próprias, inclusive dentro de `termination`;
+- branches especiais de adiantamento ainda não modeladas falham fechadas em vez de usar `total13 * 0.5`;
+- o gate da Fase 2 detectou que A02 precisava transportar para a máquina o limiar de 15 dias da fração proporcional de férias; o contrato foi corrigido explicitamente para `schema_version`/`contract_api_version` **1.1.0**, mantendo compatibilidade exata/fail-closed;
+- período aquisitivo e avos proporcionais de férias agora são ancorados no aniversário do vínculo, sem reset em 1º de janeiro;
+- regressão A02 reproduz `01/09/2025 → 31/03/2026 = 7/12`;
+- faixas de direito por faltas e abono de 1/3 do **direito adquirido** estão executáveis;
+- principal do abono (`IRRF não / CP não`) e terço constitucional sobre o abono (`IRRF sim / CP não`) permanecem componentes separados até a formação das bases tributárias;
+- H29 ganhou núcleo limitado próprio, com matriz eSocial `01/02/07/33`, sem expansão para motivos não suportados;
+- motivo `01` mantém saldo salarial e bloqueia 13º/férias proporcionais; `02/07/33` habilitam ambos;
+- saldo salarial usa `salário-base mensal normalizado × dias considerados / dias civis do mês`, sem divisor 30 universal;
+- 13º rescisório continua no calendário anual enquanto férias proporcionais continuam no período aquisitivo — no caso `01/09/2025 → 31/03/2026`, isso produz 3/12 de 13º e 7/12 de férias;
+- H29 continua declarando `partial_estimate`, com aviso prévio, FGTS rescisório, seguro-desemprego, estabilidade, prazo determinado e demais verbas não modeladas fora do total;
+- `sanida_fiscal/memory_v1.py` introduz um envelope comum de memória auditável sem fundir semânticas fiscais: IRRF, 13º, férias e H29 continuam preservando identidade/contexto e podem ser compostos como memórias-filhas;
+- valores monetários da memória comum partem de `Decimal` e são serializados como texto canônico, sem reintroduzir `float` no caminho fiscal;
+- property-based tests foram ampliados para fronteiras do redutor de 2026, denominadores civis do saldo salarial, monotonicidade de 13º/férias, matriz H29 fechada e separação tributária do abono;
+- `scripts/validate_phase3_gate.py` tornou o gate de fechamento executável e permanente no `Remake CI`;
+- revisão formal dos sete critérios do gate concluída sem aresta objetiva bloqueante;
+- suíte integral do fechamento: **150 testes verdes**;
+- `docs/phase3-closure-gate.md` registra a decisão formal de encerramento.
+
+Critério de conclusão atendido:
+
+- validação do repositório, contrato, suíte integral e gate executável verdes no mesmo head de fechamento;
+- README e documentação da fase sincronizados;
+- ausência de helper/workflow temporário residual;
+- ausência de mudança de produção/consumidor misturada à biblioteca.
 
 ### Fase 4 — Fontes e sensores
 
@@ -775,14 +822,19 @@ Objetivos:
 22. `release_id` é identidade content-addressed do payload fiscal imutável, não número de versão.
 23. Release `PUBLISHED` é imutável; supersessão é declarada pela sucessora em `supersedes_release_id`, sem mutar a predecessora.
 24. Campos narrativos existem para auditoria humana, mas o engine não pode depender deles para decidir operação fiscal.
+25. O limiar proporcional de férias não pode existir como constante jurídica escondida no engine: `vacation.acquisition_period` v1.1 declara `proportional_qualifying_days=15` e o método de aquisição proporcional; leitores 1.0.0 não aceitam silenciosamente o contrato 1.1.0.
+26. H29 deve executar a matriz eSocial `01/02/07/33` como escopo fechado e cruzar a matriz geral com as regras específicas de 13º e férias proporcionais; divergência ou motivo fora do conjunto suportado é erro, não aproximação.
+27. O saldo salarial de H29 v1 não usa divisor 30 universal. O denominador é o número de dias civis do mês de desligamento e o numerador é fornecido explicitamente como dias considerados até o desligamento; regimes fora de mensalista/quinzenalista normalizado ficam fora do escopo.
+28. A memória comum de cálculo é um envelope de representação/auditoria, não uma rules engine nem uma fusão semântica. Bases e identidades de mensal, 13º, férias e rescisão permanecem separadas; composições usam memórias-filhas.
+29. O fechamento da Fase 3 exige, no mesmo head, validação do repositório, Contrato Fiscal Canônico, suíte integral, `scripts/validate_phase3_gate.py`, documentação sincronizada e ausência de helpers/workflows temporários.
+30. A Fase 3 foi formalmente encerrada depois de revisão dos sete critérios do gate; qualquer reabertura da biblioteca deverá decorrer de defeito objetivo ou exigência explícita de uma fase posterior, não de redesign oportunista.
 
 ---
 
 ## 19. Questões em aberto
 
-Com a Fase 2 concluída, não restam pendências de design do Contrato Fiscal Canônico v1. As questões abertas pertencem às fases posteriores:
+As Fases 1, 2 e 3 estão formalmente concluídas. Se a implementação posterior revelar uma lacuna semântica objetiva, o processo exige emenda explícita e versionada do contrato em vez de hardcode no engine. A primeira ocorrência foi A02, corrigida na Fase 3 como Contrato v1.1. As questões abertas restantes pertencem às fases posteriores:
 
-- implementação e propriedades matemáticas do engine fiscal — Fase 3;
 - política exata de retenção de snapshots e resiliência das fontes — Fase 4;
 - critérios de confirmação multi-fonte para mudanças paramétricas — Fase 4/5;
 - mecanismo de semantic diff e promoção — Fase 5;
@@ -793,9 +845,11 @@ Com a Fase 2 concluída, não restam pendências de design do Contrato Fiscal Ca
 
 ## 20. Próxima etapa
 
-Iniciar a **Fase 3 — Biblioteca fiscal e testes** a partir de `docs/phase2-to-phase3-handoff.md`.
+Iniciar a **Fase 4 — Fontes e sensores** sobre o contrato e a biblioteca fiscal já fechados.
 
-A Fase 3 deverá implementar funções fiscais puras e determinísticas sobre o contrato congelado, com `Decimal`, casos oficiais executáveis e property-based testing. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.
+O primeiro checkpoint da Fase 4 deverá inventariar a superfície atual de coleta e desenhar a separação concreta entre **collector → raw snapshot imutável → parser → candidato normalizado**, incluindo estados de indisponibilidade, timeout/retry e proveniência. A fase deve priorizar fonte oficial estruturada quando houver e não deve antecipar semantic diff/publicação da Fase 5 nem migração de consumidores da Fase 6.
+
+Qualquer necessidade de reinterpretar regra jurídica ou alterar a biblioteca da Fase 3 deve voltar explicitamente ao contrato/inventário com evidência concreta, não ser resolvida silenciosamente dentro de collector ou parser.
 
 O pipeline de produção continua congelado: `scraper.py`, `update_taxas.py`, `dados_fiscais.json`, `taxas_bacen.json`, WordPress, `folha-core` e H26–H29 ainda não foram migrados.
 
@@ -816,6 +870,74 @@ Uma fase só deve ser marcada como `CONCLUÍDA` quando seus critérios de conclu
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-13 — fechamento formal da Fase 3
+
+- revisados formalmente os sete critérios de promoção definidos em `docs/phase3-closure-gate.md`;
+- validação do repositório, Contrato Fiscal Canônico v1.1, suíte integral e gate de fechamento permaneceram verdes;
+- suíte de fechamento permaneceu em **150 testes verdes**;
+- confirmada a higiene do branch: apenas `main.yml`, `taxas.yml` e `remake-ci.yml` permanecem como workflows;
+- confirmado pelo diff do PR que `scraper.py`, `update_taxas.py`, `dados_fiscais.json` e `taxas_bacen.json` não foram alterados pela Fase 3 em relação à base do PR;
+- README, `docs/phase3-library-v1.md` e `docs/phase3-closure-gate.md` sincronizados para `CONCLUÍDA`;
+- Fase 4 — Fontes e sensores passa a ser a próxima etapa; produção e consumidores continuam congelados.
+
+### 2026-09-13 — checkpoint de memória comum, invariantes e gate da Fase 3
+
+- criado `sanida_fiscal/memory_v1.py` como envelope determinístico de memória auditável, preservando separação entre contextos e bases fiscais;
+- fatos da memória passam a carregar papel, unidade e `rule_ids`, com valores monetários originados em `Decimal` e serializados como texto canônico;
+- H29 passa a expor memória composta por filhos separados para saldo salarial, 13º proporcional e férias proporcionais, sem fabricar filhos inelegíveis no motivo `01`;
+- `tests/test_memory_v1.py` valida reconciliação A01, serialização determinística, unicidade de fatos e separação das memórias;
+- `tests/test_phase3_invariants.py` amplia property-based tests para fronteiras legais e monetárias;
+- criado `scripts/validate_phase3_gate.py` e integrado ao `Remake CI`;
+- criado `docs/phase3-closure-gate.md` com critérios objetivos para a promoção formal da Fase 3;
+- run `34775296512` fecha o checkpoint com validação do repositório, Contrato v1.1, **150 testes** e gate da Fase 3 em `PASS`.
+
+### 2026-09-13 — checkpoint H29 limitado na Fase 3
+
+- criado `sanida_fiscal/termination_v1.py` com escopo fail-closed para mensalista/quinzenalista normalizado, contrato por prazo indeterminado e motivos eSocial `01/02/07/33`;
+- materializada no `CANDIDATE` a regra já inventariada `termination.vacation_proportional`, elevando o exemplo para 21 regras sem criar nova família de payload;
+- matriz geral e regras específicas de 13º/férias proporcionais passam a ser cruzadas em runtime;
+- motivo `01` bloqueia proporcionais; `02/07/33` habilitam 13º e férias proporcionais;
+- saldo salarial usa os dias civis reais do mês e reproduz R$ 3.100 / 31 × 10 = R$ 1.000;
+- no caso A02, H29 preserva simultaneamente 3/12 de 13º no ano civil e 7/12 de férias no período aquisitivo;
+- resultado continua `partial_estimate` e não incorpora aviso, FGTS, seguro-desemprego ou demais verbas excluídas;
+- suíte completa chega a **130 testes verdes**.
+
+### 2026-09-13 — checkpoint de férias/A02 na Fase 3
+
+- identificado pelo próprio gate da Fase 2 que o contrato não transportava o limiar de 15 dias das férias proporcionais;
+- Contrato Fiscal Canônico v1 recebeu emenda aditiva e compatibilidade exata em `schema_version`/`contract_api_version` 1.1.0;
+- `vacation.acquisition_period` v1.1 explicita método proporcional e `proportional_qualifying_days=15`;
+- A02 passou a ser executável: `01/09/2025 → 31/03/2026 = 7/12`, sem reset em janeiro;
+- direito por faltas e abono de 1/3 do entitlement passaram a funções puras;
+- principal do abono e terço constitucional permanecem separados nas incidências e bases;
+- suíte completa chega a **114 testes verdes**.
+
+### 2026-09-13 — checkpoint de 13º salário na Fase 3
+
+- implementados avos e fronteira legal de 15 dias;
+- referências remuneratórias anual e rescisória tornadas executáveis;
+- bruto proporcional exige rounding explícito;
+- adiantamento fixo simples reproduz o caso oficial de R$ 4.000 → R$ 2.000;
+- admissão no ano/remuneração variável no adiantamento permanecem fail-closed;
+- INSS e IRRF do 13º passam a ter memórias próprias e isoladas da folha mensal;
+- `thirteenth.irrf.reduction.2026` é selecionado explicitamente;
+- suíte completa chega a 89 testes verdes.
+
+### 2026-09-13 — checkpoint de apurações separadas na Fase 3
+
+- `monthly`, `thirteenth` e `vacation` passam a ter identidade explícita de apuração;
+- `termination` permanece contexto de origem, com mensal e 13º isolados entre si;
+- deduções legais são vinculadas à apuração e não podem vazar entre contextos;
+- seleção de regras e redutor é feita pelo tipo de rendimento;
+- suíte completa chega a 73 testes verdes.
+
+### 2026-09-13 — início da Fase 3
+
+- aberta a biblioteca fiscal determinística sobre o Contrato v1;
+- primitives de `Decimal`, tabela progressiva e redutor afim implementados;
+- cinco casos oficiais RFB e regressão A01 tornados executáveis;
+- Hypothesis integrado; primeiro checkpoint com 63 testes verdes.
 
 ### 2026-09-13 — fechamento da Fase 2
 
