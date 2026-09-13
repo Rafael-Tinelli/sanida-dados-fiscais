@@ -1,7 +1,8 @@
 # Fase 3 — Biblioteca fiscal e testes
 
-**Status:** EM ANDAMENTO  
+**Status:** CONCLUÍDA  
 **Início:** 13/09/2026  
+**Encerramento:** 13/09/2026  
 **Base:** `docs/phase2-to-phase3-handoff.md`
 
 ## 1. Objetivo
@@ -562,9 +563,9 @@ O novo conjunto cobre adicionalmente:
 
 O gate não amplia escopo: casos deliberadamente não modelados permanecem fail-closed e estão registrados em `docs/phase3-closure-gate.md`.
 
-## 11. Estado do CI
+## 11. Estado final do CI
 
-Após o checkpoint de memória comum, invariantes e gate de fechamento:
+A revisão formal de fechamento foi executada sobre o branch da Fase 3 com todos os gates verdes:
 
 ```text
 Repository baseline       PASS
@@ -579,25 +580,49 @@ Phase 3 closure gate      PASS
 150 passed
 ```
 
-Run de validação do checkpoint: `34775296512`.
+A evidência canônica é o `Remake CI` associado ao head corrente do PR. IDs de execução pertencem ao histórico do GitHub Actions e não são gravados neste documento para evitar autorreferência a cada atualização exclusivamente documental.
 
-## 12. Limites preservados
+## 12. Limites preservados e transferidos para fases posteriores
 
-Ainda não estão implementados integralmente:
+Os itens abaixo **não bloqueiam o fechamento da Fase 3**, porque estão deliberadamente fora da promessa computacional fechada nesta etapa ou dependem de camadas posteriores:
 
 - cálculo canônico interno completo da remuneração variável do 13º;
 - branches especiais de adiantamento para admissão no ano/remuneração variável;
 - fórmula monetária adicional do abono além das grandezas e incidências já tipadas, se necessária, até que exista payload computacional explícito;
 - cálculo monetário de períodos integrais adquiridos/vencidos na rescisão além da elegibilidade já exposta;
-- incidências e memória fiscal final do saldo salarial no orquestrador H29, que serão compostas a partir dos primitives já existentes sem ampliar o escopo de verbas;
+- composição final, no consumidor H29, das incidências fiscais do saldo salarial a partir dos primitives já existentes;
 - collectors/snapshots/parsers;
 - publicação de releases;
 - migração de WordPress/`folha-core`/H26–H29.
 
 Esses limites são fail-closed: o engine rejeita os casos não modelados em vez de convertê-los silenciosamente em aproximações.
 
-## 13. Próximos checkpoints da Fase 3
+## 13. Revisão formal do gate e fechamento
 
-1. revisar formalmente o gate de fechamento da Fase 3 no mesmo head limpo;
-2. se repositório, contrato, suíte integral, gate, documentação e higiene estiverem verdes, promover a Fase 3 para `CONCLUÍDA` em checkpoint próprio;
-3. somente depois iniciar a Fase 4 — Fontes e sensores, sem antecipar publicação ou migração de consumidores.
+Os sete critérios de promoção definidos em `docs/phase3-closure-gate.md` foram revisados formalmente:
+
+1. `scripts/validate_repository.py`: **PASS**;
+2. `scripts/validate_contract_v1.py`: **PASS**;
+3. suíte integral `pytest`: **PASS — 150 testes**;
+4. `scripts/validate_phase3_gate.py`: **PASS**;
+5. README e este documento sincronizados com o estado real: **PASS**;
+6. apenas workflows permanentes `main.yml`, `taxas.yml` e `remake-ci.yml`, sem helper/workflow temporário residual: **PASS**;
+7. nenhum arquivo de produção/consumidor foi misturado ao fechamento da biblioteca: **PASS**.
+
+A inspeção do diff do PR confirma que `scraper.py`, `update_taxas.py`, `dados_fiscais.json` e `taxas_bacen.json` não fazem parte das mudanças da Fase 3 em relação à base do PR. WordPress, `folha-core` e H26–H29 publicados permanecem fora desta migração.
+
+Não foi encontrada aresta objetiva que justifique manter a fase aberta. Portanto, **Fase 3 — Biblioteca fiscal e testes está CONCLUÍDA**.
+
+## 14. Handoff
+
+A próxima etapa é a **Fase 4 — Fontes e sensores**.
+
+Ela deverá trabalhar sobre o contrato e a biblioteca já fechados, sem reabrir a semântica da Fase 3 salvo evidência concreta de defeito. O foco passa a ser:
+
+- collectors separados de parsers;
+- prioridade para fontes oficiais estruturadas;
+- snapshots imutáveis e proveniência;
+- timeouts/retries e estados de indisponibilidade;
+- detecção segura de mudança sem publicação automática de mudança estrutural.
+
+Publicação de releases e migração de consumidores continuam pertencendo às fases posteriores.
