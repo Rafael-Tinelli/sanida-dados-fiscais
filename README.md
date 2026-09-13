@@ -706,14 +706,18 @@ Primeira rodada executável:
 - `tests/test_engine_v1.py` — casos RFB, regressão A01 e property-based tests;
 - `docs/phase3-library-v1.md` — escopo e checkpoints da biblioteca fiscal.
 
-Estado do primeiro checkpoint:
+Estado dos checkpoints executados:
 
 - cinco casos oficiais RFB de 2026 executados contra o engine;
 - A01 reproduz `382.88` para renda tributável de `6000.00`;
 - executor marginal com teto implementado para a família usada pelo INSS;
 - `float`/`bool` rejeitados no caminho fiscal;
 - Hypothesis integrado ao CI;
-- suíte completa: **63 testes verdes** no primeiro run da Fase 3.
+- identidade explícita de apuração (`monthly`, `thirteenth`, `vacation`) separada do contexto de origem;
+- `termination` tratado como origem que pode conter apurações mensal e de 13º distintas, nunca como quarto tipo de IRRF;
+- previdência, dependentes e pensão vinculados a uma única apuração e impedidos de vazar entre contextos;
+- bundles de regras selecionados pelo tipo de rendimento, inclusive dentro de H29;
+- suíte completa: **73 testes verdes** após o checkpoint de deduções por contexto.
 
 ### Fase 4 — Fontes e sensores
 
@@ -811,7 +815,7 @@ Com a Fase 2 concluída, não restam pendências de design do Contrato Fiscal Ca
 
 Continuar a **Fase 3 — Biblioteca fiscal e testes** a partir do primeiro núcleo já verde.
 
-Próximos checkpoints: deduções por contexto e apurações separadas; 13º/avos; período aquisitivo e férias; saldo salarial e matriz H29 limitada; memória de cálculo comum; expansão dos property-based tests. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.
+Próximos checkpoints: 13º/avos; período aquisitivo e férias; saldo salarial e matriz H29 limitada; memória de cálculo comum; expansão dos property-based tests. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.
 
 O pipeline de produção continua congelado: `scraper.py`, `update_taxas.py`, `dados_fiscais.json`, `taxas_bacen.json`, WordPress, `folha-core` e H26–H29 ainda não foram migrados.
 
@@ -832,6 +836,14 @@ Uma fase só deve ser marcada como `CONCLUÍDA` quando seus critérios de conclu
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-13 — checkpoint de apurações separadas na Fase 3
+
+- `monthly`, `thirteenth` e `vacation` passam a ter identidade explícita de apuração;
+- `termination` permanece contexto de origem, com mensal e 13º isolados entre si;
+- deduções legais são vinculadas à apuração e não podem vazar entre contextos;
+- seleção de regras e redutor é feita pelo tipo de rendimento;
+- suíte completa chega a 73 testes verdes.
 
 ### 2026-09-13 — início da Fase 3
 
