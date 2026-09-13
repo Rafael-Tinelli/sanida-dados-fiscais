@@ -769,6 +769,16 @@ Primeiro checkpoint executável:
 - suíte integral chega a **160 testes verdes** no primeiro checkpoint;
 - o legado de produção permanece intacto neste checkpoint.
 
+Segundo checkpoint executável:
+
+- `sanida_fiscal/rfb_irrf_v1.py` materializa o primeiro parser específico no novo pipeline, para `RFB_IRRF_TABLE_2026`;
+- `sanida_fiscal/source_runtime_v1.py` persiste estado operacional entre execuções, sem confundir last-good operacional com vigência jurídica;
+- `ETag` e `Last-Modified` passam a ser preservados e reutilizados em consultas condicionais quando o parser permanece compatível;
+- mudança de `parser_id`/`parser_version` força refetch completo antes de aceitar o novo parser;
+- igualdade de snapshot bruto e fingerprint de candidato é observável sem antecipar semantic diff da Fase 5;
+- `scripts/run_source_pipeline_v1.py` executa o pipeline real RFB sem publicar ou alterar artefatos de produção;
+- fixture oficial mínima e testes de estado elevam a suíte integral para **166 testes verdes**.
+
 ### Fase 5 — Diff semântico e gates de publicação
 
 **Status: PENDENTE**
@@ -840,6 +850,7 @@ Objetivos:
 29. O fechamento da Fase 3 exige, no mesmo head, validação do repositório, Contrato Fiscal Canônico, suíte integral, `scripts/validate_phase3_gate.py`, documentação sincronizada e ausência de helpers/workflows temporários.
 30. A Fase 3 foi formalmente encerrada depois de revisão dos sete critérios do gate; qualquer reabertura da biblioteca deverá decorrer de defeito objetivo ou exigência explícita de uma fase posterior, não de redesign oportunista.
 31. Na Fase 4, coleta e interpretação são etapas distintas: bytes brutos são preservados e identificados por SHA-256 antes de qualquer parser; indisponibilidade da fonte e incompatibilidade do parser nunca são o mesmo estado.
+32. Estado operacional de fonte preserva a última observação bem-sucedida, validadores HTTP e falhas correntes sem transformar last-good operacional em autorização jurídica de uso; mudança de versão do parser invalida o atalho condicional e exige refetch.
 
 ---
 
@@ -848,7 +859,6 @@ Objetivos:
 As Fases 1, 2 e 3 estão formalmente concluídas. Se a implementação posterior revelar uma lacuna semântica objetiva, o processo exige emenda explícita e versionada do contrato em vez de hardcode no engine. A primeira ocorrência foi A02, corrigida na Fase 3 como Contrato v1.1. As questões abertas restantes pertencem às fases posteriores:
 
 - política exata de retenção de snapshots e resiliência das fontes — Fase 4;
-- estado operacional persistente entre execuções (ETag/Last-Modified, última observação e falha corrente) — Fase 4;
 - critérios de confirmação multi-fonte para mudanças paramétricas — Fase 4/5;
 - mecanismo de semantic diff e promoção — Fase 5;
 - distribuição para WordPress/SFA e migração dos consumidores — Fase 6;
@@ -858,9 +868,9 @@ As Fases 1, 2 e 3 estão formalmente concluídas. Se a implementação posterior
 
 ## 20. Próxima etapa
 
-Continuar a **Fase 4 — Fontes e sensores** sobre a fundação já materializada.
+Continuar a **Fase 4 — Fontes e sensores** com o primeiro pipeline real RFB já materializado.
 
-Próximo checkpoint: executar o primeiro pipeline real **collector → raw snapshot imutável → parser → candidato normalizado** sobre uma fonte oficial estável, preservando proveniência e estado operacional entre execuções. Em seguida, desacoplar RFB/INSS do fetch legado. Semantic diff, promoção e publicação continuam reservados à Fase 5.
+Próximo checkpoint: desacoplar o **INSS** do discovery/fetch/parsing legado e resolver explicitamente a diferença entre a fonte canônica `INSS_TABLE_2026` e a notícia anual pinned/descoberta usada hoje. Depois, preparar a migração do caminho RFB em `scraper.py` para consumir o novo pipeline sem duplicar fetch/parser. Semantic diff, promoção e publicação continuam reservados à Fase 5.
 
 Qualquer necessidade de reinterpretar regra jurídica ou alterar a biblioteca da Fase 3 deve voltar explicitamente ao contrato/inventário com evidência concreta, não ser resolvida silenciosamente dentro de collector ou parser.
 
@@ -883,6 +893,16 @@ Uma fase só deve ser marcada como `CONCLUÍDA` quando seus critérios de conclu
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-13 — primeiro pipeline real RFB na Fase 4
+
+- materializado `RFB_IRRF_TABLE_2026` em `collector → snapshot → parser → candidato normalizado`;
+- parser RFB versionado normaliza tabela mensal, dependente, desconto simplificado e redutor 2026 sem publicar contrato;
+- estado operacional persistente passa a carregar `ETag`, `Last-Modified`, snapshot/candidato last-good e falhas correntes;
+- 304 e respostas 200 idênticas são distinguíveis sem antecipar classificação semântica;
+- mudança de versão do parser força coleta completa;
+- criado runner real sem publicação e runtime local ignorado pelo Git;
+- suíte integral chega a **166 testes verdes**.
 
 ### 2026-09-13 — início da Fase 4
 
