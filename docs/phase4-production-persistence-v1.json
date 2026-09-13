@@ -1,12 +1,16 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "decision_id": "phase4.production_source_evidence_persistence",
   "status": "prepared_for_activation_with_phase4_merge",
   "as_of": "2026-09-13",
   "production_environment": {
     "runner": "github_actions_ubuntu_latest_ephemeral",
-    "workflow": ".github/workflows/main.yml",
-    "branch": "main"
+    "workflows": [
+      ".github/workflows/main.yml",
+      ".github/workflows/taxas.yml"
+    ],
+    "branch": "main",
+    "shared_concurrency_group": "sanida-dados-fiscais-writes-main"
   },
   "persistence_backend": {
     "kind": "git_tracked_repository_path",
@@ -14,7 +18,7 @@
     "snapshot_subdir": "snapshots",
     "candidate_subdir": "candidates",
     "state_subdir": "state",
-    "reason": "The GitHub Actions workspace is ephemeral; evidence required by published compatibility-artifact provenance must survive the runner and remain auditable in repository history."
+    "reason": "GitHub Actions workspaces are ephemeral; evidence required by compatibility-artifact provenance must survive the runner and remain auditable in repository history."
   },
   "retention_policy": {
     "raw_snapshots": "retain_all_unique_content_addressed_files",
@@ -37,22 +41,29 @@
     ],
     "current_failure_may_not_destroy_last_good_evidence_pointer": true
   },
-  "publication_transaction": {
-    "steps": [
+  "publication_transactions": {
+    "payroll_compatibility": {
+      "workflow": ".github/workflows/main.yml",
+      "artifact": "dados_fiscais.json",
+      "evidence_gate": "scripts/validate_production_evidence_v1.py"
+    },
+    "financial_reference_compatibility": {
+      "workflow": ".github/workflows/taxas.yml",
+      "artifact": "taxas_bacen.json",
+      "evidence_gate": "scripts/validate_financial_evidence_v1.py"
+    },
+    "common_steps": [
       "checkout_main_with_previously_committed_evidence",
-      "run_scraper_with_SFA_SOURCE_RUNTIME_ROOT=evidence/source-runtime-v1",
+      "run_producer_with_SFA_SOURCE_RUNTIME_ROOT=evidence/source-runtime-v1",
       "verify_artifact_provenance_against_persisted_snapshot_candidate_and_state",
-      "stage_dados_fiscais_json_and_evidence_tree_together_only_when_artifact_verification_passes",
-      "otherwise_restore_unverified_dados_fiscais_json_and_stage_evidence_only",
-      "commit_and_push_main",
-      "fail_workflow_after_evidence_persistence_if_scraper_or_artifact_gate_failed"
+      "stage_artifact_and_evidence_tree_together_on_success",
+      "persist_evidence_only_on_failed_observation",
+      "commit_and_push_main"
     ],
     "artifact_and_evidence_share_commit_when_artifact_changes": true,
-    "evidence_only_commit_allowed_when_artifact_is_unchanged": true,
-    "evidence_only_commit_allowed_on_failed_run": true,
+    "evidence_only_commit_allowed_when_artifact_is_unchanged_or_producer_fails": true,
     "unverified_artifact_may_be_committed": false,
-    "verification_failure": "PERSIST_OPERATIONAL_EVIDENCE_ONLY_THEN_FAIL_WORKFLOW",
-    "source_failure_with_valid_same_year_last_good": "PRESERVE_ARTIFACT_AND_VERIFY_EXISTING_LAST_GOOD_EVIDENCE"
+    "verification_failure": "PERSIST_OPERATIONAL_EVIDENCE_ONLY_THEN_FAIL_WORKFLOW"
   },
   "integrity_gates": {
     "snapshot_file_sha256_must_equal_artifact_provenance": true,
@@ -65,9 +76,11 @@
   "scope": {
     "included_sources": [
       "RFB_IRRF_TABLE_2026",
-      "INSS_TABLE_2026"
+      "INSS_TABLE_2026",
+      "BCB_SELIC_META_SGS_432",
+      "BCB_CDI_DAILY_SGS_12"
     ],
-    "financial_reference": "pending_separate_phase4_migration",
+    "financial_reference": "migrated_in_branch_with_separate_registry_and_failure_policy",
     "semantic_diff": "phase5",
     "canonical_release_publication": "phase5",
     "consumer_migration": "phase6"
