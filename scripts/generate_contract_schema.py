@@ -22,7 +22,7 @@ def build_schema() -> dict:
 
 
 def render_schema() -> str:
-    return json.dumps(build_schema(), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    return json.dumps(build_schema(), ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
 
 
 def main() -> int:
