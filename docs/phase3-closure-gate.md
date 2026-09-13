@@ -98,15 +98,22 @@ Esses limites não impedem o gate enquanto o engine os rejeitar ou os mantiver e
 
 ## Evidência executável do checkpoint
 
-A sequência de validação do checkpoint estabeleceu marcos técnicos reproduzíveis. O run mais recente antes deste registro documental é o `Remake CI` **34775715471**, que validou o head `f7bfec2899d43de90780946311e0d1ada4870b0d` com:
+A evidência é produzida pelo próprio `Remake CI` do head do PR. O estado esperado e já reproduzido neste checkpoint é:
 
-- validação do repositório: `PASS`;
-- Contrato Fiscal Canônico v1.1: `PASS`;
-- `CANDIDATE`: 21 regras;
-- inventário: 32/32;
-- famílias de payload: 18/18;
-- suíte integral: **150 testes verdes**;
-- `scripts/validate_phase3_gate.py`: `PASS`.
+```text
+Repository baseline       PASS
+Fiscal Contract v1.1      PASS
+Candidate rules           21
+Inventory coverage        32/32
+Payload families          18/18
+Fiscal engine             PASS
+Property-based tests      PASS
+Phase 3 closure gate      PASS
+
+150 passed
+```
+
+Os IDs de runs concretos permanecem no histórico do GitHub Actions e no PR; este documento deliberadamente não fixa como “final” o ID do run disparado por seu próprio commit, evitando uma referência autorrecursiva impossível de estabilizar.
 
 Não houve alteração de produção nem migração de consumidores neste checkpoint.
 
