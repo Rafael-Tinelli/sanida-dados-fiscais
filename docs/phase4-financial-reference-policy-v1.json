@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0.0",
+  "decision_id": "phase4.financial_reference.source_policy",
+  "status": "migrated_in_branch",
+  "as_of": "2026-09-13",
+  "domain": "financial_reference",
+  "canonical_inputs": {
+    "selic": {
+      "source_id": "BCB_SELIC_META_SGS_432",
+      "series_code": 432,
+      "input_semantic": "selic_meta_percent_per_year",
+      "artifact_semantic": "annual_percent_rate",
+      "transformation": "identity"
+    },
+    "cdi": {
+      "source_id": "BCB_CDI_DAILY_SGS_12",
+      "series_code": 12,
+      "input_semantic": "cdi_percent_per_business_day",
+      "artifact_semantic": "annual_percent_rate",
+      "transformation": "((1 + daily_rate_pct / 100) ^ 252 - 1) * 100",
+      "rounding": "ROUND_HALF_UP_2_DECIMALS"
+    }
+  },
+  "b3_role": {
+    "benchmark_administrator_and_methodology_authority": true,
+    "legacy_ftp_is_automatic_fallback": false,
+    "legacy_ftp_is_production_input_after_migration": false,
+    "use": "human_corrobation_and_methodology_reference"
+  },
+  "failure_policy": {
+    "require_current_parsed_candidate_for_new_artifact": true,
+    "if_any_source_fails": "do_not_rewrite_taxas_bacen_json",
+    "persist_operational_failure_state": true,
+    "preserve_existing_artifact_bytes": true,
+    "write_static_fallback": false,
+    "refresh_generated_at_without_new_observation": false
+  },
+  "persistence": {
+    "runtime_root": "evidence/source-runtime-v1",
+    "snapshots": "retain_all_unique_sha256",
+    "candidates": "retain_all_unique_sha256",
+    "state": "latest_materialized_state_plus_git_history",
+    "artifact_and_evidence_same_commit_on_success": true
+  },
+  "scope_boundary": {
+    "financial_reference_is_not_legal_rule_authority": true,
+    "semantic_diff": "phase5",
+    "consumer_migration": "phase6"
+  }
+}
