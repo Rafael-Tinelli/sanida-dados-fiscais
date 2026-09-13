@@ -1,306 +1,135 @@
-import os
-import re
-import json
-import time
-import datetime as dt
-from typing import Any, Dict, List, Optional, Tuple
-from ftplib import FTP
+from __future__ import annotations
 
-import requests
+import datetime as dt
+import json
+import os
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
+
+from sanida_fiscal.financial_artifact_v1 import (
+    FINANCIAL_ARTIFACT_SCHEMA_VERSION,
+    FinancialArtifactBoundaryError,
+    build_financial_reference_artifact,
+)
+from sanida_fiscal.financial_source_catalog_v1 import run_registered_financial_source_pipeline
 
 
 OUTPUT_FILE = "taxas_bacen.json"
+FINANCIAL_SOURCE_REGISTRY = Path("docs/financial-source-registry-v1.json")
+SOURCE_RUNTIME_ROOT = Path(os.getenv("SFA_SOURCE_RUNTIME_ROOT", ".source-runtime").strip())
+FINANCIAL_SOURCE_IDS = (
+    "BCB_SELIC_META_SGS_432",
+    "BCB_CDI_DAILY_SGS_12",
+)
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; SanidaTaxasBot/1.3; +https://sanida.com.br)",
-    "Accept": "application/json,text/plain,*/*",
-    "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Connection": "keep-alive",
-}
-
-SSLVERIFY = os.getenv("SFA_SSLVERIFY", "1").strip() not in ("0", "false", "False")
 TIMEOUT = int(os.getenv("SFA_TIMEOUT", "25").strip())
 RETRIES = int(os.getenv("SFA_RETRIES", "3").strip())
 
-# Mantido propositalmente como fallback estático por enquanto.
-FALLBACK_SELIC = 15.00
-FALLBACK_CDI = 14.90
+HEADERS = {
+    "User-Agent": "SanidaFiscaisBot/4.0 (+https://sanida.com.br)",
+    "Accept": "application/json",
+    "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.7",
+}
 
 
-def now_utc_iso() -> str:
-    return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-
-
-def round_tree(obj):
-    if isinstance(obj, dict):
-        return {k: round_tree(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [round_tree(v) for v in obj]
-    if isinstance(obj, float):
-        return round(obj, 6)
-    return obj
-
-
-def fetch(url: str) -> Tuple[bool, int, str]:
-    last_err = ""
-    for i in range(1, RETRIES + 1):
-        try:
-            r = requests.get(url, headers=HEADERS, timeout=TIMEOUT, verify=SSLVERIFY)
-            code = int(r.status_code)
-            if code == 200:
-                return True, code, r.text
-            if 500 <= code < 600:
-                last_err = f"http_{code}"
-                time.sleep(0.4 * i)
-                continue
-            return False, code, r.text[:500]
-        except Exception as e:
-            last_err = f"exc_{type(e).__name__}"
-            time.sleep(0.4 * i)
-            continue
-    return False, 0, last_err
-
-
-def fetch_json(url: str) -> Tuple[bool, int, Any]:
-    ok, code, body = fetch(url)
-    if not ok:
-        return False, code, body
-    try:
-        return True, code, json.loads(body)
-    except Exception:
-        return False, code, {"error": "invalid_json", "body_sample": body[:200]}
-
-
-def sgs_last(code: int) -> float:
-    url = f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.{code}/dados/ultimos/1?formato=json"
-    ok, http_code, data = fetch_json(url)
-    if not ok:
-        raise RuntimeError(f"BCB: falha SGS {code} (status={http_code})")
-    if not isinstance(data, list) or not data or "valor" not in data[0]:
-        raise RuntimeError(f"BCB: shape inválido SGS {code}")
-    v = str(data[0]["valor"]).replace(",", ".")
-    return float(v)
-
-
-def parse_b3_numeric_rate(raw: str) -> float:
-    """
-    Exemplo esperado:
-    000002320  -> 23,20%
-    000001465  -> 14,65%
-    """
-    text = (raw or "").strip()
-    m = re.search(r"(\d{7,9})", text)
-    if not m:
-        raise RuntimeError(f"B3 FTP: formato inesperado: {text[:120]!r}")
-
-    value = int(m.group(1)) / 100.0
-    if not (0 <= value <= 60):
-        raise RuntimeError(f"B3 FTP: CDI fora de faixa: {value}")
-
-    return round(value, 2)
-
-
-def ftp_read_text(host: str, path: str, filename: str) -> str:
-    ftp = FTP()
-    ftp.connect(host=host, port=21, timeout=TIMEOUT)
-    ftp.login()
-    ftp.cwd(path)
-
-    chunks: List[bytes] = []
-    ftp.retrbinary(f"RETR {filename}", chunks.append)
-    ftp.quit()
-
-    return b"".join(chunks).decode("latin-1", errors="ignore").strip()
-
-
-def fetch_b3_cdi_ftp() -> Dict[str, Any]:
-    host = "ftp.cetip.com.br"
-
-    def read_file(ftp: FTP, path: str, filename: str) -> str:
-        ftp.cwd(path)
-        chunks: List[bytes] = []
-        ftp.retrbinary(f"RETR {filename}", chunks.append)
-        return b"".join(chunks).decode("latin-1", errors="ignore").strip()
-
-    last_exc = None
-
-    candidate_paths = ["/", "/MediaCDI"]
-
-    candidate_files: List[str] = []
-    for days_back in range(0, 15):
-        target_date = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days_back)).date()
-        candidate_files.append(target_date.strftime("%Y%m%d") + ".txt")
-
-    for path in candidate_paths:
-        for filename in candidate_files:
-            for i in range(1, RETRIES + 1):
-                try:
-                    ftp = FTP()
-                    ftp.connect(host=host, port=21, timeout=TIMEOUT)
-                    ftp.login()
-
-                    raw = read_file(ftp, path, filename)
-                    ftp.quit()
-
-                    if not raw:
-                        raise RuntimeError(f"B3 FTP: arquivo vazio em {path}{filename}")
-
-                    value = parse_b3_numeric_rate(raw)
-
-                    return {
-                        "value": value,
-                        "ftp_host": host,
-                        "ftp_path": path,
-                        "ftp_filename": filename,
-                        "raw_sample": raw[:120],
-                    }
-
-                except Exception as e:
-                    last_exc = e
-                    time.sleep(0.2 * i)
-                    continue
-
-    raise RuntimeError(f"B3 FTP: não consegui obter a Taxa DI Over ({last_exc})")
-
-
-def fetch_rates() -> Dict[str, Any]:
-    selic = sgs_last(432)
-    cdi_info = fetch_b3_cdi_ftp()
-
-    return {
-        "selic": round(selic, 2),
-        "cdi": round(float(cdi_info["value"]), 2),
-        "cdi_basis": "b3_ftp_taxa_di_txt_aa",
-        "sources": {
-            "selic": "sgs_432",
-            "cdi": "b3_ftp_taxa_di_txt",
-        },
-        "source_meta": {
-            "cdi_ftp_host": cdi_info["ftp_host"],
-            "cdi_ftp_path": cdi_info["ftp_path"],
-            "cdi_ftp_filename": cdi_info["ftp_filename"],
-            "cdi_raw_sample": cdi_info["raw_sample"],
-        },
-    }
+def now_utc() -> dt.datetime:
+    return dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
 
 
 def validate_payload(d: Dict[str, Any]) -> Tuple[bool, List[str]]:
     errs: List[str] = []
-
     if not isinstance(d, dict):
         return False, ["payload:not_dict"]
 
-    if "meta" not in d or not isinstance(d["meta"], dict):
+    if d.get("schema_version") != FINANCIAL_ARTIFACT_SCHEMA_VERSION:
+        errs.append("schema_version:unexpected")
+
+    meta = d.get("meta")
+    if not isinstance(meta, dict):
         errs.append("meta:missing_or_bad")
     else:
-        if not isinstance(d["meta"].get("generated_at_utc"), str):
+        if not isinstance(meta.get("generated_at_utc"), str):
             errs.append("meta.generated_at_utc:missing_or_bad")
+        sources = meta.get("sources")
+        if not isinstance(sources, dict):
+            errs.append("meta.sources:missing_or_bad")
+        else:
+            for key, source_id in (
+                ("selic", "BCB_SELIC_META_SGS_432"),
+                ("cdi", "BCB_CDI_DAILY_SGS_12"),
+            ):
+                item = sources.get(key)
+                if not isinstance(item, dict) or item.get("source_id") != source_id:
+                    errs.append(f"meta.sources.{key}:missing_or_bad")
 
     taxas = d.get("taxas")
     if not isinstance(taxas, dict):
         errs.append("taxas:missing_or_bad")
     else:
-        if not isinstance(taxas.get("selic"), (int, float)):
-            errs.append("taxas.selic:missing_or_bad")
-        if not isinstance(taxas.get("cdi"), (int, float)):
-            errs.append("taxas.cdi:missing_or_bad")
-
-        if isinstance(taxas.get("selic"), (int, float)) and not (0 <= taxas["selic"] <= 60):
-            errs.append("taxas.selic:out_of_range")
-        if isinstance(taxas.get("cdi"), (int, float)) and not (0 <= taxas["cdi"] <= 60):
-            errs.append("taxas.cdi:out_of_range")
+        for key in ("selic", "cdi"):
+            value = taxas.get(key)
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                errs.append(f"taxas.{key}:missing_or_bad")
+            elif not (0 <= value <= 60):
+                errs.append(f"taxas.{key}:out_of_range")
+        if taxas.get("cdi_basis") != "bcb_sgs_12_daily_compounded_252":
+            errs.append("taxas.cdi_basis:unexpected")
 
     return (len(errs) == 0), errs
 
 
-def read_existing() -> Optional[Dict[str, Any]]:
-    if not os.path.exists(OUTPUT_FILE):
-        return None
-    try:
-        with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return None
-
-
 def write_json_atomic(data: Dict[str, Any]) -> None:
-    tmp = OUTPUT_FILE + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-    os.replace(tmp, OUTPUT_FILE)
+    target = Path(OUTPUT_FILE)
+    tmp = target.with_suffix(target.suffix + ".tmp")
+    tmp.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    os.replace(tmp, target)
 
 
-def main():
-    existing = read_existing()
-    existing_ok = False
-    if isinstance(existing, dict):
-        existing_ok, _ = validate_payload(existing)
+def collect_financial_source_runs(observed_at_utc: dt.datetime):
+    runs = {}
+    for source_id in FINANCIAL_SOURCE_IDS:
+        runs[source_id] = run_registered_financial_source_pipeline(
+            source_id=source_id,
+            observed_at_utc=observed_at_utc,
+            registry_path=FINANCIAL_SOURCE_REGISTRY,
+            snapshot_root=SOURCE_RUNTIME_ROOT / "snapshots",
+            state_root=SOURCE_RUNTIME_ROOT / "state",
+            candidate_root=SOURCE_RUNTIME_ROOT / "candidates",
+            timeout_seconds=float(TIMEOUT),
+            max_attempts=RETRIES,
+            headers=HEADERS,
+            # A new compatibility artifact requires current PARSED candidates.
+            # Prior state/304 may prove last-good evidence, but cannot refresh the
+            # artifact timestamp or relabel an old financial observation as current.
+            use_http_validators=False,
+        )
+    return runs
 
-    errors: List[str] = []
-    warnings: List[str] = []
-    sources: Dict[str, Any] = {}
+
+def main() -> None:
+    observed_at_utc = now_utc()
 
     try:
-        taxas = fetch_rates()
-
-        sources["selic"] = {"source": taxas["sources"]["selic"]}
-        sources["cdi"] = {
-            "source": taxas["sources"]["cdi"],
-            "ftp_host": taxas["source_meta"]["cdi_ftp_host"],
-            "ftp_path": taxas["source_meta"]["cdi_ftp_path"],
-            "ftp_filename": taxas["source_meta"]["cdi_ftp_filename"],
-            "raw_sample": taxas["source_meta"]["cdi_raw_sample"],
-        }
-
-        payload = {
-            "schema_version": "1.3.0",
-            "meta": {
-                "generated_at_utc": now_utc_iso(),
-                "sources": sources,
-                "errors": [],
-                "warnings": [],
-            },
-            "taxas": {
-                "selic": float(taxas["selic"]),
-                "cdi": float(taxas["cdi"]),
-                "cdi_basis": taxas.get("cdi_basis"),
-            },
-        }
-
-        payload = round_tree(payload)
-        ok, verrs = validate_payload(payload)
-
-        if ok:
-            write_json_atomic(payload)
-            print("OK: taxas_bacen.json atualizado.")
-            return
-
-        errors.extend(verrs)
-    except Exception as e:
-        errors.append(str(e))
-
-    if existing_ok:
-        print("WARN: coleta falhou, mantendo last-good (nenhuma alteração no JSON).")
-        print("Erros:", errors)
-        return
-
-    fallback_payload = {
-        "schema_version": "1.3.0",
-        "meta": {
-            "generated_at_utc": now_utc_iso(),
-            "sources": sources,
-            "errors": errors,
-            "warnings": warnings + ["minimal_fallback_written", "static_reference_values"],
-        },
-        "taxas": {
-            "selic": FALLBACK_SELIC,
-            "cdi": FALLBACK_CDI,
-            "cdi_basis": "fallback",
-        },
-    }
-
-    write_json_atomic(round_tree(fallback_payload))
-    print("WARN: sem last-good; escrevi fallback mínimo em taxas_bacen.json.")
+        runs = collect_financial_source_runs(observed_at_utc)
+        payload = build_financial_reference_artifact(
+            selic_run=runs["BCB_SELIC_META_SGS_432"],
+            cdi_run=runs["BCB_CDI_DAILY_SGS_12"],
+            generated_at_utc=observed_at_utc.isoformat().replace("+00:00", "Z"),
+        )
+        ok, errors = validate_payload(payload)
+        if not ok:
+            raise FinancialArtifactBoundaryError(
+                f"financial artifact validation failed: {errors}"
+            )
+        write_json_atomic(payload)
+        print("OK: taxas_bacen.json atualizado via BCB SGS 432 + SGS 12.")
+    except Exception as exc:
+        print("ERRO: referência financeira não atualizada; taxas_bacen.json permanece inalterado.")
+        print("Erro:", str(exc))
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
