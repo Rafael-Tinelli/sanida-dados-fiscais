@@ -345,35 +345,47 @@ Esses dados podem permanecer no mesmo repositório, mas não devem compartilhar 
 
 ## 9. Contrato Fiscal Canônico v1
 
-A primeira grande entrega deste remake será a especificação e implementação do **Contrato Fiscal Canônico v1**.
+A **Fase 2 está em andamento** e o primeiro corte executável do Contrato Fiscal Canônico v1 já foi materializado. A especificação detalhada da fase está em `docs/phase2-contract-v1.md`.
 
-Cada regra deverá ser capaz de expressar, conforme aplicável:
+O contrato possui duas representações sincronizadas:
 
-- `rule_id` estável;
-- versão do schema;
-- jurisdição;
+- modelos Pydantic v2 em `sanida_fiscal/types_v1.py` e `sanida_fiscal/contract_v1.py`;
+- JSON Schema público gerado deterministicamente em `contracts/fiscal-contract-v1.schema.json`.
+
+Cada regra é representada por `FiscalRuleV1` e expressa, conforme aplicável:
+
+- `rule_id` e `rule_version`;
 - domínio;
-- descrição técnica;
-- variável/objeto jurídico ao qual se aplica;
-- dependências;
-- ordem de cálculo;
-- parâmetros;
-- unidade;
-- regras de arredondamento;
-- vigência inicial;
-- vigência final;
-- competência;
-- fonte normativa;
-- fonte operacional;
-- exemplos oficiais associados;
-- método de extração;
-- hash/snapshot da fonte;
-- data da última verificação;
+- consumidores e contextos explícitos de apuração;
+- target semântico (`applies_to`);
+- predicados de aplicabilidade;
+- dependências e ordem de cálculo;
+- política de competência e janela de vigência;
+- política de arredondamento;
+- payload tipado;
+- proveniência;
 - estado de qualidade;
-- política de atualização;
-- classificação da última mudança.
+- classe da mudança;
+- política de atualização.
 
-O schema definitivo ainda será desenhado. Esta seção descreve requisitos, não uma estrutura já congelada.
+O checkpoint de cobertura integral está documentado em `docs/contract-coverage-v1.json` e `docs/phase2-schema-coverage.md`. As **32 regras** do inventário da Fase 1 estão mapeadas para **18 famílias tipadas de payload**, e o exemplo `CANDIDATE` materializa ao menos uma regra de cada família. O CI exige cobertura exata 32/32 e igualdade entre as famílias usadas pelo mapa e a união admitida pelo schema. Nova família de payload é mudança estrutural do schema.
+
+Um exemplo `CANDIDATE` vive em `contracts/examples/fiscal-contract-v1.example.json`. Ele **não é release de produção**: releases `VALIDATED`/`PUBLISHED` exigem evidência oficial disponível com hash de snapshot por regra. Snapshots reais pertencem à camada de fontes da Fase 4.
+
+Os gates atuais já rejeitam, entre outras situações:
+
+- regra fora da vigência ou seleção ambígua;
+- sobreposição do mesmo `rule_id` no mesmo contexto;
+- dependência inexistente;
+- regra estrutural com autopublicação;
+- regra estrutural validada sem revisão humana;
+- `last-good` expirado, não validado ou com sucessora conhecida;
+- tentativa de relabelar dado histórico como corrente;
+- regressão do target semântico de A01;
+- fusão indevida entre principal e terço do abono;
+- expansão silenciosa do escopo de H29.
+
+O schema v1 ainda está sob validação da Fase 2; alterações estruturais continuam permitidas nesta branch até o fechamento formal da fase, sempre acompanhadas de testes e atualização deste README.
 
 ---
 
@@ -634,7 +646,7 @@ Artefatos de fechamento:
 
 ### Fase 2 — Contrato Fiscal Canônico v1
 
-**Status: PENDENTE**
+**Status: EM ANDAMENTO**
 
 Objetivos:
 
@@ -643,6 +655,33 @@ Objetivos:
 - definir estados de qualidade e mudança;
 - definir política de `last-good`;
 - definir proveniência.
+
+Primeiro corte executável:
+
+- `sanida_fiscal/types_v1.py`;
+- `sanida_fiscal/contract_v1.py`;
+- `contracts/fiscal-contract-v1.schema.json`;
+- `contracts/examples/fiscal-contract-v1.example.json`;
+- `scripts/generate_contract_schema.py`;
+- `scripts/validate_contract_v1.py`;
+- `tests/test_contract_v1.py`;
+- `docs/phase2-contract-v1.md`;
+- `requirements-contract.txt`;
+- `requirements-dev.txt`.
+
+Estado atual do CI:
+
+- geração/validação determinística do schema: ativa;
+- cobertura do `rule-inventory-v1.json`: **32/32**;
+- famílias tipadas de payload: **18/18 materializadas no CANDIDATE**;
+- validação cruzada com source registry, rule inventory, coverage map e reference cases: ativa;
+- proveniência, competência e lifecycle de release possuem gates negativos;
+- suíte de contrato no checkpoint de cobertura: **43 testes verdes** em `Remake CI`.
+
+Artefatos adicionais do checkpoint:
+
+- `docs/contract-coverage-v1.json`;
+- `docs/phase2-schema-coverage.md`.
 
 ### Fase 3 — Biblioteca fiscal e testes
 
@@ -732,37 +771,33 @@ Objetivos:
 
 ## 19. Questões em aberto
 
-Após o fechamento da Fase 1, as questões remanescentes são de **design de software e operação**, não lacunas jurídicas P0 do inventário:
+Após o fechamento da Fase 1, as questões remanescentes são de **design de software e operação**, não lacunas jurídicas P0 do inventário. A Fase 2 já fechou a expressividade do schema para as 32 regras, com 18 famílias tipadas, e endureceu proveniência, competência e lifecycle. Permanecem em aberto:
 
-- composição exata das classes Pydantic do Contrato Fiscal Canônico v1;
-- `$id`, modularização e compatibilidade dos JSON Schemas;
-- organização física dos contratos por regra, domínio e competência;
-- política exata de retenção e hash de snapshots;
+- política definitiva de versionamento entre `schema_version`, `contract_api_version`, `rule_version` e `release_id`;
+- compatibilidade backward/forward e critérios objetivos para major/minor/patch;
+- imutabilidade, supersessão e organização física das releases canônicas;
+- revisão final de campos que ainda poderiam exigir inferência do consumidor;
+- política exata de retenção de snapshots na futura camada de fontes;
 - critérios de confirmação multi-fonte para mudanças paramétricas;
-- política de versionamento de schema e release;
-- mecanismo de semantic diff;
-- mecanismo de distribuição para WordPress/SFA;
-- política temporal específica de `last-good` por domínio/regra;
-- estratégia de compatibilidade durante a migração dos consumidores;
+- mecanismo de semantic diff — Fase 5;
+- mecanismo de distribuição para WordPress/SFA — Fase 6;
 - estratégia final para CDI dentro do domínio separado de dados financeiros/de referência.
 
 ---
 
 ## 20. Próxima etapa
 
-Iniciar a **Fase 2 — Contrato Fiscal Canônico v1**.
+Continuar a **Fase 2 — Contrato Fiscal Canônico v1** pela rodada final de estabilidade do contrato.
 
-A especificação jurídica de entrada está congelada em `docs/phase1-closure.md`, `docs/rule-inventory-v1.json` e `docs/source-registry-v1.json`. A Fase 2 deverá transformar essa base em:
+A cobertura de expressividade já está fechada: **32/32 regras**, **18 famílias tipadas**, proveniência/competência/lifecycle endurecidos e testes negativos ativos. As próximas entregas dentro da própria Fase 2 são:
 
-- modelos Pydantic tipados;
-- JSON Schema público e versionado;
-- invariantes de vigência, qualidade e proveniência;
-- seleção de regra por competência/contexto;
-- política de `last-good`;
-- classificação de mudanças;
-- vínculos entre `rule_id`, fonte oficial e casos de referência.
+- congelar a política de versionamento (`schema_version`, `contract_api_version`, `rule_version`, `release_id`);
+- definir regras de compatibilidade backward/forward;
+- fechar imutabilidade e supersessão de releases;
+- revisar se resta qualquer campo semântico que force inferência do consumidor;
+- documentar o handoff formal para a Fase 3.
 
-O pipeline de produção ainda não deve ser migrado antes de o Contrato v1 e seus gates estarem executáveis.
+O pipeline de produção continua congelado: `scraper.py`, `update_taxas.py`, `dados_fiscais.json`, `taxas_bacen.json` e os consumidores não serão migrados antes do fechamento do Contrato v1.
 
 ---
 
@@ -781,6 +816,30 @@ Uma fase só deve ser marcada como `CONCLUÍDA` quando seus critérios de conclu
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-13 — checkpoint 32/32 da Fase 2
+
+- percorrido integralmente o `rule-inventory-v1.json`;
+- mapeadas **32/32 regras** para famílias expressáveis pelo Contrato v1;
+- ampliado o schema para **18 famílias de payload**;
+- criado `docs/contract-coverage-v1.json` como gate machine-readable de cobertura;
+- criado `docs/phase2-schema-coverage.md` como documentação humana do checkpoint;
+- proveniência endurecida com método de obtenção, consistência parser/versão e regras de snapshot;
+- competência endurecida com overrides tipados por contexto;
+- lifecycle de release endurecido para `DRAFT`, `CANDIDATE`, `VALIDATED`, `PUBLISHED`, `SUPERSEDED` e `BLOCKED`;
+- ampliada a suíte negativa; checkpoint validado com **43 testes verdes**;
+- próxima etapa reduzida à rodada final de versionamento, compatibilidade, imutabilidade/supersessão e handoff para a Fase 3.
+
+### 2026-09-13 — início da Fase 2
+
+- Fase 2 marcada como `EM ANDAMENTO`;
+- criada branch `refactor/fiscal-contract-v1` a partir do merge da Fase 1;
+- materializados modelos Pydantic v2 e JSON Schema determinístico do Contrato Fiscal Canônico v1;
+- criado exemplo `CANDIDATE` sem fingir release de produção;
+- implementadas invariantes de vigência, qualidade, proveniência, mudança estrutural e `last-good`;
+- preservadas como gates executáveis A01, separação do abono e escopo H29;
+- CI ampliado para validar schema, contrato e suíte de testes;
+- documentação detalhada da fase criada em `docs/phase2-contract-v1.md`.
 
 ### 2026-09-13 — fechamento da Fase 1
 
