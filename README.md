@@ -449,11 +449,11 @@ A adoção será incremental, evitando refatoração big-bang.
 
 ### HTTP e resiliência
 
-Planejado:
+Em implementação na Fase 4:
 
-- HTTPX ou cliente HTTP equivalente com timeouts explícitos;
-- Tenacity para retry/backoff seletivo;
-- VCR.py ou mecanismo equivalente para reproduzir respostas oficiais em testes.
+- HTTPX com timeouts explícitos já integra a nova camada de fontes;
+- retry é seletivo e tipado por classe de falha no primeiro checkpoint;
+- VCR.py ou mecanismo equivalente poderá ser adicionado quando parsers reais de fontes externas forem materializados.
 
 ### Princípio de dependência
 
@@ -496,7 +496,7 @@ O projeto deverá preservar evidência suficiente para responder posteriormente:
 - qual release foi promovida;
 - quais consumidores receberam essa release.
 
-A arquitetura exata de retenção será definida durante a implementação para evitar crescimento desnecessário do repositório.
+Na Fase 4, a identidade mínima do snapshot bruto passa a ser `source_id + sha256(raw_bytes)`, com caminho content-addressed e verificação de integridade na leitura. A política final de retenção/backend continua em aberto para não acoplar a semântica de snapshot a um único meio de armazenamento.
 
 ---
 
@@ -748,7 +748,7 @@ Critério de conclusão atendido:
 
 ### Fase 4 — Fontes e sensores
 
-**Status: PENDENTE**
+**Status: EM ANDAMENTO**
 
 Objetivos:
 
@@ -757,6 +757,17 @@ Objetivos:
 - preservar snapshots necessários;
 - melhorar retry/timeouts;
 - implementar detecção de alterações e falhas.
+
+Primeiro checkpoint executável:
+
+- `docs/phase4-collection-surface-v1.json` inventaria os caminhos legados de IRRF, INSS, Selic, CDI e o artefato interno de taxas;
+- `sanida_fiscal/sources_v1.py` separa `SourceSpec`, `HttpCollectorV1`, `RawSnapshot`, `SnapshotStore`, parser e `NormalizedSourceCandidate`;
+- snapshots são content-addressed por SHA-256 e verificados na leitura;
+- `SOURCE_UNAVAILABLE` fica distinto de `PARSER_INCOMPATIBLE`;
+- timeout, erro de rede, 4xx e falha transitória 429/5xx possuem estados operacionais explícitos;
+- `scripts/validate_phase4_foundation.py` torna a fundação verificável no `Remake CI`;
+- suíte integral chega a **160 testes verdes** no primeiro checkpoint;
+- o legado de produção permanece intacto neste checkpoint.
 
 ### Fase 5 — Diff semântico e gates de publicação
 
@@ -828,6 +839,7 @@ Objetivos:
 28. A memória comum de cálculo é um envelope de representação/auditoria, não uma rules engine nem uma fusão semântica. Bases e identidades de mensal, 13º, férias e rescisão permanecem separadas; composições usam memórias-filhas.
 29. O fechamento da Fase 3 exige, no mesmo head, validação do repositório, Contrato Fiscal Canônico, suíte integral, `scripts/validate_phase3_gate.py`, documentação sincronizada e ausência de helpers/workflows temporários.
 30. A Fase 3 foi formalmente encerrada depois de revisão dos sete critérios do gate; qualquer reabertura da biblioteca deverá decorrer de defeito objetivo ou exigência explícita de uma fase posterior, não de redesign oportunista.
+31. Na Fase 4, coleta e interpretação são etapas distintas: bytes brutos são preservados e identificados por SHA-256 antes de qualquer parser; indisponibilidade da fonte e incompatibilidade do parser nunca são o mesmo estado.
 
 ---
 
@@ -836,6 +848,7 @@ Objetivos:
 As Fases 1, 2 e 3 estão formalmente concluídas. Se a implementação posterior revelar uma lacuna semântica objetiva, o processo exige emenda explícita e versionada do contrato em vez de hardcode no engine. A primeira ocorrência foi A02, corrigida na Fase 3 como Contrato v1.1. As questões abertas restantes pertencem às fases posteriores:
 
 - política exata de retenção de snapshots e resiliência das fontes — Fase 4;
+- estado operacional persistente entre execuções (ETag/Last-Modified, última observação e falha corrente) — Fase 4;
 - critérios de confirmação multi-fonte para mudanças paramétricas — Fase 4/5;
 - mecanismo de semantic diff e promoção — Fase 5;
 - distribuição para WordPress/SFA e migração dos consumidores — Fase 6;
@@ -845,9 +858,9 @@ As Fases 1, 2 e 3 estão formalmente concluídas. Se a implementação posterior
 
 ## 20. Próxima etapa
 
-Iniciar a **Fase 4 — Fontes e sensores** sobre o contrato e a biblioteca fiscal já fechados.
+Continuar a **Fase 4 — Fontes e sensores** sobre a fundação já materializada.
 
-O primeiro checkpoint da Fase 4 deverá inventariar a superfície atual de coleta e desenhar a separação concreta entre **collector → raw snapshot imutável → parser → candidato normalizado**, incluindo estados de indisponibilidade, timeout/retry e proveniência. A fase deve priorizar fonte oficial estruturada quando houver e não deve antecipar semantic diff/publicação da Fase 5 nem migração de consumidores da Fase 6.
+Próximo checkpoint: executar o primeiro pipeline real **collector → raw snapshot imutável → parser → candidato normalizado** sobre uma fonte oficial estável, preservando proveniência e estado operacional entre execuções. Em seguida, desacoplar RFB/INSS do fetch legado. Semantic diff, promoção e publicação continuam reservados à Fase 5.
 
 Qualquer necessidade de reinterpretar regra jurídica ou alterar a biblioteca da Fase 3 deve voltar explicitamente ao contrato/inventário com evidência concreta, não ser resolvida silenciosamente dentro de collector ou parser.
 
@@ -870,6 +883,17 @@ Uma fase só deve ser marcada como `CONCLUÍDA` quando seus critérios de conclu
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-13 — início da Fase 4
+
+- Fase 4 marcada como `EM ANDAMENTO`;
+- inventariada a superfície legada de coleta em `docs/phase4-collection-surface-v1.json`;
+- criada a separação operacional `collector → raw snapshot → parser → normalized source candidate`;
+- snapshots passam a ter identidade content-addressed por SHA-256 e verificação de integridade;
+- `SOURCE_UNAVAILABLE` e `PARSER_INCOMPATIBLE` passam a ser estados distintos;
+- HTTPX entra apenas na nova camada de fontes, sem migrar ainda os scripts de produção;
+- criado `scripts/validate_phase4_foundation.py` como gate permanente do primeiro checkpoint;
+- suíte integral chega a **160 testes verdes**.
 
 ### 2026-09-13 — fechamento formal da Fase 3
 
