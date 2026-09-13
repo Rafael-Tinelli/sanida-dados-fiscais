@@ -1,3 +1,4 @@
 -r requirements-contract.txt
+-r requirements-sources.txt
 pytest>=8.4,<9
 hypothesis>=6.138,<7
