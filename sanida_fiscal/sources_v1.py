@@ -335,7 +335,14 @@ def load_source_registry(path: Path) -> dict[str, SourceSpec]:
 
     registry: dict[str, SourceSpec] = {}
     for item in sources:
-        spec = SourceSpec.model_validate(item)
+        if not isinstance(item, dict):
+            raise ValueError("source registry entries must be objects")
+        spec = SourceSpec(
+            source_id=item.get("source_id"),
+            url=item.get("url"),
+            role=item.get("role"),
+            machine_readability=item.get("machine_readability"),
+        )
         if spec.source_id in registry:
             raise ValueError(f"duplicate source_id: {spec.source_id}")
         registry[spec.source_id] = spec
