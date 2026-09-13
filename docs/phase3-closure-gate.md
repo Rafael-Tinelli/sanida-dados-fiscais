@@ -98,11 +98,15 @@ Esses limites não impedem o gate enquanto o engine os rejeitar ou os mantiver e
 
 ## Evidência executável do checkpoint
 
-A sequência de validação do checkpoint estabeleceu três marcos técnicos:
+A sequência de validação do checkpoint estabeleceu marcos técnicos reproduzíveis. O run mais recente antes deste registro documental é o `Remake CI` **34775715471**, que validou o head `f7bfec2899d43de90780946311e0d1ada4870b0d` com:
 
-- `Remake CI` **34775296512**: primeiro run com o gate integrado e todas as novas invariantes, com validação do repositório, Contrato Fiscal Canônico v1.1, 21 regras no `CANDIDATE`, cobertura 32/32, 18/18 famílias, **150 testes** e `Phase 3 closure gate: PASS`;
-- `Remake CI` **34775483791**: repetição integral depois da sincronização do README/`docs/phase3-library-v1.md` e remoção dos helpers temporários, novamente com **150 testes** e gate em `PASS`;
-- `Remake CI` **34775674917**: validação do head `1ca86ce1aa9c3ec0b459c4054563d376e12721e5`, novamente com repository/contract em `PASS`, **150 testes** e `Phase 3 closure gate: PASS`.
+- validação do repositório: `PASS`;
+- Contrato Fiscal Canônico v1.1: `PASS`;
+- `CANDIDATE`: 21 regras;
+- inventário: 32/32;
+- famílias de payload: 18/18;
+- suíte integral: **150 testes verdes**;
+- `scripts/validate_phase3_gate.py`: `PASS`.
 
 Não houve alteração de produção nem migração de consumidores neste checkpoint.
 
