@@ -121,9 +121,10 @@ def test_common_memory_serialization_is_deterministic_and_json_safe() -> None:
 
     first = json.dumps(memory.to_dict(), ensure_ascii=False, separators=(",", ":"))
     second = json.dumps(memory.to_dict(), ensure_ascii=False, separators=(",", ":"))
+    parsed = json.loads(first)
     assert first == second
-    assert '"value":"10.00"' in first
-    assert "10.0" not in first
+    assert parsed["facts"][0]["value"] == "10.00"
+    assert isinstance(parsed["facts"][0]["value"], str)
 
 
 def test_common_memory_rejects_duplicate_fact_keys() -> None:
