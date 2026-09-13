@@ -4,6 +4,11 @@ import json
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from sanida_fiscal.contract_v1 import FiscalContractV1
 from sanida_fiscal.engine_v1 import (
@@ -32,7 +37,6 @@ from sanida_fiscal.vacation_v1 import (
     select_vacation_rule_bundle,
 )
 
-ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE = ROOT / "contracts" / "examples" / "fiscal-contract-v1.example.json"
 
 REQUIRED_PHASE3_FILES = {
