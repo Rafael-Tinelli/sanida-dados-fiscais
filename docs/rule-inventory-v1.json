@@ -1,0 +1,414 @@
+{
+  "schema_version": "1.0.0",
+  "status": "phase1_closed",
+  "as_of": "2026-09-13",
+  "scope": ["H26", "H27", "H28", "H29"],
+  "contract_entry_policy": {
+    "structural_rules_require_human_review": true,
+    "parameter_changes_may_auto_publish_after_validation": true,
+    "missing_or_unvalidated_data_must_not_become_zero": true,
+    "historical_data_must_not_be_relabelled_as_current": true,
+    "money_representation": "decimal",
+    "consumer_must_validate_vigency_and_quality": true
+  },
+  "rules": [
+    {
+      "rule_id": "inss.employee.progressive_table",
+      "calculators": ["H26", "H27", "H28", "H29"],
+      "rule_class": "parameterizable_rule",
+      "applies_to": "employee_social_security_contribution_base",
+      "source_ids": ["INSS_TABLE_2026"],
+      "phase1_status": "closed",
+      "current_state": "implemented_without_strong_contract",
+      "decision": "Preservar cálculo progressivo por faixas, mas tornar vigência, competência, teto e proveniência obrigatórios no Contrato v1.",
+      "auto_publish": "parameter_change_only_after_validation"
+    },
+    {
+      "rule_id": "irrf.monthly.progressive_table",
+      "calculators": ["H26", "H28", "H29"],
+      "rule_class": "parameterizable_rule",
+      "applies_to": "irrf_tax_base_after_allowed_deductions",
+      "source_ids": ["RFB_IRRF_TABLE_2026", "RFB_IN_1500_2014"],
+      "phase1_status": "closed",
+      "current_state": "implemented_without_vigency_gate",
+      "decision": "Tabela e deduções são um estágio distinto do rendimento tributável usado pelo redutor.",
+      "auto_publish": "parameter_change_only_after_validation"
+    },
+    {
+      "rule_id": "irrf.dependent_deduction",
+      "calculators": ["H26", "H27", "H28", "H29"],
+      "rule_class": "parameter",
+      "applies_to": "legal_deductions_for_matching_income_type",
+      "source_ids": ["RFB_IRRF_TABLE_2026", "ESOCIAL_TABLES_S13_NT07_2026"],
+      "phase1_status": "closed",
+      "current_state": "implemented_as_untyped_value",
+      "decision": "Valor deve carregar vigência e ser aplicado na apuração correspondente ao tipo de rendimento.",
+      "auto_publish": "after_validation"
+    },
+    {
+      "rule_id": "irrf.simplified_monthly_discount",
+      "calculators": ["H26", "H27", "H28", "H29"],
+      "rule_class": "parameterizable_rule",
+      "applies_to": "deduction_choice_within_each_irrf_assessment",
+      "source_ids": ["RFB_IRRF_TABLE_2026", "RFB_IN_1500_2014", "ESOCIAL_TABLES_S13_NT07_2026"],
+      "phase1_status": "closed",
+      "current_state": "partially_implemented",
+      "decision": "Comparar desconto simplificado e deduções legais separadamente nas apurações mensal, férias e 13º; nunca compartilhar uma dedução entre apurações.",
+      "auto_publish": "parameter_change_only_after_validation"
+    },
+    {
+      "rule_id": "irrf.deductions_by_income_type",
+      "calculators": ["H26", "H27", "H28", "H29"],
+      "rule_class": "structural_rule",
+      "applies_to": "monthly_or_thirteenth_or_vacation_irrf_assessment",
+      "source_ids": ["RFB_IN_1500_2014", "ESOCIAL_TABLES_S13_NT07_2026"],
+      "phase1_status": "closed",
+      "current_state": "defect_or_scope_limitation",
+      "decision": "Previdência, pensão e demais deduções precisam ser tipadas por apuração. H29 não pode zerar automaticamente pensão do 13º se o cenário admitir dedução correspondente.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "irrf.reduction.2026",
+      "calculators": ["H26", "H28", "H29"],
+      "rule_class": "parameterizable_rule",
+      "applies_to": "taxable_income_subject_to_monthly_incidence_before_irrf_deductions",
+      "source_ids": ["PLANALTO_LEI_15270_2025", "RFB_IRRF_TABLE_2026", "RFB_IRRF_EXAMPLES_2026", "RFB_IN_1500_2014"],
+      "phase1_status": "closed",
+      "current_state": "defect_A01",
+      "decision": "O redutor usa o rendimento tributável sujeito à incidência mensal, não a base de IR após INSS/dependentes/pensão/desconto simplificado.",
+      "auto_publish": "parameters_only_if_semantics_unchanged"
+    },
+    {
+      "rule_id": "irrf.income_type",
+      "calculators": ["H26", "H27", "H28", "H29"],
+      "rule_class": "structural_rule",
+      "applies_to": "irrf_assessment_context",
+      "source_ids": ["ESOCIAL_TABLES_S13_NT07_2026"],
+      "phase1_status": "closed",
+      "current_state": "missing",
+      "decision": "Contrato v1 deve distinguir explicitamente pelo menos monthly, thirteenth e vacation. Função IR totalmente genérica sem contexto não é aceita.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "thirteenth.accrual.twelfths",
+      "calculators": ["H27", "H29"],
+      "rule_class": "structural_rule",
+      "applies_to": "thirteenth_entitlement",
+      "source_ids": ["PLANALTO_LEI_4090_1962", "PLANALTO_DECRETO_10854_2021"],
+      "phase1_status": "closed",
+      "current_state": "basic_logic_present",
+      "decision": "1/12 por mês; fração igual ou superior a 15 dias conta como mês integral para o direito anual/rescisório.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "thirteenth.reference_remuneration",
+      "calculators": ["H27", "H29"],
+      "rule_class": "structural_rule",
+      "applies_to": "thirteenth_gross_reference",
+      "source_ids": ["PLANALTO_DECRETO_10854_2021", "MTE_TERMINATION_FAQ"],
+      "phase1_status": "closed",
+      "current_state": "partial",
+      "decision": "13º anual usa remuneração de dezembro; 13º rescisório usa remuneração do mês da extinção, dentro da modalidade suportada.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "thirteenth.variable_remuneration",
+      "calculators": ["H27", "H29"],
+      "rule_class": "structural_rule",
+      "applies_to": "variable_component_of_thirteenth",
+      "source_ids": ["PLANALTO_DECRETO_10854_2021"],
+      "phase1_status": "closed",
+      "current_state": "current_ui_is_approximation",
+      "decision": "Contrato v1 modelará a regra normativa: valores variáveis devidos até novembro entram na apuração prevista no art. 77 e dezembro provoca revisão até 10 de janeiro. Compatibilidade com uma média pré-calculada só pode existir como entrada externa explicitamente marcada, não como cálculo canônico.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "thirteenth.advance",
+      "calculators": ["H27"],
+      "rule_class": "structural_rule",
+      "applies_to": "first_installment_of_thirteenth",
+      "source_ids": ["PLANALTO_LEI_4749_1965", "PLANALTO_DECRETO_10854_2021"],
+      "phase1_status": "closed",
+      "current_state": "oversimplified",
+      "decision": "Remover a equivalência universal `total13 * 0.5`. O adiantamento depende do salário do mês anterior, do mês de pagamento, de admissão/disponibilidade no ano e de regra própria para remuneração variável.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "thirteenth.inss.separate_assessment",
+      "calculators": ["H27", "H29"],
+      "rule_class": "structural_rule",
+      "applies_to": "thirteenth_social_security_assessment",
+      "source_ids": ["INSS_TABLE_2026", "ESOCIAL_WEB_MEI_2026"],
+      "phase1_status": "closed",
+      "current_state": "implemented",
+      "decision": "Manter apuração previdenciária do 13º separada da remuneração mensal.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "thirteenth.irrf.exclusive_assessment",
+      "calculators": ["H27", "H29"],
+      "rule_class": "structural_rule",
+      "applies_to": "thirteenth_irrf_assessment",
+      "source_ids": ["RFB_IN_1500_2014", "ESOCIAL_TABLES_S13_NT07_2026"],
+      "phase1_status": "closed",
+      "current_state": "partial",
+      "decision": "13º é uma apuração própria de IR e deve receber deduções correspondentes ao 13º.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "thirteenth.irrf.reduction.2026",
+      "calculators": ["H27", "H29"],
+      "rule_class": "parameterizable_rule",
+      "applies_to": "thirteenth_taxable_income_before_irrf_deductions",
+      "source_ids": ["PLANALTO_LEI_15270_2025"],
+      "phase1_status": "closed",
+      "current_state": "defect_shared_with_A01",
+      "decision": "A Lei 15.270/2025 determina expressamente aplicação da redução ao IR exclusivo do 13º; o target semântico permanece o rendimento do 13º antes das deduções do IR.",
+      "auto_publish": "parameters_only_if_semantics_unchanged"
+    },
+    {
+      "rule_id": "vacation.acquisition_period",
+      "calculators": ["H28", "H29"],
+      "rule_class": "structural_rule",
+      "applies_to": "vacation_entitlement_period",
+      "source_ids": ["PLANALTO_CLT"],
+      "phase1_status": "closed",
+      "current_state": "defect_A02_in_H29",
+      "decision": "Período aquisitivo é de 12 meses contado do vínculo e não reinicia em 1º de janeiro.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "vacation.entitlement_days_by_absences",
+      "calculators": ["H28"],
+      "rule_class": "structural_rule",
+      "applies_to": "vacation_entitled_days",
+      "source_ids": ["PLANALTO_CLT"],
+      "phase1_status": "closed",
+      "current_state": "not_modeled",
+      "decision": "Contrato v1 representará as faixas do art. 130: até 5 faltas=30 dias; 6–14=24; 15–23=18; 24–32=12. O consumidor não deve tratar um seletor arbitrário de dias como sinônimo de direito adquirido.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "vacation.remuneration_and_constitutional_third",
+      "calculators": ["H28", "H29"],
+      "rule_class": "structural_rule",
+      "applies_to": "vacation_remuneration",
+      "source_ids": ["PLANALTO_CLT", "RFB_QA_IRPF_2026"],
+      "phase1_status": "closed",
+      "current_state": "basic_logic_present",
+      "decision": "Separar natureza `enjoyed` de `indemnified`; o terço acompanha a natureza e o tratamento tributário da verba correspondente, ressalvado o tratamento próprio do terço sobre abono.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "vacation.abono_pecuniario",
+      "calculators": ["H28"],
+      "rule_class": "structural_rule",
+      "applies_to": "vacation_entitled_days",
+      "source_ids": ["PLANALTO_CLT"],
+      "phase1_status": "closed",
+      "current_state": "defect",
+      "decision": "Abono é conversão de 1/3 do período de férias a que o trabalhador tem direito. Separar entitled_days, enjoyed_days e cash_allowance_days; nunca usar round(enjoyed_days/3).",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "vacation.abono.ir_exemption",
+      "calculators": ["H28"],
+      "rule_class": "structural_rule",
+      "applies_to": "cash_allowance_principal",
+      "source_ids": ["RFB_QA_IRPF_2026", "RFB_SC_209_2021", "ESOCIAL_SIMPLIFIED_ABONO_2026"],
+      "phase1_status": "closed",
+      "current_state": "implemented_only_if_component_split_is_correct",
+      "decision": "O principal do abono pecuniário do art. 143 é não tributável pelo IR e não integra CP.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "vacation.abono_constitutional_third.ir_incidence",
+      "calculators": ["H28"],
+      "rule_class": "structural_rule",
+      "applies_to": "constitutional_third_on_cash_allowance",
+      "source_ids": ["RFB_SC_209_2021", "ESOCIAL_SIMPLIFIED_ABONO_2026"],
+      "phase1_status": "closed",
+      "current_state": "new_P0_defect",
+      "decision": "O terço constitucional incidente sobre o abono pecuniário pago no curso do contrato sofre IR, embora não sofra contribuição previdenciária no tratamento operacional oficial consultado. H28 atual não pode colocar `abono + 1/3` inteiro fora do IR.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "vacation.irrf.separate_assessment",
+      "calculators": ["H28"],
+      "rule_class": "structural_rule",
+      "applies_to": "taxable_vacation_payment",
+      "source_ids": ["RFB_IN_1500_2014", "RFB_QA_IRPF_2026", "ESOCIAL_TABLES_S13_NT07_2026"],
+      "phase1_status": "closed",
+      "current_state": "partial",
+      "decision": "Férias gozadas são tributadas no mês do pagamento e em separado dos demais rendimentos; as deduções devem corresponder às férias.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "vacation.irrf.reduction.2026",
+      "calculators": ["H28"],
+      "rule_class": "parameterizable_rule",
+      "applies_to": "taxable_vacation_income_subject_to_separate_monthly_irrf_assessment_before_deductions",
+      "source_ids": ["PLANALTO_LEI_15270_2025", "RFB_IN_1500_2014", "RFB_QA_IRPF_2026", "ESOCIAL_TABLES_S13_NT07_2026"],
+      "phase1_status": "closed",
+      "current_state": "must_be_explicit_in_new_contract",
+      "decision": "A redução de 2026 integra a apuração de férias tributáveis porque a Lei alcança rendimentos tributáveis sujeitos à incidência mensal e a Receita trata férias com tabela/deduções mensais em apuração separada. Não há caso numérico oficial específico de férias localizado; a evidência é a ligação normativa direta.",
+      "evidence_level": "direct_normative_linkage_without_specific_worked_example",
+      "auto_publish": "parameters_only_if_semantics_unchanged"
+    },
+    {
+      "rule_id": "vacation.inss.enjoyed",
+      "calculators": ["H28"],
+      "rule_class": "structural_rule",
+      "applies_to": "enjoyed_vacation_and_constitutional_third",
+      "source_ids": ["RFB_CP_INCIDENCE_TABLE"],
+      "phase1_status": "closed",
+      "current_state": "basic_logic_present",
+      "decision": "Férias gozadas e respectivo terço integram a base previdenciária do empregado; férias indenizadas na rescisão não.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "termination.reason_scope",
+      "calculators": ["H29"],
+      "rule_class": "structural_rule",
+      "applies_to": "termination_entitlement_matrix",
+      "source_ids": ["ESOCIAL_TABLES_S13_NT07_2026", "ESOCIAL_WEB_MEI_2026", "MTE_TERMINATION_FAQ"],
+      "phase1_status": "closed",
+      "current_state": "critical_context_missing",
+      "decision": "H29 v1 suportará explicitamente apenas eSocial 01 (justa causa), 02 (sem justa causa), 07 (pedido de demissão) e 33 (acordo). Outros motivos ficam `UNSUPPORTED` até especificação própria.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "termination.partial_output_scope",
+      "calculators": ["H29"],
+      "rule_class": "product_scope_rule",
+      "applies_to": "termination_result_promise",
+      "source_ids": ["MTE_TERMINATION_FAQ"],
+      "phase1_status": "closed",
+      "current_state": "must_be_preserved_and_made_machine_readable",
+      "decision": "Enquanto aviso prévio, multa/saque do FGTS, seguro-desemprego, estabilidade, remuneração variável rescisória e verbas convencionais não forem implementados, H29 deve se declarar estimativa parcial e nunca `total da rescisão`.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "termination.salary_balance",
+      "calculators": ["H29"],
+      "rule_class": "structural_rule",
+      "applies_to": "monthly_employee_salary_balance",
+      "source_ids": ["ESOCIAL_WEB_MEI_2026", "MTE_TERMINATION_FAQ"],
+      "phase1_status": "closed",
+      "current_state": "ambiguous_ui",
+      "decision": "Não existe no Contrato v1 uma constante universal `divisor=30`. Para o escopo padrão de mensalista/quinzenalista, adotar o método operacional do eSocial: salário-base / dias totais do mês × dias considerados no desligamento. Regra contratual/CCT diferente só entra como override explícito com proveniência; horista/diarista/semanalista ficam fora do cálculo automático v1.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "termination.thirteenth_proportional",
+      "calculators": ["H29"],
+      "rule_class": "structural_rule",
+      "applies_to": "termination_thirteenth_entitlement",
+      "source_ids": ["PLANALTO_LEI_4090_1962", "PLANALTO_DECRETO_10854_2021", "MTE_TERMINATION_FAQ"],
+      "phase1_status": "closed",
+      "current_state": "partial",
+      "decision": "Devido nas modalidades suportadas 02, 07 e 33; não devido na modalidade 01. Avos seguem a regra aplicável do 13º e o mês da rescisão.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "termination.vacation_proportional",
+      "calculators": ["H29"],
+      "rule_class": "structural_rule",
+      "applies_to": "current_vacation_acquisition_period_at_termination",
+      "source_ids": ["PLANALTO_CLT", "MTE_TERMINATION_FAQ"],
+      "phase1_status": "closed",
+      "current_state": "defect_A02",
+      "decision": "Devida nas modalidades suportadas 02, 07 e 33 e não devida em 01; contar o período aquisitivo corrente, inclusive atravessando ano civil, com 1/12 por mês/fração legalmente qualificada.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "termination.acquired_and_overdue_vacation",
+      "calculators": ["H29"],
+      "rule_class": "structural_rule",
+      "applies_to": "completed_vacation_acquisition_periods",
+      "source_ids": ["PLANALTO_CLT", "MTE_TERMINATION_FAQ"],
+      "phase1_status": "closed",
+      "current_state": "oversimplified_checkbox",
+      "decision": "Contrato v1 deve distinguir período integral adquirido ainda no concessivo de período vencido fora do prazo concessivo e eventual dobra. Um booleano único não é suficiente para cobertura geral; a migração pode limitar-se a um período se isso estiver explícito.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "termination.vacation_indemnity_tax_treatment",
+      "calculators": ["H29"],
+      "rule_class": "structural_rule",
+      "applies_to": "indemnified_vacation_at_contract_end",
+      "source_ids": ["RFB_QA_IRPF_2026", "RFB_CP_INCIDENCE_TABLE"],
+      "phase1_status": "closed",
+      "current_state": "basic_logic_present",
+      "decision": "Férias não gozadas convertidas em pecúnia na extinção, inclusive proporcionais nos casos abrangidos pela orientação oficial, não recebem o tratamento de férias gozadas para IR/CP; natureza deve ser explícita por rubrica.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "technical.money_decimal_and_rounding",
+      "calculators": ["H26", "H27", "H28", "H29"],
+      "rule_class": "technical_contract_rule",
+      "applies_to": "all_monetary_operations",
+      "source_ids": ["RFB_IRRF_EXAMPLES_2026"],
+      "phase1_status": "closed_for_contract_design",
+      "current_state": "javascript_float",
+      "decision": "Contrato/engine v1 usará Decimal. Cada fórmula deverá declarar estágio e modo de quantização; casos oficiais serão autoridade para regressão. Não será criado um arredondamento universal silencioso.",
+      "auto_publish": "never_structural"
+    },
+    {
+      "rule_id": "technical.contract_vigency_and_quality",
+      "calculators": ["H26", "H27", "H28", "H29"],
+      "rule_class": "technical_contract_rule",
+      "applies_to": "contract_selection_and_consumer_gate",
+      "source_ids": [],
+      "phase1_status": "closed",
+      "current_state": "missing",
+      "decision": "effective_from/effective_until, competence, observed_at, source provenance e quality_status serão obrigatórios. Consumidor rejeita estado incompatível; `generated_at` não prova vigência.",
+      "auto_publish": "never_structural"
+    }
+  ],
+  "termination_v1_scope": {
+    "employment_basis": "monthly_or_fortnightly_employee",
+    "contract_type": "indefinite_term_only",
+    "supported_esocial_reasons": {
+      "01": {
+        "label": "just_cause_by_employer",
+        "salary_balance": true,
+        "thirteenth_proportional": false,
+        "vacation_proportional": false,
+        "acquired_or_overdue_vacation": true
+      },
+      "02": {
+        "label": "without_just_cause_by_employer",
+        "salary_balance": true,
+        "thirteenth_proportional": true,
+        "vacation_proportional": true,
+        "acquired_or_overdue_vacation": true
+      },
+      "07": {
+        "label": "resignation_by_employee",
+        "salary_balance": true,
+        "thirteenth_proportional": true,
+        "vacation_proportional": true,
+        "acquired_or_overdue_vacation": true
+      },
+      "33": {
+        "label": "mutual_agreement_art_484A",
+        "salary_balance": true,
+        "thirteenth_proportional": true,
+        "vacation_proportional": true,
+        "acquired_or_overdue_vacation": true
+      }
+    },
+    "explicitly_excluded_from_total": [
+      "notice_pay_or_notice_discount",
+      "fgts_termination_fine",
+      "fgts_withdrawal",
+      "unemployment_insurance",
+      "stability_indemnities",
+      "collective_bargaining_specific_items",
+      "fixed_term_contract_termination_rules",
+      "indirect_termination_without_judicially_resolved_context",
+      "variable_termination_items_not_explicitly_modeled"
+    ]
+  }
+}

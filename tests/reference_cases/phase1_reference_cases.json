@@ -1,0 +1,308 @@
+{
+  "schema_version": "1.0.0",
+  "status": "phase1_closed",
+  "as_of": "2026-09-13",
+  "cases": [
+    {
+      "case_id": "rfd_irrf_2026_salary_3036",
+      "source": "RFB_IRRF_EXAMPLES_2026",
+      "calculator_target": "H26",
+      "inputs": {
+        "taxable_income": "3036.00",
+        "official_social_security_deduction": "257.73"
+      },
+      "expected": {
+        "deduction_mode": "simplified",
+        "simplified_discount": "607.20",
+        "irrf_tax_base": "2428.80",
+        "pre_reduction_irrf": "0.00",
+        "final_irrf": "0.00"
+      }
+    },
+    {
+      "case_id": "rfd_irrf_2026_salary_4000",
+      "source": "RFB_IRRF_EXAMPLES_2026",
+      "calculator_target": "H26",
+      "inputs": {
+        "taxable_income": "4000.00",
+        "official_social_security_deduction": "373.41"
+      },
+      "expected": {
+        "deduction_mode": "simplified",
+        "irrf_tax_base": "3392.80",
+        "pre_reduction_irrf": "114.76",
+        "reduction_input_income": "4000.00",
+        "reduction_applied": "114.76",
+        "final_irrf": "0.00"
+      }
+    },
+    {
+      "case_id": "rfd_irrf_2026_salary_5000",
+      "source": "RFB_IRRF_EXAMPLES_2026",
+      "calculator_target": "H26",
+      "inputs": {
+        "taxable_income": "5000.00",
+        "official_social_security_deduction": "509.60"
+      },
+      "expected": {
+        "deduction_mode": "simplified",
+        "irrf_tax_base": "4392.80",
+        "pre_reduction_irrf": "312.89",
+        "reduction_input_income": "5000.00",
+        "reduction_applied": "312.89",
+        "final_irrf": "0.00"
+      }
+    },
+    {
+      "case_id": "rfd_irrf_2026_salary_6000_A01_regression",
+      "source": "RFB_IRRF_EXAMPLES_2026",
+      "calculator_target": "H26",
+      "inputs": {
+        "taxable_income": "6000.00",
+        "official_social_security_deduction": "649.60"
+      },
+      "expected": {
+        "deduction_mode": "legal",
+        "irrf_tax_base": "5350.40",
+        "pre_reduction_irrf": "562.63",
+        "reduction_input_income": "6000.00",
+        "reduction_applied": "179.75",
+        "final_irrf": "382.88"
+      },
+      "invariant": "reduction_input_income != irrf_tax_base"
+    },
+    {
+      "case_id": "rfd_irrf_2026_salary_7607_20_boundary_semantics",
+      "source": "RFB_IRRF_EXAMPLES_2026",
+      "calculator_target": "H26",
+      "inputs": {
+        "taxable_income": "7607.20"
+      },
+      "expected": {
+        "deduction_mode": "simplified",
+        "irrf_tax_base": "7000.00",
+        "pre_reduction_irrf": "1016.27",
+        "reduction_input_income": "7607.20",
+        "reduction_applied": "0.00",
+        "final_irrf": "1016.27"
+      },
+      "invariant": "reduction eligibility is based on taxable income, not post-deduction IRRF base"
+    },
+    {
+      "case_id": "thirteenth_accrual_14_days_no_avo",
+      "source": "PLANALTO_LEI_4090_1962",
+      "calculator_target": "H27",
+      "inputs": {
+        "qualifying_days_in_month": 14
+      },
+      "expected": {
+        "twelfths_for_month": 0
+      }
+    },
+    {
+      "case_id": "thirteenth_accrual_15_days_one_avo",
+      "source": "PLANALTO_LEI_4090_1962",
+      "calculator_target": "H27",
+      "inputs": {
+        "qualifying_days_in_month": 15
+      },
+      "expected": {
+        "twelfths_for_month": 1
+      }
+    },
+    {
+      "case_id": "thirteenth_fixed_advance_previous_month_4000",
+      "source": "PLANALTO_LEI_4749_1965",
+      "calculator_target": "H27",
+      "inputs": {
+        "previous_month_salary": "4000.00",
+        "variable_remuneration": false
+      },
+      "expected": {
+        "advance_reference_remuneration": "4000.00",
+        "advance_amount": "2000.00"
+      },
+      "notes": "Caso simples de remuneração fixa. Não substitui as regras próprias de admissão no ano ou remuneração variável."
+    },
+    {
+      "case_id": "vacation_period_cross_year_A02_regression",
+      "source": "PLANALTO_CLT",
+      "calculator_target": "H29",
+      "inputs": {
+        "admission_date": "2025-09-01",
+        "termination_date": "2026-03-31",
+        "notice_projection": false
+      },
+      "expected": {
+        "proportional_vacation_twelfths": 7
+      },
+      "notes": "Assume meses completos qualificáveis no período aquisitivo corrente."
+    },
+    {
+      "case_id": "vacation_entitlement_absences_5",
+      "source": "PLANALTO_CLT",
+      "calculator_target": "H28",
+      "inputs": {
+        "unjustified_absences": 5
+      },
+      "expected": {
+        "vacation_entitled_days": 30
+      }
+    },
+    {
+      "case_id": "vacation_entitlement_absences_6",
+      "source": "PLANALTO_CLT",
+      "calculator_target": "H28",
+      "inputs": {
+        "unjustified_absences": 6
+      },
+      "expected": {
+        "vacation_entitled_days": 24
+      }
+    },
+    {
+      "case_id": "vacation_entitlement_absences_15",
+      "source": "PLANALTO_CLT",
+      "calculator_target": "H28",
+      "inputs": {
+        "unjustified_absences": 15
+      },
+      "expected": {
+        "vacation_entitled_days": 18
+      }
+    },
+    {
+      "case_id": "vacation_entitlement_absences_24",
+      "source": "PLANALTO_CLT",
+      "calculator_target": "H28",
+      "inputs": {
+        "unjustified_absences": 24
+      },
+      "expected": {
+        "vacation_entitled_days": 12
+      }
+    },
+    {
+      "case_id": "vacation_entitlement_absences_32",
+      "source": "PLANALTO_CLT",
+      "calculator_target": "H28",
+      "inputs": {
+        "unjustified_absences": 32
+      },
+      "expected": {
+        "vacation_entitled_days": 12
+      }
+    },
+    {
+      "case_id": "vacation_abono_entitlement_30_days",
+      "source": "PLANALTO_CLT",
+      "calculator_target": "H28",
+      "inputs": {
+        "vacation_entitled_days": 30,
+        "request_cash_allowance": true
+      },
+      "expected": {
+        "cash_allowance_days": 10,
+        "remaining_vacation_days": 20
+      },
+      "invariant": "cash allowance is one third of entitlement; do not derive it from arbitrarily selected gozo days"
+    },
+    {
+      "case_id": "vacation_abono_principal_tax_treatment",
+      "source": "RFB_SC_209_2021",
+      "calculator_target": "H28",
+      "inputs": {
+        "component": "cash_allowance_principal",
+        "paid_during_employment": true
+      },
+      "expected": {
+        "irrf_incidence": false,
+        "social_security_incidence": false
+      }
+    },
+    {
+      "case_id": "vacation_abono_constitutional_third_tax_treatment_P0",
+      "source": "RFB_SC_209_2021",
+      "calculator_target": "H28",
+      "inputs": {
+        "component": "constitutional_third_on_cash_allowance",
+        "paid_during_employment": true
+      },
+      "expected": {
+        "irrf_incidence": true,
+        "social_security_incidence": false
+      },
+      "invariant": "the constitutional third on the cash allowance cannot be merged into an entirely IR-exempt indemnity vector"
+    },
+    {
+      "case_id": "termination_reason_01_just_cause",
+      "source": "MTE_TERMINATION_FAQ",
+      "calculator_target": "H29",
+      "inputs": {
+        "esocial_termination_reason": "01"
+      },
+      "expected": {
+        "salary_balance": true,
+        "thirteenth_proportional": false,
+        "vacation_proportional": false,
+        "acquired_or_overdue_vacation": true
+      }
+    },
+    {
+      "case_id": "termination_reason_02_without_just_cause",
+      "source": "MTE_TERMINATION_FAQ",
+      "calculator_target": "H29",
+      "inputs": {
+        "esocial_termination_reason": "02"
+      },
+      "expected": {
+        "salary_balance": true,
+        "thirteenth_proportional": true,
+        "vacation_proportional": true,
+        "acquired_or_overdue_vacation": true
+      }
+    },
+    {
+      "case_id": "termination_reason_07_resignation",
+      "source": "MTE_TERMINATION_FAQ",
+      "calculator_target": "H29",
+      "inputs": {
+        "esocial_termination_reason": "07"
+      },
+      "expected": {
+        "salary_balance": true,
+        "thirteenth_proportional": true,
+        "vacation_proportional": true,
+        "acquired_or_overdue_vacation": true
+      }
+    },
+    {
+      "case_id": "termination_reason_33_mutual_agreement",
+      "source": "MTE_TERMINATION_FAQ",
+      "calculator_target": "H29",
+      "inputs": {
+        "esocial_termination_reason": "33"
+      },
+      "expected": {
+        "salary_balance": true,
+        "thirteenth_proportional": true,
+        "vacation_proportional": true,
+        "acquired_or_overdue_vacation": true
+      }
+    },
+    {
+      "case_id": "termination_salary_balance_monthly_31_days",
+      "source": "ESOCIAL_WEB_MEI_2026",
+      "calculator_target": "H29",
+      "inputs": {
+        "monthly_base_salary": "3100.00",
+        "calendar_days_in_month": 31,
+        "days_counted_through_termination": 10
+      },
+      "expected": {
+        "salary_balance": "1000.00"
+      },
+      "invariant": "the v1 standard monthly/fortnightly scope must not hard-code a universal divisor of 30"
+    }
+  ]
+}

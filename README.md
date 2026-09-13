@@ -596,7 +596,7 @@ O inventário deverá partir da implementação real da ferramenta antes de defi
 
 ### Fase 0 — Baseline e governança
 
-**Status: EM ANDAMENTO**
+**Status: CONCLUÍDA**
 
 Objetivos:
 
@@ -611,7 +611,7 @@ Critério de conclusão:
 
 ### Fase 1 — Inventário jurídico-fiscal
 
-**Status: PENDENTE**
+**Status: CONCLUÍDA**
 
 Objetivos:
 
@@ -623,6 +623,14 @@ Objetivos:
 Critério de conclusão:
 
 - nenhuma variável relevante das quatro calculadoras sem origem e semântica definidas.
+
+Artefatos de fechamento:
+
+- `docs/inventario-juridico-fiscal-v1.md`;
+- `docs/rule-inventory-v1.json`;
+- `docs/source-registry-v1.json`;
+- `docs/phase1-closure.md`;
+- `tests/reference_cases/phase1_reference_cases.json`.
 
 ### Fase 2 — Contrato Fiscal Canônico v1
 
@@ -711,47 +719,50 @@ Objetivos:
 10. H26–H29 serão auditadas e testadas individualmente, mesmo quando compartilham motor comum.
 11. O repositório pode conter dados fiscais e indicadores financeiros, mas os domínios terão contratos e políticas de validade independentes.
 12. O novo sistema deverá ser auditável retroativamente: fonte observada → parser → contrato → testes → release → consumidor.
+13. Mensal, férias e 13º serão contextos explícitos de apuração do IR; uma função genérica não poderá apagar diferenças semânticas entre eles.
+14. O redutor de IR de 2026 usará o rendimento tributável pertinente como variável de entrada, nunca a base pós-deduções por conveniência.
+15. H27 não tratará `total13 * 0.5` como regra universal da primeira parcela, e remuneração variável terá contrato próprio.
+16. Férias separarão direito, gozo, abono, natureza gozada/indenizada e os componentes tributários do principal e do terço do abono.
+17. H29 v1 permanecerá uma estimativa parcial e suportará inicialmente apenas os motivos eSocial `01`, `02`, `07` e `33`; demais motivos serão explicitamente não suportados.
+18. Para o escopo padrão de H29 v1, não haverá divisor 30 universal de saldo de salário; exceções exigirão override tipado e proveniência.
+19. O registro de fontes e o inventário de regras da Fase 1 são entradas formais da Fase 2 e não devem ser reabertos sem evidência oficial nova ou contradição objetiva.
+20. Toda PR do remake terá validação automática em `Remake CI`; o CI é read-only e não executa publicação de dados.
 
 ---
 
 ## 19. Questões em aberto
 
-Estas decisões ainda precisam ser fechadas durante as fases seguintes:
+Após o fechamento da Fase 1, as questões remanescentes são de **design de software e operação**, não lacunas jurídicas P0 do inventário:
 
-- schema exato do Contrato Fiscal Canônico v1;
-- conjunto completo de regras necessárias às quatro calculadoras;
-- política exata de retenção de snapshots;
+- composição exata das classes Pydantic do Contrato Fiscal Canônico v1;
+- `$id`, modularização e compatibilidade dos JSON Schemas;
+- organização física dos contratos por regra, domínio e competência;
+- política exata de retenção e hash de snapshots;
 - critérios de confirmação multi-fonte para mudanças paramétricas;
-- política de versionamento de releases e schemas;
-- mecanismo de distribuição para WordPress;
-- tempo máximo de uso de `last-good` por domínio/regra;
-- estratégia final para CDI;
-- escopo jurídico exato de H29;
-- granularidade dos contratos: por regra, por competência, por domínio ou combinação dessas abordagens.
+- política de versionamento de schema e release;
+- mecanismo de semantic diff;
+- mecanismo de distribuição para WordPress/SFA;
+- política temporal específica de `last-good` por domínio/regra;
+- estratégia de compatibilidade durante a migração dos consumidores;
+- estratégia final para CDI dentro do domínio separado de dados financeiros/de referência.
 
 ---
 
 ## 20. Próxima etapa
 
-Executar a **Fase 1 — Inventário jurídico-fiscal** antes de alterar o pipeline principal.
+Iniciar a **Fase 2 — Contrato Fiscal Canônico v1**.
 
-A primeira saída dessa fase deve ser uma matriz das regras necessárias a H26, H27, H28 e H29 contendo, para cada item:
+A especificação jurídica de entrada está congelada em `docs/phase1-closure.md`, `docs/rule-inventory-v1.json` e `docs/source-registry-v1.json`. A Fase 2 deverá transformar essa base em:
 
-- regra/conceito;
-- ferramenta que consome;
-- significado jurídico;
-- fonte normativa;
-- fonte operacional;
-- parâmetros;
-- variável de aplicação;
-- vigência;
-- ordem/dependências;
-- classificação de automação;
-- exemplos oficiais disponíveis;
-- riscos/exceções;
-- status de implementação atual.
+- modelos Pydantic tipados;
+- JSON Schema público e versionado;
+- invariantes de vigência, qualidade e proveniência;
+- seleção de regra por competência/contexto;
+- política de `last-good`;
+- classificação de mudanças;
+- vínculos entre `rule_id`, fonte oficial e casos de referência.
 
-A matriz será a especificação jurídica que antecede a especificação de software.
+O pipeline de produção ainda não deve ser migrado antes de o Contrato v1 e seus gates estarem executáveis.
 
 ---
 
@@ -770,6 +781,18 @@ Uma fase só deve ser marcada como `CONCLUÍDA` quando seus critérios de conclu
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-13 — fechamento da Fase 1
+
+- Fases 0 e 1 marcadas como concluídas;
+- criado registro canônico de fontes oficiais (`source-registry-v1.json`);
+- congelado inventário machine-readable de regras (`rule-inventory-v1.json`);
+- criado `phase1-closure.md` como handoff formal para o Contrato Fiscal Canônico v1;
+- ampliados os casos de referência para 13º, férias, abono e modalidades de desligamento;
+- formalizado novo P0 em H28: o principal do abono e o terço constitucional incidente sobre ele possuem tratamento de IR distinto;
+- fechado o escopo inicial de H29 para motivos eSocial `01`, `02`, `07` e `33`, mantendo resultado explicitamente parcial;
+- criada trilha automática `Remake CI` para toda PR destinada a `main`;
+- próxima etapa alterada para Fase 2 — Contrato Fiscal Canônico v1.
 
 ### 2026-09-13 — criação
 

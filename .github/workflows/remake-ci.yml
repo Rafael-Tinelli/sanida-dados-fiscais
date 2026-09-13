@@ -1,0 +1,35 @@
+name: Remake CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: remake-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Compile Python
+        run: |
+          python -m compileall -q scraper.py update_taxas.py scripts tests
+
+      - name: Validate repository baseline and reference cases
+        run: |
+          python scripts/validate_repository.py

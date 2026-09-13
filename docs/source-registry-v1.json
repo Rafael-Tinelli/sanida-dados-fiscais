@@ -1,0 +1,161 @@
+{
+  "schema_version": "1.0.0",
+  "status": "phase1_closed",
+  "as_of": "2026-09-13",
+  "policy": {
+    "official_sources_only_for_authority": true,
+    "source_roles": [
+      "normative_primary",
+      "administrative_norm",
+      "official_operational",
+      "official_reference_case"
+    ],
+    "note": "Fonte privada pode auxiliar descoberta, mas não pode ser autoridade canônica de regra fiscal/trabalhista quando houver fonte oficial adequada."
+  },
+  "sources": [
+    {
+      "source_id": "PLANALTO_LEI_15270_2025",
+      "authority": "Presidência da República / Planalto",
+      "role": "normative_primary",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2025/lei/l15270.htm",
+      "machine_readability": "html",
+      "covers": ["irrf.reduction.2026", "thirteenth.irrf.reduction.2026"],
+      "notes": "Institui a redução do IR a partir de janeiro/2026 para rendimentos tributáveis sujeitos à incidência mensal e determina sua aplicação ao IR exclusivo do 13º."
+    },
+    {
+      "source_id": "RFB_IRRF_TABLE_2026",
+      "authority": "Receita Federal",
+      "role": "official_operational",
+      "url": "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/tabelas/2026",
+      "machine_readability": "html",
+      "covers": ["irrf.monthly.progressive_table", "irrf.dependent_deduction", "irrf.simplified_monthly_discount", "irrf.reduction.2026"],
+      "notes": "Tabela progressiva, dedução por dependente, desconto simplificado e parâmetros do redutor."
+    },
+    {
+      "source_id": "RFB_IRRF_EXAMPLES_2026",
+      "authority": "Receita Federal",
+      "role": "official_reference_case",
+      "url": "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/tabelas/exemplos-de-aplicacao-da-lei-15-270-2025",
+      "machine_readability": "html",
+      "covers": ["irrf.reduction.2026"],
+      "notes": "Casos oficiais que provam a separação entre rendimento tributável usado pelo redutor e base de IR após deduções."
+    },
+    {
+      "source_id": "RFB_IN_1500_2014",
+      "authority": "Receita Federal",
+      "role": "administrative_norm",
+      "url": "https://normas.receita.fazenda.gov.br/sijut2consulta/link.action?idAto=57670&visao=anotado",
+      "machine_readability": "html",
+      "covers": ["irrf.deductions", "vacation.irrf.separate_assessment", "irrf.simplified_monthly_discount", "irrf.reduction.2026"],
+      "notes": "Versão anotada já incorpora alterações de 2025; art. 29 trata férias em apuração separada e o Anexo X contém a redução mensal a partir de 2026."
+    },
+    {
+      "source_id": "RFB_QA_IRPF_2026",
+      "authority": "Receita Federal",
+      "role": "official_operational",
+      "url": "https://www.gov.br/receitafederal/pt-br/centrais-de-conteudo/publicacoes/perguntas-e-respostas/dirpf/p-r-irpf-2026-v1-0-2026-04-18.pdf",
+      "machine_readability": "pdf_text",
+      "covers": ["vacation.irrf.separate_assessment", "vacation.indemnified.ir_exemption", "vacation.abono.ir_exemption"],
+      "notes": "Pergunta 178: férias gozadas + terço são tributadas separadamente; férias não gozadas convertidas em pecúnia na extinção e abono do art. 143 têm hipóteses de não tributação."
+    },
+    {
+      "source_id": "RFB_SC_209_2021",
+      "authority": "Receita Federal / Cosit",
+      "role": "administrative_norm",
+      "url": "https://normas.receita.fazenda.gov.br/sijut2consulta/consulta.action?termoBusca=abono+pecuniario",
+      "machine_readability": "html_search_result",
+      "covers": ["vacation.abono.ir_exemption", "vacation.abono_constitutional_third.ir_incidence"],
+      "notes": "Abono pecuniário do art. 143 não sofre IR; o terço constitucional incidente sobre o abono, pago durante o contrato, sofre IR."
+    },
+    {
+      "source_id": "RFB_CP_INCIDENCE_TABLE",
+      "authority": "Receita Federal",
+      "role": "official_operational",
+      "url": "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/pagamentos-e-parcelamentos/emissao-e-pagamento-de-darf-das-gps-e-dae/calculo-de-contribuicoes-previdenciarias-e-emissao-de-gps/tabela-de-incidencia-de-contribuicao",
+      "machine_readability": "html",
+      "covers": ["vacation.inss.enjoyed", "vacation.indemnified.cp_exemption", "vacation.abono.cp_exemption"],
+      "notes": "Distingue férias gozadas, férias indenizadas e abono pecuniário para contribuição previdenciária."
+    },
+    {
+      "source_id": "INSS_TABLE_2026",
+      "authority": "INSS",
+      "role": "official_operational",
+      "url": "https://www.gov.br/inss/pt-br/direitos-e-deveres/inscricao-e-contribuicao/tabela-de-contribuicao-mensal",
+      "machine_readability": "html",
+      "covers": ["inss.employee.progressive_table", "thirteenth.inss.separate_assessment"],
+      "notes": "Faixas progressivas do segurado empregado e parâmetros vigentes."
+    },
+    {
+      "source_id": "PLANALTO_CLT",
+      "authority": "Presidência da República / Planalto",
+      "role": "normative_primary",
+      "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del5452compilado.htm",
+      "machine_readability": "html",
+      "covers": ["vacation.acquisition_period", "vacation.entitlement_days_by_absences", "vacation.abono_pecuniario", "termination.vacation_entitlement"],
+      "notes": "Arts. 129–147: direito, duração, concessão, abono e efeitos da cessação do contrato."
+    },
+    {
+      "source_id": "PLANALTO_LEI_4090_1962",
+      "authority": "Presidência da República / Planalto",
+      "role": "normative_primary",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l4090.htm",
+      "machine_readability": "html",
+      "covers": ["thirteenth.accrual.twelfths", "termination.thirteenth_proportional"],
+      "notes": "13º: 1/12 por mês; fração igual ou superior a 15 dias conta como mês integral."
+    },
+    {
+      "source_id": "PLANALTO_LEI_4749_1965",
+      "authority": "Presidência da República / Planalto",
+      "role": "normative_primary",
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l4749.htm",
+      "machine_readability": "html",
+      "covers": ["thirteenth.advance"],
+      "notes": "Adiantamento entre fevereiro e novembro: metade do salário recebido no mês anterior; pagamento nas férias se requerido em janeiro."
+    },
+    {
+      "source_id": "PLANALTO_DECRETO_10854_2021",
+      "authority": "Presidência da República / Planalto",
+      "role": "normative_primary",
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/decreto/d10854.htm",
+      "machine_readability": "html",
+      "covers": ["thirteenth.reference_remuneration", "thirteenth.variable_remuneration", "thirteenth.advance", "termination.thirteenth_proportional"],
+      "notes": "Arts. 76–82: remuneração de dezembro, variáveis, adiantamento, admissão durante o ano e extinção do contrato."
+    },
+    {
+      "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
+      "authority": "eSocial",
+      "role": "official_operational",
+      "url": "https://www.gov.br/esocial/pt-br/documentacao-tecnica/leiautes-esocial-versao-s-1-3-nt-07-2026/tabelas.html",
+      "machine_readability": "html_table",
+      "covers": ["irrf.income_type", "irrf.deductions_by_income_type", "termination.reason_scope", "vacation.tax_components"],
+      "notes": "Tabela 19 codifica motivos de desligamento; Tabela 21 separa mensal, 13º e férias para base, retenção e deduções de IR."
+    },
+    {
+      "source_id": "ESOCIAL_WEB_MEI_2026",
+      "authority": "eSocial",
+      "role": "official_operational",
+      "url": "https://www.gov.br/esocial/pt-br/microempreendedor-individual/manual-web-mei",
+      "machine_readability": "html",
+      "covers": ["termination.salary_balance", "termination.reason_scope", "termination.thirteenth_proportional"],
+      "notes": "No módulo simplificado, mensalistas/quinzenalistas usam salário-base / dias totais do mês × dia do desligamento; motivo é entrada obrigatória."
+    },
+    {
+      "source_id": "ESOCIAL_SIMPLIFIED_ABONO_2026",
+      "authority": "eSocial",
+      "role": "official_operational",
+      "url": "https://www.gov.br/esocial/pt-br/documentacao-tecnica/manuais/manual-do-esocial-segurado-especial-versao-05-02-2026-versao-completa.pdf",
+      "machine_readability": "pdf_text",
+      "covers": ["vacation.abono.ir_exemption", "vacation.abono_constitutional_third.ir_incidence", "vacation.abono.cp_exemption"],
+      "notes": "Rubrica de abono: sem CP/IR/FGTS; rubrica do terço sobre abono: sem CP, com IR, sem FGTS."
+    },
+    {
+      "source_id": "MTE_TERMINATION_FAQ",
+      "authority": "Ministério do Trabalho e Emprego",
+      "role": "official_operational",
+      "url": "https://www.gov.br/trabalho-e-emprego/pt-br/acesso-a-informacao/acoes-e-programas/programas-projetos-acoes-obras-e-atividades/proteja/duvidas-frequentes",
+      "machine_readability": "html",
+      "covers": ["termination.reason_scope", "termination.salary_balance", "termination.thirteenth_proportional", "termination.vacation_entitlement"],
+      "notes": "Distingue pedido de demissão, acordo, dispensa sem justa causa, justa causa e rescisão indireta, com verbas correspondentes."
+    }
+  ]
+}
