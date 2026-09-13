@@ -1,0 +1,113 @@
+name: Phase 4 README Sync
+
+on:
+  push:
+    branches:
+      - refactor/sources-sensors-v1
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: ${{ !contains(github.event.head_commit.message, '[phase4-readme]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: refactor/sources-sensors-v1
+      - name: Patch README
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('README.md')
+          text = p.read_text(encoding='utf-8')
+
+          old = '''### Fase 4 — Fontes e sensores
+
+**Status: PENDENTE**
+
+Objetivos:
+
+- separar collectors de parsers;
+- priorizar APIs oficiais estruturadas;
+- preservar snapshots necessários;
+- melhorar retry/timeouts;
+- implementar detecção de alterações e falhas.
+'''
+          new = '''### Fase 4 — Fontes e sensores
+
+**Status: EM ANDAMENTO**
+
+Objetivos:
+
+- separar collectors de parsers;
+- priorizar APIs oficiais estruturadas;
+- preservar snapshots necessários;
+- melhorar retry/timeouts;
+- implementar detecção de alterações e falhas.
+
+Primeiro checkpoint executável:
+
+- `docs/phase4-collection-surface-v1.json` inventaria os caminhos legados de IRRF, INSS, Selic, CDI e o artefato interno de taxas;
+- `sanida_fiscal/sources_v1.py` separa `SourceSpec`, `HttpCollectorV1`, `RawSnapshot`, `SnapshotStore`, parser e `NormalizedSourceCandidate`;
+- snapshots são content-addressed por SHA-256 e verificados na leitura;
+- `SOURCE_UNAVAILABLE` fica distinto de `PARSER_INCOMPATIBLE`;
+- timeout, erro de rede, 4xx e falha transitória 429/5xx possuem estados operacionais explícitos;
+- `scripts/validate_phase4_foundation.py` torna a fundação verificável no `Remake CI`;
+- o legado de produção permanece intacto neste checkpoint.
+'''
+          if old not in text:
+              raise SystemExit('phase4 status block not found')
+          text = text.replace(old, new, 1)
+
+          old_next = '''## 20. Próxima etapa
+
+Iniciar a **Fase 4 — Fontes e sensores** sobre o contrato e a biblioteca fiscal já fechados.
+
+O primeiro checkpoint da Fase 4 deverá inventariar a superfície atual de coleta e desenhar a separação concreta entre **collector → raw snapshot imutável → parser → candidato normalizado**, incluindo estados de indisponibilidade, timeout/retry e proveniência. A fase deve priorizar fonte oficial estruturada quando houver e não deve antecipar semantic diff/publicação da Fase 5.
+'''
+          new_next = '''## 20. Próxima etapa
+
+Continuar a **Fase 4 — Fontes e sensores** sobre a fundação já materializada.
+
+Próximo checkpoint: executar o primeiro pipeline real **collector → raw snapshot imutável → parser → candidato normalizado** sobre uma fonte oficial estável, preservando proveniência e estado operacional entre execuções. Em seguida, desacoplar RFB/INSS do fetch legado. Semantic diff, promoção e publicação continuam reservados à Fase 5.
+'''
+          if old_next not in text:
+              raise SystemExit('next-step block not found')
+          text = text.replace(old_next, new_next, 1)
+
+          anchor = '30. A Fase 3 foi formalmente encerrada depois de revisão dos sete critérios do gate; qualquer reabertura da biblioteca deverá decorrer de defeito objetivo ou exigência explícita de uma fase posterior, não de redesign oportunista.\n'
+          addition = anchor + '31. Na Fase 4, coleta e interpretação são etapas distintas: bytes brutos são preservados e identificados por SHA-256 antes de qualquer parser; indisponibilidade da fonte e incompatibilidade do parser nunca são o mesmo estado.\n'
+          if anchor not in text:
+              raise SystemExit('decisions anchor not found')
+          text = text.replace(anchor, addition, 1)
+
+          changelog_anchor = '## 22. Changelog do README\n\n'
+          changelog = '''## 22. Changelog do README
+
+### 2026-09-13 — início da Fase 4
+
+- Fase 4 marcada como `EM ANDAMENTO`;
+- inventariada a superfície legada de coleta em `docs/phase4-collection-surface-v1.json`;
+- criada a separação operacional `collector → raw snapshot → parser → normalized source candidate`;
+- snapshots passam a ter identidade content-addressed por SHA-256 e verificação de integridade;
+- `SOURCE_UNAVAILABLE` e `PARSER_INCOMPATIBLE` passam a ser estados distintos;
+- HTTPX entra apenas na nova camada de fontes, sem migrar ainda os scripts de produção;
+- criado `scripts/validate_phase4_foundation.py` como gate permanente do primeiro checkpoint.
+
+'''
+          if changelog_anchor not in text:
+              raise SystemExit('changelog anchor not found')
+          text = text.replace(changelog_anchor, changelog, 1)
+
+          p.write_text(text, encoding='utf-8')
+          PY
+      - name: Commit README
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add README.md
+          git diff --cached --quiet && exit 0
+          git commit -m 'docs: iniciar Fase 4 no README mestre [phase4-readme]'
+          git push origin HEAD:refactor/sources-sensors-v1
