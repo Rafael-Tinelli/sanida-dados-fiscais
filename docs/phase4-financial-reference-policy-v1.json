@@ -25,7 +25,7 @@
     "benchmark_administrator_and_methodology_authority": true,
     "legacy_ftp_is_automatic_fallback": false,
     "legacy_ftp_is_production_input_after_migration": false,
-    "use": "human_corrobation_and_methodology_reference"
+    "use": "human_corroboration_and_methodology_reference"
   },
   "failure_policy": {
     "require_current_parsed_candidate_for_new_artifact": true,
