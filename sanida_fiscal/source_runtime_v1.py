@@ -121,11 +121,17 @@ def run_source_pipeline(
     parser: Callable[[bytes], dict[str, JsonValue]],
 ) -> SourcePipelineRun:
     previous = state_store.load(source.source_id)
+    can_use_http_validators = bool(
+        previous
+        and previous.last_parse_status == ParseStatus.PARSED
+        and previous.parser_id == parser_id
+        and previous.parser_version == parser_version
+    )
     collection = collector.collect(
         source,
         observed_at_utc=observed_at_utc,
-        conditional_etag=previous.etag if previous else None,
-        conditional_last_modified=previous.last_modified if previous else None,
+        conditional_etag=previous.etag if can_use_http_validators else None,
+        conditional_last_modified=previous.last_modified if can_use_http_validators else None,
     )
 
     previous_snapshot_sha = previous.last_collected_snapshot_sha256 if previous else None
