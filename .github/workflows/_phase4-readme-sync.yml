@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   sync:
-    if: ${{ !contains(github.event.head_commit.message, '[phase4-readme]') }}
+    if: "${{ !contains(github.event.head_commit.message, '[phase4-readme]') }}"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
