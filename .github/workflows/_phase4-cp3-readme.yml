@@ -15,88 +15,11 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: refactor/sources-sensors-v1
-      - name: Patch README
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path('README.md')
-          text = path.read_text(encoding='utf-8')
-
-          anchor = '''Segundo checkpoint executável:
-
-- `sanida_fiscal/rfb_irrf_v1.py` materializa o primeiro parser específico no novo pipeline, para `RFB_IRRF_TABLE_2026`;
-- `sanida_fiscal/source_runtime_v1.py` persiste estado operacional entre execuções, sem confundir last-good operacional com vigência jurídica;
-- `ETag` e `Last-Modified` passam a ser preservados e reutilizados em consultas condicionais quando o parser permanece compatível;
-- mudança de `parser_id`/`parser_version` força refetch completo antes de aceitar o novo parser;
-- igualdade de snapshot bruto e fingerprint de candidato é observável sem antecipar semantic diff da Fase 5;
-- `scripts/run_source_pipeline_v1.py` executa o pipeline real RFB sem publicar ou alterar artefatos de produção;
-- fixture oficial mínima e testes de estado elevam a suíte integral para **166 testes verdes**.
-'''
-          replacement = anchor + '''
-Terceiro checkpoint executável:
-
-- `docs/phase4-inss-source-resolution-v1.json` fecha formalmente a divergência `INSS_TABLE_2026` × notícia anual pinned/descoberta;
-- a URL registrada em `INSS_TABLE_2026` passa a ser a única entrada operacional automática do novo pipeline de INSS;
-- notícia anual e `@@search` ficam proibidos como fallback automático: indisponibilidade da URL canônica produz `SOURCE_UNAVAILABLE`;
-- `sanida_fiscal/inss_employee_v1.py` implementa `inss_employee_table_v1@1.0.0` para a tabela oficial de empregado, doméstico e trabalhador avulso;
-- o candidato normalizado preserva quatro faixas progressivas, teto `8475.55`, vigência 2026, referência à Portaria Interministerial MPS/MF nº 13/2026 e separação do 13º;
-- notícia anual, mesmo contendo valores, não satisfaz o contrato estrutural do parser canônico;
-- o runner manual passa a aceitar `--source-id INSS_TABLE_2026` sem chamar discovery legado;
-- o gate da Fase 4 cruza política INSS, source registry, fixture e superfície de coleta;
-- suíte integral chega a **172 testes verdes**.
-'''
-          if anchor not in text:
-              raise SystemExit('phase4 cp2 anchor not found')
-          text = text.replace(anchor, replacement, 1)
-
-          decision = '32. Estado operacional de fonte preserva a última observação bem-sucedida, validadores HTTP e falhas correntes sem transformar last-good operacional em autorização jurídica de uso; mudança de versão do parser invalida o atalho condicional e exige refetch.\n'
-          addition = decision + '33. Para `INSS_TABLE_2026`, o novo pipeline usa exclusivamente a URL canônica registrada; notícia anual pinned e `@@search` não são fallback automático e falha da fonte registrada permanece `SOURCE_UNAVAILABLE`.\n'
-          if decision not in text:
-              raise SystemExit('decision 32 anchor not found')
-          text = text.replace(decision, addition, 1)
-
-          old_next = '''## 20. Próxima etapa
-
-Continuar a **Fase 4 — Fontes e sensores** com o primeiro pipeline real RFB já materializado.
-
-Próximo checkpoint: desacoplar o **INSS** do discovery/fetch/parsing legado e resolver explicitamente a diferença entre a fonte canônica `INSS_TABLE_2026` e a notícia anual pinned/descoberta usada hoje. Depois, preparar a migração do caminho RFB em `scraper.py` para consumir o novo pipeline sem duplicar fetch/parser. Semantic diff, promoção e publicação continuam reservados à Fase 5.
-'''
-          new_next = '''## 20. Próxima etapa
-
-Continuar a **Fase 4 — Fontes e sensores** com RFB e INSS já materializados como pipelines canônicos independentes do fetch/parser legado.
-
-Próximo checkpoint: preparar a migração de `scraper.py` para consumir os pipelines RFB e INSS sem duplicar fetch/parser, definindo explicitamente a fronteira de transição para `dados_fiscais.json`. A remoção do discovery/pinned do código de produção deve ocorrer apenas nessa migração controlada. Semantic diff, promoção e publicação continuam reservados à Fase 5.
-'''
-          if old_next not in text:
-              raise SystemExit('next-step block not found')
-          text = text.replace(old_next, new_next, 1)
-
-          changelog_anchor = '## 22. Changelog do README\n\n'
-          changelog = '''## 22. Changelog do README
-
-### 2026-09-13 — INSS canônico sem discovery na Fase 4
-
-- encerrada formalmente a divergência entre `INSS_TABLE_2026` e a notícia anual pinned/descoberta do legado;
-- criada política machine-readable que proíbe notícia e `@@search` como fallback automático;
-- indisponibilidade da URL registrada passa a permanecer `SOURCE_UNAVAILABLE`, sem troca oportunística de fonte;
-- criado `inss_employee_table_v1@1.0.0` para quatro faixas, teto, vigência, referência normativa e separação do 13º;
-- runner de fontes passa a aceitar `INSS_TABLE_2026` diretamente do source registry;
-- gate da Fase 4 ancora RFB + INSS e marca a divergência de fonte como resolvida;
-- suíte integral chega a **172 testes verdes**.
-
-'''
-          if changelog_anchor not in text:
-              raise SystemExit('changelog anchor not found')
-          text = text.replace(changelog_anchor, changelog, 1)
-
-          path.write_text(text, encoding='utf-8')
-          PY
-      - name: Commit README
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      - run: python scripts/_phase4_cp3_readme.py
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/_phase4-cp3-readme.yml scripts/_phase4_cp3_readme.py
           git add README.md
-          git diff --cached --quiet && exit 0
-          git commit -m 'docs: registrar canonicalização do INSS na Fase 4 [phase4-cp3-readme]'
+          git commit -m "docs: registrar canonicalização do INSS na Fase 4"
           git push origin HEAD:refactor/sources-sensors-v1
