@@ -717,7 +717,11 @@ Estado dos checkpoints executados:
 - `termination` tratado como origem que pode conter apurações mensal e de 13º distintas, nunca como quarto tipo de IRRF;
 - previdência, dependentes e pensão vinculados a uma única apuração e impedidos de vazar entre contextos;
 - bundles de regras selecionados pelo tipo de rendimento, inclusive dentro de H29;
-- suíte completa: **73 testes verdes** após o checkpoint de deduções por contexto.
+- 13º com avos, fronteira de 15 dias, referência anual/rescisória, bruto proporcional e adiantamento fixo simples;
+- remuneração variável pré-calculada aceita apenas como entrada externa explicitamente marcada;
+- INSS do 13º e IRRF exclusivo do 13º possuem memórias próprias, inclusive dentro de `termination`;
+- branches especiais de adiantamento ainda não modeladas falham fechadas em vez de usar `total13 * 0.5`;
+- suíte completa: **89 testes verdes** após o checkpoint de 13º.
 
 ### Fase 4 — Fontes e sensores
 
@@ -815,7 +819,7 @@ Com a Fase 2 concluída, não restam pendências de design do Contrato Fiscal Ca
 
 Continuar a **Fase 3 — Biblioteca fiscal e testes** a partir do primeiro núcleo já verde.
 
-Próximos checkpoints: 13º/avos; período aquisitivo e férias; saldo salarial e matriz H29 limitada; memória de cálculo comum; expansão dos property-based tests. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.
+Próximos checkpoints: período aquisitivo e férias; saldo salarial e matriz H29 limitada; memória de cálculo comum; expansão dos property-based tests. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.
 
 O pipeline de produção continua congelado: `scraper.py`, `update_taxas.py`, `dados_fiscais.json`, `taxas_bacen.json`, WordPress, `folha-core` e H26–H29 ainda não foram migrados.
 
@@ -836,6 +840,17 @@ Uma fase só deve ser marcada como `CONCLUÍDA` quando seus critérios de conclu
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-13 — checkpoint de 13º salário na Fase 3
+
+- implementados avos e fronteira legal de 15 dias;
+- referências remuneratórias anual e rescisória tornadas executáveis;
+- bruto proporcional exige rounding explícito;
+- adiantamento fixo simples reproduz o caso oficial de R$ 4.000 → R$ 2.000;
+- admissão no ano/remuneração variável no adiantamento permanecem fail-closed;
+- INSS e IRRF do 13º passam a ter memórias próprias e isoladas da folha mensal;
+- `thirteenth.irrf.reduction.2026` é selecionado explicitamente;
+- suíte completa chega a 89 testes verdes.
 
 ### 2026-09-13 — checkpoint de apurações separadas na Fase 3
 
