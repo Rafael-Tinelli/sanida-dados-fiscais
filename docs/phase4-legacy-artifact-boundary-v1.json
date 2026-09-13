@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0.0",
+  "decision_id": "phase4.legacy_artifact_transition_boundary",
+  "status": "prepared_in_phase4_branch",
+  "as_of": "2026-09-13",
+  "producer": "scraper.py",
+  "legacy_artifact": {
+    "path": "dados_fiscais.json",
+    "schema_version": "2.2.0",
+    "role": "compatibility_artifact_for_existing_consumers",
+    "canonical_contract_release": false
+  },
+  "payroll_inputs": [
+    {
+      "source_id": "RFB_IRRF_TABLE_2026",
+      "required_state": "current_execution_PARSED_candidate",
+      "adapter": "sanida_fiscal.legacy_artifact_v1"
+    },
+    {
+      "source_id": "INSS_TABLE_2026",
+      "required_state": "current_execution_PARSED_candidate",
+      "adapter": "sanida_fiscal.legacy_artifact_v1"
+    }
+  ],
+  "financial_reference_input": {
+    "path": "taxas_bacen.json",
+    "status": "legacy_validated_input_pending_financial_reference_migration",
+    "note": "Selic/CDI remain outside the payroll-source migration checkpoint and must not inherit payroll legal-source semantics."
+  },
+  "write_policy": {
+    "require_same_reference_year_across_payroll_candidates": true,
+    "require_reference_year_equal_current_utc_year": true,
+    "allow_source_runtime_state_without_current_candidate": false,
+    "allow_static_payroll_fallback": false,
+    "allow_static_financial_fallback_in_scraper": false,
+    "allow_preserve_existing_same_year_valid_artifact_on_collection_failure": true,
+    "allow_preserve_prior_year_artifact_as_current": false,
+    "on_no_current_candidate_and_no_same_year_last_good": "FAIL_WITHOUT_WRITE"
+  },
+  "conversion_policy": {
+    "decimal_to_float_allowed_only_at_legacy_compatibility_boundary": true,
+    "normalized_candidates_remain_decimal_strings": true,
+    "legacy_top_irrf_band_uses_existing_numeric_sentinel": 9000000000,
+    "source_provenance_added_to_legacy_meta": [
+      "source_id",
+      "url",
+      "http_code",
+      "collection_status",
+      "snapshot_sha256",
+      "candidate_sha256",
+      "parser_id",
+      "parser_version",
+      "observed_at_utc"
+    ]
+  },
+  "removed_from_scraper_payroll_path": [
+    "parse_irrf_receita",
+    "PINNED_INSS_URLS",
+    "find_inss_article_url",
+    "parse_inss_gov",
+    "INSS @@search discovery",
+    "minimal static fiscal fallback"
+  ],
+  "phase_boundary": {
+    "semantic_diff": "phase5",
+    "promotion": "phase5",
+    "canonical_release_publication": "phase5",
+    "consumer_contract_migration": "phase6"
+  }
+}

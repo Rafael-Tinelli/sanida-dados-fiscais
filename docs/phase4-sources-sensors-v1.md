@@ -30,17 +30,17 @@ O inventário machine-readable está em `docs/phase4-collection-surface-v1.json`
 
 Foram identificados cinco caminhos operacionais relevantes:
 
-1. IRRF/RFB em `scraper.py`, hoje com fetch e parsing acoplados;
-2. INSS em `scraper.py`, hoje com discovery/pinned URL e parsing acoplados;
-3. Selic/SGS 432 em `update_taxas.py`, já em API oficial estruturada, mas com fetch + parse + conversão acoplados;
-4. CDI via FTP B3/Cetip, com descoberta de arquivo, fetch e parse acoplados;
-5. reutilização de `taxas_bacen.json` pelo scraper principal como artefato interno derivado.
+1. IRRF/RFB em `scraper.py`;
+2. INSS em `scraper.py`;
+3. Selic/SGS 432 em `update_taxas.py`;
+4. CDI via FTP B3/Cetip;
+5. reutilização de `taxas_bacen.json` pelo scraper principal.
 
-A primeira aresta objetiva encontrada foi o INSS: o registro canônico da Fase 1 aponta `INSS_TABLE_2026`, enquanto o legado pode coletar notícia anual descoberta/pinned. O terceiro checkpoint resolve essa diferença como política explícita de fonte; ela não é escondida dentro do parser.
+Os dois primeiros caminhos já foram migrados, nesta branch, para os pipelines canônicos da Fase 4. O domínio `financial_reference` continua separado e pendente.
 
-## 3. Fundação implementada no primeiro checkpoint
+## 3. Fundação implementada
 
-O módulo `sanida_fiscal/sources_v1.py` introduziu a separação entre:
+`sanida_fiscal/sources_v1.py` separa:
 
 - `SourceSpec`;
 - `HttpCollectorV1`;
@@ -48,7 +48,7 @@ O módulo `sanida_fiscal/sources_v1.py` introduziu a separação entre:
 - parser versionado;
 - `NormalizedSourceCandidate`.
 
-O collector conhece apenas transporte HTTP, timeout e retry. Ele **não conhece tabela de IR, INSS, férias, 13º ou rescisão**.
+O collector conhece transporte HTTP, timeout e retry. Ele não interpreta regra fiscal.
 
 Estados de coleta:
 
@@ -67,17 +67,13 @@ HTTP_CLIENT_ERROR
 HTTP_SERVER_ERROR
 ```
 
-O snapshot nasce antes do parser e usa identidade content-addressed `sha256(raw_bytes)`. A leitura recalcula o hash e rejeita corrupção. `PARSER_INCOMPATIBLE` continua separado de `SOURCE_UNAVAILABLE`.
+O snapshot nasce antes do parser, usa identidade `sha256(raw_bytes)` e é verificado na leitura. `PARSER_INCOMPATIBLE` permanece distinto de `SOURCE_UNAVAILABLE`.
 
-## 4. Segundo checkpoint — primeiro pipeline real RFB/IRRF
+## 4. Pipelines canônicos materializados
 
-O primeiro pipeline específico foi materializado para a fonte canônica:
+### 4.1 RFB / IRRF
 
-```text
-RFB_IRRF_TABLE_2026
-```
-
-Fluxo executável:
+`RFB_IRRF_TABLE_2026` percorre:
 
 ```text
 docs/source-registry-v1.json
@@ -93,199 +89,159 @@ NormalizedSourceCandidate
 SourcePipelineState
 ```
 
-### 4.1 Parser RFB isolado
+`sanida_fiscal/rfb_irrf_v1.py` normaliza tabela mensal, dependente, desconto simplificado e redutor 2026 sem publicar contrato.
 
-`sanida_fiscal/rfb_irrf_v1.py` contém o parser específico da página oficial de tributação de 2026.
+### 4.2 INSS
 
-Ele normaliza, sem publicar contrato:
+`docs/phase4-inss-source-resolution-v1.json` resolve a divergência entre a fonte canônica e a notícia anual legada.
 
-- as cinco faixas mensais de IRRF;
-- dedução mensal por dependente;
-- limite mensal do desconto simplificado;
-- tabela de redução mensal de 2026;
-- a semântica observada de entrada do redutor: rendimentos tributáveis sujeitos à incidência mensal.
+Política congelada:
 
-Valores monetários e coeficientes são preservados como strings decimais canônicas. O parser não introduz `float` e falha como `PARSER_INCOMPATIBLE` quando os marcadores ou a estrutura esperada deixam de existir.
+- `INSS_TABLE_2026` é a única entrada operacional automática;
+- a URL vem do source registry;
+- notícia anual pinned e `@@search` não são fallback automático;
+- indisponibilidade da URL canônica permanece `SOURCE_UNAVAILABLE`;
+- troca de URL canônica exige mudança explícita do registro;
+- notícia anual pode servir apenas como corroboração humana.
 
-A fixture mínima em `tests/fixtures/sources/rfb_irrf_2026_fragment.html` reproduz apenas o trecho oficial necessário ao contrato do parser. O CI não depende de rede externa.
+`sanida_fiscal/inss_employee_v1.py` implementa `inss_employee_table_v1@1.0.0` e normaliza quatro faixas progressivas, teto de 2026, referência à Portaria Interministerial MPS/MF nº 13/2026 e apuração separada do 13º.
 
-### 4.2 Estado operacional entre execuções
+### 4.3 Catálogo único de pipelines
 
-`sanida_fiscal/source_runtime_v1.py` introduz `SourcePipelineState` e `SourceStateStore`.
+`sanida_fiscal/source_catalog_v1.py` passa a ser o catálogo operacional único de bindings `source_id → parser id/version/reference year/parser`.
 
-O estado persistido inclui, separadamente:
+Tanto o runner manual quanto o produtor de compatibilidade chamam `run_registered_source_pipeline()`. Isso evita que `scraper.py` reimplemente URL, collector ou parser.
 
-- última observação UTC;
-- status e HTTP status da coleta;
-- `ETag` e `Last-Modified`;
-- contador e erro atual de fonte;
-- último snapshot coletado;
-- parser e versão;
-- status e contador de incompatibilidade do parser;
-- último snapshot parseado com sucesso;
-- SHA-256 canônico do último candidato parseado com sucesso.
+`run_source_pipeline()` ganhou apenas uma chave operacional adicional: `use_http_validators`. O runner manual pode manter revalidação condicional; o produtor do artefato legado exige uma observação `PARSED` da execução corrente e, por isso, usa fetch completo.
 
-Uma falha atual de fonte ou parser **não apaga** a identidade do último candidato parseado com sucesso. Isso é estado operacional, não autorização de uso jurídico do last-good — a validade jurídica continua pertencendo ao contrato e aos gates posteriores.
+## 5. Quarto checkpoint — fronteira de transição para `dados_fiscais.json`
 
-### 4.3 Revalidação HTTP
+A transição é formalizada em `docs/phase4-legacy-artifact-boundary-v1.json`.
 
-`HttpCollectorV1` passou a transportar `ETag` e `Last-Modified` e aceita `If-None-Match` / `If-Modified-Since` em execuções posteriores.
+### 5.1 Natureza do artefato legado
 
-Um `304 Not Modified` não fabrica novo snapshot e preserva a trilha anterior.
+`dados_fiscais.json` continua temporariamente com `schema_version: 2.2.0` para não quebrar consumidores ainda não migrados.
 
-Os validadores condicionais só são reutilizados quando o último parse foi bem-sucedido **com o mesmo `parser_id` e `parser_version`**. Se o parser muda, a próxima consulta é completa para que a nova versão processe bytes reais, em vez de aceitar 304 e assumir compatibilidade.
-
-### 4.4 Fingerprints sem antecipar a Fase 5
-
-A runtime informa apenas duas igualdades operacionais:
-
-- `raw_snapshot_unchanged` — igualdade de SHA-256 dos bytes brutos;
-- `candidate_fingerprint_unchanged` — igualdade do JSON normalizado canônico.
-
-Isso **não** classifica `PARAMETER_CHANGE`, `STRUCTURAL_CHANGE` ou qualquer outra classe do Contrato v1. A interpretação semântica da diferença continua reservada à Fase 5.
-
-### 4.5 Runner real sem publicação
-
-`scripts/run_source_pipeline_v1.py` executa fontes já registradas por CLI e grava runtime local, por padrão, em:
+Ele passa a ser explicitamente classificado como:
 
 ```text
-.source-runtime/snapshots/
-.source-runtime/state/
+compatibility_artifact_for_existing_consumers
 ```
 
-`.source-runtime/` é ignorado pelo Git. O runner não modifica `dados_fiscais.json`, não promove release e não publica nada. Neste estágio ele é manual/de diagnóstico; o CI valida os pipelines com fixtures reproduzíveis e não faz coleta de rede externa.
+Ele **não** é Contrato Fiscal Canônico, release validada ou autorização de promoção.
 
-## 5. Terceiro checkpoint — INSS canônico sem discovery de notícia
+### 5.2 Entradas permitidas
 
-A divergência entre `INSS_TABLE_2026` e a notícia anual usada pelo legado foi encerrada em `docs/phase4-inss-source-resolution-v1.json`.
-
-### 5.1 Decisão de fonte
-
-Para o novo pipeline da Fase 4, a única entrada operacional automática para a tabela progressiva do empregado é a URL registrada em `INSS_TABLE_2026`:
-
-```text
-https://www.gov.br/inss/pt-br/direitos-e-deveres/inscricao-e-contribuicao/tabela-de-contribuicao-mensal
-```
-
-O caminho antigo:
-
-```text
-PINNED_INSS_URLS
-        ou
-INSS @@search
-        ↓
-notícia anual
-```
-
-fica classificado como **legado de produção**, não como fallback do novo pipeline.
-
-A política fechada é:
-
-- a URL canônica vem do `source-registry-v1.json`;
-- notícia anual pinned não substitui automaticamente a fonte registrada;
-- `@@search` não é mecanismo de recuperação automática da fonte;
-- falha da URL canônica gera `SOURCE_UNAVAILABLE`;
-- troca da URL canônica exige mudança explícita do registro de fontes;
-- notícia oficial pode servir como corroboração humana, mas não pode alimentar o parser canônico da Fase 4.
-
-A decisão independe de a notícia anual estar acessível em um dado momento. O problema arquitetural era a descoberta oportunística de uma página diferente da registrada.
-
-### 5.2 Parser INSS isolado
-
-`sanida_fiscal/inss_employee_v1.py` implementa `inss_employee_table_v1@1.0.0` para a estrutura conhecida da página canônica.
-
-Ele normaliza:
-
-- quatro faixas progressivas para empregado, empregado doméstico e trabalhador avulso;
-- teto de contribuição de `8475.55` em 2026;
-- método `marginal_by_bracket`;
-- vigência operacional a partir de `2026-01-01`;
-- referência observada à Portaria Interministerial MPS/MF nº 13, de 09/01/2026;
-- indicação operacional de que o 13º não é somado à remuneração mensal e é apurado em separado.
-
-O parser exige os marcadores próprios da **Tabela de contribuição mensal**. Um fragmento com formato de notícia anual, ainda que mencione teto ou alíquotas, falha como `PARSER_INCOMPATIBLE` e não é reinterpretado como tabela canônica.
-
-### 5.3 Runner e estado operacional
-
-`scripts/run_source_pipeline_v1.py` registra agora dois pipelines explícitos:
+Para a parte de folha, uma nova escrita de `dados_fiscais.json` só pode nascer de candidatos `PARSED` da execução corrente de:
 
 ```text
 RFB_IRRF_TABLE_2026
 INSS_TABLE_2026
 ```
 
-Assim, por exemplo:
+A adaptação para o shape 2.2.0 acontece em `sanida_fiscal/legacy_artifact_v1.py`.
 
-```text
-python scripts/run_source_pipeline_v1.py --source-id INSS_TABLE_2026
-```
+É nessa fronteira, e somente nela, que strings decimais canônicas podem ser convertidas para `float` porque os consumidores legados ainda esperam números JSON nesse formato.
 
-faz fetch direto da URL registrada, persiste snapshot bruto antes do parser, gera candidato normalizado e atualiza `SourcePipelineState` sem tocar os artefatos de produção.
+A camada adiciona à proveniência do artefato:
 
-Não existe chamada a `find_inss_article_url()`, `PINNED_INSS_URLS` ou `@@search` no novo caminho.
+- `source_id`;
+- URL;
+- HTTP status;
+- status da coleta;
+- SHA-256 do snapshot;
+- SHA-256 do candidato;
+- parser id/versão;
+- horário UTC observado.
 
-### 5.4 Gate executável
+### 5.3 Regras de segurança da transição
 
-`scripts/validate_phase4_foundation.py` passou a rejeitar regressões em que:
+O bridge exige:
 
-- a URL canônica do documento de resolução diverge do `source-registry-v1.json`;
-- o parser id/versão diverge da política fechada;
-- fallback para notícia pinned seja reativado;
-- fallback para `@@search` seja reativado;
-- falha da fonte canônica deixe de ser fail-closed;
-- a superfície de coleta deixe de marcar a divergência como resolvida;
-- teto, quatro faixas, alíquotas ou a separação do 13º deixem de ser reproduzidos pela fixture oficial mínima.
+1. RFB e INSS com o mesmo `reference_year`;
+2. `reference_year` igual ao ano UTC corrente;
+3. candidato `PARSED` atual para as duas fontes;
+4. nenhum uso de `SourcePipelineState` sozinho para fabricar nova publicação;
+5. nenhum fallback fiscal estático;
+6. nenhuma relabelagem de 2026 como 2027;
+7. se a coleta falhar, o produtor pode apenas manter inalterado um `dados_fiscais.json` já válido **do mesmo ano**;
+8. sem candidato atual e sem last-good do mesmo ano, a execução falha sem escrever arquivo.
 
-O checkpoint fecha com **172 testes verdes** no `Remake CI`.
+Com isso, o antigo bloco `minimal_fallback` foi removido de `scraper.py`.
 
-## 6. Invariantes já executáveis
+### 5.4 Remoção efetiva do discovery/parser legado
 
-O conjunto de testes da Fase 4 garante agora:
+`scraper.py` não contém mais:
 
-1. snapshot é content-addressed e idempotente;
-2. corrupção posterior do snapshot é detectada;
-3. coleta 2xx persiste bytes antes do parser;
-4. 404 não é retryado e nunca fabrica snapshot;
-5. 5xx é retryado e, se persistente, vira `SOURCE_UNAVAILABLE` sem snapshot;
-6. timeout é distinguível de falha HTTP;
-7. `PARSER_INCOMPATIBLE` é distinguível de `SOURCE_UNAVAILABLE`;
-8. parser não aceita resultado de coleta malsucedida;
-9. candidato normalizado carrega identidade exata do snapshot;
-10. o registro oficial da Fase 1 pode ser carregado como superfície de coleta sem reinterpretação;
-11. o parser RFB reproduz os parâmetros oficiais congelados de 2026;
-12. uma segunda execução usa `ETag` e trata 304 como não modificação operacional;
-13. resposta 200 byte a byte igual produz o mesmo snapshot e o mesmo fingerprint de candidato;
-14. falha atual da fonte preserva o último candidato parseado, mas registra explicitamente a falha corrente;
-15. mudança de versão do parser força refetch completo antes de aceitar o novo parser;
-16. o parser INSS reproduz as quatro faixas e o teto oficial de 2026;
-17. o INSS da Fase 4 consulta diretamente `INSS_TABLE_2026`, sem discovery;
-18. notícia anual não satisfaz o contrato estrutural do parser canônico;
-19. falha da URL canônica não dispara fallback automático para notícia ou busca;
-20. a política de fonte INSS é machine-readable e cruzada com o source registry no CI.
+- `parse_irrf_receita`;
+- `PINNED_INSS_URLS`;
+- `find_inss_article_url`;
+- `parse_inss_gov`;
+- busca INSS por `@@search`;
+- parser HTML próprio de RFB/INSS;
+- fallback fiscal estático mínimo.
 
-`scripts/validate_phase4_foundation.py` ancora os pipelines RFB e INSS no gate permanente do `Remake CI`.
+O produtor passa a chamar apenas o catálogo de pipelines da Fase 4 e o bridge de compatibilidade.
 
-## 7. Limites deliberados
+### 5.5 Domínio financeiro ainda separado
 
-Ainda não foram definidos ou executados:
+`taxas_bacen.json` continua sendo validado e consumido como entrada legada de `financial_reference`. Este checkpoint não declara Selic/CDI como migrados nem aplica a eles a semântica jurídica das fontes de folha.
 
-- backend definitivo de retenção de snapshots;
-- duração de retenção e política de compactação;
-- migração de `scraper.py` para consumir os novos pipelines RFB/INSS;
-- remoção do discovery/pinned INSS do código legado de produção;
-- registro operacional próprio do domínio financeiro de referência;
-- estratégia final de CDI;
+A migração de `update_taxas.py`, a política de CDI e a retenção definitiva dos snapshots são checkpoints posteriores da Fase 4.
+
+## 6. Estado operacional entre execuções
+
+`sanida_fiscal/source_runtime_v1.py` persiste:
+
+- última observação UTC;
+- status/HTTP status da coleta;
+- `ETag` e `Last-Modified`;
+- falhas correntes;
+- último snapshot coletado;
+- parser id/versão;
+- último snapshot parseado;
+- fingerprint do último candidato.
+
+Esse last-good é operacional e não equivale a validade jurídica.
+
+O runner manual pode reutilizar HTTP validators. O produtor do artefato legado, por desenho, não usa 304 para gerar uma nova versão: ele exige candidato atual nesta execução.
+
+## 7. Invariantes executáveis
+
+A Fase 4 agora garante, entre outras:
+
+1. snapshot content-addressed e íntegro;
+2. `SOURCE_UNAVAILABLE` distinto de `PARSER_INCOMPATIBLE`;
+3. RFB e INSS vinculados às URLs do registro;
+4. notícia anual INSS rejeitada como input canônico;
+5. discovery/pinned removidos do produtor de folha;
+6. catálogo único de parsers para runner e produtor;
+7. bridge 2.2.0 reproduz os valores canônicos de 2026;
+8. candidato 2026 não pode ser publicado como 2027;
+9. runtime state/304 sem candidato corrente não pode gerar nova escrita legada;
+10. artefato legado de ano anterior não pode ser mantido como se fosse corrente;
+11. fallback fiscal estático não pode reaparecer em `scraper.py`;
+12. `requirements.txt` instala as dependências runtime da Fase 4.
+
+`scripts/validate_phase4_foundation.py` ancora essas invariantes no `Remake CI`.
+
+## 8. Limites deliberados
+
+Ainda não foram fechados:
+
+- backend definitivo e retenção de snapshots de produção;
+- persistência operacional entre runners efêmeros do GitHub Actions;
+- migração de Selic/SGS para collector/parser decimal;
+- política operacional e autoridade final de CDI;
+- remoção de fallback estático eventualmente existente em `update_taxas.py`;
 - semantic diff;
-- promoção automática;
-- publicação;
+- promoção/publicação canônica;
 - migração dos consumidores.
 
-O código legado de produção permanece intacto. A divergência de fonte do INSS está resolvida **no novo caminho**, mas o código legado só será removido/substituído quando a migração do produtor for executada de forma controlada.
+## 9. Próximos checkpoints
 
-## 8. Próximos checkpoints
-
-1. preparar a migração de `scraper.py` para consumir os pipelines RFB e INSS sem duplicar fetch/parser e sem alterar ainda as regras de promoção da Fase 5;
-2. definir a fronteira entre candidato normalizado da Fase 4 e artefato legado `dados_fiscais.json` durante a transição;
-3. revisar retenção de snapshots e last-good operacional sem confundi-lo com vigência jurídica;
-4. revisar a autoridade e o contrato operacional do domínio `financial_reference`, incluindo CDI;
-5. fechar a Fase 4 com sensores capazes de detectar mudança sem publicar semanticamente nada por conta própria.
+1. resolver retenção/persistência de snapshots e estado operacional no caminho que será ativado em produção;
+2. migrar o domínio `financial_reference`, começando por Selic/SGS e depois CDI;
+3. eliminar qualquer fallback financeiro capaz de fingir atualidade;
+4. revisar a fronteira final do workflow `main.yml` antes do merge da Fase 4;
+5. fechar a Fase 4 com sensores completos e sem antecipar semantic diff da Fase 5.

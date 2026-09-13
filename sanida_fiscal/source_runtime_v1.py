@@ -119,10 +119,12 @@ def run_source_pipeline(
     parser_id: str,
     parser_version: str,
     parser: Callable[[bytes], dict[str, JsonValue]],
+    use_http_validators: bool = True,
 ) -> SourcePipelineRun:
     previous = state_store.load(source.source_id)
     can_use_http_validators = bool(
-        previous
+        use_http_validators
+        and previous
         and previous.last_parse_status == ParseStatus.PARSED
         and previous.parser_id == parser_id
         and previous.parser_version == parser_version

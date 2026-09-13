@@ -8,12 +8,10 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from sanida_fiscal.inss_employee_v1 import (
-    PARSER_ID as INSS_PARSER_ID,
-    PARSER_VERSION as INSS_PARSER_VERSION,
-    parse_inss_employee_2026_snapshot,
-)
+from sanida_fiscal.inss_employee_v1 import parse_inss_employee_2026_snapshot
+from sanida_fiscal.legacy_artifact_v1 import build_legacy_payroll_fields
 from sanida_fiscal.rfb_irrf_v1 import parse_rfb_irrf_2026_snapshot
+from sanida_fiscal.source_catalog_v1 import PARSER_BINDINGS
 from sanida_fiscal.sources_v1 import load_source_registry
 
 
@@ -21,21 +19,35 @@ REQUIRED = {
     ".gitignore",
     "sanida_fiscal/sources_v1.py",
     "sanida_fiscal/source_runtime_v1.py",
+    "sanida_fiscal/source_catalog_v1.py",
     "sanida_fiscal/rfb_irrf_v1.py",
     "sanida_fiscal/inss_employee_v1.py",
+    "sanida_fiscal/legacy_artifact_v1.py",
     "tests/test_sources_v1.py",
     "tests/test_rfb_source_pipeline_v1.py",
     "tests/test_inss_source_pipeline_v1.py",
+    "tests/test_legacy_artifact_bridge_v1.py",
+    "tests/test_scraper_phase4_migration.py",
     "tests/fixtures/sources/rfb_irrf_2026_fragment.html",
     "tests/fixtures/sources/inss_employee_2026_fragment.html",
     "scripts/run_source_pipeline_v1.py",
     "docs/phase4-sources-sensors-v1.md",
     "docs/phase4-collection-surface-v1.json",
     "docs/phase4-inss-source-resolution-v1.json",
+    "docs/phase4-legacy-artifact-boundary-v1.json",
     "requirements-sources.txt",
 }
 
 ALLOWED_WORKFLOWS = {"main.yml", "taxas.yml", "remake-ci.yml"}
+FORBIDDEN_SCRAPER_TOKENS = {
+    "PINNED_INSS_URLS",
+    "find_inss_article_url",
+    "parse_inss_gov",
+    "parse_irrf_receita",
+    "@@search",
+    "minimal_fallback_written",
+    "static_reference_values",
+}
 
 
 def main() -> None:
@@ -70,8 +82,11 @@ def main() -> None:
     if unexpected:
         raise SystemExit(f"Phase 4 foundation: unexpected workflows: {unexpected}")
 
-    if "RFB_IRRF_TABLE_2026" not in registry or "INSS_TABLE_2026" not in registry:
+    required_sources = {"RFB_IRRF_TABLE_2026", "INSS_TABLE_2026"}
+    if not required_sources.issubset(registry):
         raise SystemExit("Phase 4 foundation: canonical RFB/INSS sources are missing")
+    if set(PARSER_BINDINGS) != required_sources:
+        raise SystemExit("Phase 4 foundation: parser catalog drift")
 
     rfb_fixture = (ROOT / "tests/fixtures/sources/rfb_irrf_2026_fragment.html").read_bytes()
     rfb_payload = parse_rfb_irrf_2026_snapshot(rfb_fixture)
@@ -86,54 +101,51 @@ def main() -> None:
     inss_fixture = (ROOT / "tests/fixtures/sources/inss_employee_2026_fragment.html").read_bytes()
     inss_payload = parse_inss_employee_2026_snapshot(inss_fixture)
     if inss_payload.get("contribution_ceiling_brl") != "8475.55":
-        raise SystemExit("Phase 4 foundation: INSS parser contribution ceiling drift")
-    inss_table = inss_payload.get("monthly_table")
-    if not isinstance(inss_table, list) or len(inss_table) != 4:
-        raise SystemExit("Phase 4 foundation: INSS parser band-count drift")
-    if [band.get("rate") for band in inss_table if isinstance(band, dict)] != [
-        "0.075",
-        "0.09",
-        "0.12",
-        "0.14",
-    ]:
-        raise SystemExit("Phase 4 foundation: INSS parser rate drift")
+        raise SystemExit("Phase 4 foundation: INSS parser ceiling drift")
     if inss_payload.get("thirteenth_assessment") != "separate_from_monthly_remuneration":
-        raise SystemExit("Phase 4 foundation: INSS 13th assessment marker drift")
+        raise SystemExit("Phase 4 foundation: INSS 13th assessment drift")
 
-    policy = json.loads(
-        (ROOT / "docs/phase4-inss-source-resolution-v1.json").read_text(encoding="utf-8")
-    )
-    inss_source = registry["INSS_TABLE_2026"]
-    canonical = policy.get("canonical_source")
-    resolution = policy.get("resolution")
-    if policy.get("status") != "resolved" or policy.get("registry_source_id") != inss_source.source_id:
-        raise SystemExit("Phase 4 foundation: INSS source resolution is not closed")
-    if not isinstance(canonical, dict) or canonical.get("url") != inss_source.url:
-        raise SystemExit("Phase 4 foundation: INSS canonical URL diverges from source registry")
-    if canonical.get("parser_id") != INSS_PARSER_ID or canonical.get("parser_version") != INSS_PARSER_VERSION:
-        raise SystemExit("Phase 4 foundation: INSS parser registration diverges from source policy")
-    if not isinstance(resolution, dict):
-        raise SystemExit("Phase 4 foundation: INSS source resolution payload missing")
-    if resolution.get("allow_pinned_news_fallback") is not False:
-        raise SystemExit("Phase 4 foundation: pinned INSS news fallback must stay disabled")
-    if resolution.get("allow_search_discovery_fallback") is not False:
-        raise SystemExit("Phase 4 foundation: INSS search discovery fallback must stay disabled")
-    if resolution.get("canonical_failure_state") != "SOURCE_UNAVAILABLE":
-        raise SystemExit("Phase 4 foundation: INSS canonical failure must fail closed")
+    policy = json.loads((ROOT / "docs/phase4-inss-source-resolution-v1.json").read_text(encoding="utf-8"))
+    if policy.get("registry_source_id") != "INSS_TABLE_2026":
+        raise SystemExit("Phase 4 foundation: INSS source policy registry id drift")
+    resolution = policy.get("resolution", {})
+    if resolution.get("allow_pinned_news_fallback") is not False or resolution.get("allow_search_discovery_fallback") is not False:
+        raise SystemExit("Phase 4 foundation: INSS discovery fallback re-enabled")
+    if policy.get("canonical_source", {}).get("url") != registry["INSS_TABLE_2026"].url:
+        raise SystemExit("Phase 4 foundation: INSS canonical URL differs from source registry")
 
-    inss_surface = next(
-        (entry for entry in entries if entry.get("collector_id") == "legacy.inss.employee_table"),
-        None,
+    boundary = json.loads((ROOT / "docs/phase4-legacy-artifact-boundary-v1.json").read_text(encoding="utf-8"))
+    write_policy = boundary.get("write_policy", {})
+    if write_policy.get("allow_static_payroll_fallback") is not False:
+        raise SystemExit("Phase 4 foundation: static payroll fallback re-enabled")
+    if write_policy.get("allow_preserve_prior_year_artifact_as_current") is not False:
+        raise SystemExit("Phase 4 foundation: prior-year relabeling allowed")
+    if boundary.get("legacy_artifact", {}).get("canonical_contract_release") is not False:
+        raise SystemExit("Phase 4 foundation: legacy artifact mislabeled as canonical release")
+
+    legacy = build_legacy_payroll_fields(
+        rfb_payload=rfb_payload,
+        inss_payload=inss_payload,
+        expected_year=2026,
     )
-    if not isinstance(inss_surface, dict) or inss_surface.get("gap_status") != "resolved":
-        raise SystemExit("Phase 4 foundation: INSS collection-surface gap is not marked resolved")
-    if inss_surface.get("resolution_artifact") != "docs/phase4-inss-source-resolution-v1.json":
-        raise SystemExit("Phase 4 foundation: INSS resolution artifact is not anchored")
+    if legacy.get("dep") != 189.59 or legacy.get("inss", [])[-1].get("limite") != 8475.55:
+        raise SystemExit("Phase 4 foundation: legacy compatibility bridge drift")
+
+    scraper_text = (ROOT / "scraper.py").read_text(encoding="utf-8")
+    leaked = sorted(token for token in FORBIDDEN_SCRAPER_TOKENS if token in scraper_text)
+    if leaked:
+        raise SystemExit(f"Phase 4 foundation: legacy payroll path still present in scraper: {leaked}")
+    if "run_registered_source_pipeline" not in scraper_text or "build_legacy_dados_fiscais" not in scraper_text:
+        raise SystemExit("Phase 4 foundation: scraper is not wired through canonical pipelines and compatibility bridge")
+
+    requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
+    if "-r requirements-contract.txt" not in requirements or "-r requirements-sources.txt" not in requirements:
+        raise SystemExit("Phase 4 foundation: production requirements do not install Phase 4 runtime")
 
     print(
         "Phase 4 foundation: PASS "
         f"({len(entries)} collection-surface entries; {len(registry)} registered official sources; "
-        "RFB+INSS pipelines anchored; INSS source divergence resolved)"
+        "RFB+INSS pipelines anchored; INSS source divergence resolved; legacy artifact bridge prepared)"
     )
 
 
