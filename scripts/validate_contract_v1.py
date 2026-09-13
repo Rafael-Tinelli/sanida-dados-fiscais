@@ -200,6 +200,10 @@ def main() -> int:
             f"{rule.rule_id} calculator set mismatch",
         )
         require(
+            rule.applies_to == inventory_rule["applies_to"],
+            f"{rule.rule_id} applies_to diverges from Phase 1 inventory",
+        )
+        require(
             {context.value for context in rule.contexts}
             == set(coverage_rule["contexts"]),
             f"{rule.rule_id} context set mismatch with coverage map",
@@ -208,10 +212,43 @@ def main() -> int:
             rule.competence.basis.value == coverage_rule["competence_basis"],
             f"{rule.rule_id} competence basis mismatch with coverage map",
         )
+        if coverage_rule["competence_basis"] == "rule_specific":
+            require(
+                "competence_key" in coverage_rule,
+                f"{rule.rule_id} rule_specific coverage requires competence_key",
+            )
+            require(
+                rule.competence.rule_specific_key is not None
+                and rule.competence.rule_specific_key.value == coverage_rule["competence_key"],
+                f"{rule.rule_id} typed competence key mismatch",
+            )
+        else:
+            require(
+                "competence_key" not in coverage_rule,
+                f"{rule.rule_id} has competence_key without rule_specific basis",
+            )
         require(
             rule.payload.type == coverage_rule["payload_type"],
             f"{rule.rule_id} payload family mismatch with coverage map",
         )
+        if rule.payload.type == "progressive_table":
+            require(
+                "calculation_method" in coverage_rule,
+                f"{rule.rule_id} progressive table requires calculation_method",
+            )
+            require(
+                rule.payload.calculation_method.value == coverage_rule["calculation_method"],
+                f"{rule.rule_id} progressive calculation method mismatch",
+            )
+        if rule.payload.type == "scalar":
+            require(
+                "unit" in coverage_rule,
+                f"{rule.rule_id} scalar coverage requires unit",
+            )
+            require(
+                rule.payload.unit.value == coverage_rule["unit"],
+                f"{rule.rule_id} scalar unit mismatch",
+            )
         if rule.payload.type == "policy":
             require(
                 rule.payload.policy_kind.value == coverage_rule["policy_kind"],
@@ -304,6 +341,7 @@ def main() -> int:
         f"{len(RULE_PAYLOAD_TYPES)} payload families)"
     )
     print(f"Candidate canonical sha256: {contract.content_sha256()}")
+    print(f"Candidate immutable payload sha256: {contract.release_payload_sha256()}")
     return 0
 
 

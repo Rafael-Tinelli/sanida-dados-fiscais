@@ -10,18 +10,23 @@ from pydantic import ValidationError
 
 from sanida_fiscal.contract_v1 import (
     AssessmentContext,
+    ContractCompatibilityError,
     ContractNotConsumableError,
     FiscalContractV1,
     QualityStatus,
+    ReleaseTransitionError,
     RuleSelectionError,
+    semver_bump,
 )
 from sanida_fiscal.types_v1 import (
     CompetencePolicy,
     EntitlementBandsPayload,
     EvidenceObservation,
     PeriodStatePayload,
+    POLICY_ASSERTIONS_BY_KIND,
     PolicyKind,
     PolicyPayload,
+    VersionBump,
     ScopeDeclarationPayload,
     SourceObservationStatus,
     UpdatePolicy,
@@ -54,6 +59,15 @@ def add_hashes(data: dict) -> None:
         available["snapshot_path"] = (
             f"raw/{rule['rule_id'].replace('.', '_')}/snapshot.bin"
         )
+
+
+def set_canonical_release_id(data: dict) -> None:
+    candidate = deepcopy(data)
+    candidate["status"] = "CANDIDATE"
+    candidate["lifecycle"] = {}
+    candidate["release_id"] = "candidate-for-hash"
+    contract = FiscalContractV1.model_validate(candidate)
+    data["release_id"] = contract.expected_release_id()
 
 
 def test_example_validates_and_materializes_every_payload_family() -> None:
@@ -152,6 +166,7 @@ def test_published_contract_requires_hashed_available_evidence() -> None:
 def test_published_contract_with_structural_changes_requires_human_approval() -> None:
     data = load_example()
     add_hashes(data)
+    set_canonical_release_id(data)
     data["status"] = "PUBLISHED"
     data["lifecycle"] = {
         "validated_at_utc": "2026-09-13T13:00:00Z",
@@ -166,6 +181,7 @@ def test_published_contract_with_structural_changes_requires_human_approval() ->
 def test_published_contract_with_human_approval_can_validate() -> None:
     data = load_example()
     add_hashes(data)
+    set_canonical_release_id(data)
     data["status"] = "PUBLISHED"
     data["lifecycle"] = {
         "validated_at_utc": "2026-09-13T13:00:00Z",
@@ -192,17 +208,10 @@ def test_blocked_release_requires_reason() -> None:
         FiscalContractV1.model_validate(data)
 
 
-def test_superseded_release_requires_successor_metadata() -> None:
+def test_superseded_is_not_a_mutable_release_status() -> None:
     data = load_example()
-    add_hashes(data)
     data["status"] = "SUPERSEDED"
-    data["lifecycle"] = {
-        "validated_at_utc": "2026-09-13T13:00:00Z",
-        "published_at_utc": "2026-09-13T13:05:00Z",
-        "approval_mode": "HUMAN_REVIEWED",
-        "approval_reference": "review:synthetic",
-    }
-    with pytest.raises(ValidationError, match="successor metadata"):
+    with pytest.raises(ValidationError):
         FiscalContractV1.model_validate(data)
 
 
@@ -366,7 +375,7 @@ def test_competence_override_cannot_target_undeclared_context() -> None:
 
 
 def test_rule_specific_competence_requires_description() -> None:
-    with pytest.raises(ValidationError, match="requires description"):
+    with pytest.raises(ValidationError, match="requires rule_specific_key"):
         CompetencePolicy(basis="rule_specific")
 
 
@@ -405,10 +414,10 @@ def test_snapshot_path_requires_hash() -> None:
 
 @pytest.mark.parametrize("kind", [kind.value for kind in PolicyKind])
 def test_every_policy_kind_is_schema_expressible(kind: str) -> None:
+    policy_kind = PolicyKind(kind)
     payload = PolicyPayload(
-        policy_kind=kind,
-        assertions=["phase1_semantics_preserved"],
-        values={},
+        policy_kind=policy_kind,
+        assertions=list(POLICY_ASSERTIONS_BY_KIND[policy_kind]),
     )
     assert payload.type == "policy"
 
@@ -456,3 +465,118 @@ def test_unknown_field_is_rejected() -> None:
     data["invented_field"] = True
     with pytest.raises(ValidationError):
         FiscalContractV1.model_validate(data)
+
+
+
+def test_versioning_policy_is_frozen_and_exact_for_v1() -> None:
+    contract = FiscalContractV1.model_validate(load_example())
+    assert contract.versioning_policy.schema_versioning == "semver"
+    assert contract.versioning_policy.contract_api_versioning == "semver"
+    assert contract.versioning_policy.rule_versioning == "semver"
+    assert contract.versioning_policy.release_id_strategy == "content_addressed_sha256"
+    assert contract.versioning_policy.schema_compatibility == "exact"
+    assert contract.versioning_policy.contract_api_compatibility == "exact"
+    assert contract.versioning_policy.forward_compatibility == "not_assumed"
+
+
+def test_semver_bump_classification() -> None:
+    assert semver_bump("1.0.0", "2.0.0") == VersionBump.MAJOR
+    assert semver_bump("1.0.0", "1.1.0") == VersionBump.MINOR
+    assert semver_bump("1.0.0", "1.0.1") == VersionBump.PATCH
+    assert semver_bump("1.0.0", "1.0.0") is None
+    with pytest.raises(ValueError, match="backwards"):
+        semver_bump("1.1.0", "1.0.9")
+
+
+def test_reader_compatibility_is_exact_and_unknown_versions_fail() -> None:
+    contract = FiscalContractV1.model_validate(load_example())
+    contract.assert_reader_compatible(
+        consumer="H26", schema_version="1.0.0", contract_api_version="1.0.0"
+    )
+    with pytest.raises(ContractCompatibilityError, match="schema mismatch"):
+        contract.assert_reader_compatible(
+            consumer="H26", schema_version="1.0.1", contract_api_version="1.0.0"
+        )
+    with pytest.raises(ContractCompatibilityError, match="contract API mismatch"):
+        contract.assert_reader_compatible(
+            consumer="H26", schema_version="1.0.0", contract_api_version="1.1.0"
+        )
+
+
+def test_validated_release_id_is_content_addressed() -> None:
+    data = load_example()
+    add_hashes(data)
+    data["status"] = "VALIDATED"
+    data["lifecycle"] = {"validated_at_utc": "2026-09-13T13:00:00Z"}
+    with pytest.raises(ValidationError, match="content-addressed"):
+        FiscalContractV1.model_validate(data)
+    set_canonical_release_id(data)
+    contract = FiscalContractV1.model_validate(data)
+    assert contract.release_id == contract.expected_release_id()
+    assert contract.release_id.startswith("fiscal-v1-sha256-")
+
+
+def test_published_release_artifact_is_immutable() -> None:
+    data = load_example()
+    add_hashes(data)
+    set_canonical_release_id(data)
+    data["status"] = "PUBLISHED"
+    data["lifecycle"] = {
+        "validated_at_utc": "2026-09-13T13:00:00Z",
+        "published_at_utc": "2026-09-13T13:05:00Z",
+        "approval_mode": "HUMAN_REVIEWED",
+        "approval_reference": "review:immutability",
+    }
+    published = FiscalContractV1.model_validate(data)
+    identical = FiscalContractV1.model_validate(deepcopy(data))
+    identical.assert_published_immutable_against(published)
+
+    changed = deepcopy(data)
+    changed["notes"] = "mutated after publication"
+    changed_contract = FiscalContractV1.model_validate(changed)
+    with pytest.raises(ReleaseTransitionError, match="immutable"):
+        changed_contract.assert_published_immutable_against(published)
+
+
+def test_supersession_is_declared_by_successor_without_mutating_predecessor() -> None:
+    data = load_example()
+    add_hashes(data)
+    set_canonical_release_id(data)
+    data["status"] = "PUBLISHED"
+    data["lifecycle"] = {
+        "validated_at_utc": "2026-09-13T13:00:00Z",
+        "published_at_utc": "2026-09-13T13:05:00Z",
+        "approval_mode": "HUMAN_REVIEWED",
+        "approval_reference": "review:predecessor",
+    }
+    predecessor = FiscalContractV1.model_validate(data)
+
+    successor_data = load_example()
+    successor_data["release_id"] = "candidate-successor"
+    successor_data["supersedes_release_id"] = predecessor.release_id
+    successor = FiscalContractV1.model_validate(successor_data)
+    successor.assert_supersedes(predecessor)
+    assert predecessor.status.value == "PUBLISHED"
+
+
+def test_progressive_table_method_is_explicit() -> None:
+    contract = FiscalContractV1.model_validate(load_example())
+    rule = next(rule for rule in contract.rules if rule.rule_id == "irrf.monthly.progressive_table")
+    assert rule.payload.calculation_method.value == "rate_times_base_minus_deduction"
+
+
+def test_affine_reduction_formula_is_explicit() -> None:
+    contract = FiscalContractV1.model_validate(load_example())
+    rule = next(rule for rule in contract.rules if rule.rule_id == "irrf.reduction.2026")
+    assert rule.payload.full_relief_behavior == "max_reduction"
+    assert rule.payload.phaseout_formula == "intercept_minus_slope_times_input"
+    assert rule.payload.above_phaseout_behavior == "zero"
+
+
+def test_rule_specific_competence_uses_typed_key() -> None:
+    contract = FiscalContractV1.model_validate(load_example())
+    rule = next(rule for rule in contract.rules if rule.rule_id == "thirteenth.accrual.twelfths")
+    assert (
+        rule.competence.rule_specific_key.value
+        == "thirteenth_accrual_reference_year_or_termination_period"
+    )

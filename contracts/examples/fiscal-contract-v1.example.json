@@ -15,7 +15,12 @@
       "H28",
       "H29"
     ],
-    "unsupported_behavior": "hard_fail"
+    "unsupported_behavior": "hard_fail",
+    "schema_version": "1.0.0",
+    "schema_match": "exact",
+    "contract_api_match": "exact",
+    "unknown_fields": "reject",
+    "unknown_payload_types": "reject"
   },
   "last_good_policy": {
     "allow_when_source_unavailable": true,
@@ -86,7 +91,8 @@
             "rate": "0.275",
             "deduction": "908.73"
           }
-        ]
+        ],
+        "calculation_method": "rate_times_base_minus_deduction"
       },
       "provenance": [
         {
@@ -155,7 +161,10 @@
         "intercept": "978.62",
         "slope": "0.133145",
         "input_semantic": "taxable_income_subject_to_monthly_incidence_before_irrf_deductions",
-        "floor_at_zero": true
+        "floor_at_zero": true,
+        "full_relief_behavior": "max_reduction",
+        "phaseout_formula": "intercept_minus_slope_times_input",
+        "above_phaseout_behavior": "zero"
       },
       "provenance": [
         {
@@ -228,7 +237,10 @@
         "intercept": "978.62",
         "slope": "0.133145",
         "input_semantic": "thirteenth_taxable_income_before_irrf_deductions",
-        "floor_at_zero": true
+        "floor_at_zero": true,
+        "full_relief_behavior": "max_reduction",
+        "phaseout_formula": "intercept_minus_slope_times_input",
+        "above_phaseout_behavior": "zero"
       },
       "provenance": [
         {
@@ -270,7 +282,8 @@
       "calculation_order": 10,
       "competence": {
         "basis": "rule_specific",
-        "description": "Ano de referência para 13º normal; período até a extinção para 13º rescisório dentro da modalidade suportada."
+        "description": "Ano de referência para 13º normal; período até a extinção para 13º rescisório dentro da modalidade suportada.",
+        "rule_specific_key": "thirteenth_accrual_reference_year_or_termination_period"
       },
       "vigency": {
         "effective_from": "1962-07-13"
@@ -280,7 +293,8 @@
         "fraction_numerator": 1,
         "fraction_denominator": 12,
         "qualifying_days": 15,
-        "max_units": 12
+        "max_units": 12,
+        "method": "one_unit_per_month_if_days_gte_threshold"
       },
       "provenance": [
         {
@@ -494,7 +508,7 @@
         "termination"
       ],
       "description": "Matriz inicial de elegibilidade das verbas parciais suportadas por H29 conforme Tabela 19/evidência operacional fechada na Fase 1.",
-      "applies_to": "termination_entitlements",
+      "applies_to": "termination_entitlement_matrix",
       "applicability": [
         {
           "field": "employment_regime",
@@ -562,7 +576,8 @@
             }
           }
         ],
-        "unsupported_behavior": "UNSUPPORTED"
+        "unsupported_behavior": "UNSUPPORTED",
+        "code_system": "esocial_table_19_termination_reason"
       },
       "provenance": [
         {
@@ -691,15 +706,7 @@
         "assertions": [
           "deductions_must_match_assessment_context",
           "pension_must_not_be_silently_zeroed_when_applicable"
-        ],
-        "values": {
-          "contexts": [
-            "monthly",
-            "thirteenth",
-            "vacation_enjoyed",
-            "termination"
-          ]
-        }
+        ]
       },
       "provenance": [
         {
@@ -748,7 +755,8 @@
       "calculation_order": 11,
       "competence": {
         "basis": "rule_specific",
-        "description": "Rule-specific competence defined by the Phase 1 decision."
+        "description": "Rule-specific competence defined by the Phase 1 decision.",
+        "rule_specific_key": "thirteenth_reference_remuneration_cycle"
       },
       "vigency": {
         "effective_from": "2021-11-10"
@@ -805,7 +813,8 @@
       "calculation_order": 12,
       "competence": {
         "basis": "rule_specific",
-        "description": "Rule-specific competence defined by the Phase 1 decision."
+        "description": "Rule-specific competence defined by the Phase 1 decision.",
+        "rule_specific_key": "thirteenth_variable_remuneration_cycle"
       },
       "vigency": {
         "effective_from": "2021-11-10"
@@ -1000,7 +1009,8 @@
             "entitled_days": 12
           }
         ],
-        "outside_behavior": "UNSUPPORTED"
+        "outside_behavior": "UNSUPPORTED",
+        "input_semantic": "unjustified_absences_in_acquisition_period"
       },
       "provenance": [
         {
@@ -1267,7 +1277,8 @@
         "ineligible_codes": [
           "01"
         ],
-        "unsupported_behavior": "UNSUPPORTED"
+        "unsupported_behavior": "UNSUPPORTED",
+        "code_system": "esocial_table_19_termination_reason"
       },
       "provenance": [
         {
@@ -1366,5 +1377,15 @@
     }
   ],
   "notes": "CANDIDATE de cobertura de schema da Fase 2. Não é release de produção e não contém snapshots reais.",
-  "lifecycle": {}
+  "lifecycle": {},
+  "versioning_policy": {
+    "schema_versioning": "semver",
+    "contract_api_versioning": "semver",
+    "rule_versioning": "semver",
+    "release_id_strategy": "content_addressed_sha256",
+    "schema_compatibility": "exact",
+    "contract_api_compatibility": "exact",
+    "backward_compatibility": "explicitly_tested_only",
+    "forward_compatibility": "not_assumed"
+  }
 }
