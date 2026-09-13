@@ -372,39 +372,168 @@ Perfis trocados ou componentes fundidos são rejeitados. Isso elimina estrutural
 
 O checkpoint não fabrica uma fórmula monetária específica para transformar dias de abono em principal/terço quando essa fórmula não estiver expressa como payload computacional correspondente. O engine já executa direito em dias e incidências; qualquer semântica monetária adicional precisa entrar explicitamente no contrato antes de ser calculada.
 
-## 9. Estado do CI
+## 9. Quinto checkpoint — saldo salarial e matriz H29 limitada
 
-Após o checkpoint de férias/A02 e a emenda contratual v1.1:
+O núcleo rescisório limitado vive em:
+
+```text
+sanida_fiscal/termination_v1.py
+tests/test_termination_v1.py
+```
+
+O objetivo não é transformar H29 em calculadora universal de rescisão. O engine executa apenas o subconjunto fechado na Fase 1/2 e devolve explicitamente `partial_estimate`.
+
+### 9.1 Matriz de motivos suportados
+
+`select_termination_rule_bundle()` cruza três fontes computacionais do próprio contrato:
+
+```text
+termination.reason_scope
+termination.thirteenth_proportional
+termination.vacation_proportional
+```
+
+A regra de férias proporcionais já existia no inventário/coverage, mas ainda não estava materializada no `CANDIDATE`. Ela foi adicionada como 21ª regra representativa, usando a família já existente `code_eligibility`; nenhuma família de schema nova foi criada.
+
+A matriz executada é:
+
+```text
+01  justa causa pelo empregador
+    saldo salarial             sim
+    13º proporcional           não
+    férias proporcionais       não
+
+02  sem justa causa
+    saldo salarial             sim
+    13º proporcional           sim
+    férias proporcionais       sim
+
+07  pedido de demissão
+    saldo salarial             sim
+    13º proporcional           sim
+    férias proporcionais       sim
+
+33  acordo art. 484-A
+    saldo salarial             sim
+    13º proporcional           sim
+    férias proporcionais       sim
+```
+
+Motivo fora desse conjunto é `UNSUPPORTED`. O bundle exige ainda que as regras específicas de 13º e férias cubram exatamente os mesmos quatro códigos e reproduzam os mesmos booleans da matriz. Divergência contratual falha antes do cálculo.
+
+### 9.2 Limite de vínculo suportado
+
+A aplicabilidade de `termination.reason_scope` é executada:
+
+```text
+employment_regime ∈ {monthly, biweekly}
+contract_term      = indefinite
+```
+
+No caminho monetário, `monthly_base_salary` é a base mensal normalizada declarada pelo `ProrationPayload`. Horista, diarista, semanalista e contrato a prazo determinado não são convertidos silenciosamente para esse modelo.
+
+### 9.3 Saldo salarial
+
+`calculate_salary_balance()` executa:
+
+```text
+monthly_base_salary
+× days_counted_through_termination
+÷ calendar_days_in_month
+```
+
+O denominador vem do calendário do próprio mês de desligamento. Não existe divisor 30 universal. O caso de referência fica executável:
+
+```text
+3100.00 / 31 × 10 = 1000.00
+```
+
+O mesmo numerador em abril de 2026 produz `1033.33`, demonstrando que a diferença 30/31 não é apagada. O numerador não pode exceder o dia do desligamento e o resultado não pode ultrapassar a base mensal.
+
+### 9.4 13º proporcional e férias proporcionais permanecem calendários distintos
+
+Para motivos `02/07/33`, `calculate_h29_limited_estimate()` reutiliza os núcleos já testados:
+
+- 13º: `calculate_thirteenth_accrual()` + referência remuneratória rescisória + fórmula proporcional do 13º;
+- férias: `calculate_proportional_vacation_accrual()` ancorada no período aquisitivo.
+
+No mesmo caso:
+
+```text
+admissão       01/09/2025
+desligamento   31/03/2026
+
+13º rescisório        3/12  (jan-mar/2026)
+férias proporcionais  7/12  (set/2025-mar/2026)
+```
+
+O engine não reutiliza a contagem de um direito como se fosse a do outro. No motivo `01`, os cálculos proporcionais nem são executados. A fronteira de 15 dias também foi integrada.
+
+### 9.5 A saída continua parcial
+
+`H29LimitedEstimate` carrega:
+
+```text
+result_promise = partial_estimate
+user_disclosure_required = true
+reason
+salary_balance
+thirteenth_proportional
+vacation_proportional
+acquired_vacation_if_due
+included_items
+excluded_items
+```
+
+Neste checkpoint, `acquired_vacation_if_due` é a elegibilidade da matriz; o cálculo monetário de períodos adquiridos/vencidos não foi expandido a partir do antigo checkbox.
+
+Continuam fora do total, conforme `ScopeDeclarationPayload`:
+
+- aviso prévio ou desconto de aviso;
+- multa e saque do FGTS;
+- seguro-desemprego;
+- indenizações de estabilidade;
+- verbas específicas de CCT;
+- regras de contrato por prazo determinado;
+- rescisão indireta sem contexto judicial resolvido;
+- itens variáveis rescisórios não explicitamente modelados.
+
+A saída não pode ser apresentada como “total universal da rescisão”.
+
+## 10. Estado do CI
+
+Após o checkpoint H29 limitado:
 
 ```text
 Repository baseline       PASS
 Fiscal Contract v1.1      PASS
+Candidate rules           21
 Inventory coverage        32/32
 Payload families          18/18
 Fiscal engine             PASS
 Property-based tests      PASS
 
-114 passed
+130 passed
 ```
 
-Run de referência: `34767468990` (head limpo, após remoção dos helpers/workflows temporários).
-
-## 10. Limites preservados
+Run de validação do checkpoint: `34770991820`.
+## 11. Limites preservados
 
 Ainda não estão implementados integralmente:
 
 - cálculo canônico interno completo da remuneração variável do 13º;
 - branches especiais de adiantamento para admissão no ano/remuneração variável;
 - fórmula monetária adicional do abono além das grandezas e incidências já tipadas, se necessária, até que exista payload computacional explícito;
-- saldo salarial e matriz de elegibilidade completa do H29;
+- cálculo monetário de períodos integrais adquiridos/vencidos na rescisão além da elegibilidade já exposta;
+- incidências e memória fiscal final do saldo salarial no orquestrador H29, que serão compostas a partir dos primitives já existentes sem ampliar o escopo de verbas;
 - collectors/snapshots/parsers;
 - publicação de releases;
 - migração de WordPress/`folha-core`/H26–H29.
 
 Esses limites são fail-closed: o engine rejeita os casos não modelados em vez de convertê-los silenciosamente em aproximações.
 
-## 11. Próximos checkpoints da Fase 3
+## 12. Próximos checkpoints da Fase 3
 
-1. implementar saldo salarial e matriz H29 limitada;
-2. consolidar memória de cálculo comum;
-3. ampliar invariantes/property-based tests nas fronteiras legais e monetárias.
+1. consolidar memória de cálculo comum entre os núcleos já implementados;
+2. ampliar invariantes/property-based tests nas fronteiras legais e monetárias;
+3. preparar o gate de fechamento da Fase 3 sem antecipar collectors, publicação ou migração de consumidores.

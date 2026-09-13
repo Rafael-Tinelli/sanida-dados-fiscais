@@ -726,7 +726,12 @@ Estado dos checkpoints executados:
 - regressão A02 reproduz `01/09/2025 → 31/03/2026 = 7/12`;
 - faixas de direito por faltas e abono de 1/3 do **direito adquirido** estão executáveis;
 - principal do abono (`IRRF não / CP não`) e terço constitucional sobre o abono (`IRRF sim / CP não`) permanecem componentes separados até a formação das bases tributárias;
-- suíte completa: **114 testes verdes** após o checkpoint de férias/A02.
+- H29 ganhou núcleo limitado próprio, com matriz eSocial `01/02/07/33`, sem expansão para motivos não suportados;
+- motivo `01` mantém saldo salarial e bloqueia 13º/férias proporcionais; `02/07/33` habilitam ambos;
+- saldo salarial usa `salário-base mensal normalizado × dias considerados / dias civis do mês`, sem divisor 30 universal;
+- 13º rescisório continua no calendário anual enquanto férias proporcionais continuam no período aquisitivo — no caso `01/09/2025 → 31/03/2026`, isso produz 3/12 de 13º e 7/12 de férias;
+- H29 continua declarando `partial_estimate`, com aviso prévio, FGTS rescisório, seguro-desemprego, estabilidade, prazo determinado e demais verbas não modeladas fora do total;
+- suíte completa: **130 testes verdes** após o checkpoint H29 limitado.
 
 ### Fase 4 — Fontes e sensores
 
@@ -805,6 +810,8 @@ Objetivos:
 23. Release `PUBLISHED` é imutável; supersessão é declarada pela sucessora em `supersedes_release_id`, sem mutar a predecessora.
 24. Campos narrativos existem para auditoria humana, mas o engine não pode depender deles para decidir operação fiscal.
 25. O limiar proporcional de férias não pode existir como constante jurídica escondida no engine: `vacation.acquisition_period` v1.1 declara `proportional_qualifying_days=15` e o método de aquisição proporcional; leitores 1.0.0 não aceitam silenciosamente o contrato 1.1.0.
+26. H29 deve executar a matriz eSocial `01/02/07/33` como escopo fechado e cruzar a matriz geral com as regras específicas de 13º e férias proporcionais; divergência ou motivo fora do conjunto suportado é erro, não aproximação.
+27. O saldo salarial de H29 v1 não usa divisor 30 universal. O denominador é o número de dias civis do mês de desligamento e o numerador é fornecido explicitamente como dias considerados até o desligamento; regimes fora de mensalista/quinzenalista normalizado ficam fora do escopo.
 
 ---
 
@@ -825,7 +832,7 @@ A Fase 2 permanece formalmente concluída. Se a implementação posterior revela
 
 Continuar a **Fase 3 — Biblioteca fiscal e testes** a partir do primeiro núcleo já verde.
 
-Próximos checkpoints: saldo salarial e matriz H29 limitada; memória de cálculo comum; expansão dos property-based tests. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.
+Próximos checkpoints: memória de cálculo comum e expansão dos property-based tests nas fronteiras legais e monetárias. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.
 
 O pipeline de produção continua congelado: `scraper.py`, `update_taxas.py`, `dados_fiscais.json`, `taxas_bacen.json`, WordPress, `folha-core` e H26–H29 ainda não foram migrados.
 
@@ -846,6 +853,17 @@ Uma fase só deve ser marcada como `CONCLUÍDA` quando seus critérios de conclu
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-13 — checkpoint H29 limitado na Fase 3
+
+- criado `sanida_fiscal/termination_v1.py` com escopo fail-closed para mensalista/quinzenalista normalizado, contrato por prazo indeterminado e motivos eSocial `01/02/07/33`;
+- materializada no `CANDIDATE` a regra já inventariada `termination.vacation_proportional`, elevando o exemplo para 21 regras sem criar nova família de payload;
+- matriz geral e regras específicas de 13º/férias proporcionais passam a ser cruzadas em runtime;
+- motivo `01` bloqueia proporcionais; `02/07/33` habilitam 13º e férias proporcionais;
+- saldo salarial usa os dias civis reais do mês e reproduz R$ 3.100 / 31 × 10 = R$ 1.000;
+- no caso A02, H29 preserva simultaneamente 3/12 de 13º no ano civil e 7/12 de férias no período aquisitivo;
+- resultado continua `partial_estimate` e não incorpora aviso, FGTS, seguro-desemprego ou demais verbas excluídas;
+- suíte completa chega a **130 testes verdes**.
 
 ### 2026-09-13 — checkpoint de férias/A02 na Fase 3
 
