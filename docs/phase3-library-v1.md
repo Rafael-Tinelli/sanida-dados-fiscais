@@ -500,9 +500,71 @@ Continuam fora do total, conforme `ScopeDeclarationPayload`:
 
 A saída não pode ser apresentada como “total universal da rescisão”.
 
-## 10. Estado do CI
+## 10. Sexto checkpoint — memória comum, invariantes e gate de fechamento
 
-Após o checkpoint H29 limitado:
+O checkpoint consolida a **representação auditável** dos cálculos já implementados sem criar uma camada que misture semânticas jurídicas distintas.
+
+Arquivos permanentes adicionados:
+
+```text
+sanida_fiscal/memory_v1.py
+tests/test_memory_v1.py
+tests/test_phase3_invariants.py
+scripts/validate_phase3_gate.py
+docs/phase3-closure-gate.md
+```
+
+### 10.1 Memória comum sem fusão semântica
+
+`CalculationMemory` é um envelope comum para auditoria. Cada nó declara `calculation_type`, `origin_context`, tipo de apuração quando aplicável, fatos ordenados e memórias-filhas.
+
+Cada `CalculationFact` carrega:
+
+```text
+key
+value
+unit
+role
+rule_ids
+```
+
+Valores monetários chegam à memória como `Decimal` e são serializados como texto canônico. A camada não converte os cálculos para `float`.
+
+A normalização é apenas de representação: mensal, 13º, férias e rescisão continuam com identidades, bases e regras próprias. No H29, por exemplo, saldo salarial, 13º proporcional e férias proporcionais aparecem como filhos separados; o motivo `01` contém apenas o filho de saldo salarial.
+
+### 10.2 Reconciliação e proveniência mínima
+
+O adaptador de IRRF preserva a memória A01 completa e associa os fatos críticos aos `rule_ids` executados. O caso de R$ 6.000 continua registrando simultaneamente:
+
+```text
+gross_taxable_income     6000.00
+irrf_tax_base            5350.40
+reduction_input_income   6000.00
+final_irrf                382.88
+```
+
+O envelope também cobre a apuração fiscal do 13º, saldo salarial, 13º proporcional de H29, férias proporcionais, bases tributárias do abono e composição H29 limitada.
+
+### 10.3 Expansão das invariantes/property-based tests
+
+O novo conjunto cobre adicionalmente:
+
+- fronteiras do redutor de 2026 em `4999.99 / 5000.00 / 5000.01` e `7349.99 / 7350.00 / 7350.01`;
+- saldo salarial usando o número real de dias civis nos doze meses;
+- monotonicidade dos avos de férias dentro de um período aquisitivo;
+- monotonicidade dos avos de 13º dentro do ano de referência;
+- totalidade da matriz H29 exatamente sobre `01/02/07/33`;
+- impossibilidade de o principal do abono vazar para a base de IRRF ou contribuição previdenciária.
+
+### 10.4 Gate executável de fechamento
+
+`scripts/validate_phase3_gate.py` passou a rodar no `Remake CI` depois da suíte completa. Ele valida artefatos obrigatórios, higiene de workflows, A01 e sua memória comum, H29 limitado (`01` e `02`), calendários 3/12 versus 7/12 e separação principal/terço do abono.
+
+O gate não amplia escopo: casos deliberadamente não modelados permanecem fail-closed e estão registrados em `docs/phase3-closure-gate.md`.
+
+## 11. Estado do CI
+
+Após o checkpoint de memória comum, invariantes e gate de fechamento:
 
 ```text
 Repository baseline       PASS
@@ -512,12 +574,14 @@ Inventory coverage        32/32
 Payload families          18/18
 Fiscal engine             PASS
 Property-based tests      PASS
+Phase 3 closure gate      PASS
 
-130 passed
+150 passed
 ```
 
-Run de validação do checkpoint: `34770991820`.
-## 11. Limites preservados
+Run de validação do checkpoint: `34775296512`.
+
+## 12. Limites preservados
 
 Ainda não estão implementados integralmente:
 
@@ -532,8 +596,8 @@ Ainda não estão implementados integralmente:
 
 Esses limites são fail-closed: o engine rejeita os casos não modelados em vez de convertê-los silenciosamente em aproximações.
 
-## 12. Próximos checkpoints da Fase 3
+## 13. Próximos checkpoints da Fase 3
 
-1. consolidar memória de cálculo comum entre os núcleos já implementados;
-2. ampliar invariantes/property-based tests nas fronteiras legais e monetárias;
-3. preparar o gate de fechamento da Fase 3 sem antecipar collectors, publicação ou migração de consumidores.
+1. revisar formalmente o gate de fechamento da Fase 3 no mesmo head limpo;
+2. se repositório, contrato, suíte integral, gate, documentação e higiene estiverem verdes, promover a Fase 3 para `CONCLUÍDA` em checkpoint próprio;
+3. somente depois iniciar a Fase 4 — Fontes e sensores, sem antecipar publicação ou migração de consumidores.

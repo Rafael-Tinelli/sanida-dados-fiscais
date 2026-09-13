@@ -731,7 +731,11 @@ Estado dos checkpoints executados:
 - saldo salarial usa `salário-base mensal normalizado × dias considerados / dias civis do mês`, sem divisor 30 universal;
 - 13º rescisório continua no calendário anual enquanto férias proporcionais continuam no período aquisitivo — no caso `01/09/2025 → 31/03/2026`, isso produz 3/12 de 13º e 7/12 de férias;
 - H29 continua declarando `partial_estimate`, com aviso prévio, FGTS rescisório, seguro-desemprego, estabilidade, prazo determinado e demais verbas não modeladas fora do total;
-- suíte completa: **130 testes verdes** após o checkpoint H29 limitado.
+- `sanida_fiscal/memory_v1.py` introduz um envelope comum de memória auditável sem fundir semânticas fiscais: IRRF, 13º, férias e H29 continuam preservando identidade/contexto e podem ser compostos como memórias-filhas;
+- valores monetários da memória comum partem de `Decimal` e são serializados como texto canônico, sem reintroduzir `float` no caminho fiscal;
+- property-based tests foram ampliados para fronteiras do redutor de 2026, denominadores civis do saldo salarial, monotonicidade de 13º/férias, matriz H29 fechada e separação tributária do abono;
+- `scripts/validate_phase3_gate.py` tornou o gate de fechamento da Fase 3 executável no `Remake CI`, cobrindo A01, H29, abono, artefatos obrigatórios e higiene de workflows;
+- suíte completa: **150 testes verdes** no checkpoint de memória comum/invariantes, com gate de fechamento da Fase 3 verde.
 
 ### Fase 4 — Fontes e sensores
 
@@ -812,6 +816,8 @@ Objetivos:
 25. O limiar proporcional de férias não pode existir como constante jurídica escondida no engine: `vacation.acquisition_period` v1.1 declara `proportional_qualifying_days=15` e o método de aquisição proporcional; leitores 1.0.0 não aceitam silenciosamente o contrato 1.1.0.
 26. H29 deve executar a matriz eSocial `01/02/07/33` como escopo fechado e cruzar a matriz geral com as regras específicas de 13º e férias proporcionais; divergência ou motivo fora do conjunto suportado é erro, não aproximação.
 27. O saldo salarial de H29 v1 não usa divisor 30 universal. O denominador é o número de dias civis do mês de desligamento e o numerador é fornecido explicitamente como dias considerados até o desligamento; regimes fora de mensalista/quinzenalista normalizado ficam fora do escopo.
+28. A memória comum de cálculo é um envelope de representação/auditoria, não uma rules engine nem uma fusão semântica. Bases e identidades de mensal, 13º, férias e rescisão permanecem separadas; composições usam memórias-filhas.
+29. O fechamento da Fase 3 exige, no mesmo head, validação do repositório, Contrato Fiscal Canônico, suíte integral, `scripts/validate_phase3_gate.py`, documentação sincronizada e ausência de helpers/workflows temporários.
 
 ---
 
@@ -832,7 +838,7 @@ A Fase 2 permanece formalmente concluída. Se a implementação posterior revela
 
 Continuar a **Fase 3 — Biblioteca fiscal e testes** a partir do primeiro núcleo já verde.
 
-Próximos checkpoints: memória de cálculo comum e expansão dos property-based tests nas fronteiras legais e monetárias. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.
+Próximo checkpoint: realizar a revisão formal do gate de fechamento da Fase 3 no mesmo head limpo. Se validação do repositório, contrato, suíte integral, gate executável, documentação e higiene do branch permanecerem verdes, a Fase 3 poderá ser promovida para `CONCLUÍDA` em checkpoint próprio e o trabalho seguirá para a Fase 4. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.
 
 O pipeline de produção continua congelado: `scraper.py`, `update_taxas.py`, `dados_fiscais.json`, `taxas_bacen.json`, WordPress, `folha-core` e H26–H29 ainda não foram migrados.
 
@@ -853,6 +859,17 @@ Uma fase só deve ser marcada como `CONCLUÍDA` quando seus critérios de conclu
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-13 — checkpoint de memória comum, invariantes e gate da Fase 3
+
+- criado `sanida_fiscal/memory_v1.py` como envelope determinístico de memória auditável, preservando separação entre contextos e bases fiscais;
+- fatos da memória passam a carregar papel, unidade e `rule_ids`, com valores monetários originados em `Decimal` e serializados como texto canônico;
+- H29 passa a expor memória composta por filhos separados para saldo salarial, 13º proporcional e férias proporcionais, sem fabricar filhos inelegíveis no motivo `01`;
+- `tests/test_memory_v1.py` valida reconciliação A01, serialização determinística, unicidade de fatos e separação das memórias;
+- `tests/test_phase3_invariants.py` amplia property-based tests para fronteiras legais e monetárias;
+- criado `scripts/validate_phase3_gate.py` e integrado ao `Remake CI`;
+- criado `docs/phase3-closure-gate.md` com critérios objetivos para a promoção formal da Fase 3;
+- run `34775296512` fecha o checkpoint com validação do repositório, Contrato v1.1, **150 testes** e gate da Fase 3 em `PASS`.
 
 ### 2026-09-13 — checkpoint H29 limitado na Fase 3
 
