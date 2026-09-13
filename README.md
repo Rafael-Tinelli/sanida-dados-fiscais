@@ -902,7 +902,7 @@ Próximo checkpoint: resolver a **retenção/persistência de snapshots e estado
 
 Qualquer necessidade de reinterpretar regra jurídica ou alterar a biblioteca da Fase 3 deve voltar explicitamente ao contrato/inventário com evidência concreta, não ser resolvida silenciosamente dentro de collector ou parser.
 
-O pipeline de produção continua congelado: `scraper.py`, `update_taxas.py`, `dados_fiscais.json`, `taxas_bacen.json`, WordPress, `folha-core` e H26–H29 ainda não foram migrados.
+A ativação em `main`/produção continua congelada: nesta branch `scraper.py` já foi migrado para a fronteira de compatibilidade, mas `dados_fiscais.json`, `update_taxas.py`, `taxas_bacen.json`, WordPress, `folha-core` e H26–H29 publicados ainda não foram ativados/migrados pelo merge.
 
 ---
 
