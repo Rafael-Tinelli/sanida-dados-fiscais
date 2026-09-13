@@ -1,4 +1,4 @@
-name: Phase 4 CP4 README Sync
+name: Phase 4 CP4 README Cleanup
 
 on:
   push:
@@ -6,23 +6,32 @@ on:
       - refactor/sources-sensors-v1
     paths:
       - .github/workflows/_phase4-cp4-readme.yml
-      - scripts/_phase4_cp4_readme.py
 
 permissions:
   contents: write
 
 jobs:
-  sync:
+  cleanup:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
           ref: refactor/sources-sensors-v1
-      - run: python scripts/_phase4_cp4_readme.py
-      - run: |
+      - name: Finalize README wording and remove helpers
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('README.md')
+          text = path.read_text(encoding='utf-8')
+          old = 'O pipeline de produção continua congelado: `scraper.py`, `update_taxas.py`, `dados_fiscais.json`, `taxas_bacen.json`, WordPress, `folha-core` e H26–H29 ainda não foram migrados.'
+          new = 'A ativação em `main`/produção continua congelada: nesta branch `scraper.py` já foi migrado para a fronteira de compatibilidade, mas `dados_fiscais.json`, `update_taxas.py`, `taxas_bacen.json`, WordPress, `folha-core` e H26–H29 publicados ainda não foram ativados/migrados pelo merge.'
+          if old not in text:
+              raise SystemExit('production-boundary sentence not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm scripts/_phase4_cp4_readme.py .github/workflows/_phase4-cp4-readme.yml
           git add README.md
-          git diff --cached --quiet && exit 0
-          git commit -m "docs: registrar transição do scraper na Fase 4"
+          git commit -m "docs: fechar checkpoint de transição do scraper"
           git push origin HEAD:refactor/sources-sensors-v1
