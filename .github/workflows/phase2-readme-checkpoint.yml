@@ -1,0 +1,37 @@
+name: Phase 2 README Coverage Checkpoint
+
+on:
+  push:
+    branches:
+      - refactor/fiscal-contract-v1
+    paths:
+      - scripts/sync_readme_phase2_coverage.py
+      - .github/workflows/phase2-readme-checkpoint.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+        with:
+          ref: refactor/fiscal-contract-v1
+          fetch-depth: 0
+
+      - name: Sync README
+        run: python scripts/sync_readme_phase2_coverage.py
+
+      - name: Commit README if changed
+        run: |
+          if git diff --quiet -- README.md; then
+            echo "README already synchronized."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "docs: registrar checkpoint 32/32 da Fase 2"
+          git push origin HEAD:refactor/fiscal-contract-v1
