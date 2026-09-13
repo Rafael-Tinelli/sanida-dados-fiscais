@@ -7,44 +7,1364 @@
   "generated_at_utc": "2026-09-13T12:00:00Z",
   "source_registry_version": "1.0.0",
   "rule_inventory_version": "1.0.0",
-  "consumer_compatibility": {"contract_api_version":"1.0.0","consumers":["H26","H27","H28","H29"],"unsupported_behavior":"hard_fail"},
-  "last_good_policy": {"allow_when_source_unavailable":true,"require_validated_rule":true,"require_within_effective_window":true,"require_no_known_successor":true,"allow_relabel_historical_as_current":false,"on_expired":"hard_fail","on_unknown_vigency":"hard_fail"},
+  "consumer_compatibility": {
+    "contract_api_version": "1.0.0",
+    "consumers": [
+      "H26",
+      "H27",
+      "H28",
+      "H29"
+    ],
+    "unsupported_behavior": "hard_fail"
+  },
+  "last_good_policy": {
+    "allow_when_source_unavailable": true,
+    "require_validated_rule": true,
+    "require_within_effective_window": true,
+    "require_no_known_successor": true,
+    "allow_relabel_historical_as_current": false,
+    "on_expired": "hard_fail",
+    "on_unknown_vigency": "hard_fail"
+  },
   "rules": [
     {
-      "rule_id":"irrf.monthly.progressive_table","rule_version":"1.0.0","domain":"income_tax","calculators":["H26","H27","H28","H29"],"contexts":["monthly","thirteenth","vacation_enjoyed","termination"],"description":"Tabela progressiva mensal do IRRF vigente em 2026.","applies_to":"irrf_tax_base_after_allowed_deductions","applicability":[],"dependencies":[],"calculation_order":30,"competence":{"basis":"payment_date"},"vigency":{"effective_from":"2026-01-01"},"rounding_policy":{"decimal_places":2,"mode":"ROUND_HALF_UP","stage":"per_assessment_result"},
-      "payload":{"type":"progressive_table","brackets":[{"upper_bound":"2428.80","rate":"0","deduction":"0"},{"upper_bound":"2826.65","rate":"0.075","deduction":"182.16"},{"upper_bound":"3751.05","rate":"0.15","deduction":"394.16"},{"upper_bound":"4664.68","rate":"0.225","deduction":"675.49"},{"upper_bound":null,"rate":"0.275","deduction":"908.73"}]},
-      "provenance":[{"source_id":"RFB_IRRF_TABLE_2026","role":"official_operational","observed_at_utc":"2026-09-13T12:00:00Z","status":"AVAILABLE"}],"quality":{"status":"VALIDATED","reference_case_ids":["rfd_irrf_2026_salary_3036","rfd_irrf_2026_salary_4000","rfd_irrf_2026_salary_5000","rfd_irrf_2026_salary_6000_A01_regression"],"reviewed_by_human":false},"change_class":"RULE_ADDED","update_policy":{"rule_class":"parameterizable_rule","auto_publish":true,"structural_review_required":false}
+      "rule_id": "irrf.monthly.progressive_table",
+      "rule_version": "1.0.0",
+      "domain": "income_tax",
+      "calculators": [
+        "H26",
+        "H28",
+        "H29"
+      ],
+      "contexts": [
+        "monthly",
+        "thirteenth",
+        "vacation_enjoyed",
+        "termination"
+      ],
+      "description": "Tabela progressiva mensal do IRRF vigente em 2026.",
+      "applies_to": "irrf_tax_base_after_allowed_deductions",
+      "applicability": [],
+      "dependencies": [],
+      "calculation_order": 30,
+      "competence": {
+        "basis": "payment_date"
+      },
+      "vigency": {
+        "effective_from": "2026-01-01"
+      },
+      "rounding_policy": {
+        "decimal_places": 2,
+        "mode": "ROUND_HALF_UP",
+        "stage": "per_assessment_result"
+      },
+      "payload": {
+        "type": "progressive_table",
+        "brackets": [
+          {
+            "upper_bound": "2428.80",
+            "rate": "0",
+            "deduction": "0"
+          },
+          {
+            "upper_bound": "2826.65",
+            "rate": "0.075",
+            "deduction": "182.16"
+          },
+          {
+            "upper_bound": "3751.05",
+            "rate": "0.15",
+            "deduction": "394.16"
+          },
+          {
+            "upper_bound": "4664.68",
+            "rate": "0.225",
+            "deduction": "675.49"
+          },
+          {
+            "upper_bound": null,
+            "rate": "0.275",
+            "deduction": "908.73"
+          }
+        ]
+      },
+      "provenance": [
+        {
+          "source_id": "RFB_IRRF_TABLE_2026",
+          "role": "official_operational",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [
+          "rfd_irrf_2026_salary_3036",
+          "rfd_irrf_2026_salary_4000",
+          "rfd_irrf_2026_salary_5000",
+          "rfd_irrf_2026_salary_6000_A01_regression"
+        ],
+        "reviewed_by_human": false
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "parameterizable_rule",
+        "auto_publish": true,
+        "structural_review_required": false
+      }
     },
     {
-      "rule_id":"irrf.reduction.2026","rule_version":"1.0.0","domain":"income_tax","calculators":["H26","H28","H29"],"contexts":["monthly","vacation_enjoyed","termination"],"description":"Redução de IR de 2026 aplicada ao rendimento tributável sujeito à incidência mensal antes das deduções do IRRF.","applies_to":"taxable_income_subject_to_monthly_incidence_before_irrf_deductions","applicability":[],"dependencies":["irrf.monthly.progressive_table"],"calculation_order":40,"competence":{"basis":"payment_date"},"vigency":{"effective_from":"2026-01-01","effective_until":"2026-12-31"},"rounding_policy":{"decimal_places":2,"mode":"ROUND_HALF_UP","stage":"after_pre_reduction_irrf"},
-      "payload":{"type":"affine_reduction","full_relief_income_limit":"5000.00","phaseout_income_limit":"7350.00","max_reduction":"312.89","intercept":"978.62","slope":"0.133145","input_semantic":"taxable_income_subject_to_monthly_incidence_before_irrf_deductions","floor_at_zero":true},
-      "provenance":[{"source_id":"PLANALTO_LEI_15270_2025","role":"normative_primary","observed_at_utc":"2026-09-13T12:00:00Z","status":"AVAILABLE"},{"source_id":"RFB_IRRF_EXAMPLES_2026","role":"official_reference_case","observed_at_utc":"2026-09-13T12:00:00Z","status":"AVAILABLE"}],"quality":{"status":"VALIDATED","reference_case_ids":["rfd_irrf_2026_salary_4000","rfd_irrf_2026_salary_5000","rfd_irrf_2026_salary_6000_A01_regression","rfd_irrf_2026_salary_7607_20_boundary_semantics"],"reviewed_by_human":true},"change_class":"RULE_ADDED","update_policy":{"rule_class":"parameterizable_rule","auto_publish":true,"structural_review_required":false}
+      "rule_id": "irrf.reduction.2026",
+      "rule_version": "1.0.0",
+      "domain": "income_tax",
+      "calculators": [
+        "H26",
+        "H28",
+        "H29"
+      ],
+      "contexts": [
+        "monthly",
+        "vacation_enjoyed",
+        "termination"
+      ],
+      "description": "Redução de IR de 2026 aplicada ao rendimento tributável sujeito à incidência mensal antes das deduções do IRRF.",
+      "applies_to": "taxable_income_subject_to_monthly_incidence_before_irrf_deductions",
+      "applicability": [],
+      "dependencies": [
+        "irrf.monthly.progressive_table"
+      ],
+      "calculation_order": 40,
+      "competence": {
+        "basis": "payment_date"
+      },
+      "vigency": {
+        "effective_from": "2026-01-01",
+        "effective_until": "2026-12-31"
+      },
+      "rounding_policy": {
+        "decimal_places": 2,
+        "mode": "ROUND_HALF_UP",
+        "stage": "after_pre_reduction_irrf"
+      },
+      "payload": {
+        "type": "affine_reduction",
+        "full_relief_income_limit": "5000.00",
+        "phaseout_income_limit": "7350.00",
+        "max_reduction": "312.89",
+        "intercept": "978.62",
+        "slope": "0.133145",
+        "input_semantic": "taxable_income_subject_to_monthly_incidence_before_irrf_deductions",
+        "floor_at_zero": true
+      },
+      "provenance": [
+        {
+          "source_id": "PLANALTO_LEI_15270_2025",
+          "role": "normative_primary",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        },
+        {
+          "source_id": "RFB_IRRF_EXAMPLES_2026",
+          "role": "official_reference_case",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [
+          "rfd_irrf_2026_salary_4000",
+          "rfd_irrf_2026_salary_5000",
+          "rfd_irrf_2026_salary_6000_A01_regression",
+          "rfd_irrf_2026_salary_7607_20_boundary_semantics"
+        ],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "parameterizable_rule",
+        "auto_publish": true,
+        "structural_review_required": false
+      }
     },
     {
-      "rule_id":"thirteenth.irrf.reduction.2026","rule_version":"1.0.0","domain":"thirteenth_salary","calculators":["H27","H29"],"contexts":["thirteenth"],"description":"Aplicação da redução de IR de 2026 à apuração exclusiva do 13º salário.","applies_to":"thirteenth_taxable_income_before_irrf_deductions","applicability":[],"dependencies":["irrf.monthly.progressive_table"],"calculation_order":40,"competence":{"basis":"payment_date"},"vigency":{"effective_from":"2026-01-01","effective_until":"2026-12-31"},"rounding_policy":{"decimal_places":2,"mode":"ROUND_HALF_UP","stage":"after_pre_reduction_thirteenth_irrf"},
-      "payload":{"type":"affine_reduction","full_relief_income_limit":"5000.00","phaseout_income_limit":"7350.00","max_reduction":"312.89","intercept":"978.62","slope":"0.133145","input_semantic":"thirteenth_taxable_income_before_irrf_deductions","floor_at_zero":true},"provenance":[{"source_id":"PLANALTO_LEI_15270_2025","role":"normative_primary","observed_at_utc":"2026-09-13T12:00:00Z","status":"AVAILABLE"}],"quality":{"status":"VALIDATED","reference_case_ids":[],"reviewed_by_human":true},"change_class":"RULE_ADDED","update_policy":{"rule_class":"parameterizable_rule","auto_publish":true,"structural_review_required":false}
+      "rule_id": "thirteenth.irrf.reduction.2026",
+      "rule_version": "1.0.0",
+      "domain": "thirteenth_salary",
+      "calculators": [
+        "H27",
+        "H29"
+      ],
+      "contexts": [
+        "thirteenth"
+      ],
+      "description": "Aplicação da redução de IR de 2026 à apuração exclusiva do 13º salário.",
+      "applies_to": "thirteenth_taxable_income_before_irrf_deductions",
+      "applicability": [],
+      "dependencies": [
+        "irrf.monthly.progressive_table"
+      ],
+      "calculation_order": 40,
+      "competence": {
+        "basis": "payment_date"
+      },
+      "vigency": {
+        "effective_from": "2026-01-01",
+        "effective_until": "2026-12-31"
+      },
+      "rounding_policy": {
+        "decimal_places": 2,
+        "mode": "ROUND_HALF_UP",
+        "stage": "after_pre_reduction_thirteenth_irrf"
+      },
+      "payload": {
+        "type": "affine_reduction",
+        "full_relief_income_limit": "5000.00",
+        "phaseout_income_limit": "7350.00",
+        "max_reduction": "312.89",
+        "intercept": "978.62",
+        "slope": "0.133145",
+        "input_semantic": "thirteenth_taxable_income_before_irrf_deductions",
+        "floor_at_zero": true
+      },
+      "provenance": [
+        {
+          "source_id": "PLANALTO_LEI_15270_2025",
+          "role": "normative_primary",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "parameterizable_rule",
+        "auto_publish": true,
+        "structural_review_required": false
+      }
     },
     {
-      "rule_id":"thirteenth.accrual.twelfths","rule_version":"1.0.0","domain":"thirteenth_salary","calculators":["H27","H29"],"contexts":["thirteenth","termination"],"description":"1/12 por mês de serviço; fração igual ou superior a 15 dias conta como mês integral.","applies_to":"thirteenth_entitlement","applicability":[],"dependencies":[],"calculation_order":10,"competence":{"basis":"rule_specific","description":"Ano de referência para 13º normal; período até a extinção para 13º rescisório dentro da modalidade suportada."},"vigency":{"effective_from":"1962-07-13"},
-      "payload":{"type":"threshold_accrual","fraction_numerator":1,"fraction_denominator":12,"qualifying_days":15,"max_units":12},"provenance":[{"source_id":"PLANALTO_LEI_4090_1962","role":"normative_primary","observed_at_utc":"2026-09-13T12:00:00Z","status":"AVAILABLE"}],"quality":{"status":"VALIDATED","reference_case_ids":["thirteenth_accrual_14_days_no_avo","thirteenth_accrual_15_days_one_avo"],"reviewed_by_human":true},"change_class":"RULE_ADDED","update_policy":{"rule_class":"structural_rule","auto_publish":false,"structural_review_required":true}
+      "rule_id": "thirteenth.accrual.twelfths",
+      "rule_version": "1.0.0",
+      "domain": "thirteenth_salary",
+      "calculators": [
+        "H27",
+        "H29"
+      ],
+      "contexts": [
+        "thirteenth",
+        "termination"
+      ],
+      "description": "1/12 por mês de serviço; fração igual ou superior a 15 dias conta como mês integral.",
+      "applies_to": "thirteenth_entitlement",
+      "applicability": [],
+      "dependencies": [],
+      "calculation_order": 10,
+      "competence": {
+        "basis": "rule_specific",
+        "description": "Ano de referência para 13º normal; período até a extinção para 13º rescisório dentro da modalidade suportada."
+      },
+      "vigency": {
+        "effective_from": "1962-07-13"
+      },
+      "payload": {
+        "type": "threshold_accrual",
+        "fraction_numerator": 1,
+        "fraction_denominator": 12,
+        "qualifying_days": 15,
+        "max_units": 12
+      },
+      "provenance": [
+        {
+          "source_id": "PLANALTO_LEI_4090_1962",
+          "role": "normative_primary",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [
+          "thirteenth_accrual_14_days_no_avo",
+          "thirteenth_accrual_15_days_one_avo"
+        ],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "structural_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      }
     },
     {
-      "rule_id":"vacation.abono_pecuniario","rule_version":"1.0.0","domain":"vacation","calculators":["H28"],"contexts":["vacation_cash_allowance"],"description":"Conversão em pecúnia de um terço do período de férias a que o empregado tem direito.","applies_to":"vacation_entitled_days","applicability":[],"dependencies":[],"calculation_order":10,"competence":{"basis":"acquisition_period"},"vigency":{"effective_from":"1977-04-13"},"payload":{"type":"fraction","numerator":1,"denominator":3,"rounding":"statutory"},
-      "provenance":[{"source_id":"PLANALTO_CLT","role":"normative_primary","observed_at_utc":"2026-09-13T12:00:00Z","status":"AVAILABLE","locator":"art. 143"}],"quality":{"status":"VALIDATED","reference_case_ids":["vacation_abono_entitlement_30_days"],"reviewed_by_human":true},"change_class":"RULE_ADDED","update_policy":{"rule_class":"structural_rule","auto_publish":false,"structural_review_required":true}
+      "rule_id": "vacation.abono_pecuniario",
+      "rule_version": "1.0.0",
+      "domain": "vacation",
+      "calculators": [
+        "H28"
+      ],
+      "contexts": [
+        "vacation_cash_allowance"
+      ],
+      "description": "Conversão em pecúnia de um terço do período de férias a que o empregado tem direito.",
+      "applies_to": "vacation_entitled_days",
+      "applicability": [],
+      "dependencies": [],
+      "calculation_order": 10,
+      "competence": {
+        "basis": "acquisition_period"
+      },
+      "vigency": {
+        "effective_from": "1977-04-13"
+      },
+      "payload": {
+        "type": "fraction",
+        "numerator": 1,
+        "denominator": 3,
+        "rounding": "statutory"
+      },
+      "provenance": [
+        {
+          "source_id": "PLANALTO_CLT",
+          "role": "normative_primary",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "locator": "art. 143",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [
+          "vacation_abono_entitlement_30_days"
+        ],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "structural_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      }
     },
     {
-      "rule_id":"vacation.abono.ir_exemption","rule_version":"1.0.0","domain":"vacation","calculators":["H28"],"contexts":["vacation_cash_allowance"],"description":"Tratamento do principal do abono pecuniário: sem IRRF e sem contribuição previdenciária.","applies_to":"cash_allowance_principal","applicability":[],"dependencies":["vacation.abono_pecuniario"],"calculation_order":20,"competence":{"basis":"payment_date"},"vigency":{"effective_from":"2026-01-01"},"payload":{"type":"incidence_profile","components":[{"component":"cash_allowance_principal","irrf":"no","social_security":"no"}]},
-      "provenance":[{"source_id":"RFB_QA_IRPF_2026","role":"official_operational","observed_at_utc":"2026-09-13T12:00:00Z","status":"AVAILABLE"},{"source_id":"RFB_SC_209_2021","role":"administrative_norm","observed_at_utc":"2026-09-13T12:00:00Z","status":"AVAILABLE"}],"quality":{"status":"VALIDATED","reference_case_ids":["vacation_abono_principal_tax_treatment"],"reviewed_by_human":true},"change_class":"RULE_ADDED","update_policy":{"rule_class":"structural_rule","auto_publish":false,"structural_review_required":true}
+      "rule_id": "vacation.abono.ir_exemption",
+      "rule_version": "1.0.0",
+      "domain": "vacation",
+      "calculators": [
+        "H28"
+      ],
+      "contexts": [
+        "vacation_cash_allowance"
+      ],
+      "description": "Tratamento do principal do abono pecuniário: sem IRRF e sem contribuição previdenciária.",
+      "applies_to": "cash_allowance_principal",
+      "applicability": [],
+      "dependencies": [
+        "vacation.abono_pecuniario"
+      ],
+      "calculation_order": 20,
+      "competence": {
+        "basis": "payment_date"
+      },
+      "vigency": {
+        "effective_from": "2026-01-01"
+      },
+      "payload": {
+        "type": "incidence_profile",
+        "components": [
+          {
+            "component": "cash_allowance_principal",
+            "irrf": "no",
+            "social_security": "no"
+          }
+        ]
+      },
+      "provenance": [
+        {
+          "source_id": "RFB_QA_IRPF_2026",
+          "role": "official_operational",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        },
+        {
+          "source_id": "RFB_SC_209_2021",
+          "role": "administrative_norm",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [
+          "vacation_abono_principal_tax_treatment"
+        ],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "structural_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      }
     },
     {
-      "rule_id":"vacation.abono_constitutional_third.ir_incidence","rule_version":"1.0.0","domain":"vacation","calculators":["H28"],"contexts":["vacation_cash_allowance"],"description":"Tratamento do terço constitucional sobre o abono: com IRRF e sem contribuição previdenciária no escopo fechado.","applies_to":"constitutional_third_on_cash_allowance","applicability":[],"dependencies":["vacation.abono_pecuniario"],"calculation_order":20,"competence":{"basis":"payment_date"},"vigency":{"effective_from":"2026-01-01"},"payload":{"type":"incidence_profile","components":[{"component":"constitutional_third_on_cash_allowance","irrf":"yes","social_security":"no"}]},
-      "provenance":[{"source_id":"RFB_SC_209_2021","role":"administrative_norm","observed_at_utc":"2026-09-13T12:00:00Z","status":"AVAILABLE"},{"source_id":"ESOCIAL_SIMPLIFIED_ABONO_2026","role":"official_operational","observed_at_utc":"2026-09-13T12:00:00Z","status":"AVAILABLE"}],"quality":{"status":"VALIDATED","reference_case_ids":["vacation_abono_constitutional_third_tax_treatment_P0"],"reviewed_by_human":true},"change_class":"RULE_ADDED","update_policy":{"rule_class":"structural_rule","auto_publish":false,"structural_review_required":true}
+      "rule_id": "vacation.abono_constitutional_third.ir_incidence",
+      "rule_version": "1.0.0",
+      "domain": "vacation",
+      "calculators": [
+        "H28"
+      ],
+      "contexts": [
+        "vacation_cash_allowance"
+      ],
+      "description": "Tratamento do terço constitucional sobre o abono: com IRRF e sem contribuição previdenciária no escopo fechado.",
+      "applies_to": "constitutional_third_on_cash_allowance",
+      "applicability": [],
+      "dependencies": [
+        "vacation.abono_pecuniario"
+      ],
+      "calculation_order": 20,
+      "competence": {
+        "basis": "payment_date"
+      },
+      "vigency": {
+        "effective_from": "2026-01-01"
+      },
+      "payload": {
+        "type": "incidence_profile",
+        "components": [
+          {
+            "component": "constitutional_third_on_cash_allowance",
+            "irrf": "yes",
+            "social_security": "no"
+          }
+        ]
+      },
+      "provenance": [
+        {
+          "source_id": "RFB_SC_209_2021",
+          "role": "administrative_norm",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        },
+        {
+          "source_id": "ESOCIAL_SIMPLIFIED_ABONO_2026",
+          "role": "official_operational",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [
+          "vacation_abono_constitutional_third_tax_treatment_P0"
+        ],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "structural_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      }
     },
     {
-      "rule_id":"termination.reason_scope","rule_version":"1.0.0","domain":"termination","calculators":["H29"],"contexts":["termination"],"description":"Matriz inicial de elegibilidade das verbas parciais suportadas por H29 conforme Tabela 19/evidência operacional fechada na Fase 1.","applies_to":"termination_entitlements","applicability":[{"field":"employment_regime","operator":"in","value":["monthly","biweekly"]},{"field":"contract_term","operator":"eq","value":"indefinite"}],"dependencies":[],"calculation_order":10,"competence":{"basis":"termination_date"},"vigency":{"effective_from":"2026-01-01"},
-      "payload":{"type":"eligibility_matrix","rows":[{"code":"01","label":"Justa causa pelo empregador","entitlements":{"salary_balance":true,"thirteenth_proportional":false,"vacation_proportional":false,"acquired_vacation_if_due":true}},{"code":"02","label":"Sem justa causa pelo empregador","entitlements":{"salary_balance":true,"thirteenth_proportional":true,"vacation_proportional":true,"acquired_vacation_if_due":true}},{"code":"07","label":"Pedido de demissão","entitlements":{"salary_balance":true,"thirteenth_proportional":true,"vacation_proportional":true,"acquired_vacation_if_due":true}},{"code":"33","label":"Acordo do art. 484-A","entitlements":{"salary_balance":true,"thirteenth_proportional":true,"vacation_proportional":true,"acquired_vacation_if_due":true}}],"unsupported_behavior":"UNSUPPORTED"},
-      "provenance":[{"source_id":"ESOCIAL_TABLES_S13_NT07_2026","role":"official_operational","observed_at_utc":"2026-09-13T12:00:00Z","status":"AVAILABLE","locator":"Tabela 19"},{"source_id":"MTE_TERMINATION_FAQ","role":"official_operational","observed_at_utc":"2026-09-13T12:00:00Z","status":"AVAILABLE"}],"quality":{"status":"VALIDATED","reference_case_ids":["termination_reason_01_just_cause","termination_reason_02_without_just_cause","termination_reason_07_resignation","termination_reason_33_mutual_agreement"],"reviewed_by_human":true},"change_class":"RULE_ADDED","update_policy":{"rule_class":"structural_rule","auto_publish":false,"structural_review_required":true}
+      "rule_id": "termination.reason_scope",
+      "rule_version": "1.0.0",
+      "domain": "termination",
+      "calculators": [
+        "H29"
+      ],
+      "contexts": [
+        "termination"
+      ],
+      "description": "Matriz inicial de elegibilidade das verbas parciais suportadas por H29 conforme Tabela 19/evidência operacional fechada na Fase 1.",
+      "applies_to": "termination_entitlements",
+      "applicability": [
+        {
+          "field": "employment_regime",
+          "operator": "in",
+          "value": [
+            "monthly",
+            "biweekly"
+          ]
+        },
+        {
+          "field": "contract_term",
+          "operator": "eq",
+          "value": "indefinite"
+        }
+      ],
+      "dependencies": [],
+      "calculation_order": 10,
+      "competence": {
+        "basis": "termination_date"
+      },
+      "vigency": {
+        "effective_from": "2026-01-01"
+      },
+      "payload": {
+        "type": "eligibility_matrix",
+        "rows": [
+          {
+            "code": "01",
+            "label": "Justa causa pelo empregador",
+            "entitlements": {
+              "salary_balance": true,
+              "thirteenth_proportional": false,
+              "vacation_proportional": false,
+              "acquired_vacation_if_due": true
+            }
+          },
+          {
+            "code": "02",
+            "label": "Sem justa causa pelo empregador",
+            "entitlements": {
+              "salary_balance": true,
+              "thirteenth_proportional": true,
+              "vacation_proportional": true,
+              "acquired_vacation_if_due": true
+            }
+          },
+          {
+            "code": "07",
+            "label": "Pedido de demissão",
+            "entitlements": {
+              "salary_balance": true,
+              "thirteenth_proportional": true,
+              "vacation_proportional": true,
+              "acquired_vacation_if_due": true
+            }
+          },
+          {
+            "code": "33",
+            "label": "Acordo do art. 484-A",
+            "entitlements": {
+              "salary_balance": true,
+              "thirteenth_proportional": true,
+              "vacation_proportional": true,
+              "acquired_vacation_if_due": true
+            }
+          }
+        ],
+        "unsupported_behavior": "UNSUPPORTED"
+      },
+      "provenance": [
+        {
+          "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
+          "role": "official_operational",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "locator": "Tabela 19",
+          "retrieval_method": "manual"
+        },
+        {
+          "source_id": "MTE_TERMINATION_FAQ",
+          "role": "official_operational",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [
+          "termination_reason_01_just_cause",
+          "termination_reason_02_without_just_cause",
+          "termination_reason_07_resignation",
+          "termination_reason_33_mutual_agreement"
+        ],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "structural_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      }
+    },
+    {
+      "rule_id": "irrf.dependent_deduction",
+      "rule_version": "1.0.0",
+      "domain": "income_tax",
+      "calculators": [
+        "H26",
+        "H27",
+        "H28",
+        "H29"
+      ],
+      "contexts": [
+        "monthly",
+        "thirteenth",
+        "vacation_enjoyed",
+        "termination"
+      ],
+      "description": "Dedução unitária por dependente para a apuração correspondente.",
+      "applies_to": "legal_deductions_for_matching_income_type",
+      "applicability": [],
+      "dependencies": [],
+      "calculation_order": 15,
+      "competence": {
+        "basis": "payment_date"
+      },
+      "vigency": {
+        "effective_from": "2026-01-01"
+      },
+      "payload": {
+        "type": "scalar",
+        "value": "189.59",
+        "unit": "BRL_per_dependent"
+      },
+      "provenance": [
+        {
+          "source_id": "RFB_IRRF_TABLE_2026",
+          "role": "official_operational",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        },
+        {
+          "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
+          "role": "official_operational",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [],
+        "reviewed_by_human": false
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "parameter",
+        "auto_publish": true,
+        "structural_review_required": false
+      }
+    },
+    {
+      "rule_id": "irrf.deductions_by_income_type",
+      "rule_version": "1.0.0",
+      "domain": "income_tax",
+      "calculators": [
+        "H26",
+        "H27",
+        "H28",
+        "H29"
+      ],
+      "contexts": [
+        "monthly",
+        "thirteenth",
+        "vacation_enjoyed",
+        "termination"
+      ],
+      "description": "Deduções de IR tipadas por contexto de apuração.",
+      "applies_to": "monthly_or_thirteenth_or_vacation_irrf_assessment",
+      "applicability": [],
+      "dependencies": [],
+      "calculation_order": 12,
+      "competence": {
+        "basis": "payment_date"
+      },
+      "vigency": {
+        "effective_from": "2026-01-01"
+      },
+      "payload": {
+        "type": "policy",
+        "policy_kind": "deductions_by_income_type",
+        "assertions": [
+          "deductions_must_match_assessment_context",
+          "pension_must_not_be_silently_zeroed_when_applicable"
+        ],
+        "values": {
+          "contexts": [
+            "monthly",
+            "thirteenth",
+            "vacation_enjoyed",
+            "termination"
+          ]
+        }
+      },
+      "provenance": [
+        {
+          "source_id": "RFB_IN_1500_2014",
+          "role": "administrative_norm",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        },
+        {
+          "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
+          "role": "official_operational",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "structural_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      }
+    },
+    {
+      "rule_id": "thirteenth.reference_remuneration",
+      "rule_version": "1.0.0",
+      "domain": "thirteenth_salary",
+      "calculators": [
+        "H27",
+        "H29"
+      ],
+      "contexts": [
+        "thirteenth",
+        "termination"
+      ],
+      "description": "Referência remuneratória do 13º anual e rescisório.",
+      "applies_to": "thirteenth_gross_reference",
+      "applicability": [],
+      "dependencies": [],
+      "calculation_order": 11,
+      "competence": {
+        "basis": "rule_specific",
+        "description": "Rule-specific competence defined by the Phase 1 decision."
+      },
+      "vigency": {
+        "effective_from": "2021-11-10"
+      },
+      "payload": {
+        "type": "remuneration_reference",
+        "annual_reference": "december_due_remuneration",
+        "termination_reference": "termination_month_remuneration"
+      },
+      "provenance": [
+        {
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "role": "normative_primary",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        },
+        {
+          "source_id": "MTE_TERMINATION_FAQ",
+          "role": "official_operational",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "structural_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      }
+    },
+    {
+      "rule_id": "thirteenth.variable_remuneration",
+      "rule_version": "1.0.0",
+      "domain": "thirteenth_salary",
+      "calculators": [
+        "H27",
+        "H29"
+      ],
+      "contexts": [
+        "thirteenth",
+        "termination"
+      ],
+      "description": "Tratamento canônico da remuneração variável do 13º.",
+      "applies_to": "variable_component_of_thirteenth",
+      "applicability": [],
+      "dependencies": [],
+      "calculation_order": 12,
+      "competence": {
+        "basis": "rule_specific",
+        "description": "Rule-specific competence defined by the Phase 1 decision."
+      },
+      "vigency": {
+        "effective_from": "2021-11-10"
+      },
+      "payload": {
+        "type": "variable_remuneration",
+        "accrual_through_month": 11,
+        "include_december_in_final_revision": true,
+        "revision_deadline_month": 1,
+        "revision_deadline_day": 10,
+        "precomputed_average_allowed_only_as_external_input": true
+      },
+      "provenance": [
+        {
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "role": "normative_primary",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "structural_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      }
+    },
+    {
+      "rule_id": "thirteenth.advance",
+      "rule_version": "1.0.0",
+      "domain": "thirteenth_salary",
+      "calculators": [
+        "H27"
+      ],
+      "contexts": [
+        "thirteenth"
+      ],
+      "description": "Adiantamento do 13º com referência fixa no salário do mês anterior e exceções estruturais.",
+      "applies_to": "first_installment_of_thirteenth",
+      "applicability": [],
+      "dependencies": [],
+      "calculation_order": 20,
+      "competence": {
+        "basis": "payment_date"
+      },
+      "vigency": {
+        "effective_from": "1965-08-12"
+      },
+      "payload": {
+        "type": "thirteenth_advance",
+        "fixed_reference": "previous_month_salary",
+        "fraction_numerator": 1,
+        "fraction_denominator": 2,
+        "payment_window_start_month": 2,
+        "payment_window_end_month": 11,
+        "special_handling": [
+          "admission_in_year",
+          "variable_remuneration"
+        ]
+      },
+      "provenance": [
+        {
+          "source_id": "PLANALTO_LEI_4749_1965",
+          "role": "normative_primary",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        },
+        {
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "role": "normative_primary",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [
+          "thirteenth_fixed_advance_previous_month_4000"
+        ],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "structural_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      }
+    },
+    {
+      "rule_id": "vacation.acquisition_period",
+      "rule_version": "1.0.0",
+      "domain": "vacation",
+      "calculators": [
+        "H28",
+        "H29"
+      ],
+      "contexts": [
+        "vacation_enjoyed",
+        "vacation_indemnified",
+        "termination"
+      ],
+      "description": "Período aquisitivo de doze meses ancorado no vínculo, sem reset no ano civil.",
+      "applies_to": "vacation_entitlement_period",
+      "applicability": [],
+      "dependencies": [],
+      "calculation_order": 10,
+      "competence": {
+        "basis": "acquisition_period"
+      },
+      "vigency": {
+        "effective_from": "1943-05-01"
+      },
+      "payload": {
+        "type": "period_rule",
+        "duration_months": 12,
+        "anchor": "employment_start_anniversary",
+        "calendar_year_reset": false
+      },
+      "provenance": [
+        {
+          "source_id": "PLANALTO_CLT",
+          "role": "normative_primary",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [
+          "vacation_period_cross_year_A02_regression"
+        ],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "structural_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      }
+    },
+    {
+      "rule_id": "vacation.entitlement_days_by_absences",
+      "rule_version": "1.0.0",
+      "domain": "vacation",
+      "calculators": [
+        "H28"
+      ],
+      "contexts": [
+        "vacation_enjoyed"
+      ],
+      "description": "Faixas de dias de férias por faltas injustificadas conforme inventário fechado.",
+      "applies_to": "vacation_entitled_days",
+      "applicability": [],
+      "dependencies": [],
+      "calculation_order": 11,
+      "competence": {
+        "basis": "acquisition_period"
+      },
+      "vigency": {
+        "effective_from": "1943-05-01"
+      },
+      "payload": {
+        "type": "entitlement_bands",
+        "bands": [
+          {
+            "min_absences": 0,
+            "max_absences": 5,
+            "entitled_days": 30
+          },
+          {
+            "min_absences": 6,
+            "max_absences": 14,
+            "entitled_days": 24
+          },
+          {
+            "min_absences": 15,
+            "max_absences": 23,
+            "entitled_days": 18
+          },
+          {
+            "min_absences": 24,
+            "max_absences": 32,
+            "entitled_days": 12
+          }
+        ],
+        "outside_behavior": "UNSUPPORTED"
+      },
+      "provenance": [
+        {
+          "source_id": "PLANALTO_CLT",
+          "role": "normative_primary",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [
+          "vacation_entitlement_absences_5",
+          "vacation_entitlement_absences_6",
+          "vacation_entitlement_absences_15",
+          "vacation_entitlement_absences_24",
+          "vacation_entitlement_absences_32"
+        ],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "structural_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      }
+    },
+    {
+      "rule_id": "vacation.remuneration_and_constitutional_third",
+      "rule_version": "1.0.0",
+      "domain": "vacation",
+      "calculators": [
+        "H28",
+        "H29"
+      ],
+      "contexts": [
+        "vacation_enjoyed",
+        "vacation_indemnified",
+        "termination"
+      ],
+      "description": "Componentes da remuneração de férias e adicional constitucional.",
+      "applies_to": "vacation_remuneration",
+      "applicability": [],
+      "dependencies": [],
+      "calculation_order": 20,
+      "competence": {
+        "basis": "payment_date"
+      },
+      "vigency": {
+        "effective_from": "1988-10-05"
+      },
+      "payload": {
+        "type": "component_formula",
+        "components": [
+          {
+            "component": "vacation_remuneration",
+            "basis": "vacation_pay_base",
+            "multiplier": "1"
+          },
+          {
+            "component": "constitutional_third",
+            "basis": "vacation_remuneration",
+            "multiplier": "0.3333333333333333333333333333"
+          }
+        ]
+      },
+      "provenance": [
+        {
+          "source_id": "PLANALTO_CLT",
+          "role": "normative_primary",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        },
+        {
+          "source_id": "RFB_QA_IRPF_2026",
+          "role": "official_operational",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "structural_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      },
+      "rounding_policy": {
+        "decimal_places": 2,
+        "mode": "ROUND_HALF_UP",
+        "stage": "per_component"
+      }
+    },
+    {
+      "rule_id": "termination.partial_output_scope",
+      "rule_version": "1.0.0",
+      "domain": "termination",
+      "calculators": [
+        "H29"
+      ],
+      "contexts": [
+        "termination"
+      ],
+      "description": "H29 declara resultado parcial enquanto verbas fora do escopo não forem modeladas.",
+      "applies_to": "termination_result_promise",
+      "applicability": [],
+      "dependencies": [
+        "termination.reason_scope"
+      ],
+      "calculation_order": 5,
+      "competence": {
+        "basis": "termination_date"
+      },
+      "vigency": {
+        "effective_from": "2026-01-01"
+      },
+      "payload": {
+        "type": "scope_declaration",
+        "promise": "partial_estimate",
+        "included_items": [
+          "salary_balance",
+          "thirteenth_proportional",
+          "vacation_proportional",
+          "acquired_or_overdue_vacation"
+        ],
+        "excluded_items": [
+          "notice_pay_or_notice_discount",
+          "fgts_termination_fine",
+          "fgts_withdrawal",
+          "unemployment_insurance",
+          "stability_indemnities",
+          "collective_bargaining_specific_items",
+          "fixed_term_contract_termination_rules",
+          "indirect_termination_without_judicially_resolved_context",
+          "variable_termination_items_not_explicitly_modeled"
+        ],
+        "require_user_disclosure": true
+      },
+      "provenance": [
+        {
+          "source_id": "MTE_TERMINATION_FAQ",
+          "role": "official_operational",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "product_scope_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      }
+    },
+    {
+      "rule_id": "termination.salary_balance",
+      "rule_version": "1.0.0",
+      "domain": "termination",
+      "calculators": [
+        "H29"
+      ],
+      "contexts": [
+        "termination"
+      ],
+      "description": "Prorrateio de saldo para mensalista/quinzenalista no escopo v1.",
+      "applies_to": "monthly_employee_salary_balance",
+      "applicability": [],
+      "dependencies": [
+        "termination.reason_scope"
+      ],
+      "calculation_order": 20,
+      "competence": {
+        "basis": "termination_date"
+      },
+      "vigency": {
+        "effective_from": "2026-01-01"
+      },
+      "payload": {
+        "type": "proration",
+        "formula": "base_times_numerator_over_denominator",
+        "base_semantic": "monthly_base_salary",
+        "numerator_semantic": "days_counted_through_termination",
+        "denominator_semantic": "calendar_days_in_month",
+        "universal_fixed_denominator": false
+      },
+      "provenance": [
+        {
+          "source_id": "ESOCIAL_WEB_MEI_2026",
+          "role": "official_operational",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        },
+        {
+          "source_id": "MTE_TERMINATION_FAQ",
+          "role": "official_operational",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [
+          "termination_salary_balance_monthly_31_days"
+        ],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "structural_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      },
+      "rounding_policy": {
+        "decimal_places": 2,
+        "mode": "ROUND_HALF_UP",
+        "stage": "salary_balance_result"
+      }
+    },
+    {
+      "rule_id": "termination.thirteenth_proportional",
+      "rule_version": "1.0.0",
+      "domain": "termination",
+      "calculators": [
+        "H29"
+      ],
+      "contexts": [
+        "termination"
+      ],
+      "description": "Elegibilidade do 13º proporcional por motivo suportado.",
+      "applies_to": "termination_thirteenth_entitlement",
+      "applicability": [],
+      "dependencies": [
+        "termination.reason_scope",
+        "thirteenth.accrual.twelfths"
+      ],
+      "calculation_order": 30,
+      "competence": {
+        "basis": "termination_date"
+      },
+      "vigency": {
+        "effective_from": "2026-01-01"
+      },
+      "payload": {
+        "type": "code_eligibility",
+        "eligible_codes": [
+          "02",
+          "07",
+          "33"
+        ],
+        "ineligible_codes": [
+          "01"
+        ],
+        "unsupported_behavior": "UNSUPPORTED"
+      },
+      "provenance": [
+        {
+          "source_id": "PLANALTO_LEI_4090_1962",
+          "role": "normative_primary",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        },
+        {
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "role": "normative_primary",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        },
+        {
+          "source_id": "MTE_TERMINATION_FAQ",
+          "role": "official_operational",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "structural_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      }
+    },
+    {
+      "rule_id": "termination.acquired_and_overdue_vacation",
+      "rule_version": "1.0.0",
+      "domain": "termination",
+      "calculators": [
+        "H29"
+      ],
+      "contexts": [
+        "termination"
+      ],
+      "description": "Estados de períodos integrais adquiridos e vencidos na rescisão.",
+      "applies_to": "completed_vacation_acquisition_periods",
+      "applicability": [],
+      "dependencies": [
+        "termination.reason_scope"
+      ],
+      "calculation_order": 35,
+      "competence": {
+        "basis": "termination_date"
+      },
+      "vigency": {
+        "effective_from": "2026-01-01"
+      },
+      "payload": {
+        "type": "period_state",
+        "states": [
+          "acquired_within_concession_period",
+          "overdue_beyond_concession_period"
+        ],
+        "overdue_double_requires_explicit_rule": true,
+        "initial_consumer_may_limit_to_one_period_if_disclosed": true
+      },
+      "provenance": [
+        {
+          "source_id": "PLANALTO_CLT",
+          "role": "normative_primary",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        },
+        {
+          "source_id": "MTE_TERMINATION_FAQ",
+          "role": "official_operational",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "structural_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      }
     }
   ],
-  "notes":"Exemplo de contrato CANDIDATE. Não é release de produção: snapshots/hashes ainda serão gerados pela camada de fontes na Fase 4."
+  "notes": "CANDIDATE de cobertura de schema da Fase 2. Não é release de produção e não contém snapshots reais.",
+  "lifecycle": {}
 }
