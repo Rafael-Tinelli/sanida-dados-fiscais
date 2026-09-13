@@ -6,6 +6,7 @@ on:
       - refactor/fiscal-contract-v1
     paths:
       - scripts/finalize_phase2_contract.py
+      - scripts/fix_phase2_candidate_targets.py
       - .github/workflows/phase2-finalize.yml
 
 permissions:
@@ -34,7 +35,9 @@ jobs:
         run: pip install -r requirements-dev.txt
 
       - name: Synchronize final Phase 2 contract
-        run: python scripts/finalize_phase2_contract.py
+        run: |
+          python scripts/finalize_phase2_contract.py
+          python scripts/fix_phase2_candidate_targets.py
 
       - name: Regenerate public JSON Schema
         run: python scripts/generate_contract_schema.py
