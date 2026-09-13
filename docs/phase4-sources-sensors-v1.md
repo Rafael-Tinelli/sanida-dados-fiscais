@@ -36,7 +36,7 @@ Foram identificados cinco caminhos operacionais relevantes:
 4. CDI via FTP B3/Cetip, com descoberta de arquivo, fetch e parse acoplados;
 5. reutilização de `taxas_bacen.json` pelo scraper principal como artefato interno derivado.
 
-A primeira aresta objetiva encontrada é o INSS: o registro canônico da Fase 1 aponta `INSS_TABLE_2026`, enquanto o legado pode coletar notícia anual descoberta/pinned. A Fase 4 deve resolver essa diferença como política de fonte; não deve escondê-la dentro do parser.
+A primeira aresta objetiva encontrada foi o INSS: o registro canônico da Fase 1 aponta `INSS_TABLE_2026`, enquanto o legado pode coletar notícia anual descoberta/pinned. O terceiro checkpoint resolve essa diferença como política explícita de fonte; ela não é escondida dentro do parser.
 
 ## 3. Fundação implementada no primeiro checkpoint
 
@@ -146,16 +146,99 @@ Isso **não** classifica `PARAMETER_CHANGE`, `STRUCTURAL_CHANGE` ou qualquer out
 
 ### 4.5 Runner real sem publicação
 
-`scripts/run_source_pipeline_v1.py` executa a fonte RFB real por CLI e grava runtime local, por padrão, em:
+`scripts/run_source_pipeline_v1.py` executa fontes já registradas por CLI e grava runtime local, por padrão, em:
 
 ```text
 .source-runtime/snapshots/
 .source-runtime/state/
 ```
 
-`.source-runtime/` é ignorado pelo Git. O runner não modifica `dados_fiscais.json`, não promove release e não publica nada. Neste checkpoint ele é um runner manual/de diagnóstico; o CI valida o pipeline com fixtures reproduzíveis e não faz coleta de rede externa.
+`.source-runtime/` é ignorado pelo Git. O runner não modifica `dados_fiscais.json`, não promove release e não publica nada. Neste estágio ele é manual/de diagnóstico; o CI valida os pipelines com fixtures reproduzíveis e não faz coleta de rede externa.
 
-## 5. Invariantes já executáveis
+## 5. Terceiro checkpoint — INSS canônico sem discovery de notícia
+
+A divergência entre `INSS_TABLE_2026` e a notícia anual usada pelo legado foi encerrada em `docs/phase4-inss-source-resolution-v1.json`.
+
+### 5.1 Decisão de fonte
+
+Para o novo pipeline da Fase 4, a única entrada operacional automática para a tabela progressiva do empregado é a URL registrada em `INSS_TABLE_2026`:
+
+```text
+https://www.gov.br/inss/pt-br/direitos-e-deveres/inscricao-e-contribuicao/tabela-de-contribuicao-mensal
+```
+
+O caminho antigo:
+
+```text
+PINNED_INSS_URLS
+        ou
+INSS @@search
+        ↓
+notícia anual
+```
+
+fica classificado como **legado de produção**, não como fallback do novo pipeline.
+
+A política fechada é:
+
+- a URL canônica vem do `source-registry-v1.json`;
+- notícia anual pinned não substitui automaticamente a fonte registrada;
+- `@@search` não é mecanismo de recuperação automática da fonte;
+- falha da URL canônica gera `SOURCE_UNAVAILABLE`;
+- troca da URL canônica exige mudança explícita do registro de fontes;
+- notícia oficial pode servir como corroboração humana, mas não pode alimentar o parser canônico da Fase 4.
+
+A decisão independe de a notícia anual estar acessível em um dado momento. O problema arquitetural era a descoberta oportunística de uma página diferente da registrada.
+
+### 5.2 Parser INSS isolado
+
+`sanida_fiscal/inss_employee_v1.py` implementa `inss_employee_table_v1@1.0.0` para a estrutura conhecida da página canônica.
+
+Ele normaliza:
+
+- quatro faixas progressivas para empregado, empregado doméstico e trabalhador avulso;
+- teto de contribuição de `8475.55` em 2026;
+- método `marginal_by_bracket`;
+- vigência operacional a partir de `2026-01-01`;
+- referência observada à Portaria Interministerial MPS/MF nº 13, de 09/01/2026;
+- indicação operacional de que o 13º não é somado à remuneração mensal e é apurado em separado.
+
+O parser exige os marcadores próprios da **Tabela de contribuição mensal**. Um fragmento com formato de notícia anual, ainda que mencione teto ou alíquotas, falha como `PARSER_INCOMPATIBLE` e não é reinterpretado como tabela canônica.
+
+### 5.3 Runner e estado operacional
+
+`scripts/run_source_pipeline_v1.py` registra agora dois pipelines explícitos:
+
+```text
+RFB_IRRF_TABLE_2026
+INSS_TABLE_2026
+```
+
+Assim, por exemplo:
+
+```text
+python scripts/run_source_pipeline_v1.py --source-id INSS_TABLE_2026
+```
+
+faz fetch direto da URL registrada, persiste snapshot bruto antes do parser, gera candidato normalizado e atualiza `SourcePipelineState` sem tocar os artefatos de produção.
+
+Não existe chamada a `find_inss_article_url()`, `PINNED_INSS_URLS` ou `@@search` no novo caminho.
+
+### 5.4 Gate executável
+
+`scripts/validate_phase4_foundation.py` passou a rejeitar regressões em que:
+
+- a URL canônica do documento de resolução diverge do `source-registry-v1.json`;
+- o parser id/versão diverge da política fechada;
+- fallback para notícia pinned seja reativado;
+- fallback para `@@search` seja reativado;
+- falha da fonte canônica deixe de ser fail-closed;
+- a superfície de coleta deixe de marcar a divergência como resolvida;
+- teto, quatro faixas, alíquotas ou a separação do 13º deixem de ser reproduzidos pela fixture oficial mínima.
+
+O checkpoint fecha com **172 testes verdes** no `Remake CI`.
+
+## 6. Invariantes já executáveis
 
 O conjunto de testes da Fase 4 garante agora:
 
@@ -173,18 +256,23 @@ O conjunto de testes da Fase 4 garante agora:
 12. uma segunda execução usa `ETag` e trata 304 como não modificação operacional;
 13. resposta 200 byte a byte igual produz o mesmo snapshot e o mesmo fingerprint de candidato;
 14. falha atual da fonte preserva o último candidato parseado, mas registra explicitamente a falha corrente;
-15. mudança de versão do parser força refetch completo antes de aceitar o novo parser.
+15. mudança de versão do parser força refetch completo antes de aceitar o novo parser;
+16. o parser INSS reproduz as quatro faixas e o teto oficial de 2026;
+17. o INSS da Fase 4 consulta diretamente `INSS_TABLE_2026`, sem discovery;
+18. notícia anual não satisfaz o contrato estrutural do parser canônico;
+19. falha da URL canônica não dispara fallback automático para notícia ou busca;
+20. a política de fonte INSS é machine-readable e cruzada com o source registry no CI.
 
-`scripts/validate_phase4_foundation.py` ancora o parser RFB no gate permanente do `Remake CI`.
+`scripts/validate_phase4_foundation.py` ancora os pipelines RFB e INSS no gate permanente do `Remake CI`.
 
-## 6. Limites deliberados
+## 7. Limites deliberados
 
 Ainda não foram definidos ou executados:
 
 - backend definitivo de retenção de snapshots;
 - duração de retenção e política de compactação;
-- parser novo do INSS;
-- migração de `scraper.py` para consumir o novo pipeline RFB;
+- migração de `scraper.py` para consumir os novos pipelines RFB/INSS;
+- remoção do discovery/pinned INSS do código legado de produção;
 - registro operacional próprio do domínio financeiro de referência;
 - estratégia final de CDI;
 - semantic diff;
@@ -192,12 +280,12 @@ Ainda não foram definidos ou executados:
 - publicação;
 - migração dos consumidores.
 
-O código legado de produção permanece intacto.
+O código legado de produção permanece intacto. A divergência de fonte do INSS está resolvida **no novo caminho**, mas o código legado só será removido/substituído quando a migração do produtor for executada de forma controlada.
 
-## 7. Próximos checkpoints
+## 8. Próximos checkpoints
 
-1. desacoplar **INSS** do fetch/discovery/parsing legado e resolver explicitamente `INSS_TABLE_2026` versus notícia anual pinned;
-2. preparar a migração do caminho RFB em `scraper.py` para consumir candidato validado sem duplicar fetch/parser;
+1. preparar a migração de `scraper.py` para consumir os pipelines RFB e INSS sem duplicar fetch/parser e sem alterar ainda as regras de promoção da Fase 5;
+2. definir a fronteira entre candidato normalizado da Fase 4 e artefato legado `dados_fiscais.json` durante a transição;
 3. revisar retenção de snapshots e last-good operacional sem confundi-lo com vigência jurídica;
 4. revisar a autoridade e o contrato operacional do domínio `financial_reference`, incluindo CDI;
 5. fechar a Fase 4 com sensores capazes de detectar mudança sem publicar semanticamente nada por conta própria.
