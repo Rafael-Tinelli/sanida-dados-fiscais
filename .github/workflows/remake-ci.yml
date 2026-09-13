@@ -46,3 +46,7 @@ jobs:
       - name: Run contract and fiscal-engine tests
         run: |
           python -m pytest -q tests
+
+      - name: Validate Phase 3 closure gate
+        run: |
+          python scripts/validate_phase3_gate.py
