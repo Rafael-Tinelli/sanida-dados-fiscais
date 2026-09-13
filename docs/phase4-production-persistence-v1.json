@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0.0",
+  "decision_id": "phase4.production_source_evidence_persistence",
+  "status": "prepared_for_activation_with_phase4_merge",
+  "as_of": "2026-09-13",
+  "production_environment": {
+    "runner": "github_actions_ubuntu_latest_ephemeral",
+    "workflow": ".github/workflows/main.yml",
+    "branch": "main"
+  },
+  "persistence_backend": {
+    "kind": "git_tracked_repository_path",
+    "runtime_root": "evidence/source-runtime-v1",
+    "snapshot_subdir": "snapshots",
+    "candidate_subdir": "candidates",
+    "state_subdir": "state",
+    "reason": "The GitHub Actions workspace is ephemeral; evidence required by published compatibility-artifact provenance must survive the runner and remain auditable in repository history."
+  },
+  "retention_policy": {
+    "raw_snapshots": "retain_all_unique_content_addressed_files",
+    "normalized_candidates": "retain_all_unique_content_addressed_files",
+    "operational_state": "retain_latest_materialized_state_per_source_plus_git_history",
+    "automatic_pruning": false,
+    "deduplication": "sha256_content_addressed",
+    "note": "No synthetic or fixture evidence is seeded into the production evidence tree. Files appear only after a real production collection."
+  },
+  "state_contract": {
+    "schema_version": "1.1.0",
+    "required_last_good_fields": [
+      "last_parsed_at_utc",
+      "last_parsed_snapshot_sha256",
+      "last_parsed_snapshot_path",
+      "last_successful_parser_id",
+      "last_successful_parser_version",
+      "last_candidate_sha256",
+      "last_candidate_path"
+    ],
+    "current_failure_may_not_destroy_last_good_evidence_pointer": true
+  },
+  "publication_transaction": {
+    "steps": [
+      "checkout_main_with_previously_committed_evidence",
+      "run_scraper_with_SFA_SOURCE_RUNTIME_ROOT=evidence/source-runtime-v1",
+      "verify_artifact_provenance_against_persisted_snapshot_candidate_and_state",
+      "stage_dados_fiscais_json_and_evidence_tree_together",
+      "commit_and_push_main"
+    ],
+    "artifact_and_evidence_share_commit_when_artifact_changes": true,
+    "evidence_only_commit_allowed_when_artifact_is_unchanged": true,
+    "verification_failure": "FAIL_WITHOUT_COMMIT",
+    "source_failure_with_valid_same_year_last_good": "PRESERVE_ARTIFACT_AND_VERIFY_EXISTING_EVIDENCE"
+  },
+  "integrity_gates": {
+    "snapshot_file_sha256_must_equal_artifact_provenance": true,
+    "candidate_file_sha256_must_equal_artifact_provenance": true,
+    "state_last_good_hashes_must_equal_artifact_provenance": true,
+    "state_last_good_parser_identity_must_equal_artifact_provenance": true,
+    "state_last_parsed_timestamp_must_equal_artifact_provenance": true,
+    "paths_must_remain_inside_runtime_root": true
+  },
+  "scope": {
+    "included_sources": [
+      "RFB_IRRF_TABLE_2026",
+      "INSS_TABLE_2026"
+    ],
+    "financial_reference": "pending_separate_phase4_migration",
+    "semantic_diff": "phase5",
+    "canonical_release_publication": "phase5",
+    "consumer_migration": "phase6"
+  }
+}
