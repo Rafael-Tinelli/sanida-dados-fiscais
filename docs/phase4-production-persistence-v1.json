@@ -42,13 +42,17 @@
       "checkout_main_with_previously_committed_evidence",
       "run_scraper_with_SFA_SOURCE_RUNTIME_ROOT=evidence/source-runtime-v1",
       "verify_artifact_provenance_against_persisted_snapshot_candidate_and_state",
-      "stage_dados_fiscais_json_and_evidence_tree_together",
-      "commit_and_push_main"
+      "stage_dados_fiscais_json_and_evidence_tree_together_only_when_artifact_verification_passes",
+      "otherwise_restore_unverified_dados_fiscais_json_and_stage_evidence_only",
+      "commit_and_push_main",
+      "fail_workflow_after_evidence_persistence_if_scraper_or_artifact_gate_failed"
     ],
     "artifact_and_evidence_share_commit_when_artifact_changes": true,
     "evidence_only_commit_allowed_when_artifact_is_unchanged": true,
-    "verification_failure": "FAIL_WITHOUT_COMMIT",
-    "source_failure_with_valid_same_year_last_good": "PRESERVE_ARTIFACT_AND_VERIFY_EXISTING_EVIDENCE"
+    "evidence_only_commit_allowed_on_failed_run": true,
+    "unverified_artifact_may_be_committed": false,
+    "verification_failure": "PERSIST_OPERATIONAL_EVIDENCE_ONLY_THEN_FAIL_WORKFLOW",
+    "source_failure_with_valid_same_year_last_good": "PRESERVE_ARTIFACT_AND_VERIFY_EXISTING_LAST_GOOD_EVIDENCE"
   },
   "integrity_gates": {
     "snapshot_file_sha256_must_equal_artifact_provenance": true,
