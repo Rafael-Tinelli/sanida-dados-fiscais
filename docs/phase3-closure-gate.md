@@ -98,17 +98,12 @@ Esses limites não impedem o gate enquanto o engine os rejeitar ou os mantiver e
 
 ## Evidência executável do checkpoint
 
-O primeiro run com o gate integrado e todas as novas invariantes foi o `Remake CI` **34775296512**. Nesse run:
+A sequência de validação do checkpoint estabeleceu dois marcos técnicos:
 
-- validação do repositório: `PASS`;
-- Contrato Fiscal Canônico v1.1: `PASS`;
-- `CANDIDATE`: 21 regras;
-- inventário: 32/32;
-- famílias de payload: 18/18;
-- suíte integral: **150 testes verdes**;
-- `scripts/validate_phase3_gate.py`: `PASS`.
+- `Remake CI` **34775296512**: primeiro run com o gate integrado e todas as novas invariantes, com validação do repositório, Contrato Fiscal Canônico v1.1, 21 regras no `CANDIDATE`, cobertura 32/32, 18/18 famílias, **150 testes** e `Phase 3 closure gate: PASS`;
+- `Remake CI` **34775483791**: repetição integral depois da sincronização do README/`docs/phase3-library-v1.md` e remoção dos helpers temporários, novamente com **150 testes** e gate em `PASS`.
 
-README e `docs/phase3-library-v1.md` foram então sincronizados com o checkpoint e o workflow/helper temporário usado apenas para essa sincronização foi removido. A validação do head documental limpo também ficou verde no `Remake CI` **34775483791**, novamente com **150 testes** e `Phase 3 closure gate: PASS`.
+O commit documental subsequente não altera engine, contrato, testes nem critérios do gate; sua própria execução do `Remake CI` também deve permanecer verde antes da promoção formal da fase.
 
 ## Critério para marcar a Fase 3 como CONCLUÍDA
 
