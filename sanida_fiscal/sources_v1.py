@@ -65,6 +65,8 @@ class CollectionResult(StrictModel):
     status: CollectionStatus
     attempts: int = Field(ge=1)
     http_status: int | None = None
+    etag: str | None = None
+    last_modified: str | None = None
     failure_kind: FailureKind | None = None
     error_detail: str | None = None
     snapshot: RawSnapshot | None = None
@@ -199,21 +201,34 @@ class HttpCollectorV1:
         self.transport = transport
         self.headers = dict(headers or {})
 
-    def collect(self, source: SourceSpec, *, observed_at_utc: datetime) -> CollectionResult:
+    def collect(
+        self,
+        source: SourceSpec,
+        *,
+        observed_at_utc: datetime,
+        conditional_etag: str | None = None,
+        conditional_last_modified: str | None = None,
+    ) -> CollectionResult:
         last_kind: FailureKind | None = None
         last_detail: str | None = None
         last_status: int | None = None
+        request_headers = dict(self.headers)
+        if conditional_etag:
+            request_headers["If-None-Match"] = conditional_etag
+        if conditional_last_modified:
+            request_headers["If-Modified-Since"] = conditional_last_modified
 
         with httpx.Client(
             transport=self.transport,
-            headers=self.headers,
             timeout=self.retry_policy.timeout_seconds,
             follow_redirects=True,
         ) as client:
             for attempt in range(1, self.retry_policy.max_attempts + 1):
                 try:
-                    response = client.get(source.url)
+                    response = client.get(source.url, headers=request_headers)
                     last_status = response.status_code
+                    etag = response.headers.get("etag") or conditional_etag
+                    last_modified = response.headers.get("last-modified") or conditional_last_modified
 
                     if response.status_code == 304:
                         return CollectionResult(
@@ -223,6 +238,8 @@ class HttpCollectorV1:
                             status=CollectionStatus.NOT_MODIFIED,
                             attempts=attempt,
                             http_status=304,
+                            etag=etag,
+                            last_modified=last_modified,
                         )
 
                     if 200 <= response.status_code < 300:
@@ -242,6 +259,8 @@ class HttpCollectorV1:
                             status=CollectionStatus.COLLECTED,
                             attempts=attempt,
                             http_status=response.status_code,
+                            etag=etag,
+                            last_modified=last_modified,
                             snapshot=snapshot,
                         )
 
@@ -258,6 +277,8 @@ class HttpCollectorV1:
                             status=CollectionStatus.SOURCE_UNAVAILABLE,
                             attempts=attempt,
                             http_status=response.status_code,
+                            etag=etag,
+                            last_modified=last_modified,
                             failure_kind=FailureKind.HTTP_CLIENT_ERROR,
                             error_detail=f"http_{response.status_code}",
                         )
