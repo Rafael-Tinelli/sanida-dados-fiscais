@@ -779,6 +779,18 @@ Segundo checkpoint executável:
 - `scripts/run_source_pipeline_v1.py` executa o pipeline real RFB sem publicar ou alterar artefatos de produção;
 - fixture oficial mínima e testes de estado elevam a suíte integral para **166 testes verdes**.
 
+Terceiro checkpoint executável:
+
+- `docs/phase4-inss-source-resolution-v1.json` fecha formalmente a divergência `INSS_TABLE_2026` × notícia anual pinned/descoberta;
+- a URL registrada em `INSS_TABLE_2026` passa a ser a única entrada operacional automática do novo pipeline de INSS;
+- notícia anual e `@@search` ficam proibidos como fallback automático: indisponibilidade da URL canônica produz `SOURCE_UNAVAILABLE`;
+- `sanida_fiscal/inss_employee_v1.py` implementa `inss_employee_table_v1@1.0.0` para a tabela oficial de empregado, doméstico e trabalhador avulso;
+- o candidato normalizado preserva quatro faixas progressivas, teto `8475.55`, vigência 2026, referência à Portaria Interministerial MPS/MF nº 13/2026 e separação do 13º;
+- notícia anual, mesmo contendo valores, não satisfaz o contrato estrutural do parser canônico;
+- o runner manual passa a aceitar `--source-id INSS_TABLE_2026` sem chamar discovery legado;
+- o gate da Fase 4 cruza política INSS, source registry, fixture e superfície de coleta;
+- suíte integral chega a **172 testes verdes**.
+
 ### Fase 5 — Diff semântico e gates de publicação
 
 **Status: PENDENTE**
@@ -851,6 +863,7 @@ Objetivos:
 30. A Fase 3 foi formalmente encerrada depois de revisão dos sete critérios do gate; qualquer reabertura da biblioteca deverá decorrer de defeito objetivo ou exigência explícita de uma fase posterior, não de redesign oportunista.
 31. Na Fase 4, coleta e interpretação são etapas distintas: bytes brutos são preservados e identificados por SHA-256 antes de qualquer parser; indisponibilidade da fonte e incompatibilidade do parser nunca são o mesmo estado.
 32. Estado operacional de fonte preserva a última observação bem-sucedida, validadores HTTP e falhas correntes sem transformar last-good operacional em autorização jurídica de uso; mudança de versão do parser invalida o atalho condicional e exige refetch.
+33. Para `INSS_TABLE_2026`, o novo pipeline usa exclusivamente a URL canônica registrada; notícia anual pinned e `@@search` não são fallback automático e falha da fonte registrada permanece `SOURCE_UNAVAILABLE`.
 
 ---
 
@@ -868,9 +881,9 @@ As Fases 1, 2 e 3 estão formalmente concluídas. Se a implementação posterior
 
 ## 20. Próxima etapa
 
-Continuar a **Fase 4 — Fontes e sensores** com o primeiro pipeline real RFB já materializado.
+Continuar a **Fase 4 — Fontes e sensores** com RFB e INSS já materializados como pipelines canônicos independentes do fetch/parser legado.
 
-Próximo checkpoint: desacoplar o **INSS** do discovery/fetch/parsing legado e resolver explicitamente a diferença entre a fonte canônica `INSS_TABLE_2026` e a notícia anual pinned/descoberta usada hoje. Depois, preparar a migração do caminho RFB em `scraper.py` para consumir o novo pipeline sem duplicar fetch/parser. Semantic diff, promoção e publicação continuam reservados à Fase 5.
+Próximo checkpoint: preparar a migração de `scraper.py` para consumir os pipelines RFB e INSS sem duplicar fetch/parser, definindo explicitamente a fronteira de transição para `dados_fiscais.json`. A remoção do discovery/pinned do código de produção deve ocorrer apenas nessa migração controlada. Semantic diff, promoção e publicação continuam reservados à Fase 5.
 
 Qualquer necessidade de reinterpretar regra jurídica ou alterar a biblioteca da Fase 3 deve voltar explicitamente ao contrato/inventário com evidência concreta, não ser resolvida silenciosamente dentro de collector ou parser.
 
@@ -893,6 +906,16 @@ Uma fase só deve ser marcada como `CONCLUÍDA` quando seus critérios de conclu
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-13 — INSS canônico sem discovery na Fase 4
+
+- encerrada formalmente a divergência entre `INSS_TABLE_2026` e a notícia anual pinned/descoberta do legado;
+- criada política machine-readable que proíbe notícia e `@@search` como fallback automático;
+- indisponibilidade da URL registrada passa a permanecer `SOURCE_UNAVAILABLE`, sem troca oportunística de fonte;
+- criado `inss_employee_table_v1@1.0.0` para quatro faixas, teto, vigência, referência normativa e separação do 13º;
+- runner de fontes passa a aceitar `INSS_TABLE_2026` diretamente do source registry;
+- gate da Fase 4 ancora RFB + INSS e marca a divergência de fonte como resolvida;
+- suíte integral chega a **172 testes verdes**.
 
 ### 2026-09-13 — primeiro pipeline real RFB na Fase 4
 
