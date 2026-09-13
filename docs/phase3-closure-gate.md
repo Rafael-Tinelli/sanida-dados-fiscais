@@ -98,7 +98,7 @@ Esses limites não impedem o gate enquanto o engine os rejeitar ou os mantiver e
 
 ## Evidência executável do checkpoint
 
-A evidência é o próprio `Remake CI` do head corrente do PR. O estado exigido é:
+A evidência é o próprio `Remake CI` do head corrente do PR. O estado exigido e reproduzido neste checkpoint é:
 
 ```text
 Repository baseline       PASS
