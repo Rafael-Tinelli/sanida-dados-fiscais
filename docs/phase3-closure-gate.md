@@ -18,7 +18,7 @@ O script permanente é:
 scripts/validate_phase3_gate.py
 ```
 
-Ele deve rodar no `Remake CI` depois das validações do repositório, do Contrato Fiscal Canônico e da suíte completa de testes.
+Ele roda no `Remake CI` depois das validações do repositório, do Contrato Fiscal Canônico e da suíte completa de testes.
 
 O gate verifica:
 
@@ -98,7 +98,7 @@ Esses limites não impedem o gate enquanto o engine os rejeitar ou os mantiver e
 
 ## Evidência executável do checkpoint
 
-A evidência é produzida pelo próprio `Remake CI` do head do PR. O estado esperado e reproduzido neste checkpoint é:
+A evidência é o próprio `Remake CI` do head corrente do PR. O estado exigido é:
 
 ```text
 Repository baseline       PASS
@@ -113,7 +113,7 @@ Phase 3 closure gate      PASS
 150 passed
 ```
 
-Os IDs concretos dos runs permanecem no histórico do GitHub Actions e no PR. Este documento deliberadamente não fixa um run como “final”, porque cada alteração documental dispara nova validação; a fonte operacional dessa evidência é o próprio check do head corrente.
+O histórico de GitHub Actions preserva os IDs e logs de cada execução. Este documento registra somente os invariantes de aceite, para que não seja necessário alterá-lo a cada novo run disparado por mudanças documentais.
 
 Não houve alteração de produção nem migração de consumidores neste checkpoint.
 
