@@ -96,6 +96,20 @@ O gate não transforma casos deliberadamente não suportados em requisitos impl�
 
 Esses limites não impedem o gate enquanto o engine os rejeitar ou os mantiver explicitamente fora da promessa do produto.
 
+## Evidência executável do checkpoint
+
+O primeiro run com o gate integrado e todas as novas invariantes foi o `Remake CI` **34775296512**. Nesse run:
+
+- validação do repositório: `PASS`;
+- Contrato Fiscal Canônico v1.1: `PASS`;
+- `CANDIDATE`: 21 regras;
+- inventário: 32/32;
+- famílias de payload: 18/18;
+- suíte integral: **150 testes verdes**;
+- `scripts/validate_phase3_gate.py`: `PASS`.
+
+Depois desse run, README e `docs/phase3-library-v1.md` foram sincronizados com o checkpoint e o workflow/helper temporário usado apenas para essa sincronização foi removido. O `Remake CI` do head documental limpo é a evidência final a ser lida no checkpoint formal de promoção da fase.
+
 ## Critério para marcar a Fase 3 como CONCLUÍDA
 
 A Fase 3 só poderá ser promovida de `EM ANDAMENTO` para `CONCLUÍDA` quando, no mesmo head do PR:
