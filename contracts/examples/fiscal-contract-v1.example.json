@@ -1318,6 +1318,77 @@
       }
     },
     {
+      "rule_id": "termination.vacation_proportional",
+      "rule_version": "1.0.0",
+      "domain": "termination",
+      "calculators": [
+        "H29"
+      ],
+      "contexts": [
+        "termination"
+      ],
+      "description": "Elegibilidade das férias proporcionais no período aquisitivo corrente por motivo de desligamento suportado.",
+      "applies_to": "current_vacation_acquisition_period_at_termination",
+      "applicability": [],
+      "dependencies": [
+        "termination.reason_scope",
+        "vacation.acquisition_period"
+      ],
+      "calculation_order": 31,
+      "competence": {
+        "basis": "termination_date"
+      },
+      "vigency": {
+        "effective_from": "2026-01-01"
+      },
+      "payload": {
+        "type": "code_eligibility",
+        "eligible_codes": [
+          "02",
+          "07",
+          "33"
+        ],
+        "ineligible_codes": [
+          "01"
+        ],
+        "unsupported_behavior": "UNSUPPORTED",
+        "code_system": "esocial_table_19_termination_reason"
+      },
+      "provenance": [
+        {
+          "source_id": "PLANALTO_CLT",
+          "role": "normative_primary",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        },
+        {
+          "source_id": "MTE_TERMINATION_FAQ",
+          "role": "official_operational",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "status": "AVAILABLE",
+          "retrieval_method": "manual"
+        }
+      ],
+      "quality": {
+        "status": "VALIDATED",
+        "reference_case_ids": [
+          "vacation_period_cross_year_A02_regression",
+          "termination_reason_01_just_cause",
+          "termination_reason_02_without_just_cause",
+          "termination_reason_07_resignation",
+          "termination_reason_33_mutual_agreement"
+        ],
+        "reviewed_by_human": true
+      },
+      "change_class": "RULE_ADDED",
+      "update_policy": {
+        "rule_class": "structural_rule",
+        "auto_publish": false,
+        "structural_review_required": true
+      }
+    },
+    {
       "rule_id": "termination.acquired_and_overdue_vacation",
       "rule_version": "1.0.0",
       "domain": "termination",

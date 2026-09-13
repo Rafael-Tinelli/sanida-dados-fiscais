@@ -22,7 +22,7 @@ Entradas congeladas para a Fase 3:
 - `scripts/validate_contract_v1.py`;
 - `tests/test_contract_v1.py`.
 
-O inventário possui **32 regras**, todas cobertas pelo Contrato v1 em **18 famílias tipadas de payload**. O `CANDIDATE` materializa 20 regras representativas e cobre as 18 famílias.
+O inventário possui **32 regras**, todas cobertas pelo Contrato v1 em **18 famílias tipadas de payload**. O `CANDIDATE` materializa 21 regras representativas e cobre as 18 famílias; a regra `termination.vacation_proportional` foi materializada na Fase 3 para execução da matriz H29 já fechada no inventário.
 
 ## 2. Contrato de versionamento que a Fase 3 deve respeitar
 
