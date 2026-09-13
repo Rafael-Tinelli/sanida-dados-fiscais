@@ -1,0 +1,2 @@
+pydantic>=2.12,<3
+jsonschema>=4.25,<5
