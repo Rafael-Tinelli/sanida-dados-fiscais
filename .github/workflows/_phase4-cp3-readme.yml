@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - refactor/sources-sensors-v1
-    paths:
-      - .github/workflows/_phase4-cp3-readme.yml
 
 permissions:
   contents: write
