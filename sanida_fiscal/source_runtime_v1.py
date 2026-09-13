@@ -26,7 +26,7 @@ class StrictModel(BaseModel):
 
 
 class SourcePipelineState(StrictModel):
-    schema_version: str = "1.0.0"
+    schema_version: str = "1.1.0"
     source_id: str
     source_url: str
     last_observed_at_utc: datetime
@@ -43,14 +43,21 @@ class SourcePipelineState(StrictModel):
     parser_version: str | None = None
     consecutive_parser_failures: int = Field(default=0, ge=0)
     last_parser_error: str | None = None
+    last_parsed_at_utc: datetime | None = None
     last_parsed_snapshot_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    last_parsed_snapshot_path: str | None = None
+    last_successful_parser_id: str | None = None
+    last_successful_parser_version: str | None = None
     last_candidate_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    last_candidate_path: str | None = None
 
-    @field_validator("last_observed_at_utc")
+    @field_validator("last_observed_at_utc", "last_parsed_at_utc")
     @classmethod
-    def utc_only(cls, value: datetime) -> datetime:
+    def utc_only(cls, value: datetime | None) -> datetime | None:
+        if value is None:
+            return None
         if value.tzinfo is None or value.utcoffset() != timezone.utc.utcoffset(value):
-            raise ValueError("last_observed_at_utc must be UTC")
+            raise ValueError("operational timestamps must be UTC")
         return value
 
 
@@ -97,16 +104,56 @@ class SourceStateStore:
         os.replace(tmp, target)
 
 
-def canonical_candidate_sha256(candidate: NormalizedSourceCandidate) -> str:
+def canonical_candidate_bytes(candidate: NormalizedSourceCandidate) -> bytes:
     if candidate.status != ParseStatus.PARSED or candidate.payload is None:
         raise ValueError("candidate fingerprint requires PARSED payload")
-    body = json.dumps(
+    return json.dumps(
         candidate.payload,
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
     ).encode("utf-8")
-    return sha256(body).hexdigest()
+
+
+def canonical_candidate_sha256(candidate: NormalizedSourceCandidate) -> str:
+    return sha256(canonical_candidate_bytes(candidate)).hexdigest()
+
+
+class CandidateStore:
+    """Content-addressed immutable storage for normalized candidate payloads."""
+
+    def __init__(self, root: Path):
+        self.root = Path(root)
+
+    @staticmethod
+    def relative_path(source_id: str, digest: str) -> str:
+        safe_source = SourceStateStore._safe_source_id(source_id)
+        return f"{safe_source}/{digest[:2]}/{digest}.json"
+
+    def persist(self, candidate: NormalizedSourceCandidate) -> str:
+        body = canonical_candidate_bytes(candidate)
+        digest = sha256(body).hexdigest()
+        relative = self.relative_path(candidate.source_id, digest)
+        target = self.root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+
+        if target.exists():
+            existing = target.read_bytes()
+            if existing != body:
+                raise RuntimeError("candidate hash collision or immutable candidate corruption")
+        else:
+            with target.open("xb") as fh:
+                fh.write(body)
+        return relative
+
+    def read(self, *, relative_path: str, expected_sha256: str) -> dict[str, JsonValue]:
+        body = (self.root / relative_path).read_bytes()
+        if sha256(body).hexdigest() != expected_sha256:
+            raise RuntimeError("candidate integrity check failed")
+        payload = json.loads(body.decode("utf-8"))
+        if not isinstance(payload, dict):
+            raise RuntimeError("candidate evidence payload must be an object")
+        return payload
 
 
 def run_source_pipeline(
@@ -119,6 +166,7 @@ def run_source_pipeline(
     parser_id: str,
     parser_version: str,
     parser: Callable[[bytes], dict[str, JsonValue]],
+    candidate_store: CandidateStore | None = None,
     use_http_validators: bool = True,
 ) -> SourcePipelineRun:
     previous = state_store.load(source.source_id)
@@ -157,8 +205,13 @@ def run_source_pipeline(
             parser_version=previous.parser_version if previous else None,
             consecutive_parser_failures=previous.consecutive_parser_failures if previous else 0,
             last_parser_error=previous.last_parser_error if previous else None,
+            last_parsed_at_utc=previous.last_parsed_at_utc if previous else None,
             last_parsed_snapshot_sha256=previous.last_parsed_snapshot_sha256 if previous else None,
+            last_parsed_snapshot_path=previous.last_parsed_snapshot_path if previous else None,
+            last_successful_parser_id=previous.last_successful_parser_id if previous else None,
+            last_successful_parser_version=previous.last_successful_parser_version if previous else None,
             last_candidate_sha256=previous_candidate_sha,
+            last_candidate_path=previous.last_candidate_path if previous else None,
         )
         state_store.persist(state)
         return SourcePipelineRun(collection=collection, state=state)
@@ -215,8 +268,13 @@ def run_source_pipeline(
             parser_version=parser_version,
             consecutive_parser_failures=(previous.consecutive_parser_failures if previous else 0) + 1,
             last_parser_error=candidate.error_detail,
+            last_parsed_at_utc=previous.last_parsed_at_utc if previous else None,
             last_parsed_snapshot_sha256=previous.last_parsed_snapshot_sha256 if previous else None,
+            last_parsed_snapshot_path=previous.last_parsed_snapshot_path if previous else None,
+            last_successful_parser_id=previous.last_successful_parser_id if previous else None,
+            last_successful_parser_version=previous.last_successful_parser_version if previous else None,
             last_candidate_sha256=previous_candidate_sha,
+            last_candidate_path=previous.last_candidate_path if previous else None,
         )
         state_store.persist(state)
         return SourcePipelineRun(
@@ -227,6 +285,7 @@ def run_source_pipeline(
         )
 
     candidate_sha = canonical_candidate_sha256(candidate)
+    candidate_path = candidate_store.persist(candidate) if candidate_store is not None else None
     candidate_unchanged = previous_candidate_sha == candidate_sha if previous_candidate_sha else None
     state = SourcePipelineState(
         source_id=source.source_id,
@@ -245,8 +304,13 @@ def run_source_pipeline(
         parser_version=parser_version,
         consecutive_parser_failures=0,
         last_parser_error=None,
+        last_parsed_at_utc=observed_at_utc,
         last_parsed_snapshot_sha256=collection.snapshot.sha256,
+        last_parsed_snapshot_path=collection.snapshot.relative_path,
+        last_successful_parser_id=parser_id,
+        last_successful_parser_version=parser_version,
         last_candidate_sha256=candidate_sha,
+        last_candidate_path=candidate_path,
     )
     state_store.persist(state)
     return SourcePipelineRun(
