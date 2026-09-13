@@ -1,12 +1,17 @@
+from __future__ import annotations
+
 import datetime as dt
+from decimal import Decimal, InvalidOperation
 import json
 import os
-import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-import requests
-
+from sanida_fiscal.financial_artifact_v1 import FINANCIAL_ARTIFACT_SCHEMA_VERSION
+from sanida_fiscal.financial_evidence_v1 import (
+    FinancialEvidenceError,
+    verify_financial_artifact_evidence,
+)
 from sanida_fiscal.legacy_artifact_v1 import (
     LegacyArtifactBoundaryError,
     build_legacy_dados_fiscais,
@@ -19,7 +24,6 @@ from sanida_fiscal.source_catalog_v1 import (
 
 OUTPUT_FILE = "dados_fiscais.json"
 TAXAS_FILE_LOCAL = "taxas_bacen.json"
-TAXAS_JSON_URL_DEFAULT = "https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/main/taxas_bacen.json"
 SOURCE_REGISTRY = Path("docs/source-registry-v1.json")
 SOURCE_RUNTIME_ROOT = Path(os.getenv("SFA_SOURCE_RUNTIME_ROOT", ".source-runtime").strip())
 PAYROLL_SOURCE_IDS = ("RFB_IRRF_TABLE_2026", "INSS_TABLE_2026")
@@ -31,7 +35,6 @@ HEADERS = {
     "Connection": "keep-alive",
 }
 
-SSLVERIFY = os.getenv("SFA_SSLVERIFY", "1").strip() not in ("0", "false", "False")
 TIMEOUT = int(os.getenv("SFA_TIMEOUT", "25").strip())
 RETRIES = int(os.getenv("SFA_RETRIES", "3").strip())
 
@@ -58,40 +61,6 @@ def round_fiscal_tree(obj):
     return round_fiscal_number(obj)
 
 
-def taxas_json_url() -> str:
-    return os.getenv("SFA_TAXAS_JSON_URL", TAXAS_JSON_URL_DEFAULT).strip()
-
-
-def fetch(url: str) -> Tuple[bool, int, str]:
-    last_err = ""
-    for i in range(1, RETRIES + 1):
-        try:
-            r = requests.get(url, headers=HEADERS, timeout=TIMEOUT, verify=SSLVERIFY)
-            code = int(r.status_code)
-            if code == 200:
-                return True, code, r.text
-            if 500 <= code < 600:
-                last_err = f"http_{code}"
-                time.sleep(0.4 * i)
-                continue
-            return False, code, r.text[:500]
-        except Exception as e:
-            last_err = f"exc_{type(e).__name__}"
-            time.sleep(0.4 * i)
-            continue
-    return False, 0, last_err
-
-
-def fetch_json(url: str) -> Tuple[bool, int, Any]:
-    ok, code, body = fetch(url)
-    if not ok:
-        return False, code, body
-    try:
-        return True, code, json.loads(body)
-    except Exception:
-        return False, code, {"error": "invalid_json", "body_sample": body[:200]}
-
-
 def read_json_file(path: str) -> Optional[Dict[str, Any]]:
     if not os.path.exists(path):
         return None
@@ -103,55 +72,120 @@ def read_json_file(path: str) -> Optional[Dict[str, Any]]:
         return None
 
 
+def _decimal_equal_number(canonical: Any, number: Any) -> bool:
+    if not isinstance(canonical, str):
+        return False
+    if not isinstance(number, (int, float)) or isinstance(number, bool):
+        return False
+    try:
+        return Decimal(canonical) == Decimal(str(number))
+    except (InvalidOperation, ValueError):
+        return False
+
+
 def validate_taxas_payload(d: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    """Validate the Phase 4 financial compatibility contract consumed by payroll.
+
+    A01: old 1.3/B3-FTP documents and arbitrary remote JSON must never be accepted
+    merely because they contain numeric `selic`/`cdi` fields.
+    """
     errs: List[str] = []
 
     if not isinstance(d, dict):
         return False, ["taxas_payload:not_dict"]
+    if d.get("schema_version") != FINANCIAL_ARTIFACT_SCHEMA_VERSION:
+        errs.append("schema_version:unexpected")
+
+    meta = d.get("meta")
+    sources = None
+    if not isinstance(meta, dict):
+        errs.append("meta:missing_or_bad")
+    else:
+        if not isinstance(meta.get("generated_at_utc"), str):
+            errs.append("meta.generated_at_utc:missing_or_bad")
+        sources = meta.get("sources")
+        if not isinstance(sources, dict):
+            errs.append("meta.sources:missing_or_bad")
+
+    expected_sources = {
+        "selic": ("BCB_SELIC_META_SGS_432", 432),
+        "cdi": ("BCB_CDI_DAILY_SGS_12", 12),
+    }
+    if isinstance(sources, dict):
+        for key, (source_id, series_code) in expected_sources.items():
+            source = sources.get(key)
+            if not isinstance(source, dict):
+                errs.append(f"meta.sources.{key}:missing_or_bad")
+                continue
+            if source.get("source_id") != source_id:
+                errs.append(f"meta.sources.{key}.source_id:unexpected")
+            if source.get("series_code") != series_code:
+                errs.append(f"meta.sources.{key}.series_code:unexpected")
+            for hash_key in ("snapshot_sha256", "candidate_sha256"):
+                value = source.get(hash_key)
+                if not isinstance(value, str) or len(value) != 64:
+                    errs.append(f"meta.sources.{key}.{hash_key}:missing_or_bad")
+            if not isinstance(source.get("parser_id"), str) or not isinstance(source.get("parser_version"), str):
+                errs.append(f"meta.sources.{key}.parser:missing_or_bad")
 
     taxas = d.get("taxas")
     if not isinstance(taxas, dict):
         errs.append("taxas:missing_or_bad")
     else:
-        if not isinstance(taxas.get("selic"), (int, float)):
-            errs.append("taxas.selic:missing_or_bad")
-        if not isinstance(taxas.get("cdi"), (int, float)):
-            errs.append("taxas.cdi:missing_or_bad")
+        for key in ("selic", "cdi"):
+            value = taxas.get(key)
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                errs.append(f"taxas.{key}:missing_or_bad")
+            elif not (0 <= value <= 60):
+                errs.append(f"taxas.{key}:out_of_range")
+        if taxas.get("cdi_basis") != "bcb_sgs_12_daily_compounded_252":
+            errs.append("taxas.cdi_basis:unexpected")
 
-        if isinstance(taxas.get("selic"), (int, float)) and not (0 <= taxas["selic"] <= 60):
-            errs.append("taxas.selic:out_of_range")
-        if isinstance(taxas.get("cdi"), (int, float)) and not (0 <= taxas["cdi"] <= 60):
-            errs.append("taxas.cdi:out_of_range")
-
-    meta = d.get("meta")
-    if meta is not None and not isinstance(meta, dict):
-        errs.append("meta:bad_shape")
+        if isinstance(sources, dict):
+            selic_meta = sources.get("selic")
+            cdi_meta = sources.get("cdi")
+            if isinstance(selic_meta, dict) and not _decimal_equal_number(
+                selic_meta.get("source_value_pct"), taxas.get("selic")
+            ):
+                errs.append("taxas.selic:does_not_match_source_provenance")
+            if isinstance(cdi_meta, dict) and not _decimal_equal_number(
+                cdi_meta.get("annualized_value_pct"), taxas.get("cdi")
+            ):
+                errs.append("taxas.cdi:does_not_match_source_provenance")
 
     return (len(errs) == 0), errs
 
 
-def load_taxas_payload() -> Tuple[Dict[str, Any], str, str]:
+def load_taxas_payload(
+    *,
+    runtime_root: Path = SOURCE_RUNTIME_ROOT,
+    artifact_path: Path = Path(TAXAS_FILE_LOCAL),
+) -> Tuple[Dict[str, Any], str, str]:
+    """Load only the local, evidence-gated Phase 4 financial artifact.
+
+    There is intentionally no raw-GitHub or environment URL fallback. `taxas.yml`
+    is the sole producer and its persisted snapshot/candidate/state chain must be
+    verifiable before payroll may consume the artifact.
     """
-    Domínio financial_reference ainda legado nesta etapa.
+    artifact_path = Path(artifact_path)
+    local = read_json_file(str(artifact_path))
+    ok_local, errs_local = (
+        validate_taxas_payload(local)
+        if isinstance(local, dict)
+        else (False, ["local:not_found_or_bad"])
+    )
+    if not ok_local:
+        raise RuntimeError(f"taxas local incompatível com Phase 4: {errs_local}")
 
-    Fonte prioritária:
-    1) arquivo local taxas_bacen.json (commitado no repo)
-    2) raw GitHub do mesmo arquivo
-    """
-    local = read_json_file(TAXAS_FILE_LOCAL)
-    ok_local, errs_local = validate_taxas_payload(local) if isinstance(local, dict) else (False, ["local:not_found_or_bad"])
-    if ok_local:
-        return local, "local_file", TAXAS_FILE_LOCAL
+    try:
+        verify_financial_artifact_evidence(
+            artifact_path=artifact_path,
+            runtime_root=Path(runtime_root),
+        )
+    except FinancialEvidenceError as exc:
+        raise RuntimeError(f"taxas sem evidência financeira válida: {exc}") from exc
 
-    remote_url = taxas_json_url()
-    ok_remote, http_code, remote_data = fetch_json(remote_url)
-    if ok_remote and isinstance(remote_data, dict):
-        ok_payload, errs_payload = validate_taxas_payload(remote_data)
-        if ok_payload:
-            return remote_data, "remote_url", remote_url
-        raise RuntimeError(f"taxas remoto inválido: {errs_payload}")
-
-    raise RuntimeError(f"taxas indisponível: local={errs_local}; remote_status={http_code}; remote_error={remote_data}")
+    return local, "local_file", TAXAS_FILE_LOCAL
 
 
 def validate_payload(d: Dict[str, Any]) -> Tuple[bool, List[str]]:
@@ -190,6 +224,8 @@ def validate_payload(d: Dict[str, Any]) -> Tuple[bool, List[str]]:
         for k in ("selic", "cdi"):
             if k not in taxas or not isinstance(taxas.get(k), (int, float)):
                 errs.append(f"taxas.{k}:missing_or_bad")
+        if taxas.get("cdi_basis") != "bcb_sgs_12_daily_compounded_252":
+            errs.append("taxas.cdi_basis:unexpected")
 
     if isinstance(d.get("dep"), (int, float)) and not (0 < d["dep"] < 500):
         errs.append("dep:out_of_range")
@@ -268,9 +304,6 @@ def collect_payroll_source_runs(reference_year: int, observed_at_utc: dt.datetim
             timeout_seconds=float(TIMEOUT),
             max_attempts=RETRIES,
             headers=HEADERS,
-            # Legacy artifact generation needs a current PARSED candidate in this
-            # execution. It must not turn a 304/state-only observation into a new
-            # published compatibility artifact.
             use_http_validators=False,
         )
     return runs
@@ -298,6 +331,7 @@ def main():
         taxas_source_meta = {
             "origin": taxas_origin,
             "origin_ref": taxas_ref,
+            "schema_version": taxas_doc.get("schema_version"),
             "generated_at_utc": taxas_meta.get("generated_at_utc"),
             "source_meta": taxas_sources,
         }
@@ -323,7 +357,7 @@ def main():
             if not ok:
                 raise LegacyArtifactBoundaryError(f"legacy artifact validation failed: {verrs}")
             write_json_atomic(payload)
-            print("OK: dados_fiscais.json atualizado via pipelines canônicos RFB + INSS.")
+            print("OK: dados_fiscais.json atualizado via RFB + INSS + taxas financeiras evidence-gated.")
             return
         except Exception as e:
             errors.append(f"legacy_artifact:{e}")
@@ -333,7 +367,7 @@ def main():
         print("Erros:", errors)
         return
 
-    print("ERRO: sem candidato canônico atual e sem last-good válido para o ano corrente; nenhum JSON foi escrito.")
+    print("ERRO: sem candidatos/evidência atuais e sem last-good válido para o ano corrente; nenhum JSON foi escrito.")
     print("Erros:", errors)
     raise SystemExit(1)
 
