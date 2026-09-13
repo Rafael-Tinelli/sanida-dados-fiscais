@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any
 
 from .source_runtime_v1 import CandidateStore, SourceStateStore
-from .sources_v1 import ParseStatus
 
 
 PAYROLL_PROVENANCE = {
@@ -98,15 +97,13 @@ def verify_legacy_artifact_evidence(
         state = state_store.load(source_id)
         if state is None:
             raise ProductionEvidenceError(f"missing operational state for {source_id}")
-        if state.last_parse_status != ParseStatus.PARSED:
-            raise ProductionEvidenceError(f"{source_id} has no last-good PARSED state")
 
         snapshot_sha = provenance.get("snapshot_sha256")
         candidate_sha = provenance.get("candidate_sha256")
         if state.last_parsed_snapshot_sha256 != snapshot_sha:
-            raise ProductionEvidenceError(f"{source_id} snapshot provenance differs from persisted state")
+            raise ProductionEvidenceError(f"{source_id} snapshot provenance differs from persisted last-good state")
         if state.last_candidate_sha256 != candidate_sha:
-            raise ProductionEvidenceError(f"{source_id} candidate provenance differs from persisted state")
+            raise ProductionEvidenceError(f"{source_id} candidate provenance differs from persisted last-good state")
         if state.last_successful_parser_id != provenance.get("parser_id"):
             raise ProductionEvidenceError(f"{source_id} parser_id provenance differs from last-good state")
         if state.last_successful_parser_version != provenance.get("parser_version"):
@@ -139,7 +136,6 @@ def verify_legacy_artifact_evidence(
         if not isinstance(candidate_payload, dict):
             raise ProductionEvidenceError(f"{source_id} candidate evidence root must be an object")
 
-        # CandidateStore.read performs the same digest contract used by the producer.
         CandidateStore(candidate_root).read(
             relative_path=candidate_path,
             expected_sha256=candidate_sha,
