@@ -1,6 +1,6 @@
 # Gate de fechamento — Fase 3
 
-Status: **PREPARADO / ainda não promove a Fase 3 para CONCLUÍDA por si só**
+Status: **APROVADO — FASE 3 CONCLUÍDA**
 
 Data: 2026-09-13
 
@@ -34,7 +34,7 @@ O gate verifica:
 
 ## Memória comum de cálculo
 
-O checkpoint introduz:
+O checkpoint introduziu:
 
 ```text
 sanida_fiscal/memory_v1.py
@@ -52,7 +52,7 @@ Cada nó possui:
 
 Valores monetários são serializados a partir de `Decimal` como texto canônico. O envelope não introduz `float` no caminho fiscal.
 
-Adaptadores permanentes cobrem neste checkpoint:
+Adaptadores permanentes cobrem:
 
 - IRRF mensal/13º/férias quando já existe `IrrfAssessmentMemory`;
 - apuração fiscal do 13º;
@@ -82,9 +82,9 @@ Adaptadores permanentes cobrem neste checkpoint:
 - ausência de filhos proporcionais no motivo `01`;
 - separação do principal/terço do abono.
 
-## O que o gate não declara concluído
+## Limites que o gate não converte em escopo implícito
 
-O gate não transforma casos deliberadamente não suportados em requisitos implícitos. Permanecem fail-closed, salvo decisão posterior de escopo:
+Permanecem fail-closed, salvo decisão posterior de escopo:
 
 - branches especiais do adiantamento do 13º para admissão no ano/remuneração variável;
 - cálculo interno completo da remuneração variável do 13º;
@@ -94,11 +94,11 @@ O gate não transforma casos deliberadamente não suportados em requisitos impl�
 - itens rescisórios explicitamente excluídos da estimativa parcial;
 - collectors, sensores, semantic diff, publicação e migração de consumidores.
 
-Esses limites não impedem o gate enquanto o engine os rejeitar ou os mantiver explicitamente fora da promessa do produto.
+Esses limites não impedem o fechamento enquanto o engine os rejeitar ou os mantiver explicitamente fora da promessa do produto.
 
-## Evidência executável do checkpoint
+## Evidência executável
 
-A evidência é o próprio `Remake CI` do head corrente do PR. O estado de aceite é:
+O estado de aceite é:
 
 ```text
 Repository baseline       PASS
@@ -113,20 +113,28 @@ Phase 3 closure gate      PASS
 150 passed
 ```
 
-O histórico de GitHub Actions preserva os IDs e logs de cada execução. Este documento registra somente os invariantes de aceite, para que permaneça estável e não precise ser alterado quando um novo run é disparado.
+A evidência operacional é o `Remake CI` associado ao head corrente do PR. O histórico de GitHub Actions preserva IDs e logs; este documento registra os invariantes de aceite para não depender de um ID de execução que mudaria sempre que uma atualização documental disparasse novo run.
 
-Não houve alteração de produção nem migração de consumidores neste checkpoint.
+## Revisão formal dos sete critérios de promoção
 
-## Critério para marcar a Fase 3 como CONCLUÍDA
+A promoção de `EM ANDAMENTO` para `CONCLUÍDA` foi revisada em checkpoint próprio.
 
-A Fase 3 só poderá ser promovida de `EM ANDAMENTO` para `CONCLUÍDA` quando, no mesmo head do PR:
+| Critério | Resultado | Evidência |
+|---|---|---|
+| `scripts/validate_repository.py` | PASS | etapa `Validate repository baseline and reference cases` do `Remake CI` |
+| `scripts/validate_contract_v1.py` | PASS | 21 regras candidatas, 32/32 do inventário, 18 famílias |
+| suíte `pytest` integral | PASS | 150 testes |
+| `scripts/validate_phase3_gate.py` | PASS | `Phase 3 closure gate: PASS` |
+| README + `docs/phase3-library-v1.md` coerentes | PASS | ambos promovidos para `CONCLUÍDA` no checkpoint formal |
+| ausência de helper/workflow temporário | PASS | somente `main.yml`, `taxas.yml` e `remake-ci.yml` |
+| nenhuma mudança de produção/consumidor misturada | PASS | diff do PR não inclui `scraper.py`, `update_taxas.py`, `dados_fiscais.json` ou `taxas_bacen.json`; WordPress/`folha-core`/H26–H29 não foram migrados |
 
-1. `scripts/validate_repository.py` passar;
-2. `scripts/validate_contract_v1.py` passar;
-3. toda a suíte `pytest` passar;
-4. `scripts/validate_phase3_gate.py` passar;
-5. README e `docs/phase3-library-v1.md` refletirem o estado real;
-6. não houver helper/workflow temporário residual;
-7. nenhuma alteração de produção/consumidor tiver sido misturada ao fechamento da biblioteca.
+A revisão não encontrou aresta objetiva de biblioteca, contrato, testes, documentação ou higiene que exigisse manter a Fase 3 aberta.
 
-A promoção formal de status deve ocorrer em checkpoint próprio, depois da leitura do resultado deste gate.
+## Decisão
+
+**Fase 3 — Biblioteca fiscal e testes: CONCLUÍDA.**
+
+O gate permanece permanente no CI para impedir regressões enquanto as fases seguintes avançam.
+
+A próxima fase é **Fase 4 — Fontes e sensores**. O fechamento da Fase 3 não autoriza antecipar publicação de releases nem migração de consumidores.
