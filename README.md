@@ -721,7 +721,12 @@ Estado dos checkpoints executados:
 - remuneração variável pré-calculada aceita apenas como entrada externa explicitamente marcada;
 - INSS do 13º e IRRF exclusivo do 13º possuem memórias próprias, inclusive dentro de `termination`;
 - branches especiais de adiantamento ainda não modeladas falham fechadas em vez de usar `total13 * 0.5`;
-- suíte completa: **89 testes verdes** após o checkpoint de 13º.
+- o gate da Fase 2 detectou que A02 precisava transportar para a máquina o limiar de 15 dias da fração proporcional de férias; o contrato foi corrigido explicitamente para `schema_version`/`contract_api_version` **1.1.0**, mantendo compatibilidade exata/fail-closed;
+- período aquisitivo e avos proporcionais de férias agora são ancorados no aniversário do vínculo, sem reset em 1º de janeiro;
+- regressão A02 reproduz `01/09/2025 → 31/03/2026 = 7/12`;
+- faixas de direito por faltas e abono de 1/3 do **direito adquirido** estão executáveis;
+- principal do abono (`IRRF não / CP não`) e terço constitucional sobre o abono (`IRRF sim / CP não`) permanecem componentes separados até a formação das bases tributárias;
+- suíte completa: **114 testes verdes** após o checkpoint de férias/A02.
 
 ### Fase 4 — Fontes e sensores
 
@@ -799,12 +804,13 @@ Objetivos:
 22. `release_id` é identidade content-addressed do payload fiscal imutável, não número de versão.
 23. Release `PUBLISHED` é imutável; supersessão é declarada pela sucessora em `supersedes_release_id`, sem mutar a predecessora.
 24. Campos narrativos existem para auditoria humana, mas o engine não pode depender deles para decidir operação fiscal.
+25. O limiar proporcional de férias não pode existir como constante jurídica escondida no engine: `vacation.acquisition_period` v1.1 declara `proportional_qualifying_days=15` e o método de aquisição proporcional; leitores 1.0.0 não aceitam silenciosamente o contrato 1.1.0.
 
 ---
 
 ## 19. Questões em aberto
 
-Com a Fase 2 concluída, não restam pendências de design do Contrato Fiscal Canônico v1. As questões abertas pertencem às fases posteriores:
+A Fase 2 permanece formalmente concluída. Se a implementação posterior revelar uma lacuna semântica objetiva, o gate de handoff exige uma emenda explícita e versionada do contrato em vez de hardcode no engine. A primeira ocorrência foi A02, corrigida na Fase 3 como Contrato v1.1. As questões abertas restantes pertencem às fases posteriores:
 
 - implementação e propriedades matemáticas do engine fiscal — Fase 3;
 - política exata de retenção de snapshots e resiliência das fontes — Fase 4;
@@ -819,7 +825,7 @@ Com a Fase 2 concluída, não restam pendências de design do Contrato Fiscal Ca
 
 Continuar a **Fase 3 — Biblioteca fiscal e testes** a partir do primeiro núcleo já verde.
 
-Próximos checkpoints: período aquisitivo e férias; saldo salarial e matriz H29 limitada; memória de cálculo comum; expansão dos property-based tests. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.
+Próximos checkpoints: saldo salarial e matriz H29 limitada; memória de cálculo comum; expansão dos property-based tests. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.
 
 O pipeline de produção continua congelado: `scraper.py`, `update_taxas.py`, `dados_fiscais.json`, `taxas_bacen.json`, WordPress, `folha-core` e H26–H29 ainda não foram migrados.
 
@@ -840,6 +846,16 @@ Uma fase só deve ser marcada como `CONCLUÍDA` quando seus critérios de conclu
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-13 — checkpoint de férias/A02 na Fase 3
+
+- identificado pelo próprio gate da Fase 2 que o contrato não transportava o limiar de 15 dias das férias proporcionais;
+- Contrato Fiscal Canônico v1 recebeu emenda aditiva e compatibilidade exata em `schema_version`/`contract_api_version` 1.1.0;
+- `vacation.acquisition_period` v1.1 explicita método proporcional e `proportional_qualifying_days=15`;
+- A02 passou a ser executável: `01/09/2025 → 31/03/2026 = 7/12`, sem reset em janeiro;
+- direito por faltas e abono de 1/3 do entitlement passaram a funções puras;
+- principal do abono e terço constitucional permanecem separados nas incidências e bases;
+- suíte completa chega a **114 testes verdes**.
 
 ### 2026-09-13 — checkpoint de 13º salário na Fase 3
 

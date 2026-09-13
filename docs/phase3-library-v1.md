@@ -274,28 +274,128 @@ No checkpoint de 13º, a apuração previdenciária separada já consome um `Pro
 
 Quando o contrato executável disponibilizar a instância canônica de `inss.employee.progressive_table`, o mesmo primitive deverá consumi-la sem duplicação de fórmula.
 
-## 8. Estado do CI
+## 8. Quarto checkpoint — período aquisitivo, férias proporcionais e abono
 
-Após o checkpoint de 13º:
+O núcleo específico de férias vive em:
+
+```text
+sanida_fiscal/vacation_v1.py
+tests/test_vacation_v1.py
+```
+
+### 8.1 Emenda explícita do Contrato v1 para A02
+
+Ao iniciar a implementação, o gate do handoff detectou uma lacuna objetiva: `vacation.acquisition_period` já declarava período de 12 meses, âncora no vínculo e ausência de reset no ano civil, mas não transportava para a máquina o limiar de 15 dias da fração proporcional. Hardcodar `15` no engine violaria a regra de não inferência da Fase 2.
+
+A correção foi feita no próprio contrato, de forma aditiva e versionada:
+
+```text
+schema_version       1.0.0 -> 1.1.0
+contract_api_version 1.0.0 -> 1.1.0
+rule_inventory       1.0.0 -> 1.1.0
+vacation.acquisition_period.rule_version 1.0.0 -> 1.1.0
+```
+
+`PeriodRulePayload` agora carrega:
+
+```text
+proportional_accrual_method = one_twelfth_per_acquisition_month_or_fraction_gte_days
+proportional_qualifying_days = 15
+```
+
+A compatibilidade continua `exact`: um leitor 1.0.0 não aceita silenciosamente o contrato 1.1.0.
+
+### 8.2 Período aquisitivo e A02
+
+`acquisition_period_for_date()` localiza o período corrente a partir de `employment_start_anniversary`. `calculate_proportional_vacation_accrual()` subdivide esse período em doze fatias aquisitivas sucessivas e conta 1/12 por fatia integral ou fração que alcance o limiar declarado no contrato.
+
+A contagem **não usa meses civis como substituto do período aquisitivo**. Portanto vínculos iniciados no meio do mês continuam ancorados naquele dia.
+
+Regressão A02 congelada e executável:
+
+```text
+admissão      01/09/2025
+desligamento  31/03/2026
+período       01/09/2025 .. 31/08/2026
+avos           7/12
+```
+
+A fronteira de fração também está testada: 14 dias não geram avo; 15 dias geram 1/12.
+
+### 8.3 Direito em dias por faltas
+
+`vacation_entitlement_from_absences()` executa `EntitlementBandsPayload` sem reconstituir faixas no código:
+
+```text
+0–5 faltas   -> 30 dias
+6–14         -> 24 dias
+15–23        -> 18 dias
+24–32        -> 12 dias
+```
+
+Valor fora das faixas suportadas falha fechado; não há extrapolação silenciosa.
+
+### 8.4 Abono pecuniário
+
+`calculate_cash_allowance_days()` aplica o `FractionPayload` de 1/3 sobre **entitled_days**, nunca sobre uma quantidade arbitrária de dias escolhidos para gozo.
+
+Casos suportados ficam exatos:
+
+```text
+30 -> 10 de abono + 20 restantes
+24 ->  8 de abono + 16 restantes
+18 ->  6 de abono + 12 restantes
+12 ->  4 de abono +  8 restantes
+```
+
+Se uma entrada fora do universo contratual produzir fração não inteira, o engine não inventa arredondamento estatutário.
+
+### 8.5 Principal e terço constitucional não são fundidos
+
+`resolve_cash_allowance_tax_treatment()` exige os dois componentes canônicos distintos:
+
+```text
+cash_allowance_principal:                IRRF=no  CP=no
+constitutional_third_on_cash_allowance:  IRRF=yes CP=no
+```
+
+`cash_allowance_tax_bases()` preserva essa separação até a formação das bases. Exemplo com principal de R$ 1.000 e terço de R$ 333,33:
+
+```text
+base IRRF = 333.33
+base CP   = 0.00
+```
+
+Perfis trocados ou componentes fundidos são rejeitados. Isso elimina estruturalmente o defeito de colocar `abono + 1/3` inteiro em um vetor isento de IR.
+
+### 8.6 Limite deliberado
+
+O checkpoint não fabrica uma fórmula monetária específica para transformar dias de abono em principal/terço quando essa fórmula não estiver expressa como payload computacional correspondente. O engine já executa direito em dias e incidências; qualquer semântica monetária adicional precisa entrar explicitamente no contrato antes de ser calculada.
+
+## 9. Estado do CI
+
+Após o checkpoint de férias/A02 e a emenda contratual v1.1:
 
 ```text
 Repository baseline       PASS
-Fiscal Contract v1        PASS
+Fiscal Contract v1.1      PASS
+Inventory coverage        32/32
+Payload families          18/18
 Fiscal engine             PASS
 Property-based tests      PASS
 
-89 passed
+114 passed
 ```
 
-Run de referência: `34766418032`.
+Run de referência: `34767270494`.
 
-## 9. Limites preservados
+## 10. Limites preservados
 
 Ainda não estão implementados integralmente:
 
 - cálculo canônico interno completo da remuneração variável do 13º;
 - branches especiais de adiantamento para admissão no ano/remuneração variável;
-- férias/período aquisitivo/abono;
+- fórmula monetária adicional do abono além das grandezas e incidências já tipadas, se necessária, até que exista payload computacional explícito;
 - saldo salarial e matriz de elegibilidade completa do H29;
 - collectors/snapshots/parsers;
 - publicação de releases;
@@ -303,9 +403,8 @@ Ainda não estão implementados integralmente:
 
 Esses limites são fail-closed: o engine rejeita os casos não modelados em vez de convertê-los silenciosamente em aproximações.
 
-## 10. Próximos checkpoints da Fase 3
+## 11. Próximos checkpoints da Fase 3
 
-1. implementar período aquisitivo, férias proporcionais e abono;
-2. implementar saldo salarial e matriz H29 limitada;
-3. consolidar memória de cálculo comum;
-4. ampliar invariantes/property-based tests nas fronteiras legais e monetárias.
+1. implementar saldo salarial e matriz H29 limitada;
+2. consolidar memória de cálculo comum;
+3. ampliar invariantes/property-based tests nas fronteiras legais e monetárias.
