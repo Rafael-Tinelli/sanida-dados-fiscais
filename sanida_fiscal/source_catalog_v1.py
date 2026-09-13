@@ -20,7 +20,12 @@ from .rfb_irrf_v1 import (
     REFERENCE_YEAR as RFB_REFERENCE_YEAR,
     parse_rfb_irrf_2026_snapshot,
 )
-from .source_runtime_v1 import SourcePipelineRun, SourceStateStore, run_source_pipeline
+from .source_runtime_v1 import (
+    CandidateStore,
+    SourcePipelineRun,
+    SourceStateStore,
+    run_source_pipeline,
+)
 from .sources_v1 import HttpCollectorV1, RetryPolicy, SnapshotStore, load_source_registry
 
 
@@ -75,6 +80,7 @@ def run_registered_source_pipeline(
     registry_path: Path = Path("docs/source-registry-v1.json"),
     snapshot_root: Path = Path(".source-runtime/snapshots"),
     state_root: Path = Path(".source-runtime/state"),
+    candidate_root: Path = Path(".source-runtime/candidates"),
     timeout_seconds: float = 20.0,
     max_attempts: int = 3,
     transport: httpx.BaseTransport | None = None,
@@ -89,6 +95,7 @@ def run_registered_source_pipeline(
     source = registry[source_id]
     snapshot_store = SnapshotStore(snapshot_root)
     state_store = SourceStateStore(state_root)
+    candidate_store = CandidateStore(candidate_root)
     collector = HttpCollectorV1(
         snapshot_store=snapshot_store,
         retry_policy=RetryPolicy(max_attempts=max_attempts, timeout_seconds=timeout_seconds),
@@ -105,5 +112,6 @@ def run_registered_source_pipeline(
         parser_id=binding.parser_id,
         parser_version=binding.parser_version,
         parser=binding.parser,
+        candidate_store=candidate_store,
         use_http_validators=use_http_validators,
     )
