@@ -791,6 +791,20 @@ Terceiro checkpoint executável:
 - o gate da Fase 4 cruza política INSS, source registry, fixture e superfície de coleta;
 - suíte integral chega a **172 testes verdes**.
 
+Quarto checkpoint executável:
+
+- `sanida_fiscal/source_catalog_v1.py` centraliza os bindings RFB + INSS usados pelo runner e pelo produtor legado;
+- `scraper.py` deixa de conter fetch/parser próprio de RFB/INSS, pinned URL e discovery `@@search`;
+- `sanida_fiscal/legacy_artifact_v1.py` cria a única fronteira explícita `normalized candidate → dados_fiscais.json 2.2.0`;
+- `dados_fiscais.json` fica formalmente classificado como artefato de compatibilidade, não como release do Contrato Fiscal Canônico;
+- uma nova escrita exige candidatos `PARSED` da execução corrente, mesmo `reference_year` e igualdade com o ano UTC corrente;
+- `SourcePipelineState`/304 isolado não pode gerar nova publicação de compatibilidade;
+- o antigo fallback fiscal estático de `scraper.py` foi removido; sem candidato atual, somente um last-good válido do mesmo ano pode permanecer inalterado;
+- candidato/artefato de ano anterior nunca é relabelado como corrente;
+- proveniência do artefato legado passa a carregar hashes de snapshot/candidato e versão do parser;
+- `requirements.txt` passa a instalar o runtime da Fase 4;
+- suíte integral chega a **180 testes verdes** e o gate registra `legacy artifact bridge prepared`.
+
 ### Fase 5 — Diff semântico e gates de publicação
 
 **Status: PENDENTE**
@@ -864,6 +878,7 @@ Objetivos:
 31. Na Fase 4, coleta e interpretação são etapas distintas: bytes brutos são preservados e identificados por SHA-256 antes de qualquer parser; indisponibilidade da fonte e incompatibilidade do parser nunca são o mesmo estado.
 32. Estado operacional de fonte preserva a última observação bem-sucedida, validadores HTTP e falhas correntes sem transformar last-good operacional em autorização jurídica de uso; mudança de versão do parser invalida o atalho condicional e exige refetch.
 33. Para `INSS_TABLE_2026`, o novo pipeline usa exclusivamente a URL canônica registrada; notícia anual pinned e `@@search` não são fallback automático e falha da fonte registrada permanece `SOURCE_UNAVAILABLE`.
+34. `dados_fiscais.json` permanece temporariamente como artefato de compatibilidade 2.2.0: só pode ser reescrito a partir de candidatos RFB/INSS `PARSED` da execução corrente e do mesmo ano UTC; estado operacional isolado, fallback estático ou dado de ano anterior não autorizam nova escrita.
 
 ---
 
@@ -881,9 +896,9 @@ As Fases 1, 2 e 3 estão formalmente concluídas. Se a implementação posterior
 
 ## 20. Próxima etapa
 
-Continuar a **Fase 4 — Fontes e sensores** com RFB e INSS já materializados como pipelines canônicos independentes do fetch/parser legado.
+Continuar a **Fase 4 — Fontes e sensores** com o produtor de compatibilidade já desacoplado dos parsers legados de RFB/INSS.
 
-Próximo checkpoint: preparar a migração de `scraper.py` para consumir os pipelines RFB e INSS sem duplicar fetch/parser, definindo explicitamente a fronteira de transição para `dados_fiscais.json`. A remoção do discovery/pinned do código de produção deve ocorrer apenas nessa migração controlada. Semantic diff, promoção e publicação continuam reservados à Fase 5.
+Próximo checkpoint: resolver a **retenção/persistência de snapshots e estado operacional no caminho que será ativado em produção**, para que os hashes adicionados ao `dados_fiscais.json` correspondam a evidência realmente preservada fora do runner efêmero. Em seguida, migrar o domínio separado `financial_reference` (Selic/SGS e CDI) e eliminar fallback financeiro capaz de fingir atualidade. Semantic diff, promoção e publicação continuam reservados à Fase 5.
 
 Qualquer necessidade de reinterpretar regra jurídica ou alterar a biblioteca da Fase 3 deve voltar explicitamente ao contrato/inventário com evidência concreta, não ser resolvida silenciosamente dentro de collector ou parser.
 
@@ -906,6 +921,17 @@ Uma fase só deve ser marcada como `CONCLUÍDA` quando seus critérios de conclu
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-13 — fronteira `scraper.py` → `dados_fiscais.json` na Fase 4
+
+- criado catálogo único de pipelines para RFB e INSS;
+- removidos de `scraper.py` os parsers de folha, pinned URL e discovery do INSS;
+- criado bridge explícito para manter `dados_fiscais.json` 2.2.0 apenas como artefato de compatibilidade;
+- nova escrita passa a exigir candidatos atuais `PARSED` e competência anual coerente;
+- removido o fallback fiscal estático e bloqueada relabelagem de ano anterior;
+- proveniência legada passa a incluir hashes de snapshot/candidato e parser id/versão;
+- runtime de produção passa a instalar Pydantic/HTTPX/BeautifulSoup necessários ao novo caminho;
+- suíte integral chega a **180 testes verdes**.
 
 ### 2026-09-13 — INSS canônico sem discovery na Fase 4
 
