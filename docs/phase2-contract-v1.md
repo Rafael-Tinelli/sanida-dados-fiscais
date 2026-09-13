@@ -1,7 +1,8 @@
 # Fase 2 — Contrato Fiscal Canônico v1
 
-**Status:** EM ANDAMENTO  
+**Status:** CONCLUÍDA  
 **Início:** 13/09/2026  
+**Fechamento:** 13/09/2026  
 **Base:** fechamento formal da Fase 1 (`docs/phase1-closure.md`)
 
 ## 1. Objetivo desta fase
@@ -140,7 +141,7 @@ acquisition_period
 rule_specific
 ```
 
-Além da base principal, `context_overrides` permite declarar uma base distinta para um contexto específico sem recorrer a texto livre. Overrides para contextos não declarados são rejeitados. `rule_specific` exige descrição explícita.
+Além da base principal, `context_overrides` permite declarar uma base distinta para um contexto específico. Overrides para contextos não declarados são rejeitados. `rule_specific` exige uma `rule_specific_key` tipada; descrição narrativa pode existir para auditoria humana, mas não decide o cálculo.
 
 ## 8. Proveniência
 
@@ -164,7 +165,7 @@ Invariantes:
 
 Snapshots reais permanecem responsabilidade da camada de fontes da Fase 4. A Fase 2 define o contrato de proveniência; não inventa hashes para parecer uma release real.
 
-## 9. Lifecycle da release
+## 9. Lifecycle, identidade e imutabilidade da release
 
 Estados suportados:
 
@@ -173,29 +174,37 @@ DRAFT
 CANDIDATE
 VALIDATED
 PUBLISHED
-SUPERSEDED
 BLOCKED
 ```
 
+`SUPERSEDED` não é um estado mutável do artefato antigo. Uma release `PUBLISHED` é imutável; sua substituição é declarada pela sucessora em `supersedes_release_id`.
+
 O modelo `ReleaseLifecycle` registra, conforme o estado:
 
-- release anterior;
 - data de validação;
 - data de publicação;
-- data de supersessão;
-- release sucessora;
 - modo e referência de aprovação;
 - motivos de bloqueio.
 
 Gates principais:
 
 - `DRAFT` não pode carregar estado de validação/publicação;
-- `CANDIDATE` não pode alegar publicação ou supersessão;
-- `VALIDATED` exige `validated_at_utc`;
+- `CANDIDATE` não pode alegar lifecycle final;
+- `VALIDATED` exige `validated_at_utc`, todas as regras validadas e snapshot hashado por regra;
 - `PUBLISHED` exige validação, publicação, aprovação e evidência hashada por regra;
 - release com mudança estrutural só pode ser `PUBLISHED` com `HUMAN_REVIEWED`;
-- `SUPERSEDED` exige histórico de publicação e sucessora explícita;
-- `BLOCKED` exige `block_reasons` e não pode estar publicada.
+- `BLOCKED` exige `block_reasons` e não pode estar publicada;
+- `VALIDATED`/`PUBLISHED` exigem `release_id` content-addressed do payload fiscal imutável;
+- uma sucessora só pode apontar por `supersedes_release_id` para uma predecessora `PUBLISHED` e deve possuir identidade distinta;
+- após `PUBLISHED`, qualquer alteração do artefato exige nova release; reescrita do mesmo `release_id` é rejeitada.
+
+A identidade canônica de release é:
+
+```text
+fiscal-v1-sha256-<sha256 do immutable payload>
+```
+
+O hash de identidade não depende de timestamps de workflow/lifecycle. Ele cobre a substância fiscal e contratual imutável da release.
 
 ## 10. Invariantes executáveis
 
@@ -278,57 +287,110 @@ Outros motivos continuam `UNSUPPORTED` até especificação própria.
 A suíte não testa apenas casos felizes. Ela rejeita, entre outros:
 
 - release publicada sem snapshot hashado;
+- `release_id` de release validada/publicada que não corresponda ao hash do payload imutável;
 - mudança estrutural publicada como `AUTO_VALIDATED`;
 - `CANDIDATE` com timestamp de publicação;
 - `BLOCKED` sem motivo;
-- `SUPERSEDED` sem sucessora;
+- uso de `SUPERSEDED` como estado mutável da predecessora;
+- tentativa de mutar artefato já `PUBLISHED`;
+- sucessão sem `supersedes_release_id` coerente;
+- versão SemVer regressiva;
+- consumidor com `schema_version` ou `contract_api_version` incompatível;
 - regra estrutural com autopublicação;
 - dependência inexistente ou autorreferente;
 - sobreposição de vigência;
 - override de competência em contexto não declarado;
-- competência `rule_specific` sem descrição;
+- competência `rule_specific` sem chave tipada;
 - parser sem versão ou versão sem parser;
 - fonte indisponível com snapshot fictício;
 - `snapshot_path` sem hash;
+- método de tabela progressiva implícito;
 - faixas de direito sobrepostas;
 - códigos de elegibilidade duplicados/sobrepostos;
 - escopo com o mesmo item simultaneamente incluído e excluído;
 - campos extras desconhecidos.
 
-No checkpoint 32/32, o `Remake CI` executou **43 testes com sucesso**.
+Na rodada final da Fase 2, a suíte específica do contrato executou **52 testes com sucesso**.
 
 ## 13. Casos de referência
 
 `reference_case_ids` não são texto livre: o validador exige que cada ID exista em `tests/reference_cases/phase1_reference_cases.json`.
 
-## 14. Compatibilidade de consumidores
+## 14. Versionamento, compatibilidade e auditoria de inferência
 
-O v1 começa com:
+### 14.1. Quatro identidades distintas
+
+O v1 congela quatro conceitos que não podem ser confundidos:
+
+- `schema_version` — SemVer da forma pública JSON/Pydantic;
+- `contract_api_version` — SemVer da interface semântica oferecida aos consumidores;
+- `rule_version` — SemVer da semântica de cada `rule_id`;
+- `release_id` — identidade imutável content-addressed, **não SemVer**.
+
+Critérios de bump:
+
+| Identidade | MAJOR | MINOR | PATCH |
+|---|---|---|---|
+| `schema_version` | forma/validação/significado incompatível | capacidade aditiva sem alterar significado anterior | correção não incompatível sem mudar significado computacional | 
+| `contract_api_version` | interpretação/seleção/contexto/lifecycle incompatível | capacidade semântica aditiva preservando comportamento anterior | correção/clarificação preservando contratos existentes |
+| `rule_version` | target, fórmula, incidência, contexto, dependência/ordem ou semântica incompatível | extensão compatível sem alterar casos existentes | parâmetro, vigência, proveniência/referência ou correção sob a mesma semântica |
+
+Mesmo uma versão minor/patch **não é aceita automaticamente no v1**. Compatibilidade precisa ser testada e declarada.
+
+### 14.2. Política fail-closed do v1
 
 ```text
-contract_api_version = 1.0.0
-consumers = H26, H27, H28, H29
-unsupported_behavior = hard_fail
+schema_match            = exact
+contract_api_match      = exact
+unknown_fields          = reject
+unknown_payload_types   = reject
+backward_compatibility  = explicitly_tested_only
+forward_compatibility   = not_assumed
+unsupported_behavior    = hard_fail
 ```
 
-Isso não significa migração concluída; significa que incompatibilidade futura será erro explícito e não fallback silencioso.
+O contrato declara H26, H27, H28 e H29 como consumidores-alvo, mas isso não significa migração concluída. Significa que uma incompatibilidade futura será erro explícito, não fallback silencioso.
+
+### 14.3. Auditoria final: nenhum cálculo depende de inferência narrativa
+
+A revisão final eliminou os pontos objetivos em que o engine ainda poderia precisar escolher uma operação a partir de texto livre. Agora são explícitos/tipados:
+
+- método de tabela progressiva (`marginal_by_bracket` × `rate_times_base_minus_deduction`);
+- unidade de escalares (`BRL` × `BRL_per_dependent`);
+- fórmula e comportamentos de fronteira do redutor afim;
+- método do accrual por limiar de dias;
+- chave de competência `rule_specific`;
+- campos/valores admitidos nos predicados de aplicabilidade;
+- estágios de arredondamento;
+- assertions de políticas, sem `values` livre;
+- componentes e bases das fórmulas de férias;
+- componentes de incidência;
+- sistema de códigos eSocial;
+- itens incluídos/excluídos do escopo H29;
+- semântica do prorrateio do saldo de salário;
+- `applies_to` das regras representativas, cruzado exatamente com o inventário fechado.
+
+`description`, `notes` e `locator` continuam úteis para auditoria humana, mas não são fonte de decisão computacional.
 
 ## 15. Critério de conclusão da Fase 2
 
-A Fase 2 só termina quando:
+Todos os critérios estão objetivamente atendidos:
 
-- modelos Pydantic e JSON Schema cobrirem as famílias necessárias do inventário — **ATENDIDO (32/32, 18 famílias)**;
-- schema gerado e commitado forem byte-a-byte equivalentes — **ATENDIDO**;
-- exemplo canônico validar em Pydantic e JSON Schema — **ATENDIDO**;
-- source registry, rule inventory, coverage map e reference cases forem cruzados automaticamente — **ATENDIDO**;
-- seleção por regra/contexto/vigência estiver testada — **ATENDIDO**;
-- política de qualidade/publicação estiver testada — **ATENDIDO no nível estrutural**;
-- política de `last-good` estiver testada — **ATENDIDO**;
-- invariantes A01/H28/H29 relevantes ao contrato estiverem cobertas — **ATENDIDO**;
-- CI instalar dependências e executar a suíte sem tocar produção — **ATENDIDO**;
-- nenhum campo semântico essencial depender de inferência do consumidor — **EM REVISÃO FINAL**;
-- política de versionamento/compatibilidade do schema e das releases estar congelada — **PENDENTE**;
-- handoff formal para a Fase 3 estar documentado — **PENDENTE**.
+- modelos Pydantic e JSON Schema cobrem as famílias necessárias — **ATENDIDO (32/32, 18 famílias)**;
+- schema gerado e commitado são byte-a-byte equivalentes — **ATENDIDO**;
+- exemplo canônico valida em Pydantic e JSON Schema — **ATENDIDO**;
+- source registry, rule inventory, coverage map e reference cases são cruzados automaticamente — **ATENDIDO**;
+- seleção por regra/contexto/vigência está testada — **ATENDIDO**;
+- qualidade/publicação e `last-good` estão testados — **ATENDIDO**;
+- A01, A02, abono e escopo H29 estão preservados por gates — **ATENDIDO**;
+- proveniência e competência possuem invariantes negativas — **ATENDIDO**;
+- versionamento/compatibilidade está congelado e executável — **ATENDIDO**;
+- identidade, imutabilidade e supersessão das releases estão congeladas — **ATENDIDO**;
+- nenhum campo semântico essencial exige inferência narrativa do consumidor — **ATENDIDO**;
+- CI executa a suíte sem tocar produção — **ATENDIDO (52 testes específicos do contrato)**;
+- handoff formal para Fase 3 existe em `docs/phase2-to-phase3-handoff.md` — **ATENDIDO**.
+
+**Conclusão:** Fase 2 encerrada. O Contrato Fiscal Canônico v1 está pronto para ser a entrada formal da Fase 3.
 
 ## 16. Delimitação com as próximas fases
 
@@ -341,14 +403,10 @@ Ficam para as fases seguintes:
 - diff semântico e promoção automática — Fase 5;
 - migração de WordPress/`folha-core`/H26–H29 — Fase 6.
 
-## 17. Próximo checkpoint
+## 17. Fechamento e próximo passo
 
-A pergunta de expressividade do schema está fechada: **as 32 regras da Fase 1 são representáveis por 18 famílias tipadas e verificadas pelo CI**.
+A Fase 2 está concluída. O contrato cobre **32/32 regras**, possui **18 famílias tipadas**, mantém 20 regras representativas no `CANDIDATE` e fechou a rodada final com **52 testes específicos do contrato**.
 
-Antes de declarar a Fase 2 concluída, resta a rodada de fechamento sobre:
+O handoff formal está em `docs/phase2-to-phase3-handoff.md`.
 
-1. versionamento de schema, `contract_api_version`, `rule_version` e `release_id`;
-2. regras de compatibilidade backward/forward;
-3. imutabilidade e supersessão de releases;
-4. revisão final de campos que ainda poderiam exigir inferência do consumidor;
-5. documento formal de handoff para a Fase 3.
+A próxima etapa é a **Fase 3 — Biblioteca fiscal e testes**, que deve implementar funções puras e determinísticas sobre este contrato, usando `Decimal`, casos oficiais e property-based testing, sem reabrir silenciosamente a semântica jurídica já congelada.

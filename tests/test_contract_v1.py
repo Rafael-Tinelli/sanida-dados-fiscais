@@ -167,6 +167,7 @@ def test_published_contract_with_structural_changes_requires_human_approval() ->
     data = load_example()
     add_hashes(data)
     set_canonical_release_id(data)
+    set_canonical_release_id(data)
     data["status"] = "PUBLISHED"
     data["lifecycle"] = {
         "validated_at_utc": "2026-09-13T13:00:00Z",
@@ -181,6 +182,7 @@ def test_published_contract_with_structural_changes_requires_human_approval() ->
 def test_published_contract_with_human_approval_can_validate() -> None:
     data = load_example()
     add_hashes(data)
+    set_canonical_release_id(data)
     set_canonical_release_id(data)
     data["status"] = "PUBLISHED"
     data["lifecycle"] = {

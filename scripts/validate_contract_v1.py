@@ -342,6 +342,7 @@ def main() -> int:
     )
     print(f"Candidate canonical sha256: {contract.content_sha256()}")
     print(f"Candidate immutable payload sha256: {contract.release_payload_sha256()}")
+    print(f"Candidate immutable payload sha256: {contract.release_payload_sha256()}")
     return 0
 
 

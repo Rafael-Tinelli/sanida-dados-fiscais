@@ -345,7 +345,7 @@ Esses dados podem permanecer no mesmo repositório, mas não devem compartilhar 
 
 ## 9. Contrato Fiscal Canônico v1
 
-A **Fase 2 está em andamento** e o primeiro corte executável do Contrato Fiscal Canônico v1 já foi materializado. A especificação detalhada da fase está em `docs/phase2-contract-v1.md`.
+A **Fase 2 está concluída**. O Contrato Fiscal Canônico v1 foi fechado como entrada formal da biblioteca fiscal da Fase 3. A especificação consolidada está em `docs/phase2-contract-v1.md` e o handoff em `docs/phase2-to-phase3-handoff.md`.
 
 O contrato possui duas representações sincronizadas:
 
@@ -372,6 +372,8 @@ O checkpoint de cobertura integral está documentado em `docs/contract-coverage-
 
 Um exemplo `CANDIDATE` vive em `contracts/examples/fiscal-contract-v1.example.json`. Ele **não é release de produção**: releases `VALIDATED`/`PUBLISHED` exigem evidência oficial disponível com hash de snapshot por regra. Snapshots reais pertencem à camada de fontes da Fase 4.
 
+O v1 congela SemVer para `schema_version`, `contract_api_version` e `rule_version`, mas adota compatibilidade **exata** e fail-closed até teste explícito. `release_id` não é SemVer: releases validadas/publicadas usam `fiscal-v1-sha256-<hash do payload imutável>`. Releases publicadas são imutáveis; uma sucessora declara `supersedes_release_id` sem reescrever a predecessora.
+
 Os gates atuais já rejeitam, entre outras situações:
 
 - regra fora da vigência ou seleção ambígua;
@@ -385,7 +387,7 @@ Os gates atuais já rejeitam, entre outras situações:
 - fusão indevida entre principal e terço do abono;
 - expansão silenciosa do escopo de H29.
 
-O schema v1 ainda está sob validação da Fase 2; alterações estruturais continuam permitidas nesta branch até o fechamento formal da fase, sempre acompanhadas de testes e atualização deste README.
+A auditoria final da Fase 2 fechou os pontos de inferência remanescentes: método de tabela progressiva, unidades, fórmula de redução, competência `rule_specific`, predicados, rounding stages, policies, componentes de fórmula/incidência, sistema de códigos, escopo H29 e prorrateio estão tipados ou cruzados contra o inventário. Campos narrativos não decidem o cálculo.
 
 ---
 
@@ -646,7 +648,7 @@ Artefatos de fechamento:
 
 ### Fase 2 — Contrato Fiscal Canônico v1
 
-**Status: EM ANDAMENTO**
+**Status: CONCLUÍDA**
 
 Objetivos:
 
@@ -676,12 +678,15 @@ Estado atual do CI:
 - famílias tipadas de payload: **18/18 materializadas no CANDIDATE**;
 - validação cruzada com source registry, rule inventory, coverage map e reference cases: ativa;
 - proveniência, competência e lifecycle de release possuem gates negativos;
-- suíte de contrato no checkpoint de cobertura: **43 testes verdes** em `Remake CI`.
+- suíte final do contrato: **52 testes verdes**;
+- versionamento, compatibilidade exata, identidade content-addressed e imutabilidade/supersessão possuem gates executáveis;
+- auditoria final de inferência semântica concluída.
 
 Artefatos adicionais do checkpoint:
 
 - `docs/contract-coverage-v1.json`;
-- `docs/phase2-schema-coverage.md`.
+- `docs/phase2-schema-coverage.md`;
+- `docs/phase2-to-phase3-handoff.md`.
 
 ### Fase 3 — Biblioteca fiscal e testes
 
@@ -766,38 +771,33 @@ Objetivos:
 18. Para o escopo padrão de H29 v1, não haverá divisor 30 universal de saldo de salário; exceções exigirão override tipado e proveniência.
 19. O registro de fontes e o inventário de regras da Fase 1 são entradas formais da Fase 2 e não devem ser reabertos sem evidência oficial nova ou contradição objetiva.
 20. Toda PR do remake terá validação automática em `Remake CI`; o CI é read-only e não executa publicação de dados.
+21. `schema_version`, `contract_api_version` e `rule_version` seguem SemVer, mas o v1 exige compatibilidade exata e testada antes de aceitar qualquer nova versão.
+22. `release_id` é identidade content-addressed do payload fiscal imutável, não número de versão.
+23. Release `PUBLISHED` é imutável; supersessão é declarada pela sucessora em `supersedes_release_id`, sem mutar a predecessora.
+24. Campos narrativos existem para auditoria humana, mas o engine não pode depender deles para decidir operação fiscal.
 
 ---
 
 ## 19. Questões em aberto
 
-Após o fechamento da Fase 1, as questões remanescentes são de **design de software e operação**, não lacunas jurídicas P0 do inventário. A Fase 2 já fechou a expressividade do schema para as 32 regras, com 18 famílias tipadas, e endureceu proveniência, competência e lifecycle. Permanecem em aberto:
+Com a Fase 2 concluída, não restam pendências de design do Contrato Fiscal Canônico v1. As questões abertas pertencem às fases posteriores:
 
-- política definitiva de versionamento entre `schema_version`, `contract_api_version`, `rule_version` e `release_id`;
-- compatibilidade backward/forward e critérios objetivos para major/minor/patch;
-- imutabilidade, supersessão e organização física das releases canônicas;
-- revisão final de campos que ainda poderiam exigir inferência do consumidor;
-- política exata de retenção de snapshots na futura camada de fontes;
-- critérios de confirmação multi-fonte para mudanças paramétricas;
-- mecanismo de semantic diff — Fase 5;
-- mecanismo de distribuição para WordPress/SFA — Fase 6;
+- implementação e propriedades matemáticas do engine fiscal — Fase 3;
+- política exata de retenção de snapshots e resiliência das fontes — Fase 4;
+- critérios de confirmação multi-fonte para mudanças paramétricas — Fase 4/5;
+- mecanismo de semantic diff e promoção — Fase 5;
+- distribuição para WordPress/SFA e migração dos consumidores — Fase 6;
 - estratégia final para CDI dentro do domínio separado de dados financeiros/de referência.
 
 ---
 
 ## 20. Próxima etapa
 
-Continuar a **Fase 2 — Contrato Fiscal Canônico v1** pela rodada final de estabilidade do contrato.
+Iniciar a **Fase 3 — Biblioteca fiscal e testes** a partir de `docs/phase2-to-phase3-handoff.md`.
 
-A cobertura de expressividade já está fechada: **32/32 regras**, **18 famílias tipadas**, proveniência/competência/lifecycle endurecidos e testes negativos ativos. As próximas entregas dentro da própria Fase 2 são:
+A Fase 3 deverá implementar funções fiscais puras e determinísticas sobre o contrato congelado, com `Decimal`, casos oficiais executáveis e property-based testing. Qualquer necessidade de reinterpretar regra jurídica ou inventar semântica ausente deve voltar explicitamente ao contrato/inventário, não ser resolvida silenciosamente dentro do engine.
 
-- congelar a política de versionamento (`schema_version`, `contract_api_version`, `rule_version`, `release_id`);
-- definir regras de compatibilidade backward/forward;
-- fechar imutabilidade e supersessão de releases;
-- revisar se resta qualquer campo semântico que force inferência do consumidor;
-- documentar o handoff formal para a Fase 3.
-
-O pipeline de produção continua congelado: `scraper.py`, `update_taxas.py`, `dados_fiscais.json`, `taxas_bacen.json` e os consumidores não serão migrados antes do fechamento do Contrato v1.
+O pipeline de produção continua congelado: `scraper.py`, `update_taxas.py`, `dados_fiscais.json`, `taxas_bacen.json`, WordPress, `folha-core` e H26–H29 ainda não foram migrados.
 
 ---
 
@@ -816,6 +816,19 @@ Uma fase só deve ser marcada como `CONCLUÍDA` quando seus critérios de conclu
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-13 — fechamento da Fase 2
+
+- Fase 2 marcada como `CONCLUÍDA`;
+- congelado SemVer para `schema_version`, `contract_api_version` e `rule_version`;
+- congelada compatibilidade fail-closed/exata do v1;
+- `release_id` definido como identidade content-addressed do payload imutável;
+- release publicada tornada imutável e supersessão movida para `supersedes_release_id` da sucessora;
+- auditoria final de inferência tipou método de tabela, unidades, competência específica, policies, fórmulas, incidências, códigos, escopo e prorrateio;
+- divergência de `applies_to` em `termination.reason_scope` detectada pelo novo gate e alinhada ao inventário da Fase 1;
+- suíte específica do contrato fechada com **52 testes verdes**;
+- criado `docs/phase2-to-phase3-handoff.md`;
+- próxima etapa alterada para **Fase 3 — Biblioteca fiscal e testes**.
 
 ### 2026-09-13 — checkpoint 32/32 da Fase 2
 
