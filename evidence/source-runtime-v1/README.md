@@ -1,6 +1,6 @@
 # Evidências operacionais de fontes — v1
 
-Este diretório é o backend persistente do runtime de fontes usado pelo workflow de produção `main.yml`.
+Este diretório é o backend persistente do runtime de fontes usado pelo workflow de produção `main.yml`. Nesta branch ele está apenas preparado; a criação de evidências reais começa quando a Fase 4 for ativada em `main`.
 
 A árvore real é criada pelas execuções de produção:
 
