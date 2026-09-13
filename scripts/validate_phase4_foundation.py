@@ -8,12 +8,19 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from sanida_fiscal.rfb_irrf_v1 import parse_rfb_irrf_2026_snapshot
 from sanida_fiscal.sources_v1 import load_source_registry
 
 
 REQUIRED = {
+    ".gitignore",
     "sanida_fiscal/sources_v1.py",
+    "sanida_fiscal/source_runtime_v1.py",
+    "sanida_fiscal/rfb_irrf_v1.py",
     "tests/test_sources_v1.py",
+    "tests/test_rfb_source_pipeline_v1.py",
+    "tests/fixtures/sources/rfb_irrf_2026_fragment.html",
+    "scripts/run_source_pipeline_v1.py",
     "docs/phase4-sources-sensors-v1.md",
     "docs/phase4-collection-surface-v1.json",
     "requirements-sources.txt",
@@ -57,9 +64,19 @@ def main() -> None:
     if "RFB_IRRF_TABLE_2026" not in registry or "INSS_TABLE_2026" not in registry:
         raise SystemExit("Phase 4 foundation: canonical RFB/INSS sources are missing")
 
+    fixture = (ROOT / "tests/fixtures/sources/rfb_irrf_2026_fragment.html").read_bytes()
+    payload = parse_rfb_irrf_2026_snapshot(fixture)
+    if payload.get("dependent_deduction_brl") != "189.59":
+        raise SystemExit("Phase 4 foundation: RFB parser dependent deduction drift")
+    if payload.get("simplified_discount_brl") != "607.20":
+        raise SystemExit("Phase 4 foundation: RFB parser simplified discount drift")
+    reduction = payload.get("monthly_reduction")
+    if not isinstance(reduction, dict) or reduction.get("intercept_brl") != "978.62":
+        raise SystemExit("Phase 4 foundation: RFB parser reduction drift")
+
     print(
         "Phase 4 foundation: PASS "
-        f"({len(entries)} collection-surface entries; {len(registry)} registered official sources)"
+        f"({len(entries)} collection-surface entries; {len(registry)} registered official sources; RFB pipeline anchored)"
     )
 
 
