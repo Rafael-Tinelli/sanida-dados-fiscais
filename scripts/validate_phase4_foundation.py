@@ -12,6 +12,7 @@ from sanida_fiscal.inss_employee_v1 import parse_inss_employee_2026_snapshot
 from sanida_fiscal.legacy_artifact_v1 import build_legacy_payroll_fields
 from sanida_fiscal.rfb_irrf_v1 import parse_rfb_irrf_2026_snapshot
 from sanida_fiscal.source_catalog_v1 import PARSER_BINDINGS
+from sanida_fiscal.source_runtime_v1 import SourcePipelineState
 from sanida_fiscal.sources_v1 import load_source_registry
 
 
@@ -23,18 +24,23 @@ REQUIRED = {
     "sanida_fiscal/rfb_irrf_v1.py",
     "sanida_fiscal/inss_employee_v1.py",
     "sanida_fiscal/legacy_artifact_v1.py",
+    "sanida_fiscal/production_evidence_v1.py",
     "tests/test_sources_v1.py",
     "tests/test_rfb_source_pipeline_v1.py",
     "tests/test_inss_source_pipeline_v1.py",
     "tests/test_legacy_artifact_bridge_v1.py",
     "tests/test_scraper_phase4_migration.py",
+    "tests/test_production_evidence_v1.py",
     "tests/fixtures/sources/rfb_irrf_2026_fragment.html",
     "tests/fixtures/sources/inss_employee_2026_fragment.html",
     "scripts/run_source_pipeline_v1.py",
+    "scripts/validate_production_evidence_v1.py",
     "docs/phase4-sources-sensors-v1.md",
     "docs/phase4-collection-surface-v1.json",
     "docs/phase4-inss-source-resolution-v1.json",
     "docs/phase4-legacy-artifact-boundary-v1.json",
+    "docs/phase4-production-persistence-v1.json",
+    "evidence/source-runtime-v1/README.md",
     "requirements-sources.txt",
 }
 
@@ -123,6 +129,26 @@ def main() -> None:
     if boundary.get("legacy_artifact", {}).get("canonical_contract_release") is not False:
         raise SystemExit("Phase 4 foundation: legacy artifact mislabeled as canonical release")
 
+    persistence = json.loads((ROOT / "docs/phase4-production-persistence-v1.json").read_text(encoding="utf-8"))
+    backend = persistence.get("persistence_backend", {})
+    if backend.get("kind") != "git_tracked_repository_path":
+        raise SystemExit("Phase 4 foundation: production evidence backend is not durable Git storage")
+    if backend.get("runtime_root") != "evidence/source-runtime-v1":
+        raise SystemExit("Phase 4 foundation: production evidence runtime root drift")
+    retention = persistence.get("retention_policy", {})
+    if retention.get("automatic_pruning") is not False:
+        raise SystemExit("Phase 4 foundation: production evidence auto-pruning unexpectedly enabled")
+    integrity = persistence.get("integrity_gates", {})
+    if integrity.get("snapshot_file_sha256_must_equal_artifact_provenance") is not True:
+        raise SystemExit("Phase 4 foundation: snapshot provenance hash gate disabled")
+    if integrity.get("candidate_file_sha256_must_equal_artifact_provenance") is not True:
+        raise SystemExit("Phase 4 foundation: candidate provenance hash gate disabled")
+
+    state_fields = SourcePipelineState.model_fields
+    required_state_fields = set(persistence.get("state_contract", {}).get("required_last_good_fields", []))
+    if not required_state_fields.issubset(state_fields):
+        raise SystemExit("Phase 4 foundation: production state contract fields are not materialized")
+
     legacy = build_legacy_payroll_fields(
         rfb_payload=rfb_payload,
         inss_payload=inss_payload,
@@ -137,6 +163,20 @@ def main() -> None:
         raise SystemExit(f"Phase 4 foundation: legacy payroll path still present in scraper: {leaked}")
     if "run_registered_source_pipeline" not in scraper_text or "build_legacy_dados_fiscais" not in scraper_text:
         raise SystemExit("Phase 4 foundation: scraper is not wired through canonical pipelines and compatibility bridge")
+    if 'candidate_root=SOURCE_RUNTIME_ROOT / "candidates"' not in scraper_text:
+        raise SystemExit("Phase 4 foundation: scraper does not persist normalized candidate evidence")
+
+    main_workflow = (workflow_dir / "main.yml").read_text(encoding="utf-8")
+    workflow_markers = {
+        "SFA_SOURCE_RUNTIME_ROOT: evidence/source-runtime-v1",
+        "scripts/validate_production_evidence_v1.py",
+        'git add dados_fiscais.json "$SFA_SOURCE_RUNTIME_ROOT"',
+        'git add "$SFA_SOURCE_RUNTIME_ROOT"',
+        "Enforce production gate",
+    }
+    missing_markers = sorted(marker for marker in workflow_markers if marker not in main_workflow)
+    if missing_markers:
+        raise SystemExit(f"Phase 4 foundation: production workflow persistence drift: {missing_markers}")
 
     requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
     if "-r requirements-contract.txt" not in requirements or "-r requirements-sources.txt" not in requirements:
@@ -145,7 +185,8 @@ def main() -> None:
     print(
         "Phase 4 foundation: PASS "
         f"({len(entries)} collection-surface entries; {len(registry)} registered official sources; "
-        "RFB+INSS pipelines anchored; INSS source divergence resolved; legacy artifact bridge prepared)"
+        "RFB+INSS pipelines anchored; INSS source divergence resolved; legacy artifact bridge prepared; "
+        "production evidence persistence anchored)"
     )
 
 
