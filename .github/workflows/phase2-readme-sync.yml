@@ -1,0 +1,40 @@
+name: Phase 2 README Sync
+
+on:
+  push:
+    branches:
+      - refactor/fiscal-contract-v1
+    paths:
+      - scripts/sync_readme_phase2.py
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase2-readme-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+        with:
+          ref: refactor/fiscal-contract-v1
+          fetch-depth: 0
+
+      - name: Sync README master
+        run: python scripts/sync_readme_phase2.py
+
+      - name: Commit README if changed
+        run: |
+          if git diff --quiet -- README.md; then
+            echo "README already synchronized."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "docs: registrar início da Fase 2 no README mestre"
+          git push origin HEAD:refactor/fiscal-contract-v1
