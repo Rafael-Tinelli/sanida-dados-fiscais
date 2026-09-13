@@ -102,7 +102,7 @@ A sequência de validação do checkpoint estabeleceu três marcos técnicos:
 
 - `Remake CI` **34775296512**: primeiro run com o gate integrado e todas as novas invariantes, com validação do repositório, Contrato Fiscal Canônico v1.1, 21 regras no `CANDIDATE`, cobertura 32/32, 18/18 famílias, **150 testes** e `Phase 3 closure gate: PASS`;
 - `Remake CI` **34775483791**: repetição integral depois da sincronização do README/`docs/phase3-library-v1.md` e remoção dos helpers temporários, novamente com **150 testes** e gate em `PASS`;
-- `Remake CI` **34775569422**: validação do head `adb99722975486af048b2282ff4b60d7bba2512d`, novamente com repository/contract em `PASS`, **150 testes** e `Phase 3 closure gate: PASS`.
+- `Remake CI` **34775674917**: validação do head `1ca86ce1aa9c3ec0b459c4054563d376e12721e5`, novamente com repository/contract em `PASS`, **150 testes** e `Phase 3 closure gate: PASS`.
 
 Não houve alteração de produção nem migração de consumidores neste checkpoint.
 
