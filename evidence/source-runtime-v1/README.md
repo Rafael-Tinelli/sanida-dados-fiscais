@@ -23,4 +23,4 @@ Regras:
 - uma nova publicação de `dados_fiscais.json` só pode ser commitada depois que `scripts/validate_production_evidence_v1.py` comprovar que os hashes de proveniência resolvem para arquivos realmente persistidos aqui;
 - não há pruning automático na política v1; arquivos únicos observados em produção são retidos.
 
-A política machine-readable está em `docs/phase4-production-persistence-v1.json`.
+A política machine-readable está em `docs/phase4-production-persistence-v1.json`. O gate permanente deste checkpoint também é validado por `scripts/validate_phase4_foundation.py` no Remake CI.
