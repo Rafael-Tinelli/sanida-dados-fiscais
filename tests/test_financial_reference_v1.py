@@ -8,6 +8,7 @@ import httpx
 import pytest
 
 from sanida_fiscal.financial_artifact_v1 import (
+    CDI_MAX_OBSERVATION_AGE_DAYS,
     FinancialArtifactBoundaryError,
     build_financial_reference_artifact,
 )
@@ -30,7 +31,7 @@ def test_selic_parser_preserves_official_decimal_and_date():
     assert payload == {
         "observation_type": "bcb_selic_meta_sgs432",
         "series_code": 432,
-        "observation_date": "2026-09-16",
+        "observation_date": "2026-09-10",
         "annual_rate_pct": "14.00",
         "unit": "percent_per_year",
     }
@@ -106,9 +107,11 @@ def test_financial_artifact_reproduces_legacy_annual_rates_from_canonical_inputs
         "cdi_basis": "bcb_sgs_12_daily_compounded_252",
     }
     assert artifact["meta"]["sources"]["selic"]["series_code"] == 432
+    assert artifact["meta"]["sources"]["selic"]["freshness_policy"] == "persistent_until_changed_no_max_age"
     assert artifact["meta"]["sources"]["cdi"]["series_code"] == 12
     assert artifact["meta"]["sources"]["cdi"]["source_value_pct"] == "0.051660"
     assert artifact["meta"]["sources"]["cdi"]["annualized_value_pct"] == "13.90"
+    assert artifact["meta"]["sources"]["cdi"]["max_observation_age_calendar_days"] == CDI_MAX_OBSERVATION_AGE_DAYS
 
 
 def test_financial_artifact_requires_current_parsed_candidate(tmp_path: Path):
@@ -124,12 +127,53 @@ def test_financial_artifact_requires_current_parsed_candidate(tmp_path: Path):
         )
 
 
+def test_stale_daily_cdi_cannot_be_relabelled_by_new_generated_timestamp(tmp_path: Path):
+    stale_cdi = b'[{"data":"01/09/2026","valor":"0.051660"}]'
+    selic = _run(tmp_path, "BCB_SELIC_META_SGS_432", SELIC_FIXTURE)
+    cdi = _run(tmp_path, "BCB_CDI_DAILY_SGS_12", stale_cdi)
+
+    with pytest.raises(FinancialArtifactBoundaryError, match="CDI observation is stale"):
+        build_financial_reference_artifact(
+            selic_run=selic,
+            cdi_run=cdi,
+            generated_at_utc="2026-09-13T22:00:00Z",
+        )
+
+
+def test_old_selic_latest_observation_is_allowed_because_rate_persists_until_changed(tmp_path: Path):
+    old_selic = b'[{"data":"01/07/2026","valor":"14.00"}]'
+    selic = _run(tmp_path, "BCB_SELIC_META_SGS_432", old_selic)
+    cdi = _run(tmp_path, "BCB_CDI_DAILY_SGS_12", CDI_FIXTURE)
+
+    artifact = build_financial_reference_artifact(
+        selic_run=selic,
+        cdi_run=cdi,
+        generated_at_utc="2026-09-13T22:00:00Z",
+    )
+    assert artifact["taxas"]["selic"] == 14.0
+
+
+def test_future_financial_observation_is_rejected(tmp_path: Path):
+    future_selic = b'[{"data":"14/09/2026","valor":"14.00"}]'
+    selic = _run(tmp_path, "BCB_SELIC_META_SGS_432", future_selic)
+    cdi = _run(tmp_path, "BCB_CDI_DAILY_SGS_12", CDI_FIXTURE)
+
+    with pytest.raises(FinancialArtifactBoundaryError, match="Selic observation_date cannot be in the future"):
+        build_financial_reference_artifact(
+            selic_run=selic,
+            cdi_run=cdi,
+            generated_at_utc="2026-09-13T22:00:00Z",
+        )
+
+
 def test_financial_source_policy_removes_ftp_and_static_fallback_from_automatic_path():
     policy = json.loads(Path("docs/phase4-financial-reference-policy-v1.json").read_text(encoding="utf-8"))
     assert policy["failure_policy"]["write_static_fallback"] is False
     assert policy["failure_policy"]["refresh_generated_at_without_new_observation"] is False
     assert policy["b3_role"]["legacy_ftp_is_automatic_fallback"] is False
     assert policy["b3_role"]["legacy_ftp_is_production_input_after_migration"] is False
+    assert policy["freshness_policy"]["cdi_daily"]["max_observation_age_calendar_days"] == 7
+    assert policy["freshness_policy"]["selic_meta"]["max_observation_age_calendar_days"] is None
 
 
 def test_update_taxas_contains_no_ftp_or_static_reference_fallback():
