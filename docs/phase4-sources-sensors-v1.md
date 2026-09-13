@@ -153,7 +153,7 @@ Isso **não** classifica `PARAMETER_CHANGE`, `STRUCTURAL_CHANGE` ou qualquer out
 .source-runtime/state/
 ```
 
-`.source-runtime/` é ignorado pelo Git. O runner não modifica `dados_fiscais.json`, não promove release e não publica nada.
+`.source-runtime/` é ignorado pelo Git. O runner não modifica `dados_fiscais.json`, não promove release e não publica nada. Neste checkpoint ele é um runner manual/de diagnóstico; o CI valida o pipeline com fixtures reproduzíveis e não faz coleta de rede externa.
 
 ## 5. Invariantes já executáveis
 
