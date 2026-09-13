@@ -50,3 +50,7 @@ jobs:
       - name: Validate Phase 3 closure gate
         run: |
           python scripts/validate_phase3_gate.py
+
+      - name: Validate Phase 4 foundation
+        run: |
+          python scripts/validate_phase4_foundation.py
