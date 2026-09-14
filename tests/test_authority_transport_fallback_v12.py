@@ -7,6 +7,7 @@ import requests
 
 from sanida_fiscal.authority_evidence_v12 import (
     AUTHORITY_HEADERS,
+    PLANALTO_BROWSER_HEADERS,
     PLANALTO_CLT_SOURCE_ID,
     _collect_authority_source,
 )
@@ -89,7 +90,8 @@ def test_planalto_remote_protocol_error_retries_same_url_with_requests(monkeypat
 
     assert result.status == CollectionStatus.COLLECTED
     assert result.source_url == CLT_URL
-    assert calls == [(CLT_URL, AUTHORITY_HEADERS)]
+    assert calls == [(CLT_URL, PLANALTO_BROWSER_HEADERS)]
+    assert PLANALTO_BROWSER_HEADERS != AUTHORITY_HEADERS
     assert result.snapshot is not None
     assert result.snapshot.source_url == CLT_URL
     assert result.snapshot.relative_path.endswith(".html")
@@ -122,6 +124,7 @@ def test_transport_fallback_never_changes_authority_url(monkeypatch, tmp_path: P
 
     def fake_get(url, *, headers, timeout, allow_redirects):
         requested.append(url)
+        assert headers == PLANALTO_BROWSER_HEADERS
         return _Response()
 
     monkeypatch.setattr(requests, "get", fake_get)

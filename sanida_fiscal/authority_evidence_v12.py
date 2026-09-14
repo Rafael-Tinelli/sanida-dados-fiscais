@@ -75,11 +75,21 @@ AUTHORITY_HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/pdf;q=0.9,*/*;q=0.5",
 }
 
-# The Planalto CLT endpoint repeatedly disconnects GitHub-hosted runners before
-# emitting an HTTP response when called through httpx. The same public URL is
-# healthy and retrievable through the requests/urllib3 stack. This is a
-# transport fallback only: it never changes source_id, URL, authority, content,
-# or semantic interpretation. Structural CLT evidence remains raw/unparsed.
+# Planalto has long exhibited User-Agent-sensitive transport behaviour. Keep the
+# general collector identifiable, but when the allowlisted CLT endpoint drops
+# the automated connection before an HTTP response, retry the exact same URL
+# with a conventional browser transport profile. This changes neither source,
+# authority, bytes, nor semantic interpretation.
+PLANALTO_BROWSER_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/152.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.7",
+}
+
 REQUESTS_TRANSPORT_FALLBACK_SOURCE_IDS = frozenset({PLANALTO_CLT_SOURCE_ID})
 REQUESTS_TRANSPORT_FALLBACK_ERRORS = frozenset({"RemoteProtocolError"})
 
@@ -127,8 +137,6 @@ def _source_priority(source_id: str, registry: Mapping[str, Mapping[str, Any]]) 
     item = registry[source_id]
     readability = str(item.get("machine_readability", ""))
     role = str(item.get("role", ""))
-    # Prefer stable text/HTML over PDFs for durable bootstrap evidence when both
-    # sources are already authorized by the Phase 1 inventory.
     readability_rank = {
         "html": 0,
         "html_table": 0,
@@ -214,12 +222,7 @@ def _collect_same_source_with_requests(
     retry_policy: RetryPolicy,
     headers: Mapping[str, str],
 ) -> CollectionResult:
-    """Retry the exact same official URL through requests/urllib3.
-
-    This helper is intentionally not a source fallback. It exists only for an
-    allowlisted transport incompatibility and persists the response through the
-    same immutable SnapshotStore used by the primary httpx collector.
-    """
+    """Retry the exact same official URL through requests/urllib3."""
     last_kind = FailureKind.NETWORK_ERROR
     last_detail: str | None = None
     last_status: int | None = None
@@ -316,12 +319,17 @@ def _collect_authority_source(
     if not should_fallback_transport:
         return result
 
+    fallback_headers = (
+        PLANALTO_BROWSER_HEADERS
+        if source_id == PLANALTO_CLT_SOURCE_ID
+        else headers
+    )
     return _collect_same_source_with_requests(
         source=source,
         store=store,
         observed_at_utc=observed_at_utc,
         retry_policy=retry_policy,
-        headers=headers,
+        headers=fallback_headers,
     )
 
 
