@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   sync:
-    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -18,84 +17,11 @@ jobs:
           ref: refactor/sources-sensors-v1
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: "3.11"
       - name: Sync README
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path("README.md")
-          text = path.read_text(encoding="utf-8")
-
-          marker = "\n### Fase 5 — Diff semântico e gates de publicação\n"
-          if "Sétimo checkpoint executável — auditoria da fronteira final" not in text:
-              block = """
-Sétimo checkpoint executável — auditoria da fronteira final e correções A01–A04:
-
-- **A01 corrigido:** `scraper.py` só aceita o `taxas_bacen.json` local no contrato 1.4.0, com `cdi_basis=bcb_sgs_12_daily_compounded_252`, source IDs SGS 432/12, reconciliação dos valores com a proveniência e `verify_financial_artifact_evidence()` antes do consumo;
-- removidos `SFA_TAXAS_JSON_URL`, raw GitHub e qualquer fallback remoto do consumidor financeiro;
-- `scripts/validate_production_evidence_v1.py` passa a validar a cadeia composta das quatro fontes externas: RFB, INSS, Selic e CDI;
-- **A02 corrigido:** Selic Meta segue sem idade máxima por ser persistente até mudança, mas não aceita data futura; CDI diário não aceita data futura nem observação com mais de 7 dias corridos;
-- **A03 corrigido:** `main.yml` e `taxas.yml` compartilham `sanida-dados-fiscais-writes-main`, `cancel-in-progress: false` e `queue: max`;
-- **A04 corrigido:** documentação de fronteira/persistência foi alinhada ao comportamento real e `scripts/validate_phase4_preclosure_gate.py` separa explicitamente fundação de fechamento formal;
-- `docs/phase4-final-boundary-audit-v1.json` registra A01–A04 como `CORRECTED`, A05 como `OPEN` e `closure_authorized=false`;
-- suíte integral chega a **209 testes verdes**;
-- o pre-closure gate encerra com `PASS (A01-A04 corrected; A05 OPEN; formal closure NOT authorized)`.
-
-"""
-              if marker not in text:
-                  raise SystemExit("Phase 5 marker not found")
-              text = text.replace(marker, "\n" + block + marker.lstrip("\n"), 1)
-
-          d39 = "39. Falha financeira nunca autoriza fallback estático nem refresh de timestamp: `taxas_bacen.json` só é reescrito com dois candidatos atuais `PARSED` e evidência persistida validada."
-          if "40. `scraper.py` só pode consumir" not in text:
-              addition = d39 + """
-40. `scraper.py` só pode consumir `taxas_bacen.json` local no contrato 1.4.0 e após validação da evidência financeira; raw GitHub, URL arbitrária e artefato 1.3/B3 legado não são fallback de produção.
-41. Freshness de `financial_reference` é específica por série: Selic Meta é persistente até mudança e não possui idade máxima, enquanto CDI diário possui tolerância máxima de 7 dias corridos; nenhuma das duas aceita observação futura.
-42. `main.yml` e `taxas.yml` são escritores serializados do mesmo `main`/runtime e usam o mesmo concurrency group com `cancel-in-progress: false` e `queue: max`.
-43. `validate_phase4_foundation.py` continua sendo gate de fundação; `validate_phase4_preclosure_gate.py` prova A01–A04 sem autorizar fechamento. A Fase 4 permanece aberta enquanto A05 não tiver política explícita."""
-              if d39 not in text:
-                  raise SystemExit("Decision 39 not found")
-              text = text.replace(d39, addition, 1)
-
-          old_q = "- revisão final da fronteira entre `taxas.yml`, `main.yml`, `taxas_bacen.json` e `dados_fiscais.json` — fechamento da Fase 4;"
-          new_q = "- A05: política explícita para consumo (ou invalidação) do last-good financeiro quando a tentativa corrente entra em `PARSER_INCOMPATIBLE` — bloqueia o fechamento formal da Fase 4;"
-          if old_q in text:
-              text = text.replace(old_q, new_q, 1)
-
-          old_next = """Continuar a **Fase 4 — Fontes e sensores** com os quatro coletores externos já migrados na branch: RFB, INSS, Selic/SGS 432 e CDI/SGS 12.
-
-Próximo checkpoint: revisar a **fronteira final de produção** entre `taxas.yml`, `main.yml`, `taxas_bacen.json` e `dados_fiscais.json`, confirmar que nenhuma rota legada de coleta/fallback permanece alcançável e executar o gate formal de fechamento da Fase 4. Semantic diff, promoção e publicação continuam reservados à Fase 5."""
-          new_next = """Continuar a **Fase 4 — Fontes e sensores** com a fronteira final de produção corrigida para A01–A04 e protegida pelo pre-closure gate.
-
-Próximo checkpoint: resolver **A05**, definindo a política para o last-good financeiro diante de uma tentativa corrente `PARSER_INCOMPATIBLE`. Somente depois disso executar o gate formal de fechamento da Fase 4 e revisar se a fase pode ser promovida a `CONCLUÍDA`. Semantic diff, promoção e publicação continuam reservados à Fase 5."""
-          if old_next not in text:
-              raise SystemExit("Next-stage block not found")
-          text = text.replace(old_next, new_next, 1)
-
-          changelog_marker = "### 2026-09-13 — migração de Selic e CDI na Fase 4\n"
-          if "### 2026-09-13 — correções A01–A04 da auditoria de fronteira\n" not in text:
-              changelog = """### 2026-09-13 — correções A01–A04 da auditoria de fronteira
-
-- fechado o bypass que permitia ao `scraper.py` aceitar `taxas_bacen.json` legado apenas pela presença de números;
-- consumo financeiro passa a exigir artefato local 1.4.0, proveniência SGS 432/12, reconciliação de valores e evidência persistida;
-- o gate de `dados_fiscais.json` passa de duas para quatro fontes externas verificadas;
-- instituída freshness específica: Selic persistente até mudança; CDI diário com máximo de 7 dias corridos; datas futuras rejeitadas;
-- alinhado `taxas.yml` a `main.yml` com `queue: max` no mesmo concurrency group;
-- criado `docs/phase4-final-boundary-audit-v1.json` e `scripts/validate_phase4_preclosure_gate.py`;
-- A01–A04 estão `CORRECTED`; A05 permanece `OPEN` e bloqueia fechamento/merge da Fase 4;
-- suíte integral chega a **209 testes verdes**.
-
-"""
-              if changelog_marker not in text:
-                  raise SystemExit("Changelog marker not found")
-              text = text.replace(changelog_marker, changelog + changelog_marker, 1)
-
-          path.write_text(text, encoding="utf-8")
-          print("README A01-A04 sync: PASS")
-          PY
+        run: python scripts/_sync_readme_phase4_audit.py
       - name: Commit README if changed
+        shell: bash
         run: |
           if git diff --quiet -- README.md; then
             echo "README already synchronized."
