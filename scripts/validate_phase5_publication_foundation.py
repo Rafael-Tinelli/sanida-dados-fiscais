@@ -52,13 +52,29 @@ def main() -> None:
         "auto-publish approval policy drift",
     )
 
+    transition = policy.get("transition_metadata", {})
+    _require(transition.get("change_class_is_release_relative") is True, "change_class became historical instead of release-relative")
+    _require(transition.get("unchanged_successor_rule") == "SOURCE_REFRESH_NO_CHANGE", "unchanged successor class drift")
+    _require(
+        transition.get("historical_structural_or_rule_added_label_must_not_leak_into_unchanged_successor") is True,
+        "historical structural labels may leak into successor",
+    )
+    _require(
+        transition.get("phase2_structural_human_review_invariant_is_preserved") is True,
+        "Phase 2 human-review invariant weakened",
+    )
+    _require(transition.get("release_id_is_calculated_after_reconciliation") is True, "release identity precedes transition reconciliation")
+
     module = _read("sanida_fiscal/publication_v1.py")
     for marker in (
         "def assert_release_inventory_complete(",
+        "def reconcile_transition_change_classes(",
         "def prepare_published_release(",
         "class FiscalReleaseStore",
         "candidate.supersedes_release_id != previous.release_id",
-        "candidate.expected_release_id()",
+        "item.change_class.value",
+        "ChangeClass.SOURCE_REFRESH_NO_CHANGE.value",
+        "reconciled.expected_release_id()",
         "content-addressed release path already exists with different bytes",
         "current release artifact sha256 mismatch",
     ):
@@ -68,6 +84,8 @@ def main() -> None:
     for marker in (
         "test_real_phase2_representative_candidate_cannot_be_published_as_complete_release",
         "test_auto_parameter_promotion_builds_consumable_published_release",
+        "published.release_id != candidate.expected_release_id()",
+        "unchanged_structural.change_class == ChangeClass.SOURCE_REFRESH_NO_CHANGE",
         "test_review_required_change_cannot_publish_without_explicit_human_reference",
         "test_no_semantic_release_change_does_not_publish_duplicate",
         "test_successor_must_point_to_exact_current_release",
@@ -77,7 +95,7 @@ def main() -> None:
     ):
         _require(marker in tests, f"publication regression marker missing: {marker}")
 
-    print("Phase 5 publication foundation: PASS (32/32 completeness + immutable release store anchored)")
+    print("Phase 5 publication foundation: PASS (32/32 completeness + release-relative metadata + immutable store anchored)")
 
 
 if __name__ == "__main__":
