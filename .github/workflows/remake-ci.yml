@@ -55,6 +55,10 @@ jobs:
         run: |
           python scripts/validate_phase4_foundation.py
 
-      - name: Validate Phase 4 pre-closure boundary
+      - name: Validate Phase 4 production boundary
         run: |
           python scripts/validate_phase4_preclosure_gate.py
+
+      - name: Validate Phase 4 formal closure gate
+        run: |
+          python scripts/validate_phase4_closure_gate.py
