@@ -55,7 +55,7 @@ A Issue apresenta:
 - `changed_paths`;
 - diferenças semânticas e de payload relevantes;
 - fontes do candidato;
-- hashes dos snapshots;
+- hashes brutos dos snapshots;
 - parser e versão, quando disponíveis;
 - casos de referência associados, quando disponíveis;
 - resultado da suíte completa de regressões.
@@ -90,13 +90,36 @@ O fechamento da Fase 5 identificou a lacuna histórica como **21 regras material
 
 O `review_key` é estável para o mesmo candidato decisório.
 
-Ele inclui semântica, payload, diff e identidade/hash da evidência. Relógios operacionais como `observed_at_utc` ou `last_validated_at_utc`, quando os bytes e a semântica não mudaram, não criam uma revisão nova por conveniência.
+Ele inclui semântica, payload, diff e identidade material da evidência. Relógios operacionais como `observed_at_utc` ou `last_validated_at_utc` não criam uma revisão nova por conveniência.
 
-Mudança de snapshot oficial, payload, semântica ou diff altera o `review_key`.
+### 5.1 Evidência parser-backed
 
-Isso permite reutilizar a mesma revisão enquanto o candidato é realmente o mesmo e abrir uma nova revisão quando o conteúdo a decidir mudou.
+Quando uma fonte possui parser conhecido, o `review_key` continua preso ao **SHA-256 bruto do snapshot + identidade do parser**. Uma alteração dos bytes da fonte parser-backed muda a revisão e permanece fail-closed.
 
-O publicador preserva byte a byte o review packet e o estado `REVIEW_REQUIRED` quando a chave continua igual; o gestor de Issues não faz PATCH quando título, corpo e assignee já correspondem ao candidato. Portanto, uma execução agendada repetida não cria churn Git nem nova notificação apenas pelo avanço do relógio.
+### 5.2 HTML estrutural sem parser
+
+Durante o bootstrap C6.0 real foi demonstrado que páginas oficiais HTML do Planalto, e depois páginas do gov.br, podem devolver bytes diferentes em coletas sucessivas sem qualquer delta nas 32 regras ou nas regressões. Prender a aprovação humana ao hash bruto desses documentos criou um ciclo impossível: revisar A → recoletar → bytes de apresentação mudam → A fica stale → revisar B → repetir.
+
+Para fontes `http_html` **sem parser semântico**, o contrato e a release continuam preservando o snapshot bruto content-addressed e seu SHA-256 exato. Porém, a identidade usada apenas pelo `review_key` passa a ser `html-visible-text-links-v1`, calculada sobre:
+
+- texto humano visível em ordem documental, com whitespace normalizado;
+- rótulos e destinos (`href`) dos links;
+- exclusão de `script`, `style`, `noscript`, `template`, comentários, atributos de apresentação e diferenças de whitespace/markup.
+
+Isso **não interpreta a norma nem extrai uma regra fiscal**. É normalização de evidência para distinguir conteúdo material de ruído de transporte/apresentação.
+
+Consequências fail-closed:
+
+- alteração de texto visível muda o fingerprint e invalida a aprovação;
+- alteração de destino de link muda o fingerprint e invalida a aprovação;
+- alteração semântica do candidato muda o `review_key` independentemente da evidência;
+- alteração parser-backed continua presa ao hash bruto;
+- divergência entre o SHA bruto declarado e os bytes persistidos bloqueia o processo;
+- somente churn de markup/transporte com conteúdo material idêntico deixa de rotacionar a aprovação.
+
+O pacote de revisão mantém os hashes brutos para auditoria e registra também `review_evidence_identity`, sem alterar o schema público do Fiscal Contract v1.2 nem a identidade content-addressed da release.
+
+O publicador preserva byte a byte o review packet e o estado `REVIEW_REQUIRED` quando a chave continua igual; o gestor de Issues não faz PATCH quando título, corpo e assignee já correspondem ao candidato. Portanto, uma execução agendada repetida não cria churn Git nem nova notificação apenas pelo avanço do relógio ou por markup volátil sem mudança material.
 
 ## 6. Aprovação
 
@@ -127,12 +150,13 @@ Ao receber a aprovação, o workflow:
 1. coleta novamente as fontes;
 2. reconstrói o candidato;
 3. recalcula semantic diff;
-4. recalcula `review_key`;
-5. compara com a chave aprovada.
+4. recalcula a identidade material da evidência;
+5. recalcula `review_key`;
+6. compara com a chave aprovada.
 
 Se a chave for diferente, a publicação é bloqueada. O estado vira `REVIEW_STALE`, o pacote corrente é persistido e a Issue de revisão é atualizada/substituída para o novo candidato.
 
-Portanto, não é possível revisar A e publicar silenciosamente B.
+Portanto, não é possível revisar A e publicar silenciosamente B. Ao mesmo tempo, duas representações HTML materialmente equivalentes não são tratadas como candidatos jurídicos diferentes só porque o servidor alterou markup dinâmico.
 
 ## 8. Regressões
 
@@ -143,6 +167,14 @@ python -m pytest -q tests
 ```
 
 O resultado entra no pacote de decisão humano.
+
+A regressão de C6.0a exige adicionalmente que:
+
+- markup/atributos/scripts/comentários diferentes com o mesmo texto e links gerem o mesmo fingerprint;
+- mudança de texto visível gere fingerprint diferente;
+- mudança de `href` gere fingerprint diferente;
+- fonte parser-backed continue usando o SHA bruto;
+- mismatch entre snapshot persistido e SHA declarado bloqueie fail-closed.
 
 Antes de persistir uma publicação bem-sucedida, a suíte completa roda novamente, junto dos gates permanentes das Fases 3–5 e do gate C6.0a.
 
@@ -182,4 +214,4 @@ C6.2 — folha-core
 H26 → H27 → H28 → H29
 ```
 
-O defeito observado no workflow `Atualizar taxas_bacen.json` #2726 permanece um bloqueador operacional separado a ser corrigido antes do bootstrap C6.0, sem misturar `financial_reference` com a autoridade jurídico-fiscal do contrato H26–H29.
+O bloqueador histórico observado no workflow `Atualizar taxas_bacen.json` #2726 foi tratado antes do bootstrap C6.0. Ele permanece registrado como evidência de pré-flight, sem misturar `financial_reference` com a autoridade jurídico-fiscal do contrato H26–H29.
