@@ -8,7 +8,7 @@
     "immutable_release_pattern": "releases/fiscal-v1/releases/{release_id}.json",
     "mutable_pointer": "releases/fiscal-v1/current.json",
     "release_id_prefix": "fiscal-v1-sha256-",
-    "release_identity": "FiscalContractV1.expected_release_id content-addressed immutable payload",
+    "release_identity": "FiscalContractV1.expected_release_id content-addressed immutable payload after transition reconciliation",
     "release_files_are_immutable": true,
     "current_pointer_update": "atomic_replace"
   },
@@ -25,6 +25,16 @@
     "NO_PUBLISH_REQUIRED": "do_not_create_duplicate_release",
     "REVIEW_REQUIRED": "require_explicit_human_approval_reference",
     "AUTO_PUBLISH_ALLOWED": "publish_with_AUTO_VALIDATED_and_no_human_override"
+  },
+  "transition_metadata": {
+    "change_class_is_release_relative": true,
+    "changed_rule_uses_computed_change_class": true,
+    "unchanged_successor_rule": "SOURCE_REFRESH_NO_CHANGE",
+    "new_rule": "RULE_ADDED",
+    "removed_rule_is_represented_by_diff_and_approval_gate_not_carried_in_successor_rules": true,
+    "historical_structural_or_rule_added_label_must_not_leak_into_unchanged_successor": true,
+    "phase2_structural_human_review_invariant_is_preserved": true,
+    "release_id_is_calculated_after_reconciliation": true
   },
   "lineage": {
     "bootstrap_supersedes_release_id": null,
