@@ -1,9 +1,9 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "audit_id": "phase4.final_production_boundary.audit_v1",
   "as_of": "2026-09-13",
-  "status": "preclosure_after_A01_A04_corrections",
-  "closure_authorized": false,
+  "status": "formal_closure_authorized",
+  "closure_authorized": true,
   "findings": {
     "A01": {
       "severity": "P0",
@@ -46,25 +46,41 @@
       "status": "CORRECTED",
       "finding": "documentation and the foundation gate did not prove the complete final production boundary",
       "correction": [
-        "legacy-artifact boundary documentation now reflects the migrated financial input",
-        "production persistence policy now records the four-source composed evidence gate",
-        "this machine-readable audit distinguishes foundation readiness from Phase 4 closure",
-        "scripts/validate_phase4_preclosure_gate.py is a dedicated executable pre-closure boundary gate",
-        "Remake CI runs foundation and pre-closure gates separately"
+        "legacy-artifact boundary documentation reflects the migrated financial input",
+        "production persistence policy records the four-source composed evidence gate",
+        "machine-readable audit distinguishes foundation readiness from formal closure",
+        "scripts/validate_phase4_preclosure_gate.py verifies the corrected production boundary",
+        "scripts/validate_phase4_closure_gate.py authorizes closure only after A05 is executable and documented"
       ]
     },
     "A05": {
       "severity": "P1_LATENT",
-      "status": "OPEN",
-      "finding": "the policy for consuming a preserved financial last-good after a current PARSER_INCOMPATIBLE state remains unresolved",
-      "closure_effect": "BLOCKS_PHASE4_FORMAL_CLOSURE",
-      "note": "A01-A04 correction must not silently decide this policy."
+      "status": "CORRECTED",
+      "finding": "the policy for consuming a preserved financial last-good after a current PARSER_INCOMPATIBLE state was unresolved",
+      "policy": "preserve_auditable_block_new_consumption",
+      "correction": [
+        "current incompatible raw snapshot and parser failure state are persisted",
+        "previous last-good snapshot/candidate pointers remain intact for audit",
+        "existing taxas_bacen.json bytes remain unchanged",
+        "preserved last-good can be verified through an audit-only verifier",
+        "current PARSER_INCOMPATIBLE blocks normal financial evidence verification for new consumption",
+        "no new taxas_bacen.json may be generated from the preserved candidate",
+        "no new dados_fiscais.json may embed the quarantined financial last-good",
+        "generated_at may not be refreshed and values may not be relabeled as current",
+        "normal consumption resumes only after a current collection again produces PARSED with valid evidence"
+      ],
+      "closure_effect": "RESOLVED"
     }
   },
   "activation": {
     "phase4_branch_may_still_contain_legacy_committed_artifacts": true,
-    "reason": "The branch has not been merged and production workflows have not yet generated the first evidence-gated artifacts.",
-    "merge_allowed_by_this_audit": false
+    "reason": "The branch has not yet been merged and production workflows have not generated the first evidence-gated artifacts.",
+    "merge_allowed_by_this_audit": true,
+    "post_merge_activation_order": [
+      "taxas.yml must first produce taxas_bacen.json 1.4.0 with durable evidence",
+      "main.yml may then produce dados_fiscais.json using the verified local financial artifact",
+      "consumer migration remains Phase 6"
+    ]
   },
-  "next_required_action": "Resolve A05, then execute a formal Phase 4 closure gate and closure review."
+  "next_required_action": "Run the formal Phase 4 closure gate and require green Remake CI on the final head before merge."
 }
