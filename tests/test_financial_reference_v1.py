@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import json
 from pathlib import Path
 
@@ -13,6 +13,7 @@ from sanida_fiscal.financial_artifact_v1 import (
     build_financial_reference_artifact,
 )
 from sanida_fiscal.financial_reference_v1 import (
+    SELIC_PARSER_VERSION,
     annualize_cdi_daily_rate_pct,
     parse_bcb_cdi_daily_sgs12_snapshot,
     parse_bcb_selic_meta_sgs432_snapshot,
@@ -37,6 +38,32 @@ def test_selic_parser_preserves_official_decimal_and_date():
     }
 
 
+def test_selic_parser_selects_latest_applicable_row_and_ignores_forward_rows():
+    raw = json.dumps(
+        [
+            {"data": "12/09/2026", "valor": "14.00"},
+            {"data": "13/09/2026", "valor": "14.00"},
+            {"data": "14/09/2026", "valor": "14.00"},
+            {"data": "15/09/2026", "valor": "14.00"},
+            {"data": "16/09/2026", "valor": "14.00"},
+        ]
+    ).encode("utf-8")
+
+    payload = parse_bcb_selic_meta_sgs432_snapshot(
+        raw,
+        as_of_date=date(2026, 9, 14),
+    )
+
+    assert payload["observation_date"] == "2026-09-14"
+    assert payload["annual_rate_pct"] == "14.00"
+
+
+def test_selic_parser_fails_closed_when_snapshot_has_only_future_rows():
+    raw = b'[{"data":"15/09/2026","valor":"14.00"},{"data":"16/09/2026","valor":"14.00"}]'
+    with pytest.raises(ParserIncompatibleError, match="no observation on or before 2026-09-14"):
+        parse_bcb_selic_meta_sgs432_snapshot(raw, as_of_date=date(2026, 9, 14))
+
+
 def test_cdi_parser_preserves_daily_rate_without_pretending_it_is_annual():
     payload = parse_bcb_cdi_daily_sgs12_snapshot(CDI_FIXTURE)
     assert payload == {
@@ -53,19 +80,28 @@ def test_cdi_daily_rate_is_annualized_at_252_business_days_for_legacy_artifact()
     assert str(annualize_cdi_daily_rate_pct("0.051660")) == "13.90"
 
 
-def test_sgs_parser_rejects_ambiguous_multiple_observations():
+def test_sgs_parser_rejects_ambiguous_multiple_observations_without_as_of_date():
     raw = b'[{"data":"10/09/2026","valor":"14.00"},{"data":"11/09/2026","valor":"14.00"}]'
-    with pytest.raises(ParserIncompatibleError, match="exactly one observation"):
+    with pytest.raises(ParserIncompatibleError, match="as_of_date is required"):
         parse_bcb_selic_meta_sgs432_snapshot(raw)
 
 
-def _run(tmp_path: Path, source_id: str, body: bytes):
+def _run(
+    tmp_path: Path,
+    source_id: str,
+    body: bytes,
+    *,
+    observed_at_utc: datetime = NOW,
+    request_assertion=None,
+):
     def handler(request: httpx.Request):
+        if request_assertion is not None:
+            request_assertion(request)
         return httpx.Response(200, content=body, headers={"content-type": "application/json"})
 
     return run_registered_financial_source_pipeline(
         source_id=source_id,
-        observed_at_utc=NOW,
+        observed_at_utc=observed_at_utc,
         registry_path=Path("docs/financial-source-registry-v1.json"),
         snapshot_root=tmp_path / "snapshots",
         state_root=tmp_path / "state",
@@ -73,6 +109,36 @@ def _run(tmp_path: Path, source_id: str, body: bytes):
         transport=httpx.MockTransport(handler),
         use_http_validators=False,
     )
+
+
+def test_selic_pipeline_bounds_query_to_current_brazil_calendar_date(tmp_path: Path):
+    observed = datetime(2026, 9, 14, 13, 2, 28, tzinfo=timezone.utc)
+    raw = json.dumps(
+        [
+            {"data": "13/09/2026", "valor": "14.00"},
+            {"data": "14/09/2026", "valor": "14.00"},
+        ]
+    ).encode("utf-8")
+
+    def assert_request(request: httpx.Request):
+        assert request.url.params["dataFinal"] == "14/09/2026"
+        assert request.url.params["dataInicial"] == "14/08/2026"
+        assert request.url.params["formato"] == "json"
+        assert "/ultimos/" not in str(request.url)
+
+    run = _run(
+        tmp_path,
+        "BCB_SELIC_META_SGS_432",
+        raw,
+        observed_at_utc=observed,
+        request_assertion=assert_request,
+    )
+
+    assert run.candidate is not None
+    assert run.candidate.status == ParseStatus.PARSED
+    assert run.candidate.parser_version == SELIC_PARSER_VERSION == "1.1.0"
+    assert run.candidate.payload["observation_date"] == "2026-09-14"
+    assert run.state.source_url.endswith("dataFinal=14%2F09%2F2026")
 
 
 def test_financial_pipelines_persist_snapshot_candidate_and_state(tmp_path: Path):
@@ -153,17 +219,13 @@ def test_old_selic_latest_observation_is_allowed_because_rate_persists_until_cha
     assert artifact["taxas"]["selic"] == 14.0
 
 
-def test_future_financial_observation_is_rejected(tmp_path: Path):
+def test_future_only_selic_snapshot_is_rejected_before_artifact(tmp_path: Path):
     future_selic = b'[{"data":"14/09/2026","valor":"14.00"}]'
     selic = _run(tmp_path, "BCB_SELIC_META_SGS_432", future_selic)
-    cdi = _run(tmp_path, "BCB_CDI_DAILY_SGS_12", CDI_FIXTURE)
 
-    with pytest.raises(FinancialArtifactBoundaryError, match="Selic observation_date cannot be in the future"):
-        build_financial_reference_artifact(
-            selic_run=selic,
-            cdi_run=cdi,
-            generated_at_utc="2026-09-13T22:00:00Z",
-        )
+    assert selic.candidate is not None
+    assert selic.candidate.status == ParseStatus.PARSER_INCOMPATIBLE
+    assert "no observation on or before 2026-09-13" in selic.candidate.error_detail
 
 
 def test_financial_source_policy_removes_ftp_and_static_fallback_from_automatic_path():
