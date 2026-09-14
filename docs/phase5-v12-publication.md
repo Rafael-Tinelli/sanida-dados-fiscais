@@ -186,7 +186,7 @@ O `release_id` é calculado somente depois da reconciliação final do candidato
 
 Um caminho de release existente com bytes diferentes é erro fatal.
 
-## 11. Fronteira com a Fase 6
+## 11. Fase 6 — Migração dos consumidores
 
 A Fase 6 só pode migrar consumidores depois de existir uma release v1.2 `PUBLISHED` real e verificável.
 
