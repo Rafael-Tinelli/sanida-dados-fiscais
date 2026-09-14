@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Callable
+from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
 
 import httpx
 from pydantic import JsonValue
@@ -17,7 +19,7 @@ from .financial_reference_v1 import (
     parse_bcb_selic_meta_sgs432_snapshot,
 )
 from .source_runtime_v1 import CandidateStore, SourcePipelineRun, SourceStateStore, run_source_pipeline
-from .sources_v1 import HttpCollectorV1, RetryPolicy, SnapshotStore, load_source_registry
+from .sources_v1 import HttpCollectorV1, RetryPolicy, SnapshotStore, SourceSpec, load_source_registry
 
 
 @dataclass(frozen=True)
@@ -49,12 +51,44 @@ DEFAULT_HEADERS = {
     "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.7",
 }
 
+SELIC_SOURCE_ID = "BCB_SELIC_META_SGS_432"
+SELIC_CALENDAR_TIMEZONE = ZoneInfo("America/Sao_Paulo")
+SELIC_LOOKBACK_DAYS = 31
+
 
 def financial_parser_binding(source_id: str) -> FinancialParserBinding:
     try:
         return FINANCIAL_PARSER_BINDINGS[source_id]
     except KeyError as exc:
         raise ValueError(f"no Phase 4 financial parser binding for source_id: {source_id}") from exc
+
+
+def _resolve_runtime_source_and_parser(
+    *,
+    source_id: str,
+    source: SourceSpec,
+    binding: FinancialParserBinding,
+    observed_at_utc: datetime,
+) -> tuple[SourceSpec, Callable[[bytes], dict[str, JsonValue]]]:
+    if source_id != SELIC_SOURCE_ID:
+        return source, binding.parser
+
+    local_date = observed_at_utc.astimezone(SELIC_CALENDAR_TIMEZONE).date()
+    start_date = local_date - timedelta(days=SELIC_LOOKBACK_DAYS)
+    base_url = source.url.split("?", 1)[0]
+    query = urlencode(
+        {
+            "formato": "json",
+            "dataInicial": start_date.strftime("%d/%m/%Y"),
+            "dataFinal": local_date.strftime("%d/%m/%Y"),
+        }
+    )
+    resolved_source = source.model_copy(update={"url": f"{base_url}?{query}"})
+
+    def parse_current_selic(raw: bytes) -> dict[str, JsonValue]:
+        return parse_bcb_selic_meta_sgs432_snapshot(raw, as_of_date=local_date)
+
+    return resolved_source, parse_current_selic
 
 
 def run_registered_financial_source_pipeline(
@@ -76,7 +110,12 @@ def run_registered_financial_source_pipeline(
         raise ValueError(f"unknown financial source_id: {source_id}")
 
     binding = financial_parser_binding(source_id)
-    source = registry[source_id]
+    source, parser = _resolve_runtime_source_and_parser(
+        source_id=source_id,
+        source=registry[source_id],
+        binding=binding,
+        observed_at_utc=observed_at_utc,
+    )
     snapshot_store = SnapshotStore(snapshot_root)
     state_store = SourceStateStore(state_root)
     candidate_store = CandidateStore(candidate_root)
@@ -95,7 +134,7 @@ def run_registered_financial_source_pipeline(
         observed_at_utc=observed_at_utc,
         parser_id=binding.parser_id,
         parser_version=binding.parser_version,
-        parser=binding.parser,
+        parser=parser,
         candidate_store=candidate_store,
         use_http_validators=use_http_validators,
     )
