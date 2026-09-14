@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "domain": "financial_reference",
+  "status": "phase4_migrated_in_branch",
+  "as_of": "2026-09-13",
+  "policy": {
+    "separate_from_payroll_fiscal_registry": true,
+    "structured_official_source_preferred": true,
+    "static_fallback_allowed": false,
+    "source_failure_may_relabel_prior_value_as_current": false
+  },
+  "sources": [
+    {
+      "source_id": "BCB_SELIC_META_SGS_432",
+      "authority": "Banco Central do Brasil",
+      "role": "official_structured_api",
+      "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json",
+      "machine_readability": "json",
+      "series_code": 432,
+      "source_value_semantic": "selic_meta_percent_per_year",
+      "legacy_artifact_target": "taxas.selic"
+    },
+    {
+      "source_id": "BCB_CDI_DAILY_SGS_12",
+      "authority": "Banco Central do Brasil / SGS; série de origem Cetip/B3",
+      "role": "official_structured_api",
+      "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados/ultimos/1?formato=json",
+      "machine_readability": "json",
+      "series_code": 12,
+      "source_value_semantic": "cdi_percent_per_business_day",
+      "legacy_artifact_target": "taxas.cdi",
+      "legacy_transform": "annualize_by_compounding_252_business_days"
+    }
+  ]
+}

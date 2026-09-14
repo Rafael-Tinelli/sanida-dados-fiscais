@@ -1,0 +1,108 @@
+{
+  "schema_version": "1.3.0",
+  "decision_id": "phase4.production_source_evidence_persistence",
+  "status": "phase4_closure_ready",
+  "as_of": "2026-09-13",
+  "production_environment": {
+    "runner": "github_actions_ubuntu_latest_ephemeral",
+    "workflows": [
+      ".github/workflows/main.yml",
+      ".github/workflows/taxas.yml"
+    ],
+    "branch": "main",
+    "shared_concurrency_group": "sanida-dados-fiscais-writes-main",
+    "queue_policy": "max",
+    "cancel_in_progress": false,
+    "reason": "Both writers mutate main and the same evidence tree; pending runs must queue rather than replace each other."
+  },
+  "persistence_backend": {
+    "kind": "git_tracked_repository_path",
+    "runtime_root": "evidence/source-runtime-v1",
+    "snapshot_subdir": "snapshots",
+    "candidate_subdir": "candidates",
+    "state_subdir": "state",
+    "reason": "GitHub Actions workspaces are ephemeral; evidence required by compatibility-artifact provenance must survive the runner and remain auditable in repository history."
+  },
+  "retention_policy": {
+    "raw_snapshots": "retain_all_unique_content_addressed_files",
+    "normalized_candidates": "retain_all_unique_content_addressed_files",
+    "operational_state": "retain_latest_materialized_state_per_source_plus_git_history",
+    "automatic_pruning": false,
+    "deduplication": "sha256_content_addressed",
+    "note": "No synthetic or fixture evidence is seeded into the production evidence tree. Files appear only after a real production collection."
+  },
+  "state_contract": {
+    "schema_version": "1.1.0",
+    "required_last_good_fields": [
+      "last_parsed_at_utc",
+      "last_parsed_snapshot_sha256",
+      "last_parsed_snapshot_path",
+      "last_successful_parser_id",
+      "last_successful_parser_version",
+      "last_candidate_sha256",
+      "last_candidate_path"
+    ],
+    "current_failure_may_not_destroy_last_good_evidence_pointer": true,
+    "parser_incompatible_last_good_consumption_policy": "preserve_auditable_block_new_consumption",
+    "parser_incompatible_policy_details": {
+      "preserve_last_good_evidence": true,
+      "audit_only_verification_allowed": true,
+      "new_financial_artifact_consumption_allowed": false,
+      "new_payroll_artifact_composition_allowed": false,
+      "generated_at_refresh_allowed": false,
+      "resume_condition": "current source collection returns PARSED under the registered parser with valid durable evidence"
+    }
+  },
+  "publication_transactions": {
+    "payroll_compatibility": {
+      "workflow": ".github/workflows/main.yml",
+      "artifact": "dados_fiscais.json",
+      "evidence_gate": "scripts/validate_production_evidence_v1.py",
+      "evidence_scope": "RFB + INSS + nested Selic + CDI",
+      "financial_input_policy": "local taxas_bacen.json 1.4.0 only; no remote fallback; current financial PARSER_INCOMPATIBLE blocks new composition"
+    },
+    "financial_reference_compatibility": {
+      "workflow": ".github/workflows/taxas.yml",
+      "artifact": "taxas_bacen.json",
+      "evidence_gate": "scripts/validate_financial_evidence_v1.py",
+      "parser_incompatible_behavior": "preserve artifact bytes and durable failure evidence; fail workflow"
+    },
+    "common_steps": [
+      "checkout_main_with_previously_committed_evidence",
+      "run_producer_with_SFA_SOURCE_RUNTIME_ROOT=evidence/source-runtime-v1",
+      "verify_artifact_provenance_against_persisted_snapshot_candidate_and_state",
+      "stage_artifact_and_evidence_tree_together_on_success",
+      "persist_evidence_only_on_failed_observation",
+      "commit_and_push_main"
+    ],
+    "artifact_and_evidence_share_commit_when_artifact_changes": true,
+    "evidence_only_commit_allowed_when_artifact_is_unchanged_or_producer_fails": true,
+    "unverified_artifact_may_be_committed": false,
+    "verification_failure": "PERSIST_OPERATIONAL_EVIDENCE_ONLY_THEN_FAIL_WORKFLOW"
+  },
+  "integrity_gates": {
+    "snapshot_file_sha256_must_equal_artifact_provenance": true,
+    "candidate_file_sha256_must_equal_artifact_provenance": true,
+    "state_last_good_hashes_must_equal_artifact_provenance": true,
+    "state_last_good_parser_identity_must_equal_artifact_provenance": true,
+    "state_last_parsed_timestamp_must_equal_artifact_provenance": true,
+    "paths_must_remain_inside_runtime_root": true,
+    "dados_fiscais_must_verify_all_four_sources": true,
+    "dados_fiscais_must_reject_remote_financial_origin": true,
+    "current_financial_parser_incompatible_must_block_new_consumption": true,
+    "preserved_financial_last_good_must_remain_auditable": true
+  },
+  "scope": {
+    "included_sources": [
+      "RFB_IRRF_TABLE_2026",
+      "INSS_TABLE_2026",
+      "BCB_SELIC_META_SGS_432",
+      "BCB_CDI_DAILY_SGS_12"
+    ],
+    "financial_reference": "migrated_with_strict_local_consumer_boundary_source_specific_freshness_and_A05_quarantine",
+    "semantic_diff": "phase5",
+    "canonical_release_publication": "phase5",
+    "consumer_migration": "phase6",
+    "phase4_closure": "authorized_subject_to_green_formal_closure_gate_on_final_head"
+  }
+}

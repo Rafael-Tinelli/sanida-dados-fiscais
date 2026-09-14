@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0.0",
+  "decision_id": "phase4.inss.canonical_source_resolution",
+  "status": "resolved",
+  "as_of": "2026-09-13",
+  "registry_source_id": "INSS_TABLE_2026",
+  "canonical_source": {
+    "url": "https://www.gov.br/inss/pt-br/direitos-e-deveres/inscricao-e-contribuicao/tabela-de-contribuicao-mensal",
+    "role": "official_operational",
+    "collection_mode": "direct_registered_url",
+    "parser_id": "inss_employee_table_v1",
+    "parser_version": "1.0.0",
+    "reference_year": 2026,
+    "effective_from": "2026-01-01"
+  },
+  "legacy_path": {
+    "pinned_news_url": "https://www.gov.br/inss/pt-br/assuntos/com-reajuste-de-3-9-teto-do-inss-chega-a-r-8-475-55-em-2026",
+    "search_endpoint": "https://www.gov.br/inss/@@search",
+    "implementation": "scraper.py:find_inss_article_url+parse_inss_gov",
+    "disposition": "legacy_production_only_until_consumer_migration"
+  },
+  "resolution": {
+    "canonical_source_is_single_operational_input": true,
+    "allow_pinned_news_fallback": false,
+    "allow_search_discovery_fallback": false,
+    "canonical_failure_state": "SOURCE_UNAVAILABLE",
+    "url_change_requires_registry_change": true,
+    "legacy_news_may_feed_phase4_parser": false,
+    "legacy_news_may_be_manual_corroboration_only": true
+  },
+  "rationale": [
+    "The Phase 1 source registry already names the contribution-table URL as INSS_TABLE_2026.",
+    "The canonical table explicitly exposes the employee, domestic-employee and casual-worker progressive bands for competence January 2026.",
+    "The canonical table ties the 2026 values to Portaria Interministerial MPS/MF 13 of 2026 and states that 13th-salary contribution assessment is separate from monthly remuneration.",
+    "A yearly news article or search result is discovery/reference material, not a stable machine contract and must not silently replace the registered source.",
+    "If the registered canonical page is unavailable, the safe operational state is SOURCE_UNAVAILABLE rather than discovery of a different page."
+  ]
+}

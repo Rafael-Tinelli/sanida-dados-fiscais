@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      SFA_SOURCE_RUNTIME_ROOT: evidence/source-runtime-v1
 
     steps:
       - name: Checkout
@@ -33,23 +35,70 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run scraper
+      - name: Run scraper and capture outcome
+        id: scraper
+        shell: bash
         run: |
+          set +e
           python scraper.py
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
 
-      - name: Commit if changed
+      - name: Validate persisted source evidence
+        id: evidence
+        shell: bash
         run: |
-          git add dados_fiscais.json
-
-          if git diff --cached --quiet -- dados_fiscais.json; then
-            echo "No changes to commit."
-            exit 0
+          set +e
+          if [ "${{ steps.scraper.outputs.exit_code }}" = "0" ]; then
+            python scripts/validate_production_evidence_v1.py \
+              --artifact dados_fiscais.json \
+              --runtime-root "$SFA_SOURCE_RUNTIME_ROOT"
+            code=$?
+          else
+            echo "Skipping artifact provenance validation because scraper failed."
+            code=99
           fi
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
 
+      - name: Persist operational evidence and validated artifact
+        shell: bash
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git commit -m "chore(data): atualizar dados_fiscais.json"
+          if [ "${{ steps.scraper.outputs.exit_code }}" = "0" ] && \
+             [ "${{ steps.evidence.outputs.exit_code }}" = "0" ]; then
+            git add dados_fiscais.json "$SFA_SOURCE_RUNTIME_ROOT"
+            commit_message="chore(data): atualizar dados fiscais e evidências de fonte"
+          else
+            # Never let an unverified compatibility artifact reach main. Operational
+            # state/raw evidence from a failed run is still useful and must survive
+            # the ephemeral runner for diagnosis and failure counters.
+            git restore --source=HEAD --staged --worktree dados_fiscais.json || true
+            git add "$SFA_SOURCE_RUNTIME_ROOT"
+            commit_message="chore(source-state): persistir evidências operacionais"
+          fi
 
+          if git diff --cached --quiet; then
+            echo "No persisted changes to commit."
+            exit 0
+          fi
+
+          git commit -m "$commit_message"
           git pull --rebase origin main
           git push origin main
+
+      - name: Enforce production gate
+        shell: bash
+        run: |
+          if [ "${{ steps.scraper.outputs.exit_code }}" != "0" ]; then
+            echo "scraper.py failed with exit code ${{ steps.scraper.outputs.exit_code }}"
+            exit 1
+          fi
+          if [ "${{ steps.evidence.outputs.exit_code }}" != "0" ]; then
+            echo "production evidence validation failed with exit code ${{ steps.evidence.outputs.exit_code }}"
+            exit 1
+          fi
+          echo "Production artifact and durable source evidence are consistent."

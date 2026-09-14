@@ -9,13 +9,15 @@ on:
 concurrency:
   group: sanida-dados-fiscais-writes-main
   cancel-in-progress: false
+  queue: max
 
 jobs:
   update:
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
+    env:
+      SFA_SOURCE_RUNTIME_ROOT: evidence/source-runtime-v1
 
     steps:
       - name: Checkout
@@ -33,53 +35,75 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run taxas updater
+      - name: Run financial updater and capture outcome
+        id: updater
+        shell: bash
         run: |
+          set +e
           python update_taxas.py
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
 
-      - name: Validate output
+      - name: Validate persisted financial evidence
+        id: evidence
+        shell: bash
         run: |
-          python - <<'PY'
-          import json
-
-          with open("taxas_bacen.json", "r", encoding="utf-8") as f:
-              d = json.load(f)
-
-          assert isinstance(
-              d.get("meta", {}).get("generated_at_utc"),
-              str
-          )
-          assert isinstance(
-              d.get("taxas", {}).get("selic"),
-              (int, float)
-          )
-          assert isinstance(
-              d.get("taxas", {}).get("cdi"),
-              (int, float)
-          )
-
-          print("Output OK")
-          PY
+          set +e
+          if [ "${{ steps.updater.outputs.exit_code }}" = "0" ]; then
+            python scripts/validate_financial_evidence_v1.py \
+              --artifact taxas_bacen.json \
+              --runtime-root "$SFA_SOURCE_RUNTIME_ROOT"
+            code=$?
+          else
+            echo "Skipping financial artifact provenance validation because updater failed."
+            code=99
+          fi
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
 
       - name: Show preview
+        if: always()
         run: |
-          sed -n '1,120p' taxas_bacen.json || true
+          sed -n '1,160p' taxas_bacen.json || true
           git status --short
 
-      - name: Commit if changed
+      - name: Persist operational evidence and validated financial artifact
+        shell: bash
         run: |
-          git add taxas_bacen.json
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          if git diff --cached --quiet -- taxas_bacen.json; then
-            echo "No changes to commit."
+          if [ "${{ steps.updater.outputs.exit_code }}" = "0" ] && \
+             [ "${{ steps.evidence.outputs.exit_code }}" = "0" ]; then
+            git add taxas_bacen.json "$SFA_SOURCE_RUNTIME_ROOT"
+            commit_message="chore(data): atualizar taxas e evidências de fonte"
+          else
+            # A failed observation must not refresh or rewrite the public financial
+            # artifact. Runtime state/snapshots remain useful and survive the runner.
+            git restore --source=HEAD --staged --worktree taxas_bacen.json || true
+            git add "$SFA_SOURCE_RUNTIME_ROOT"
+            commit_message="chore(source-state): persistir evidências financeiras"
+          fi
+
+          if git diff --cached --quiet; then
+            echo "No persisted changes to commit."
             exit 0
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email \
-            "github-actions[bot]@users.noreply.github.com"
-
-          git commit -m "chore(data): atualizar taxas_bacen.json"
-
+          git commit -m "$commit_message"
           git pull --rebase origin main
           git push origin main
+
+      - name: Enforce financial production gate
+        shell: bash
+        run: |
+          if [ "${{ steps.updater.outputs.exit_code }}" != "0" ]; then
+            echo "update_taxas.py failed with exit code ${{ steps.updater.outputs.exit_code }}"
+            exit 1
+          fi
+          if [ "${{ steps.evidence.outputs.exit_code }}" != "0" ]; then
+            echo "financial evidence validation failed with exit code ${{ steps.evidence.outputs.exit_code }}"
+            exit 1
+          fi
+          echo "Financial artifact and durable source evidence are consistent."
