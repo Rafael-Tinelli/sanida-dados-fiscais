@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
+import requests
+
 from .inss_employee_v1 import (
     PARSER_ID as INSS_PARSER_ID,
     PARSER_VERSION as INSS_PARSER_VERSION,
@@ -17,7 +19,9 @@ from .rfb_irrf_v1 import (
     parse_rfb_irrf_2026_snapshot,
 )
 from .sources_v1 import (
+    CollectionResult,
     CollectionStatus,
+    FailureKind,
     HttpCollectorV1,
     NormalizedSourceCandidate,
     ParseStatus,
@@ -36,6 +40,7 @@ class AuthorityEvidenceError(RuntimeError):
 
 RFB_SOURCE_ID = "RFB_IRRF_TABLE_2026"
 INSS_SOURCE_ID = "INSS_TABLE_2026"
+PLANALTO_CLT_SOURCE_ID = "PLANALTO_CLT"
 
 
 # Parameter parsers are deliberately limited to Phase 4's known source structures.
@@ -63,6 +68,20 @@ PREFERRED_RULE_SOURCES = {
     "irrf.reduction.2026": RFB_SOURCE_ID,
     "vacation.irrf.reduction.2026": "PLANALTO_LEI_15270_2025",
 }
+
+
+AUTHORITY_HEADERS = {
+    "User-Agent": "SanidaFiscalEvidence/1.2 (+https://sanida.com.br/)",
+    "Accept": "text/html,application/xhtml+xml,application/pdf;q=0.9,*/*;q=0.5",
+}
+
+# The Planalto CLT endpoint repeatedly disconnects GitHub-hosted runners before
+# emitting an HTTP response when called through httpx. The same public URL is
+# healthy and retrievable through the requests/urllib3 stack. This is a
+# transport fallback only: it never changes source_id, URL, authority, content,
+# or semantic interpretation. Structural CLT evidence remains raw/unparsed.
+REQUESTS_TRANSPORT_FALLBACK_SOURCE_IDS = frozenset({PLANALTO_CLT_SOURCE_ID})
+REQUESTS_TRANSPORT_FALLBACK_ERRORS = frozenset({"RemoteProtocolError"})
 
 
 @dataclass(frozen=True)
@@ -174,6 +193,138 @@ def _retrieval_method(snapshot_media_type: str | None) -> RetrievalMethod:
     return RetrievalMethod.HTTP_HTML
 
 
+def _suffix_for_media_type(media_type: str | None) -> str:
+    value = (media_type or "").lower()
+    if "pdf" in value:
+        return ".pdf"
+    if "html" in value:
+        return ".html"
+    if "json" in value:
+        return ".json"
+    if "text" in value:
+        return ".txt"
+    return ".bin"
+
+
+def _collect_same_source_with_requests(
+    *,
+    source: SourceSpec,
+    store: SnapshotStore,
+    observed_at_utc: datetime,
+    retry_policy: RetryPolicy,
+    headers: Mapping[str, str],
+) -> CollectionResult:
+    """Retry the exact same official URL through requests/urllib3.
+
+    This helper is intentionally not a source fallback. It exists only for an
+    allowlisted transport incompatibility and persists the response through the
+    same immutable SnapshotStore used by the primary httpx collector.
+    """
+    last_kind = FailureKind.NETWORK_ERROR
+    last_detail: str | None = None
+    last_status: int | None = None
+
+    for attempt in range(1, retry_policy.max_attempts + 1):
+        try:
+            response = requests.get(
+                source.url,
+                headers=dict(headers),
+                timeout=retry_policy.timeout_seconds,
+                allow_redirects=True,
+            )
+            last_status = response.status_code
+
+            if 200 <= response.status_code < 300:
+                content_type = response.headers.get("content-type")
+                snapshot = store.persist(
+                    source=source,
+                    observed_at_utc=observed_at_utc,
+                    body=response.content,
+                    media_type=content_type,
+                    suffix=_suffix_for_media_type(content_type),
+                )
+                return CollectionResult(
+                    source_id=source.source_id,
+                    source_url=source.url,
+                    observed_at_utc=observed_at_utc,
+                    status=CollectionStatus.COLLECTED,
+                    attempts=attempt,
+                    http_status=response.status_code,
+                    etag=response.headers.get("etag"),
+                    last_modified=response.headers.get("last-modified"),
+                    snapshot=snapshot,
+                )
+
+            if response.status_code == 429 or 500 <= response.status_code < 600:
+                last_kind = FailureKind.HTTP_SERVER_ERROR
+                last_detail = f"http_{response.status_code}"
+                if attempt < retry_policy.max_attempts:
+                    continue
+            else:
+                return CollectionResult(
+                    source_id=source.source_id,
+                    source_url=source.url,
+                    observed_at_utc=observed_at_utc,
+                    status=CollectionStatus.SOURCE_UNAVAILABLE,
+                    attempts=attempt,
+                    http_status=response.status_code,
+                    failure_kind=FailureKind.HTTP_CLIENT_ERROR,
+                    error_detail=f"http_{response.status_code}",
+                )
+        except requests.Timeout as exc:
+            last_kind = FailureKind.TIMEOUT
+            last_detail = type(exc).__name__
+            if attempt < retry_policy.max_attempts:
+                continue
+        except requests.RequestException as exc:
+            last_kind = FailureKind.NETWORK_ERROR
+            last_detail = type(exc).__name__
+            if attempt < retry_policy.max_attempts:
+                continue
+
+        return CollectionResult(
+            source_id=source.source_id,
+            source_url=source.url,
+            observed_at_utc=observed_at_utc,
+            status=CollectionStatus.SOURCE_UNAVAILABLE,
+            attempts=attempt,
+            http_status=last_status,
+            failure_kind=last_kind,
+            error_detail=last_detail,
+        )
+
+    raise AssertionError("requests authority collector loop ended unexpectedly")
+
+
+def _collect_authority_source(
+    *,
+    source_id: str,
+    source: SourceSpec,
+    collector: HttpCollectorV1,
+    store: SnapshotStore,
+    observed_at_utc: datetime,
+    retry_policy: RetryPolicy,
+    headers: Mapping[str, str],
+) -> CollectionResult:
+    result = collector.collect(source, observed_at_utc=observed_at_utc)
+    should_fallback_transport = (
+        source_id in REQUESTS_TRANSPORT_FALLBACK_SOURCE_IDS
+        and result.status == CollectionStatus.SOURCE_UNAVAILABLE
+        and result.failure_kind == FailureKind.NETWORK_ERROR
+        and result.error_detail in REQUESTS_TRANSPORT_FALLBACK_ERRORS
+    )
+    if not should_fallback_transport:
+        return result
+
+    return _collect_same_source_with_requests(
+        source=source,
+        store=store,
+        observed_at_utc=observed_at_utc,
+        retry_policy=retry_policy,
+        headers=headers,
+    )
+
+
 def collect_authority_evidence(
     *,
     source_registry_path: Path,
@@ -196,14 +347,12 @@ def collect_authority_evidence(
     registry = load_source_registry(source_registry_path)
     required_source_ids = sorted(set(selected.values()) | set(PARSER_BINDINGS))
 
+    policy = retry_policy or RetryPolicy(max_attempts=3, timeout_seconds=30.0)
     store = SnapshotStore(Path(snapshot_root))
     collector = HttpCollectorV1(
         snapshot_store=store,
-        retry_policy=retry_policy or RetryPolicy(max_attempts=3, timeout_seconds=30.0),
-        headers={
-            "User-Agent": "SanidaFiscalEvidence/1.2 (+https://sanida.com.br/)",
-            "Accept": "text/html,application/xhtml+xml,application/pdf;q=0.9,*/*;q=0.5",
-        },
+        retry_policy=policy,
+        headers=AUTHORITY_HEADERS,
     )
 
     evidence: dict[str, EvidenceObservation] = {}
@@ -213,7 +362,15 @@ def collect_authority_evidence(
         source = registry.get(source_id)
         if source is None:
             raise AuthorityEvidenceError(f"source absent from registry: {source_id}")
-        result = collector.collect(source, observed_at_utc=observed_at_utc)
+        result = _collect_authority_source(
+            source_id=source_id,
+            source=source,
+            collector=collector,
+            store=store,
+            observed_at_utc=observed_at_utc,
+            retry_policy=policy,
+            headers=AUTHORITY_HEADERS,
+        )
         if result.status != CollectionStatus.COLLECTED or result.snapshot is None:
             detail = result.error_detail or (
                 result.failure_kind.value if result.failure_kind else result.status.value
