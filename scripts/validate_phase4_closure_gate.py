@@ -104,13 +104,17 @@ def main() -> None:
     _require("Fase 5" in phase4_doc, "Phase 4 handoff does not preserve Phase 5 boundary")
     _require("Fase 6" in phase4_doc, "Phase 4 handoff does not preserve Phase 6 boundary")
 
+    # The Phase 4 gate must remain valid after later phases advance. It therefore
+    # checks that the master README preserves Phase 4's concluded state and the
+    # downstream phase boundaries, not that section 20 still points to Phase 5.
     readme = _read("README.md")
     _require(
         "### Fase 4 — Fontes e sensores\n\n**Status: CONCLUÍDA**" in readme,
         "README master does not mark Phase 4 as CONCLUÍDA",
     )
     _require("preserve_auditable_block_new_consumption" in readme, "README master lost A05 policy")
-    _require("## 20. Próxima etapa\n\nIniciar a **Fase 5" in readme, "README master does not hand off to Phase 5")
+    _require("### Fase 5 — Diff semântico e gates de publicação" in readme, "README master lost Phase 5 boundary")
+    _require("### Fase 6 — Migração dos consumidores" in readme, "README master lost Phase 6 boundary")
 
     closure_doc = _read("docs/phase4-closure-gate.md")
     _require("preserve_auditable_block_new_consumption" in closure_doc, "closure record lost A05 policy")
