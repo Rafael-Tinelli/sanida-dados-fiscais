@@ -104,13 +104,34 @@ def _close_stale(issues: list[dict[str, Any]], current_key: str) -> None:
                 )
 
 
+def _assignee_logins(issue: dict[str, Any]) -> set[str]:
+    values = issue.get("assignees")
+    if not isinstance(values, list):
+        return set()
+    return {
+        str(item.get("login"))
+        for item in values
+        if isinstance(item, dict) and isinstance(item.get("login"), str)
+    }
+
+
+def _same_issue_payload(existing: dict[str, Any], *, title: str, body: str, owner: str) -> bool:
+    if existing.get("title") != title or existing.get("body") != body:
+        return False
+    if owner and owner not in _assignee_logins(existing):
+        return False
+    return True
+
+
 def upsert(packet_path: Path, regression_result: Path | None) -> int:
     packet = _load(packet_path)
     review_key = str(packet.get("review_key") or "")
     if len(review_key) != 64:
         raise GitHubIssueError("review packet has invalid review_key")
+
     class Args:
         pass
+
     args = Args()
     args.regression_result = regression_result
     status, summary = _regression(args)
@@ -129,9 +150,15 @@ def upsert(packet_path: Path, regression_result: Path | None) -> int:
         number = existing.get("number")
         if not isinstance(number, int):
             raise GitHubIssueError("existing review Issue has no number")
+        if _same_issue_payload(existing, title=title, body=body, owner=owner):
+            print(f"review_issue_number={number}")
+            print(f"review_issue_url={existing.get('html_url', '')}")
+            print("review_issue_action=REUSED_UNCHANGED")
+            return number
         updated = _api("PATCH", f"/issues/{number}", payload)
         print(f"review_issue_number={number}")
         print(f"review_issue_url={updated.get('html_url') if isinstance(updated, dict) else ''}")
+        print("review_issue_action=UPDATED")
         return number
 
     created = _api("POST", "/issues", payload)
@@ -140,6 +167,7 @@ def upsert(packet_path: Path, regression_result: Path | None) -> int:
     number = int(created["number"])
     print(f"review_issue_number={number}")
     print(f"review_issue_url={created.get('html_url', '')}")
+    print("review_issue_action=CREATED")
     return number
 
 
