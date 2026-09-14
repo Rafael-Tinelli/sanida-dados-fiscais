@@ -256,6 +256,7 @@ def main() -> int:
             review_identity_candidate, review_evidence_identity = build_review_identity_candidate(
                 candidate,
                 authority_snapshot_root=AUTHORITY_EVIDENCE_ROOT,
+                normalized_candidates=authority.normalized_candidates,
             )
         except ReviewEvidenceIdentityError as exc:
             state["publication_status"] = "BLOCKED"
