@@ -1,7 +1,7 @@
 # Fase 6 — C6.0a — Human Review UX
 
 **Data:** 2026-09-14  
-**Status:** IMPLEMENTADO NA BRANCH / AGUARDANDO CI E MERGE  
+**Status:** CONCLUÍDO  
 **Escopo:** revisão humana acionável para `REVIEW_REQUIRED` antes do bootstrap v1.2 e antes de qualquer migração de consumidor.
 
 ## 1. Problema resolvido
@@ -94,7 +94,9 @@ Ele inclui semântica, payload, diff e identidade/hash da evidência. Relógios 
 
 Mudança de snapshot oficial, payload, semântica ou diff altera o `review_key`.
 
-Isso permite atualizar a mesma Issue enquanto o candidato é realmente o mesmo e abrir uma nova revisão quando o conteúdo a decidir mudou.
+Isso permite reutilizar a mesma revisão enquanto o candidato é realmente o mesmo e abrir uma nova revisão quando o conteúdo a decidir mudou.
+
+O publicador preserva byte a byte o review packet e o estado `REVIEW_REQUIRED` quando a chave continua igual; o gestor de Issues não faz PATCH quando título, corpo e assignee já correspondem ao candidato. Portanto, uma execução agendada repetida não cria churn Git nem nova notificação apenas pelo avanço do relógio.
 
 ## 6. Aprovação
 
@@ -154,7 +156,8 @@ Mudanças que permaneçam legitimamente `AUTO_PUBLISH_ALLOWED` continuam fora de
 
 ## 10. Ciclo de vida das Issues
 
-- mesmo `review_key`: atualizar a mesma Issue;
+- mesmo `review_key` e mesmo conteúdo: reutilizar a mesma Issue sem PATCH/noise;
+- mesmo `review_key` com apresentação materialmente atualizada, como novo resultado de regressão: atualizar a mesma Issue;
 - novo `review_key`: fechar a revisão pendente anterior como stale e abrir/atualizar a revisão corrente;
 - aprovação válida + publicação: comentar a release publicada e fechar a Issue como concluída;
 - aprovação stale: não publicar e manter o novo candidato em revisão.
