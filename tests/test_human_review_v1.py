@@ -113,6 +113,7 @@ def _assessment(*, change_class: str = "RULE_ADDED", changed_paths=("$rule",)):
         changed=True,
     )
     return SimpleNamespace(
+        outcome=SimpleNamespace(value="REVIEW_REQUIRED"),
         diff=SimpleNamespace(contract_changed_paths=(), rule_diffs=(item,)),
         reasons=("fixture.rule requires human review",),
     )
