@@ -1,71 +1,69 @@
-# Fase 5 — Diff semântico, Contrato Fiscal v1.2 e publicação
+# Fase 5 — Contrato Fiscal v1.2 e publicação canônica
 
-**Status do documento:** fechamento técnico da Fase 5  
-**Escopo:** produtor canônico `sanida-dados-fiscais`; consumidores permanecem na Fase 6.
+## 1. Objetivo
 
-## 1. O que a Fase 5 fecha
+A Fase 5 fecha a fronteira entre um candidato fiscal validado e uma release canônica consumível.
 
-A Fase 5 transforma candidatos e evidências da Fase 4 em uma decisão de promoção auditável. O caminho fechado é:
+Ela não reinterpreta legislação. Seu papel é:
+
+- classificar mudanças de forma determinística;
+- decidir se uma mudança pode ser promovida automaticamente ou exige revisão humana;
+- preservar evidência oficial e governança interna separadamente;
+- materializar exatamente o inventário fechado de 32 regras;
+- publicar releases imutáveis e content-addressed;
+- manter um ponteiro `current.json` atômico;
+- bloquear qualquer bootstrap ou mudança estrutural sem aprovação humana explícita.
+
+## 2. Resultado da Fase 5
+
+A Fase 5 é considerada **CONCLUÍDA** como implementação e governança.
+
+Isso não significa que a primeira release v1.2 de produção já exista. O primeiro bootstrap continua deliberadamente pendente de:
+
+1. merge da Fase 5 no `main`;
+2. coleta das fontes oficiais reais;
+3. montagem do candidato exato 32/32;
+4. revisão humana explícita;
+5. publicação pela automação permanente.
+
+A migração dos consumidores permanece fora deste fechamento e pertence à Fase 6.
+
+## 3. Diff semântico e promoção
+
+O motor `sanida_fiscal/semantic_diff_v1.py` calcula a classe de mudança; não confia em classe declarada pelo produtor.
+
+Resultados possíveis:
 
 ```text
-raw snapshot / normalized candidate
-        ↓
-assembler do contrato canônico
-        ↓
-semantic diff computado
-        ↓
-classification + version gate
-        ↓
-AUTO_PUBLISH_ALLOWED | REVIEW_REQUIRED | BLOCKED | NO_PUBLISH_REQUIRED
-        ↓
-release content-addressed imutável
-        ↓
-current.json atômico
+NO_PUBLISH_REQUIRED
+AUTO_PUBLISH_ALLOWED
+REVIEW_REQUIRED
+BLOCKED
 ```
 
-A classificação não confia no `change_class` declarado pelo produtor. O valor declarado precisa coincidir com a classe calculada pelo diff.
+Princípios:
 
-## 2. Classes e decisão
+- mudança apenas numérica só é `PARAMETER_CHANGE` quando o shape semântico tipado permanece idêntico;
+- mudança de campos estruturais, fórmulas, target, dependências, aplicabilidade ou governança permanece estrutural;
+- mudança de `effective_date`, adição, remoção e mudança estrutural exigem revisão humana;
+- autopromoção de parâmetro/fonte exige evidência hashada e parser versionado;
+- bootstrap sem release anterior é sempre revisão humana;
+- `change_class` é relativo à release anterior, não histórico permanente da regra.
 
-O classificador distingue:
+## 4. Por que existe o v1.2
 
-- `SOURCE_REFRESH_NO_CHANGE`;
-- `PARAMETER_CHANGE`;
-- `EFFECTIVE_DATE_CHANGE`;
-- `STRUCTURAL_CHANGE`;
-- `RULE_ADDED`;
-- `RULE_REMOVED`.
+O contrato v1.1 exigia proveniência oficial externa em toda regra `PUBLISHED`.
 
-`SOURCE_UNAVAILABLE` e `PARSER_INCOMPATIBLE` permanecem estados operacionais incapazes de autorizar uma promoção nova.
+Esse requisito era incompatível com duas regras técnicas do inventário:
 
-Uma alteração numérica só é paramétrica quando a forma tipada e todas as partes semânticas do payload permanecem iguais. Mudança de campo, tipo, enum/string semântica, fórmula, target, estrutura de lista/objeto ou classe de regra não pode ser rebaixada para alteração de parâmetro.
+```text
+technical.money_decimal_and_rounding
+technical.contract_vigency_and_quality
+```
 
-Mudança de vigência, mudança estrutural e adição/remoção de regra exigem revisão humana.
+Essas regras não são normas governamentais. Elas definem governança computacional da própria Sanida. Atribuir uma fonte governamental a elas criaria falsa autoridade.
 
-## 3. `change_class` é relativo à release
-
-`change_class` descreve a transição que está sendo publicada, não toda a história da regra.
-
-Uma regra que entrou na primeira release como `RULE_ADDED` não permanece com esse rótulo para sempre. Antes da publicação, a Fase 5 reconcilia cada ocorrência contra a release anterior:
-
-- regra efetivamente alterada recebe a classe computada;
-- regra comparável inalterada recebe `SOURCE_REFRESH_NO_CHANGE` como metadado da transição;
-- regra nova permanece `RULE_ADDED`.
-
-O `release_id` final só é calculado depois dessa reconciliação.
-
-## 4. Por que existe o Contrato Fiscal v1.2
-
-A cobertura da Fase 2 definiu 32 regras, incluindo:
-
-- `technical.money_decimal_and_rounding`;
-- `technical.contract_vigency_and_quality`.
-
-Essas duas regras são invariantes de governança computacional da Sanida. Por definição, não possuem autoridade jurídica externa em `docs/source-registry-v1.json`.
-
-O modelo v1.1, entretanto, exigia snapshot hashado em toda regra `PUBLISHED` e a validação de proveniência estava limitada às fontes oficiais externas. Isso tornava impossível publicar legitimamente 32/32 sem atribuir falsamente uma fonte governamental às regras técnicas.
-
-A correção é aditiva e auditável:
+Por isso:
 
 ```text
 histórico preservado: schema/API 1.1.0
@@ -122,6 +120,18 @@ Para as 30 regras não técnicas, a autoridade continua limitada a `docs/source-
 
 As demais fontes funcionam como evidência bruta para detecção/revisão, não como intérpretes automáticos de legislação.
 
+### Fallback de transporte não é fallback de autoridade
+
+`PLANALTO_CLT` permanece vinculado exclusivamente à URL oficial registrada da CLT compilada. Em GitHub-hosted runners, essa URL demonstrou uma incompatibilidade repetível com a pilha `httpx`, encerrando a conexão antes de qualquer resposta HTTP (`RemoteProtocolError`).
+
+A coleta v1.2 admite, somente para esse erro e esse `source_id`, uma segunda tentativa pela pilha `requests/urllib3`. Esse fallback:
+
+- usa exatamente o mesmo `source_id` e a mesma URL oficial;
+- não consulta espelho, cache externo, busca ou fonte substituta;
+- persiste os bytes retornados no mesmo `SnapshotStore` content-addressed;
+- não interpreta automaticamente a CLT;
+- continua fail-closed se a segunda pilha também não obtiver resposta oficial válida.
+
 ## 7. Autopromoção
 
 Uma mudança conhecida só pode receber `AUTO_PUBLISH_ALLOWED` quando, cumulativamente:
@@ -152,74 +162,39 @@ Workflow permanente:
 .github/workflows/fiscal-release-v12.yml
 ```
 
-A primeira release 32/32 não pode nascer pelo `schedule`.
+O workflow possui:
 
-Bootstrap exige `workflow_dispatch` com uma `approval_reference` explícita. O resultado é `HUMAN_REVIEWED`.
+- `workflow_dispatch` para execução manual;
+- schedule diário;
+- preparação acionável de revisão humana antes do bootstrap;
+- gate de publicação fail-closed;
+- geração/materialização do schema público v1.2;
+- nova execução de testes e gates antes de persistir uma publicação bem-sucedida.
 
-Depois de existir `releases/fiscal-v1/current.json`, o workflow agendado pode avaliar sucessores. Mudanças paramétricas seguras podem ser autopublicadas; mudanças que exigem revisão encerram a execução fail-closed e registram o estado acionável.
+O schedule pode detectar e preparar revisão, mas não pode criar a primeira release `PUBLISHED` sem aprovação humana.
 
-O writer usa o mesmo grupo de concorrência dos demais writers de `main`:
+## 10. Store imutável
 
-```text
-sanida-dados-fiscais-writes-main
-```
-
-## 10. Release store
-
-Estrutura canônica:
-
-```text
-releases/fiscal-v1/
-├── releases/
-│   └── fiscal-v1-sha256-<digest>.json
-└── current.json
-```
-
-Arquivos de release são imutáveis. `current.json` é o único ponteiro mutável e é trocado atomicamente.
-
-A leitura valida novamente:
-
-- hash do artefato;
-- path derivado do `release_id`;
-- contrato Pydantic;
-- status `PUBLISHED`;
-- identidade content-addressed.
-
-## 11. JSON Schema v1.2
-
-`scripts/generate_contract_schema_v12.py` gera deterministicamente:
+A publicação usa:
 
 ```text
-contracts/fiscal-contract-v1.2.schema.json
+releases/fiscal-v1/releases/{release_id}.json
+releases/fiscal-v1/current.json
 ```
 
-O schema v1.1 histórico permanece separado. Compatibilidade não é presumida: consumidores devem declarar suporte exato à versão recebida.
+O `release_id` é calculado somente depois da reconciliação final do candidato. O ponteiro `current.json` é atualizado atomicamente.
 
-## 12. O que a Fase 5 não faz
+Um caminho de release existente com bytes diferentes é erro fatal.
 
-A Fase 5 não migra:
+## 11. Fronteira com a Fase 6
 
-- `sanida-fiscais-auto`;
-- WordPress/cache;
-- `folha-core`;
-- H26;
-- H27;
-- H28;
-- H29.
+A Fase 6 só pode migrar consumidores depois de existir uma release v1.2 `PUBLISHED` real e verificável.
 
-Também não declara `dados_fiscais.json` removido. Essas fronteiras pertencem à Fase 6.
+Ordem segura:
 
-## 13. Gate de encerramento
-
-O encerramento formal depende simultaneamente de:
-
-- suíte pytest verde;
-- gates históricos das Fases 1–4 preservados;
-- semantic diff e publication foundation verdes;
-- v1.2 32/32 testada;
-- evidência interna separada de autoridade externa;
-- schema v1.2 determinístico;
-- workflow permanente fail-closed;
-- `scripts/validate_phase5_closure_gate.py` verde no mesmo head.
-
-Após esse gate, a próxima etapa é **Fase 6 — Migração dos consumidores**.
+1. bootstrap humano da primeira release;
+2. validar `current.json`, release imutável, schema e evidências;
+3. migrar `sanida-fiscais-auto`/cache/REST;
+4. migrar `folha-core`;
+5. migrar H26–H29;
+6. remover caminhos legados somente após paridade comprovada.
