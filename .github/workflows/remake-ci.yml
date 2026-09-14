@@ -66,3 +66,7 @@ jobs:
       - name: Validate Phase 5 semantic-diff foundation
         run: |
           python scripts/validate_phase5_foundation.py
+
+      - name: Validate Phase 5 publication foundation
+        run: |
+          python scripts/validate_phase5_publication_foundation.py
