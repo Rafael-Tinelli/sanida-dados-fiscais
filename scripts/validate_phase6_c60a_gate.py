@@ -72,7 +72,7 @@ def main() -> None:
         "SEMANTICALLY_INHERITED",
         "NEWLY_MATERIALIZED",
         "/approve {review_key}",
-        "email depende das configurações de notificações",
+        "entrega por e-mail depende das configurações de notificações",
     ):
         _require(marker in review, f"human review module marker missing: {marker}")
 
