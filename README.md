@@ -201,9 +201,9 @@ Inclui Selic, CDI e eventuais indicadores financeiros futuros. Esses dados possu
 
 ---
 
-## 9. Contrato Fiscal Canônico v1.1
+## 9. Contrato Fiscal Canônico v1.1 / v1.2
 
-A **Fase 2 está concluída**. O contrato possui:
+A **Fase 2 está concluída** e seu contrato v1.1 histórico permanece preservado. Ele possui:
 
 - modelos Pydantic em `sanida_fiscal/types_v1.py` e `sanida_fiscal/contract_v1.py`;
 - JSON Schema público em `contracts/fiscal-contract-v1.schema.json`;
@@ -216,6 +216,10 @@ A **Fase 2 está concluída**. O contrato possui:
 Cada regra expressa, conforme aplicável, `rule_id`, versão, domínio, consumidores/contextos, target semântico, predicados, dependências, ordem de cálculo, competência, vigência, arredondamento, payload, proveniência, qualidade, classe de mudança e política de atualização.
 
 O contrato v1.1 incorporou explicitamente o limiar de 15 dias da aquisição proporcional de férias depois que a Fase 3 revelou essa lacuna computacional. Leitores 1.0 não aceitam silenciosamente 1.1.
+
+Na Fase 5 foi necessária uma evolução aditiva para **schema/API 1.2.0**. O motivo não foi mudança jurídico-fiscal: as duas `technical_contract_rule` do inventário não possuem autoridade governamental externa, mas releases `PUBLISHED` exigem evidência hashada. O v1.2 separa explicitamente `GovernanceEvidenceObservation` da proveniência jurídico-fiscal oficial, impedindo tanto que evidência interna seja usada como autoridade legal quanto que uma fonte governamental seja falsamente atribuída à política técnica interna.
+
+O histórico 1.1 continua parseável e imutável; a primeira release canônica 32/32 será v1.2. O schema v1.2 é gerado deterministicamente por `scripts/generate_contract_schema_v12.py` e materializado em `contracts/fiscal-contract-v1.2.schema.json` pelo workflow de publicação.
 
 ---
 
@@ -302,6 +306,14 @@ evidence/source-runtime-v1/
 
 Snapshots e candidatos são content-addressed; estado corrente fica materializado e estados anteriores permanecem no histórico Git. A política v1 não faz pruning automático.
 
+A Fase 5 acrescenta duas trilhas de publicação:
+
+```text
+evidence/fiscal-authority-v1/   # snapshots oficiais usados pela release fiscal
+evidence/governance-v1/         # manifests internos apenas para technical_contract_rule
+releases/fiscal-v1/              # releases imutáveis + current.json
+```
+
 ---
 
 ## 14. Política de promoção
@@ -328,7 +340,7 @@ APPROVED_FOR_AUTO_PUBLISH ou REVIEW_REQUIRED
 PUBLISHED
 ```
 
-A Fase 4 encerra aquisição, parsing, evidência e fronteiras de compatibilidade. A classificação semântica e a promoção pertencem à Fase 5.
+A Fase 4 encerra aquisição, parsing, evidência e fronteiras de compatibilidade. A Fase 5, agora concluída, governa classificação semântica, confirmação, versionamento, aprovação e publicação. A distribuição efetiva aos consumidores pertence à Fase 6.
 
 ---
 
@@ -484,15 +496,50 @@ No head técnico de fechamento, o Remake CI run `34797878486` passou com **210 t
 
 ### Fase 5 — Diff semântico e gates de publicação
 
-**Status: PENDENTE**
+**Status: CONCLUÍDA**
 
-Objetivos:
+A Fase 5 fechou:
 
-- classificar refresh sem mudança, mudança paramétrica, vigência e mudança estrutural;
-- bloquear promoção insegura;
-- definir critérios de confirmação aplicáveis;
-- publicar somente releases validadas;
-- tornar o estado operacional observável sem confundir coleta com aprovação.
+- classificador semântico que calcula a classe da mudança em vez de confiar no rótulo declarado;
+- outcomes `NO_PUBLISH_REQUIRED`, `AUTO_PUBLISH_ALLOWED`, `REVIEW_REQUIRED` e `BLOCKED`;
+- separação entre alteração numérica paramétrica e mudança de forma/semântica estrutural;
+- versionamento executável por classe de mudança;
+- `change_class` relativo à transição da release, não um rótulo histórico permanente;
+- gate exato de completude **32/32**;
+- Contrato Fiscal **v1.2.0** para separar evidência oficial de evidência interna de governança das duas regras técnicas;
+- assembler que materializa as 11 regras ausentes do CANDIDATE representativo de 21 regras;
+- hidratação automática restrita aos parâmetros realmente parser-backed por RFB/INSS;
+- fontes estruturais preservadas como snapshots brutos, sem interpretação automática de legislação;
+- idempotência: mesma evidência/semântica não cria release nova nem renova timestamps por conveniência;
+- release store imutável e content-addressed com `current.json` atômico;
+- bootstrap exclusivamente manual com revisão humana explícita;
+- workflow permanente `.github/workflows/fiscal-release-v12.yml` para publicação e avaliação de sucessores;
+- schema v1.2 determinístico;
+- gate formal `scripts/validate_phase5_closure_gate.py`.
+
+Artefatos principais:
+
+- `sanida_fiscal/semantic_diff_v1.py`;
+- `sanida_fiscal/contract_v1_2.py`;
+- `sanida_fiscal/release_assembler_v12.py`;
+- `sanida_fiscal/authority_evidence_v12.py`;
+- `sanida_fiscal/governance_evidence_v12.py`;
+- `sanida_fiscal/publication_v1.py`;
+- `docs/governance-source-registry-v1.json`;
+- `docs/phase5-semantic-diff-policy-v1.json`;
+- `docs/phase5-publication-policy-v1.json`;
+- `docs/phase5-closure-v1.json`;
+- `docs/phase5-v12-publication.md`;
+- `scripts/generate_contract_schema_v12.py`;
+- `scripts/publish_fiscal_release_v12.py`;
+- `scripts/validate_phase5_foundation.py`;
+- `scripts/validate_phase5_publication_foundation.py`;
+- `scripts/validate_phase5_closure_gate.py`;
+- `tests/test_phase5_v12.py`.
+
+O checkpoint técnico que autorizou o fechamento passou no Remake CI run `34801976842` (#298), com **237 testes verdes**, schema v1.2 PASS, Fase 3 PASS, Fase 4 PASS e todos os gates da Fase 5 PASS.
+
+**Ativação ainda pendente:** o encerramento da Fase 5 não afirma que a primeira release v1.2 já foi publicada. Depois do merge, a primeira release 32/32 deve ser criada manualmente por `workflow_dispatch`, com `approval_reference` explícita. O schedule é incapaz de fazer bootstrap por construção.
 
 ### Fase 6 — Migração dos consumidores
 
@@ -566,17 +613,25 @@ Objetivos:
 43. Fundação, fronteira de produção e fechamento formal da Fase 4 possuem gates separados e permanentes.
 44. Sob `PARSER_INCOMPATIBLE`, o last-good financeiro é **preservado para auditoria e bloqueado para novo consumo** (`preserve_auditable_block_new_consumption`).
 45. O fechamento da Fase 4 não antecipa semantic diff/promoção da Fase 5 nem migração de consumidores da Fase 6.
+46. `change_class` é calculado e relativo à transição da release; rótulo declarado não substitui o semantic diff.
+47. Mudança numérica só é paramétrica se forma tipada e semântica permanecerem iguais.
+48. Contrato Fiscal v1.2 separa autoridade jurídico-fiscal oficial de evidência interna de governança das `technical_contract_rule`.
+49. Release fiscal canônica exige conjunto exato 32/32; o CANDIDATE representativo de 21 regras nunca é publicável.
+50. Bootstrap da primeira release é exclusivamente manual e `HUMAN_REVIEWED`; schedule não pode bootstrapar.
+51. Autopromoção de mudança depende de evidência hashada e parser versionado; hoje os bindings automáticos são RFB e INSS.
+52. Fonte estrutural pode ser coletada/hashada automaticamente, mas mudança estrutural não é interpretada nem publicada automaticamente.
+53. Execução sem delta produz `NO_PUBLISH_REQUIRED` e não cria churn de release/timestamp.
+54. A Fase 5 fecha produtor/publicação; WordPress, `folha-core` e H26–H29 permanecem responsabilidade da Fase 6.
 
 ---
 
 ## 19. Questões em aberto
 
-As Fases 0–4 estão formalmente concluídas. Questões restantes pertencem às fases posteriores:
+As Fases 0–5 estão formalmente concluídas. Questões restantes pertencem às etapas posteriores ou à ativação controlada pós-merge:
 
-- critérios exatos de confirmação de mudanças paramétricas — Fase 5;
-- semantic diff e classificação de mudanças — Fase 5;
-- gates de promoção/publicação canônica — Fase 5;
+- primeira publicação v1.2 32/32 por `workflow_dispatch` com referência explícita de revisão humana — ativação operacional pós-merge, sem reabrir a Fase 5;
 - distribuição para WordPress/SFA e migração dos consumidores — Fase 6;
+- remoção da lógica fiscal duplicada/legada após migração validada — Fase 6;
 - testes ponta a ponta e operação evergreen — Fase 7.
 
 Se uma fase posterior revelar lacuna semântica objetiva, a correção deve voltar explicitamente ao contrato/camada responsável; não será escondida em collector, parser ou consumidor.
@@ -585,30 +640,17 @@ Se uma fase posterior revelar lacuna semântica objetiva, a correção deve volt
 
 ## 20. Próxima etapa
 
-Iniciar a **Fase 5 — Diff semântico e gates de publicação**.
+Iniciar a **Fase 6 — Migração dos consumidores**.
 
-A Fase 5 deve consumir os candidatos e evidências produzidos pela Fase 4 para distinguir, de forma executável, pelo menos:
+Antes de apontar qualquer consumidor para o novo contrato, executar a ativação controlada da primeira release v1.2:
 
-- `SOURCE_REFRESH_NO_CHANGE`;
-- `PARAMETER_CHANGE`;
-- `EFFECTIVE_DATE_CHANGE`;
-- `STRUCTURAL_CHANGE`;
-- `RULE_ADDED`;
-- `RULE_REMOVED`;
-- estados operacionais que não autorizam promoção.
+1. após o merge da Fase 5, executar manualmente `Fiscal Contract v1.2 Publication`;
+2. fornecer `approval_reference` explícita para o bootstrap 32/32;
+3. confirmar `releases/fiscal-v1/current.json`, artefato content-addressed, evidências e schema v1.2;
+4. somente então migrar `sanida-fiscais-auto`, cache/WordPress, `folha-core` e H26–H29;
+5. preservar fail-closed se o bootstrap ou qualquer fonte oficial não passar nos gates.
 
-Ela deve definir quando uma mudança pode ser promovida automaticamente e quando exige `REVIEW_REQUIRED`, sem migrar ainda WordPress/`folha-core`/H26–H29.
-
-### Ativação da Fase 4 após merge
-
-O merge da Fase 4 ativa a infraestrutura de fontes/sensores, não as calculadoras.
-
-A ordem segura é:
-
-1. `taxas.yml` produzir primeiro um `taxas_bacen.json 1.4.0` evidence-gated;
-2. depois `main.yml` poderá produzir novo `dados_fiscais.json` com a cadeia das quatro fontes comprovada;
-3. Fase 5 passa a governar semantic diff/promoção;
-4. WordPress, `folha-core` e H26–H29 permanecem congelados até a Fase 6.
+A Fase 6 não deve reimplementar regra fiscal no frontend. Seu trabalho é consumir o contrato/release canônico, remover as duplicações legadas e validar a experiência real das quatro calculadoras.
 
 ---
 
@@ -627,6 +669,25 @@ Uma fase só é `CONCLUÍDA` quando seus critérios objetivos e gates correspond
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-14 — fechamento formal da Fase 5 / Contrato Fiscal v1.2
+
+- semantic diff computado e fail-closed consolidado;
+- política de autopromoção separada de revisão estrutural;
+- `change_class` definido como metadado relativo à transição da release;
+- publicação exige inventário exato 32/32;
+- lacuna das 11 regras do CANDIDATE representativo materializada pelo assembler;
+- Contrato Fiscal evoluído aditivamente para schema/API 1.2.0;
+- criada evidência interna hash-addressed exclusiva para as duas regras técnicas, sem falsificar autoridade governamental;
+- RFB/INSS permanecem os únicos parsers automáticos de parâmetros fiscais neste checkpoint;
+- criado store content-addressed imutável com `current.json` atômico;
+- bootstrap tornou-se exclusivamente manual com `approval_reference`;
+- criado workflow permanente `fiscal-release-v12.yml`;
+- criado gerador determinístico do JSON Schema v1.2;
+- criada documentação e gate formal de fechamento da Fase 5;
+- checkpoint técnico Remake CI `34801976842` (#298): **237 testes verdes**, Fases 3–4 PASS e Fase 5 formal closure PASS;
+- primeira release de produção v1.2 permanece deliberadamente pendente do bootstrap humano pós-merge;
+- próxima etapa: **Fase 6 — Migração dos consumidores**.
 
 ### 2026-09-13 — fechamento formal da Fase 4
 
