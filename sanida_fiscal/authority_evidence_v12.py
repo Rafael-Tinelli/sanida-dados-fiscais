@@ -75,10 +75,11 @@ AUTHORITY_HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/pdf;q=0.9,*/*;q=0.5",
 }
 
-# Planalto has long exhibited User-Agent-sensitive transport behaviour. Keep the
-# general collector identifiable, but when the allowlisted CLT endpoint drops
-# the automated connection before an HTTP response, retry the exact same URL
-# with a conventional browser transport profile. This changes neither source,
+# The Planalto host exhibits User-Agent-sensitive transport behaviour from
+# GitHub-hosted runners. Keep the general collector identifiable, but when one
+# of the currently registered Planalto authorities drops the automated
+# connection before an HTTP response, retry the exact same official URL with a
+# conventional browser transport profile. This changes neither source,
 # authority, bytes, nor semantic interpretation.
 PLANALTO_BROWSER_HEADERS = {
     "User-Agent": (
@@ -90,7 +91,16 @@ PLANALTO_BROWSER_HEADERS = {
     "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.7",
 }
 
-REQUESTS_TRANSPORT_FALLBACK_SOURCE_IDS = frozenset({PLANALTO_CLT_SOURCE_ID})
+PLANALTO_BROWSER_FALLBACK_SOURCE_IDS = frozenset(
+    {
+        "PLANALTO_LEI_15270_2025",
+        PLANALTO_CLT_SOURCE_ID,
+        "PLANALTO_LEI_4090_1962",
+        "PLANALTO_LEI_4749_1965",
+        "PLANALTO_DECRETO_10854_2021",
+    }
+)
+REQUESTS_TRANSPORT_FALLBACK_SOURCE_IDS = PLANALTO_BROWSER_FALLBACK_SOURCE_IDS
 REQUESTS_TRANSPORT_FALLBACK_ERRORS = frozenset({"RemoteProtocolError"})
 
 
@@ -321,7 +331,7 @@ def _collect_authority_source(
 
     fallback_headers = (
         PLANALTO_BROWSER_HEADERS
-        if source_id == PLANALTO_CLT_SOURCE_ID
+        if source_id in PLANALTO_BROWSER_FALLBACK_SOURCE_IDS
         else headers
     )
     return _collect_same_source_with_requests(
