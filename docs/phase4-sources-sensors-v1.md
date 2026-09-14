@@ -1,7 +1,8 @@
 # Fase 4 — Fontes e sensores
 
-**Status:** EM ANDAMENTO  
+**Status:** CONCLUÍDA  
 **Início:** 13/09/2026  
+**Encerramento:** 13/09/2026  
 **Base:** `main` após o fechamento da Fase 3
 
 ## 1. Objetivo
@@ -36,7 +37,7 @@ A Fase 4 não classifica mudança paramétrica versus estrutural e não publica 
 4. CDI via FTP B3/Cetip;
 5. reutilização de `taxas_bacen.json` por `scraper.py`.
 
-Nesta branch, os quatro coletores externos já foram migrados. `dados_fiscais.json` e `taxas_bacen.json` permanecem artefatos de compatibilidade para consumidores legados.
+Na branch de fechamento, os quatro coletores externos foram migrados. `dados_fiscais.json` e `taxas_bacen.json` permanecem artefatos de compatibilidade para consumidores legados até as fases de publicação/migração.
 
 ## 3. Fundação comum
 
@@ -63,7 +64,7 @@ HTTP_SERVER_ERROR
 
 `sanida_fiscal/source_runtime_v1.py` acrescenta estado operacional persistente, `CandidateStore`, ETag/Last-Modified e ponteiros last-good para snapshot, candidato, parser e timestamp.
 
-## 4. Domínio payroll_fiscal
+## 4. Domínio `payroll_fiscal`
 
 ### 4.1 RFB / IRRF
 
@@ -81,7 +82,7 @@ Nova escrita exige candidatos RFB + INSS `PARSED` da execução corrente, mesmo 
 
 ## 5. Persistência real em produção
 
-O runner de GitHub Actions é efêmero. A evidência de produção é, portanto, persistida em:
+O runner de GitHub Actions é efêmero. A evidência de produção é persistida em:
 
 ```text
 evidence/source-runtime-v1/
@@ -96,7 +97,7 @@ A política está em `docs/phase4-production-persistence-v1.json`.
 
 Em falha, o artefato é restaurado e a evidência operacional da tentativa pode ser commitada sozinha; o workflow termina em erro depois da persistência do diagnóstico.
 
-## 6. Sexto checkpoint — migração de `financial_reference`
+## 6. Domínio `financial_reference`
 
 A política do domínio financeiro está em:
 
@@ -141,9 +142,7 @@ BCB_CDI_DAILY_SGS_12
 https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados/ultimos/1?formato=json
 ```
 
-O parser `bcb_cdi_daily_sgs12_v1@1.0.0` preserva a unidade efetivamente fornecida pela série: **percentual ao dia útil**. Ele não finge que o valor diário já é taxa anual.
-
-A compatibilidade com o consumidor legado exige uma taxa anual. Essa transformação ocorre somente em `sanida_fiscal/financial_artifact_v1.py`:
+O parser `bcb_cdi_daily_sgs12_v1@1.0.0` preserva a unidade efetivamente fornecida pela série: **percentual ao dia útil**. A compatibilidade com o consumidor legado exige taxa anual, derivada somente em `sanida_fiscal/financial_artifact_v1.py`:
 
 ```text
 annual_pct = ((1 + daily_rate_pct / 100) ^ 252 - 1) * 100
@@ -151,27 +150,15 @@ annual_pct = ((1 + daily_rate_pct / 100) ^ 252 - 1) * 100
 
 com `Decimal` e `ROUND_HALF_UP` a duas casas. A fixture `0.051660% a.d.` reproduz `13.90% a.a.`.
 
-A B3 continua sendo a autoridade/metodologia do benchmark DI e pode servir de corroboração humana. O FTP legado deixa de ser input de produção e não é fallback automático.
+A B3 continua referência de metodologia/corroboração do benchmark DI. O FTP legado deixou de ser input de produção e não é fallback automático.
 
 ### 6.3 `taxas_bacen.json` v1.4
 
-`sanida_fiscal/financial_artifact_v1.py` passa a ser a única fronteira `normalized financial candidates → taxas_bacen.json`.
+`sanida_fiscal/financial_artifact_v1.py` é a fronteira `normalized financial candidates → taxas_bacen.json`.
 
-Nova escrita exige candidatos atuais `PARSED` para SGS 432 e SGS 12. O artefato carrega para cada fonte:
+Nova escrita exige candidatos atuais `PARSED` para SGS 432 e SGS 12. O artefato registra source id/URL, status HTTP, hashes de snapshot/candidato, parser id/versão, timestamp da coleta, data da observação, código SGS, valor e unidade de origem. Para CDI também registra base de 252 dias úteis e valor anualizado.
 
-- `source_id` e URL;
-- status/HTTP status;
-- snapshot SHA-256;
-- candidate SHA-256;
-- parser id/versão;
-- timestamp UTC da coleta;
-- data da observação na série;
-- código SGS;
-- valor/unidade de origem.
-
-Para CDI também registra a base de 252 dias úteis e o valor anualizado.
-
-`cdi_basis` passa a ser:
+`cdi_basis` é:
 
 ```text
 bcb_sgs_12_daily_compounded_252
@@ -188,27 +175,39 @@ Foram removidos de `update_taxas.py`:
 - `minimal_fallback_written`;
 - `static_reference_values`.
 
-Se qualquer fonte falhar, `update_taxas.py` termina em erro **sem reescrever `taxas_bacen.json`**. O workflow persiste estado/snapshot da tentativa quando houver, restaura qualquer artefato não comprovado e falha no gate final.
+Se qualquer fonte falhar, `update_taxas.py` termina em erro **sem reescrever `taxas_bacen.json`**. O workflow persiste estado/snapshot da tentativa quando houver, restaura artefato não comprovado e falha no gate final.
 
-Isso permite manter o último artefato exatamente como foi observado, sem atualizar `generated_at_utc` nem relabelar valor antigo como atual.
+### 6.5 A05 — `PARSER_INCOMPATIBLE` e last-good financeiro
 
-### 6.5 Gate financeiro de evidência
+A política final é:
 
-`sanida_fiscal/financial_evidence_v1.py` e `scripts/validate_financial_evidence_v1.py` verificam antes do commit:
+```text
+preserve_auditable_block_new_consumption
+```
 
-1. source id e URL;
-2. hash e existência real do raw snapshot;
-3. hash e existência real do candidato;
-4. parser id/versão last-good;
-5. timestamp da observação;
-6. igualdade com `SourcePipelineState`;
-7. confinamento de caminhos ao runtime root.
+Quando uma coleta corrente obtém bytes mas o parser registrado fica incompatível:
+
+1. o raw snapshot corrente e o estado de falha são persistidos;
+2. os ponteiros do último snapshot/candidato `PARSED` permanecem intactos para auditoria;
+3. o `taxas_bacen.json` previamente validado permanece byte a byte inalterado;
+4. o last-good preservado continua verificável por um caminho **audit-only**;
+5. o verificador normal para novo consumo falha fechada enquanto o estado corrente for `PARSER_INCOMPATIBLE`;
+6. o candidato antigo não pode formar novo `taxas_bacen.json`;
+7. o last-good financeiro em quarentena não pode ser incorporado a um novo `dados_fiscais.json`;
+8. `generated_at_utc` não é renovado e o valor anterior não é relabelado como corrente;
+9. o consumo normal só volta quando uma coleta corrente produzir novamente `PARSED` com evidência persistida válida.
+
+A implementação está em `sanida_fiscal/financial_evidence_v1.py`. A prova de regressão está em `test_A05_parser_incompatible_preserves_last_good_but_blocks_new_consumption`.
+
+### 6.6 Gate financeiro de evidência
+
+`sanida_fiscal/financial_evidence_v1.py` e `scripts/validate_financial_evidence_v1.py` verificam source id/URL, hashes e existência real de snapshot/candidato, parser last-good, timestamp, coerência com `SourcePipelineState` e confinamento ao runtime root.
 
 `taxas.yml` só commita `taxas_bacen.json` junto da árvore de evidência se produtor + gate passarem.
 
 ## 7. Invariantes executáveis
 
-A Fase 4 agora ancora, entre outras:
+A Fase 4 fecha, entre outras, as seguintes invariantes:
 
 1. snapshot content-addressed e íntegro;
 2. candidato normalizado content-addressed e íntegro;
@@ -223,37 +222,58 @@ A Fase 4 agora ancora, entre outras:
 11. CDI usa BCB SGS 12 via JSON bruto + parser decimal;
 12. taxa CDI diária não é confundida com taxa anual;
 13. annualização CDI legada é explícita, determinística e testada em 252 dias úteis;
-14. FTP B3/Cetip não é mais input/fallback automático;
+14. FTP B3/Cetip não é input/fallback automático;
 15. `update_taxas.py` não contém fallback estático;
-16. falha financeira não atualiza `generated_at_utc` nem sobrescreve o last-good;
-17. `taxas.yml` persiste artefato + evidência em uma única transação verificada.
+16. falha financeira não atualiza `generated_at_utc` nem sobrescreve last-good;
+17. `taxas.yml` persiste artefato + evidência em transação verificada;
+18. last-good sob `PARSER_INCOMPATIBLE` permanece auditável;
+19. esse mesmo last-good fica bloqueado para qualquer novo consumo/publicação;
+20. normalidade só é restaurada por candidato corrente `PARSED` com evidência válida.
 
-`scripts/validate_phase4_foundation.py` ancora esses pontos no `Remake CI`.
+Os gates permanentes no `Remake CI` são:
 
-## 8. Estado atual de ativação
+- `scripts/validate_phase4_foundation.py`;
+- `scripts/validate_phase4_preclosure_gate.py` — fronteira de produção;
+- `scripts/validate_phase4_closure_gate.py` — fechamento formal.
 
-A migração está materializada na branch, mas não ativa em produção enquanto o PR da Fase 4 não for mergeado.
+## 8. Auditoria final e fechamento
 
-Por isso:
+A auditoria machine-readable `docs/phase4-final-boundary-audit-v1.json` encerra **A01–A05 como `CORRECTED`** e autoriza formalmente o fechamento.
 
-- `taxas_bacen.json` commitado na base ainda é o artefato 1.3.0 produzido pelo caminho legado;
-- nenhuma fixture foi copiada para `evidence/source-runtime-v1`;
-- os primeiros snapshots/candidatos financeiros reais só surgirão quando `taxas.yml` migrado rodar em `main`.
+O documento `docs/phase4-closure-gate.md` registra os critérios de promoção e a separação entre preservação auditável e autorização de consumo.
 
-## 9. Limites deliberados
+No head de fechamento `718378b25346b1db2ffa26e4d7b2607350f10094`, o **Remake CI run 34797878486** concluiu com sucesso:
 
-Ainda pertencem a fases posteriores:
+- repository baseline: PASS;
+- Fiscal Contract v1.1: PASS;
+- inventário: 32/32;
+- famílias de payload: 18/18;
+- suíte integral: **210 passed**;
+- Phase 3 closure gate: PASS;
+- Phase 4 foundation: PASS;
+- Phase 4 production boundary: PASS (`A05 CORRECTED`);
+- Phase 4 formal closure gate: PASS (`A01-A05 corrected; formal closure authorized`).
 
-- semantic diff e classificação de mudança — Fase 5;
-- promoção/publicação canônica — Fase 5;
-- substituição dos artefatos de compatibilidade pelos contratos/releases finais — Fase 5/6;
-- migração de WordPress, `folha-core` e H26–H29 — Fase 6.
+## 9. Estado de ativação
 
-## 10. Próximo checkpoint
+O fechamento da fase e a ativação dos workflows são conceitos distintos. Antes do merge, a infraestrutura está materializada na branch e os artefatos commitados na base continuam legados.
 
-1. revisar a fronteira final entre `taxas.yml`, `main.yml`, `taxas_bacen.json` e `dados_fiscais.json`;
-2. confirmar que nenhuma rota legada de coleta/fallback permanece alcançável;
-3. executar gate formal de fechamento da Fase 4;
-4. só então considerar merge/ativação da Fase 4.
+Após merge em `main`, a ordem segura de ativação é:
 
-Semantic diff continua fora do escopo até a Fase 5.
+1. `taxas.yml` produzir o primeiro `taxas_bacen.json` 1.4.0 com evidência durável;
+2. somente depois `main.yml` pode produzir novo `dados_fiscais.json` com RFB + INSS + Selic + CDI comprovados;
+3. semantic diff/promoção continuam reservados à Fase 5;
+4. WordPress/plugin, `folha-core` e H26–H29 continuam congelados até a Fase 6.
+
+Nenhuma fixture é semeada como evidência de produção.
+
+## 10. Limites deliberados e handoff
+
+Ficam fora da Fase 4:
+
+- semantic diff e classificação de mudança — **Fase 5**;
+- política de promoção/publicação canônica — **Fase 5**;
+- substituição dos artefatos de compatibilidade por releases finais — **Fase 5/6**;
+- migração de WordPress, `folha-core` e H26–H29 — **Fase 6**.
+
+A próxima etapa é **Fase 5 — Diff semântico e gates de publicação**. A Fase 4 não deve ser reaberta por redesign oportunista; somente por defeito objetivo na camada de fontes/sensores ou por requisito comprovadamente necessário das fases seguintes.
