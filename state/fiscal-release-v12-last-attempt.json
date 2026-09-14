@@ -1,5 +1,5 @@
 {
-  "attempted_at_utc": "2026-09-14T14:43:44.373148Z",
+  "attempted_at_utc": "2026-09-14T14:56:04.557054Z",
   "candidate_release_id": "candidate-v1-2",
   "changed_rules": [
     {
@@ -363,6 +363,6 @@
     "vacation.remuneration_and_constitutional_third: RULE_ADDED requires human review"
   ],
   "review_issue_action": "UPSERT_REQUIRED",
-  "review_key": "d08985136be0a385d81c2f3aaa428a442935e23d23b406a6a9229710a0ba2a77",
+  "review_key": "06f6b51f148b753c5c2905c3d01dad8389d10ffea3bcc7f2b372d14b3ece7eaf",
   "schema_version": "1.0.0"
 }
