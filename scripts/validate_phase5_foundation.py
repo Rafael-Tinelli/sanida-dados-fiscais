@@ -87,11 +87,30 @@ def main() -> None:
     ):
         _require(marker in tests, f"semantic diff regression marker missing: {marker}")
 
+    # The Phase 2 example was intentionally representative rather than a complete
+    # production release. Phase 5 must make that gap explicit before publication.
+    coverage = _load("docs/contract-coverage-v1.json")
+    candidate = _load("contracts/examples/fiscal-contract-v1.example.json")
+    inventory_ids = {item["rule_id"] for item in coverage.get("rules", [])}
+    candidate_ids = {item["rule_id"] for item in candidate.get("rules", [])}
+    missing_release_rules = sorted(inventory_ids - candidate_ids)
+    unexpected_candidate_rules = sorted(candidate_ids - inventory_ids)
+    _require(coverage.get("rule_count") == 32 and len(inventory_ids) == 32, "inventory coverage is not 32/32")
+    _require(len(candidate_ids) == 21, "representative Phase 2 CANDIDATE rule count drift")
+    _require(not unexpected_candidate_rules, f"CANDIDATE has rules outside inventory: {unexpected_candidate_rules}")
+    _require(len(missing_release_rules) == 11, "expected 11-rule release materialization gap")
+
     readme = _read("README.md")
     _require("Fase 4 — Fontes e sensores\n\n**Status: CONCLUÍDA**" in readme, "Phase 4 closure regressed")
     _require("Fase 5 — Diff semântico e gates de publicação" in readme, "Phase 5 boundary missing from README")
 
-    print("Phase 5 foundation: PASS (semantic classifier + fail-closed promotion policy anchored)")
+    print(
+        "Phase 5 foundation: PASS "
+        "(semantic classifier + fail-closed promotion policy anchored; "
+        f"release materialization gap={len(missing_release_rules)} rules: "
+        + ", ".join(missing_release_rules)
+        + ")"
+    )
 
 
 if __name__ == "__main__":
