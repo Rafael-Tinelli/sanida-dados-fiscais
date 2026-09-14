@@ -62,3 +62,7 @@ jobs:
       - name: Validate Phase 4 formal closure gate
         run: |
           python scripts/validate_phase4_closure_gate.py
+
+      - name: Validate Phase 5 semantic-diff foundation
+        run: |
+          python scripts/validate_phase5_foundation.py
