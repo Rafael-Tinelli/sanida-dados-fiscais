@@ -1,9 +1,368 @@
 {
-  "attempted_at_utc": "2026-09-14T15:35:54.462081Z",
-  "previous_release_id": null,
-  "promotion_outcome": "BLOCKED_BEFORE_DIFF",
-  "reasons": [
-    "ESOCIAL_TABLES_S13_NT07_2026: official source unavailable: ConnectError"
+  "attempted_at_utc": "2026-09-14T15:38:09.557049Z",
+  "candidate_release_id": "candidate-v1-2",
+  "changed_rules": [
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "inss.employee.progressive_table"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "irrf.deductions_by_income_type"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "irrf.dependent_deduction"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "irrf.income_type"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "irrf.monthly.progressive_table"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "irrf.reduction.2026"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "irrf.simplified_monthly_discount"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "technical.contract_vigency_and_quality"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "technical.money_decimal_and_rounding"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "termination.acquired_and_overdue_vacation"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "termination.partial_output_scope"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "termination.reason_scope"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "termination.salary_balance"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "termination.thirteenth_proportional"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "termination.vacation_indemnity_tax_treatment"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "termination.vacation_proportional"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "thirteenth.accrual.twelfths"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "thirteenth.advance"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "thirteenth.inss.separate_assessment"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "thirteenth.irrf.exclusive_assessment"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "thirteenth.irrf.reduction.2026"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "thirteenth.reference_remuneration"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "thirteenth.variable_remuneration"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "vacation.abono.ir_exemption"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "vacation.abono_constitutional_third.ir_incidence"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "vacation.abono_pecuniario"
+    },
+    {
+      "candidate_rule_version": "1.1.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "vacation.acquisition_period"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "vacation.entitlement_days_by_absences"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "vacation.inss.enjoyed"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "vacation.irrf.reduction.2026"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "vacation.irrf.separate_assessment"
+    },
+    {
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "rule_id": "vacation.remuneration_and_constitutional_third"
+    }
   ],
+  "contract_changed_paths": [],
+  "contract_schema_version": "1.2.0",
+  "previous_release_id": null,
+  "promotion_outcome": "REVIEW_REQUIRED",
+  "publication_status": "REVIEW_REQUIRED",
+  "reasons": [
+    "inss.employee.progressive_table: RULE_ADDED requires human review",
+    "irrf.deductions_by_income_type: RULE_ADDED requires human review",
+    "irrf.dependent_deduction: RULE_ADDED requires human review",
+    "irrf.income_type: RULE_ADDED requires human review",
+    "irrf.monthly.progressive_table: RULE_ADDED requires human review",
+    "irrf.reduction.2026: RULE_ADDED requires human review",
+    "irrf.simplified_monthly_discount: RULE_ADDED requires human review",
+    "technical.contract_vigency_and_quality: RULE_ADDED requires human review",
+    "technical.money_decimal_and_rounding: RULE_ADDED requires human review",
+    "termination.acquired_and_overdue_vacation: RULE_ADDED requires human review",
+    "termination.partial_output_scope: RULE_ADDED requires human review",
+    "termination.reason_scope: RULE_ADDED requires human review",
+    "termination.salary_balance: RULE_ADDED requires human review",
+    "termination.thirteenth_proportional: RULE_ADDED requires human review",
+    "termination.vacation_indemnity_tax_treatment: RULE_ADDED requires human review",
+    "termination.vacation_proportional: RULE_ADDED requires human review",
+    "thirteenth.accrual.twelfths: RULE_ADDED requires human review",
+    "thirteenth.advance: RULE_ADDED requires human review",
+    "thirteenth.inss.separate_assessment: RULE_ADDED requires human review",
+    "thirteenth.irrf.exclusive_assessment: RULE_ADDED requires human review",
+    "thirteenth.irrf.reduction.2026: RULE_ADDED requires human review",
+    "thirteenth.reference_remuneration: RULE_ADDED requires human review",
+    "thirteenth.variable_remuneration: RULE_ADDED requires human review",
+    "vacation.abono.ir_exemption: RULE_ADDED requires human review",
+    "vacation.abono_constitutional_third.ir_incidence: RULE_ADDED requires human review",
+    "vacation.abono_pecuniario: RULE_ADDED requires human review",
+    "vacation.acquisition_period: RULE_ADDED requires human review",
+    "vacation.entitlement_days_by_absences: RULE_ADDED requires human review",
+    "vacation.inss.enjoyed: RULE_ADDED requires human review",
+    "vacation.irrf.reduction.2026: RULE_ADDED requires human review",
+    "vacation.irrf.separate_assessment: RULE_ADDED requires human review",
+    "vacation.remuneration_and_constitutional_third: RULE_ADDED requires human review"
+  ],
+  "review_issue_action": "UPSERT_REQUIRED",
+  "review_key": "4d029493356205cc24535424b7f66d60b8457e0ec7a534e6fd3201c87eeface6",
   "schema_version": "1.0.0"
 }
