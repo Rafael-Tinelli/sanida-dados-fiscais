@@ -237,6 +237,15 @@ def validate_regression_tests_and_docs() -> None:
     ):
         _require(marker in docs, f"Phase 5 documentation marker missing: {marker}")
 
+    readme = _read("README.md")
+    for marker in (
+        "### Fase 5 — Diff semântico e gates de publicação\n\n**Status: CONCLUÍDA**",
+        "Contrato Fiscal **v1.2.0**",
+        "primeira release de produção v1.2 permanece deliberadamente pendente",
+        "## 20. Próxima etapa\n\nIniciar a **Fase 6 — Migração dos consumidores**.",
+    ):
+        _require(marker in readme, f"README Phase 5 handoff marker missing: {marker}")
+
 
 def main() -> None:
     validate_closure_policy()
