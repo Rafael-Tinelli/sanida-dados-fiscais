@@ -68,6 +68,19 @@
     "H26_H29_migration": "phase6",
     "legacy_artifacts_are_not_declared_replaced_by_phase5": true
   },
+  "formal_validation": {
+    "technical_head_before_handoff_docs": "b1daaf30737743081a79ae3e4182da9368f08e1c",
+    "remake_ci_run_number": 304,
+    "remake_ci_run_id": 34802354014,
+    "test_count": 237,
+    "all_phase3_to_phase5_gates_passed": true
+  },
+  "handoff": {
+    "document": "docs/phase5-to-phase6-handoff.md",
+    "status": "delivered",
+    "first_checkpoint": "C6.0 bootstrap v1.2 + C6.1 WordPress consumer adapter",
+    "consumer_migration_must_wait_for_first_published_v12_release": true
+  },
   "closure_gate": "scripts/validate_phase5_closure_gate.py",
   "next_phase": "Fase 6 — Migração dos consumidores"
 }
