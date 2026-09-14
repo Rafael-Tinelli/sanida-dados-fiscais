@@ -18,7 +18,7 @@ from sanida_fiscal.publication_v1 import (
     assert_release_inventory_complete,
     prepare_published_release,
 )
-from sanida_fiscal.types_v1 import ReleaseApprovalMode
+from sanida_fiscal.types_v1 import ChangeClass, ReleaseApprovalMode
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -139,7 +139,14 @@ def test_auto_parameter_promotion_builds_consumable_published_release() -> None:
     assert published.status.value == "PUBLISHED"
     assert published.lifecycle.approval_mode == ReleaseApprovalMode.AUTO_VALIDATED
     assert published.supersedes_release_id == previous.release_id
-    assert published.release_id == candidate.expected_release_id()
+    assert published.release_id == published.expected_release_id()
+    assert published.release_id != candidate.expected_release_id()
+    changed = next(item for item in published.rules if item.rule_id == "irrf.monthly.progressive_table")
+    unchanged_structural = next(
+        item for item in published.rules if item.rule_id == "thirteenth.accrual.twelfths"
+    )
+    assert changed.change_class == ChangeClass.PARAMETER_CHANGE
+    assert unchanged_structural.change_class == ChangeClass.SOURCE_REFRESH_NO_CHANGE
     published.assert_consumable()
 
 
@@ -168,6 +175,7 @@ def test_review_required_change_cannot_publish_without_explicit_human_reference(
         human_approval_reference="review:phase5-test-structural",
     )
     assert published.lifecycle.approval_mode == ReleaseApprovalMode.HUMAN_REVIEWED
+    assert published.release_id == published.expected_release_id()
 
 
 def test_no_semantic_release_change_does_not_publish_duplicate() -> None:
