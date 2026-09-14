@@ -5,11 +5,7 @@ from datetime import datetime, timezone
 from typing import Any, Mapping
 
 from .contract_v1 import FiscalContractV1
-from .contract_v1_2 import (
-    FiscalContractV12,
-    GovernanceEvidenceObservation,
-    parse_fiscal_contract,
-)
+from .contract_v1_2 import FiscalContractV12, GovernanceEvidenceObservation
 from .semantic_diff_v1 import diff_contracts
 from .sources_v1 import NormalizedSourceCandidate, ParseStatus
 from .types_v1 import (
@@ -30,6 +26,17 @@ RFB_SOURCE_ID = "RFB_IRRF_TABLE_2026"
 INSS_SOURCE_ID = "INSS_TABLE_2026"
 
 
+EXTERNAL_EVIDENCE_PREFERENCES = {
+    "inss.employee.progressive_table": INSS_SOURCE_ID,
+    "thirteenth.inss.separate_assessment": INSS_SOURCE_ID,
+    "irrf.monthly.progressive_table": RFB_SOURCE_ID,
+    "irrf.dependent_deduction": RFB_SOURCE_ID,
+    "irrf.simplified_monthly_discount": RFB_SOURCE_ID,
+    "irrf.reduction.2026": RFB_SOURCE_ID,
+    "vacation.irrf.reduction.2026": "PLANALTO_LEI_15270_2025",
+}
+
+
 # These eleven rules are the exact Phase 2 coverage gap identified by the Phase 5
 # gate. Metadata already frozen in rule-inventory/contract-coverage is loaded at
 # runtime. Only the typed semantic payload and rule-specific mechanics live here.
@@ -45,7 +52,6 @@ MISSING_RULE_SPECS: dict[str, dict[str, Any]] = {
             "stage": "per_assessment_result",
         },
         "payload_builder": "inss_progressive",
-        "preferred_source_id": INSS_SOURCE_ID,
     },
     "irrf.simplified_monthly_discount": {
         "description": "Limite do desconto simplificado comparado separadamente dentro de cada apuração de IRRF suportada.",
@@ -53,7 +59,6 @@ MISSING_RULE_SPECS: dict[str, dict[str, Any]] = {
         "calculation_order": 14,
         "vigency": {"effective_from": "2026-01-01"},
         "payload_builder": "irrf_simplified",
-        "preferred_source_id": RFB_SOURCE_ID,
     },
     "irrf.income_type": {
         "description": "Partição obrigatória entre apurações mensal, 13º e férias; o contexto de rescisão não cria um quarto tipo de rendimento.",
@@ -68,7 +73,6 @@ MISSING_RULE_SPECS: dict[str, dict[str, Any]] = {
         "calculation_order": 25,
         "vigency": {"effective_from": "2026-01-01"},
         "payload_builder": "policy",
-        "preferred_source_id": INSS_SOURCE_ID,
     },
     "thirteenth.irrf.exclusive_assessment": {
         "description": "O IRRF do 13º constitui apuração exclusiva, com deduções vinculadas à própria apuração.",
@@ -95,7 +99,6 @@ MISSING_RULE_SPECS: dict[str, dict[str, Any]] = {
             "stage": "after_pre_reduction_vacation_irrf",
         },
         "payload_builder": "vacation_reduction",
-        "preferred_source_id": "PLANALTO_LEI_15270_2025",
     },
     "vacation.inss.enjoyed": {
         "description": "Férias gozadas e o respectivo terço integram a base previdenciária do empregado.",
@@ -290,7 +293,7 @@ def _preferred_external_evidence(
     official_evidence: Mapping[str, EvidenceObservation],
 ) -> EvidenceObservation:
     allowed = _rule_source_ids(inventory_rule)
-    preferred = MISSING_RULE_SPECS.get(rule_id, {}).get("preferred_source_id")
+    preferred = EXTERNAL_EVIDENCE_PREFERENCES.get(rule_id)
     ordered = ([preferred] if isinstance(preferred, str) else []) + [
         source_id for source_id in allowed if source_id != preferred
     ]
@@ -478,10 +481,14 @@ def _bump_minor(version: str) -> str:
     return f"{major}.{minor + 1}.0"
 
 
-def _reconcile_declared_transition(previous: FiscalContractV1, candidate: FiscalContractV12) -> FiscalContractV12:
+def _reconcile_declared_transition(
+    previous: FiscalContractV1,
+    candidate: FiscalContractV12,
+) -> FiscalContractV12:
     first_diff = diff_contracts(previous, candidate)
     data = candidate.model_dump(mode="json", exclude_none=True)
     rules = _index_rules(data)
+    validated_at = candidate.generated_at_utc.isoformat().replace("+00:00", "Z")
     for item in first_diff.rule_diffs:
         if item.change_class == ChangeClass.RULE_REMOVED:
             raise ReleaseAssemblyError("v1.2 canonical assembler cannot remove inventory rules")
@@ -496,6 +503,8 @@ def _reconcile_declared_transition(previous: FiscalContractV1, candidate: Fiscal
             rule["rule_version"] = _bump_minor(previous_version)
         else:
             rule["rule_version"] = _bump_patch(previous_version)
+        quality = rule.setdefault("quality", {})
+        quality["last_validated_at_utc"] = validated_at
     return FiscalContractV12.model_validate(data)
 
 
@@ -589,7 +598,8 @@ def assemble_candidate_v12(
             rule["provenance"] = [_reuse_previous_evidence_if_same_hash(prior, evidence)]
         quality = rule.setdefault("quality", {})
         quality["status"] = "VALIDATED"
-        quality["last_validated_at_utc"] = generated_at_utc.isoformat().replace("+00:00", "Z")
+        if previous is None:
+            quality["last_validated_at_utc"] = generated_at_utc.isoformat().replace("+00:00", "Z")
         if rule_class in STRUCTURAL_RULE_CLASSES:
             quality["reviewed_by_human"] = True
         if previous is None:
