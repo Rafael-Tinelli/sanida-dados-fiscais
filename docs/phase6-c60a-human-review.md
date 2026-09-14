@@ -94,7 +94,27 @@ Ele inclui semântica, payload, diff e identidade material da evidência. Relóg
 
 ### 5.1 Evidência parser-backed
 
-Quando uma fonte possui parser conhecido, o `review_key` continua preso ao **SHA-256 bruto do snapshot + identidade do parser**. Uma alteração dos bytes da fonte parser-backed muda a revisão e permanece fail-closed.
+A execução real do bootstrap demonstrou que páginas oficiais usadas por parsers também podem oscilar em bytes sem alteração do dado fiscal interpretado. Isso ocorreu com `INSS_TABLE_2026` e `RFB_IRRF_TABLE_2026`: o SHA-256 bruto alternou entre recolhas enquanto os parsers continuaram válidos, os payloads normalizados permaneceram iguais e a suíte completa continuou verde.
+
+Prender a aprovação humana ao SHA bruto dessas páginas criava o mesmo ciclo impossível já observado no HTML estrutural: revisar A → recoletar → markup/bytes mudam → aprovação stale, embora a regra fiscal lida pelo parser seja idêntica.
+
+Para fonte com parser conhecido, a identidade usada **somente pelo `review_key`** passa a ser `parsed-normalized-payload-v1`, calculada deterministicamente sobre:
+
+- `source_id` e URL da fonte oficial;
+- `parser_id`;
+- `parser_version`;
+- payload normalizado emitido por um candidato `PARSED`.
+
+O snapshot bruto content-addressed e seu SHA-256 exato continuam preservados na proveniência, no review packet e na release. A normalização **não substitui nem altera a evidência canônica**; ela apenas define quando duas recolhas representam a mesma decisão humana.
+
+Consequências fail-closed:
+
+- mudança no payload normalizado muda o fingerprint e invalida a aprovação;
+- mudança de `parser_id` ou `parser_version` muda o fingerprint e invalida a aprovação;
+- parser incompatível ou candidato não `PARSED` bloqueia o processo;
+- ausência do candidato normalizado correspondente bloqueia o processo;
+- divergência entre o SHA bruto da observação e o snapshot que originou o candidato normalizado bloqueia o processo;
+- churn de bytes/markup com o mesmo parser e o mesmo payload normalizado não rotaciona a aprovação.
 
 ### 5.2 HTML estrutural sem parser
 
@@ -113,7 +133,6 @@ Consequências fail-closed:
 - alteração de texto visível muda o fingerprint e invalida a aprovação;
 - alteração de destino de link muda o fingerprint e invalida a aprovação;
 - alteração semântica do candidato muda o `review_key` independentemente da evidência;
-- alteração parser-backed continua presa ao hash bruto;
 - divergência entre o SHA bruto declarado e os bytes persistidos bloqueia o processo;
 - somente churn de markup/transporte com conteúdo material idêntico deixa de rotacionar a aprovação.
 
@@ -156,7 +175,7 @@ Ao receber a aprovação, o workflow:
 
 Se a chave for diferente, a publicação é bloqueada. O estado vira `REVIEW_STALE`, o pacote corrente é persistido e a Issue de revisão é atualizada/substituída para o novo candidato.
 
-Portanto, não é possível revisar A e publicar silenciosamente B. Ao mesmo tempo, duas representações HTML materialmente equivalentes não são tratadas como candidatos jurídicos diferentes só porque o servidor alterou markup dinâmico.
+Portanto, não é possível revisar A e publicar silenciosamente B. Ao mesmo tempo, duas representações oficiais materialmente equivalentes não são tratadas como candidatos jurídicos diferentes apenas porque o servidor alterou markup dinâmico ou bytes que o parser normaliza para o mesmo resultado.
 
 ## 8. Regressões
 
@@ -170,10 +189,12 @@ O resultado entra no pacote de decisão humano.
 
 A regressão de C6.0a exige adicionalmente que:
 
-- markup/atributos/scripts/comentários diferentes com o mesmo texto e links gerem o mesmo fingerprint;
+- markup/atributos/scripts/comentários diferentes com o mesmo texto e links gerem o mesmo fingerprint para HTML estrutural sem parser;
 - mudança de texto visível gere fingerprint diferente;
 - mudança de `href` gere fingerprint diferente;
-- fonte parser-backed continue usando o SHA bruto;
+- fonte parser-backed com SHA bruto diferente, mas mesmo parser/version e mesmo payload normalizado, gere a mesma identidade de revisão;
+- mudança do payload normalizado ou da versão do parser gere identidade diferente;
+- ausência/mismatch do candidato normalizado parser-backed bloqueie fail-closed;
 - mismatch entre snapshot persistido e SHA declarado bloqueie fail-closed.
 
 Antes de persistir uma publicação bem-sucedida, a suíte completa roda novamente, junto dos gates permanentes das Fases 3–5 e do gate C6.0a.
