@@ -59,6 +59,16 @@ def _load(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _load_optional(path: Path) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    try:
+        value = _load(path)
+    except (OSError, ValueError, json.JSONDecodeError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
 def _utc_text(value: datetime) -> str:
     return value.isoformat().replace("+00:00", "Z")
 
@@ -77,8 +87,31 @@ def _write_state(payload: dict[str, Any]) -> None:
     _write_json_atomic(STATE_PATH, payload)
 
 
-def _write_review(payload: dict[str, Any]) -> None:
+def _write_review(payload: dict[str, Any]) -> bool:
+    """Persist a new decision packet only when its review identity changed.
+
+    Repeated scheduled observations of the same semantic/evidence candidate must not
+    rotate `created_at_utc`, rewrite Git history or trigger Issue churn merely because
+    the wall clock advanced.
+    """
+    existing = _load_optional(REVIEW_PATH)
+    if existing is not None and existing.get("review_key") == payload.get("review_key"):
+        return False
     _write_json_atomic(REVIEW_PATH, payload)
+    return True
+
+
+def _write_pending_review_state(payload: dict[str, Any]) -> bool:
+    existing = _load_optional(STATE_PATH)
+    if (
+        existing is not None
+        and existing.get("publication_status") == "REVIEW_REQUIRED"
+        and existing.get("review_key") == payload.get("review_key")
+        and existing.get("previous_release_id") == payload.get("previous_release_id")
+    ):
+        return False
+    _write_state(payload)
+    return True
 
 
 def _assessment_state(*, now: datetime, previous_release_id: str | None, candidate, assessment) -> dict[str, Any]:
@@ -222,17 +255,23 @@ def main() -> int:
             created_at_utc=now,
             historical_template=historical_template if previous is None else None,
         )
-        _write_review(review_packet)
+        review_packet_changed = _write_review(review_packet)
         state["review_key"] = review_packet["review_key"]
 
         if not args.human_approval_reference:
             state["publication_status"] = "REVIEW_REQUIRED"
             state["review_issue_action"] = "UPSERT_REQUIRED"
-            _write_state(state)
-            print(
-                "Fiscal v1.2: human review required; durable review packet prepared for GitHub Issue.",
-                file=sys.stderr,
-            )
+            state_changed = _write_pending_review_state(state)
+            if not review_packet_changed and not state_changed:
+                print(
+                    "Fiscal v1.2: same pending review_key; preserved durable review/state bytes without clock churn.",
+                    file=sys.stderr,
+                )
+            else:
+                print(
+                    "Fiscal v1.2: human review required; durable review packet prepared for GitHub Issue.",
+                    file=sys.stderr,
+                )
             return EXIT_REVIEW_REQUIRED
 
         try:
