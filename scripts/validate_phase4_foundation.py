@@ -61,7 +61,14 @@ REQUIRED = {
     "requirements-sources.txt",
 }
 
-ALLOWED_WORKFLOWS = {"main.yml", "taxas.yml", "remake-ci.yml"}
+# Exact permanent workflow allowlist. Phase 5 adds the canonical fiscal-release
+# writer; unexpected debug/temporary workflows remain forbidden by this gate.
+ALLOWED_WORKFLOWS = {
+    "main.yml",
+    "taxas.yml",
+    "remake-ci.yml",
+    "fiscal-release-v12.yml",
+}
 FORBIDDEN_SCRAPER_TOKENS = {
     "PINNED_INSS_URLS",
     "find_inss_article_url",
