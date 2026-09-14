@@ -1,36 +1,77 @@
 {
   "schema_version": "2.2.0",
   "meta": {
-    "generated_at_utc": "2026-07-03T11:41:54Z",
+    "generated_at_utc": "2026-09-14T15:54:39Z",
     "sources": {
       "irrf": {
+        "source_id": "RFB_IRRF_TABLE_2026",
         "url": "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/tabelas/2026",
-        "http_code": 200
+        "http_code": 200,
+        "collection_status": "COLLECTED",
+        "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+        "candidate_sha256": "787ecdf33486305d7da8f0117c5943a563c68386593cbac415567e7ce6e8b10d",
+        "parser_id": "rfb_irrf_table_v1",
+        "parser_version": "1.0.0",
+        "observed_at_utc": "2026-09-14T15:54:39Z"
       },
       "inss": {
-        "url": "https://www.gov.br/inss/pt-br/assuntos/com-reajuste-de-3-9-teto-do-inss-chega-a-r-8-475-55-em-2026",
-        "http_code": 200
+        "source_id": "INSS_TABLE_2026",
+        "url": "https://www.gov.br/inss/pt-br/direitos-e-deveres/inscricao-e-contribuicao/tabela-de-contribuicao-mensal",
+        "http_code": 200,
+        "collection_status": "COLLECTED",
+        "snapshot_sha256": "e2772669ddd3b5681d3ca988b3210fc868c08b61f2b7c353616958ba19443f17",
+        "candidate_sha256": "1836a09ba4520d61e2d6c6677ee6b34fac640a4bdfc94aa243827272b5a63fc5",
+        "parser_id": "inss_employee_table_v1",
+        "parser_version": "1.0.1",
+        "observed_at_utc": "2026-09-14T15:54:39Z"
       },
       "taxas": {
         "origin": "local_file",
         "origin_ref": "taxas_bacen.json",
-        "generated_at_utc": "2026-07-03T11:15:26Z",
+        "schema_version": "1.4.0",
+        "generated_at_utc": "2026-09-14T13:16:27Z",
         "source_meta": {
           "selic": {
-            "source": "sgs_432"
+            "source_id": "BCB_SELIC_META_SGS_432",
+            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?formato=json&dataInicial=14%2F08%2F2026&dataFinal=14%2F09%2F2026",
+            "http_code": 200,
+            "collection_status": "COLLECTED",
+            "snapshot_sha256": "e16c31e0732270472f12b3c0e0a45daecbbaf1d345b439b7ef97b74b0f28cdc8",
+            "candidate_sha256": "5e64f7f6194c404e46e525d6328a8d05e5025c71d5fa6802c10385551e474d33",
+            "parser_id": "bcb_selic_meta_sgs432_v1",
+            "parser_version": "1.1.0",
+            "observed_at_utc": "2026-09-14T13:16:27Z",
+            "source_observation_date": "2026-09-14",
+            "series_code": 432,
+            "source_value_pct": "14.00",
+            "source_unit": "percent_per_year",
+            "freshness_policy": "persistent_until_changed_no_max_age"
           },
           "cdi": {
-            "source": "b3_ftp_taxa_di_txt",
-            "ftp_host": "ftp.cetip.com.br",
-            "ftp_path": "/MediaCDI",
-            "ftp_filename": "20260702.txt",
-            "raw_sample": "000001415"
+            "source_id": "BCB_CDI_DAILY_SGS_12",
+            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados/ultimos/1?formato=json",
+            "http_code": 200,
+            "collection_status": "COLLECTED",
+            "snapshot_sha256": "c45febf00067f0b92469e104bc91afb38483de839bab109e11f8ba923379cbae",
+            "candidate_sha256": "f2791ac1b3015c6ead415b51b7927bd6d01743f4ea0b9ea9157555456523a534",
+            "parser_id": "bcb_cdi_daily_sgs12_v1",
+            "parser_version": "1.0.0",
+            "observed_at_utc": "2026-09-14T13:16:27Z",
+            "source_observation_date": "2026-09-11",
+            "series_code": 12,
+            "source_value_pct": "0.051660",
+            "source_unit": "percent_per_business_day",
+            "annualization_basis_business_days": 252,
+            "annualized_value_pct": "13.90",
+            "max_observation_age_calendar_days": 7
           }
         }
       }
     },
     "errors": [],
-    "warnings": []
+    "warnings": [
+      "phase4_legacy_compatibility_artifact"
+    ]
   },
   "ano": 2026,
   "dep": 189.59,
@@ -90,8 +131,8 @@
     }
   },
   "taxas": {
-    "selic": 14.25,
-    "cdi": 14.15,
-    "cdi_basis": "b3_ftp_taxa_di_txt_aa"
+    "selic": 14.0,
+    "cdi": 13.9,
+    "cdi_basis": "bcb_sgs_12_daily_compounded_252"
   }
 }
