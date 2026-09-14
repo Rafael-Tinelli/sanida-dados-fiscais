@@ -33,6 +33,10 @@ from sanida_fiscal.publication_v1 import (
     prepare_published_release,
 )
 from sanida_fiscal.release_assembler_v12 import ReleaseAssemblyError, assemble_candidate_v12
+from sanida_fiscal.review_evidence_identity_v1 import (
+    ReviewEvidenceIdentityError,
+    build_review_identity_candidate,
+)
 from sanida_fiscal.semantic_diff_v1 import PromotionOutcome, assess_promotion
 
 
@@ -248,6 +252,27 @@ def main() -> int:
 
     review_packet: dict[str, Any] | None = None
     if assessment.outcome == PromotionOutcome.REVIEW_REQUIRED:
+        try:
+            review_identity_candidate, review_evidence_identity = build_review_identity_candidate(
+                candidate,
+                authority_snapshot_root=AUTHORITY_EVIDENCE_ROOT,
+            )
+        except ReviewEvidenceIdentityError as exc:
+            state["publication_status"] = "BLOCKED"
+            state["reasons"] = list(state.get("reasons", [])) + [
+                f"review evidence identity failed closed: {exc}"
+            ]
+            _write_state(state)
+            print(f"Fiscal v1.2: review evidence identity blocked: {exc}", file=sys.stderr)
+            return EXIT_BLOCKED
+
+        identity_packet = build_review_packet(
+            previous=previous,
+            candidate=review_identity_candidate,
+            assessment=assessment,
+            created_at_utc=now,
+            historical_template=historical_template if previous is None else None,
+        )
         review_packet = build_review_packet(
             previous=previous,
             candidate=candidate,
@@ -255,6 +280,12 @@ def main() -> int:
             created_at_utc=now,
             historical_template=historical_template if previous is None else None,
         )
+        review_packet["review_key"] = identity_packet["review_key"]
+        review_packet["review_evidence_identity"] = review_evidence_identity
+        review_packet["approval"]["required_command"] = (
+            f"/approve {review_packet['review_key']}"
+        )
+
         review_packet_changed = _write_review(review_packet)
         state["review_key"] = review_packet["review_key"]
 
