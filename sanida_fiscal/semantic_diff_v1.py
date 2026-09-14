@@ -39,8 +39,16 @@ class RuleDiffV1:
     changed_paths: tuple[str, ...]
     previous_rule_version: str | None
     candidate_rule_version: str | None
+    declared_change_class: ChangeClass | None
     rule_class: RuleClass | None
     auto_publish_declared: bool
+
+    @property
+    def changed(self) -> bool:
+        return bool(self.changed_paths) or self.change_class in {
+            ChangeClass.RULE_ADDED,
+            ChangeClass.RULE_REMOVED,
+        }
 
 
 @dataclass(frozen=True)
@@ -53,7 +61,7 @@ class ContractDiffV1:
 
     @property
     def change_classes(self) -> frozenset[ChangeClass]:
-        return frozenset(item.change_class for item in self.rule_diffs)
+        return frozenset(item.change_class for item in self.rule_diffs if item.changed)
 
 
 @dataclass(frozen=True)
@@ -97,11 +105,12 @@ def _is_numeric_leaf(value: Any) -> bool:
 
 
 def _numeric_shape(value: Any) -> Any:
-    """Preserve typed structure while erasing only numeric parameter values.
+    """Erase numeric values while preserving the typed semantic shape.
 
-    This is deliberately used only for parameter/parameterizable rules. A change
-    in payload type, object/list shape, enum/string semantic, boolean semantic or
-    field name survives this normalization and therefore becomes STRUCTURAL_CHANGE.
+    This normalization is used only after both rules are known to be parameter or
+    parameterizable rules. Payload type, field names, list/object shape, booleans,
+    enum strings and semantic strings remain visible. Therefore a formula/target/
+    shape change cannot be mislabeled as a numeric parameter refresh.
     """
     value = _json_value(value)
     if _is_numeric_leaf(value):
@@ -211,9 +220,6 @@ def classify_rule_change(
     elif vigency_paths:
         change_class = ChangeClass.EFFECTIVE_DATE_CHANGE
     else:
-        # Provenance/quality/description/version-only refreshes have no calculation
-        # semantic delta. Whether a source refresh may auto-publish is decided by
-        # the promotion gate, not by this classifier.
         change_class = ChangeClass.SOURCE_REFRESH_NO_CHANGE
 
     return RuleDiffV1(
@@ -223,6 +229,7 @@ def classify_rule_change(
         changed_paths=changed_paths,
         previous_rule_version=previous.rule_version,
         candidate_rule_version=candidate.rule_version,
+        declared_change_class=candidate.change_class,
         rule_class=rule_class,
         auto_publish_declared=candidate.update_policy.auto_publish,
     )
@@ -236,6 +243,7 @@ def _added_rule_diff(rule: FiscalRuleV1, occurrence: int) -> RuleDiffV1:
         changed_paths=("$rule",),
         previous_rule_version=None,
         candidate_rule_version=rule.rule_version,
+        declared_change_class=rule.change_class,
         rule_class=rule.update_policy.rule_class,
         auto_publish_declared=rule.update_policy.auto_publish,
     )
@@ -249,6 +257,7 @@ def _removed_rule_diff(rule: FiscalRuleV1, occurrence: int) -> RuleDiffV1:
         changed_paths=("$rule",),
         previous_rule_version=rule.rule_version,
         candidate_rule_version=None,
+        declared_change_class=None,
         rule_class=rule.update_policy.rule_class,
         auto_publish_declared=False,
     )
@@ -268,11 +277,12 @@ def diff_contracts(
     if candidate.status != ContractStatus.CANDIDATE:
         raise SemanticDiffError("Phase 5 diff input must be a CANDIDATE contract")
 
+    candidate_groups = _group_rules(candidate)
     if previous is None:
         rule_diffs = tuple(
             _added_rule_diff(rule, occurrence)
-            for rule_id in sorted(_group_rules(candidate))
-            for occurrence, rule in enumerate(_group_rules(candidate)[rule_id])
+            for rule_id in sorted(candidate_groups)
+            for occurrence, rule in enumerate(candidate_groups[rule_id])
         )
         return ContractDiffV1(
             previous_release_id=None,
@@ -290,7 +300,6 @@ def diff_contracts(
     )
 
     previous_groups = _group_rules(previous)
-    candidate_groups = _group_rules(candidate)
     diffs: list[RuleDiffV1] = []
 
     for rule_id in sorted(set(previous_groups) | set(candidate_groups)):
@@ -308,7 +317,7 @@ def diff_contracts(
 
     previous_payload = previous.immutable_payload_dict().copy()
     candidate_payload = candidate.immutable_payload_dict().copy()
-    # Supersession is release lineage, not a semantic rule delta.
+    # Supersession is lineage, not a semantic rule delta.
     previous_payload.pop("supersedes_release_id", None)
     candidate_payload.pop("supersedes_release_id", None)
 
@@ -326,11 +335,7 @@ def _rule_version_reason(diff: RuleDiffV1) -> str | None:
     previous = diff.previous_rule_version
     current = diff.candidate_rule_version
 
-    if change == ChangeClass.RULE_ADDED:
-        if current != "1.0.0":
-            return f"{diff.rule_id}: newly added rule must start at 1.0.0"
-        return None
-    if change == ChangeClass.RULE_REMOVED:
+    if change in {ChangeClass.RULE_ADDED, ChangeClass.RULE_REMOVED}:
         return None
     if previous is None or current is None:
         return f"{diff.rule_id}: missing rule version for comparable rule"
@@ -339,6 +344,11 @@ def _rule_version_reason(diff: RuleDiffV1) -> str | None:
         bump = semver_bump(previous, current)
     except ValueError as exc:
         return f"{diff.rule_id}: invalid version transition: {exc}"
+
+    if not diff.changed_paths:
+        if bump is not None:
+            return f"{diff.rule_id}: unchanged rule must preserve rule_version"
+        return None
 
     if change in {
         ChangeClass.SOURCE_REFRESH_NO_CHANGE,
@@ -357,39 +367,57 @@ def _iter_candidate_rules(contract: FiscalContractV1) -> Iterable[FiscalRuleV1]:
     return sorted(contract.rules, key=lambda rule: (rule.rule_id, *_rule_sort_key(rule)))
 
 
+def _changed_candidate_rule(
+    candidate: FiscalContractV1,
+    diff: RuleDiffV1,
+) -> FiscalRuleV1 | None:
+    if diff.change_class == ChangeClass.RULE_REMOVED:
+        return None
+    grouped = _group_rules(candidate)
+    rules = grouped.get(diff.rule_id, [])
+    if diff.occurrence >= len(rules):
+        return None
+    return rules[diff.occurrence]
+
+
 def assess_promotion(
     previous: FiscalContractV1 | None,
     candidate: FiscalContractV1,
 ) -> PromotionAssessmentV1:
     diff = diff_contracts(previous, candidate)
-    reasons: list[str] = []
-
-    if candidate.status != ContractStatus.CANDIDATE:
-        reasons.append("candidate status must be CANDIDATE")
+    blockers: list[str] = []
+    review_reasons: list[str] = []
 
     for rule in _iter_candidate_rules(candidate):
         if rule.quality.status != QualityStatus.VALIDATED:
-            reasons.append(f"{rule.rule_id}: quality is {rule.quality.status.value}, expected VALIDATED")
-        for evidence in rule.provenance:
-            if evidence.status != SourceObservationStatus.AVAILABLE:
-                reasons.append(
-                    f"{rule.rule_id}: provenance {evidence.source_id} is {evidence.status.value}"
-                )
+            blockers.append(
+                f"{rule.rule_id}: quality is {rule.quality.status.value}, expected VALIDATED"
+            )
+        available_hashed = [
+            evidence
+            for evidence in rule.provenance
+            if evidence.status == SourceObservationStatus.AVAILABLE
+            and evidence.snapshot_sha256
+        ]
+        if not available_hashed:
+            blockers.append(f"{rule.rule_id}: no AVAILABLE hashed source evidence")
 
     for item in diff.rule_diffs:
         version_reason = _rule_version_reason(item)
         if version_reason:
-            reasons.append(version_reason)
+            blockers.append(version_reason)
 
-    hard_blockers = [
-        reason
-        for reason in reasons
-        if "quality is" in reason or "provenance" in reason or "invalid version transition" in reason
-    ]
-    if hard_blockers:
+        if item.change_class != ChangeClass.RULE_REMOVED and item.changed:
+            if item.declared_change_class != item.change_class:
+                blockers.append(
+                    f"{item.rule_id}: declared change_class={item.declared_change_class.value if item.declared_change_class else None} "
+                    f"does not match computed {item.change_class.value}"
+                )
+
+    if blockers:
         return PromotionAssessmentV1(
             outcome=PromotionOutcome.BLOCKED,
-            reasons=tuple(sorted(set(reasons))),
+            reasons=tuple(sorted(set(blockers))),
             diff=diff,
         )
 
@@ -399,41 +427,61 @@ def assess_promotion(
         ChangeClass.RULE_ADDED,
         ChangeClass.RULE_REMOVED,
     }
+
     if diff.contract_changed_paths:
-        reasons.append(
+        review_reasons.append(
             "contract-level semantic/governance fields changed: "
             + ", ".join(diff.contract_changed_paths)
         )
 
-    if any(item.change_class in review_classes for item in diff.rule_diffs):
-        for item in diff.rule_diffs:
-            if item.change_class in review_classes:
-                reasons.append(f"{item.rule_id}: {item.change_class.value} requires human review")
-
-    # Even a provenance-only refresh on a structural rule cannot be declared
-    # semantically unchanged automatically because no parser proves that the raw
-    # authority change was editorial only.
     for item in diff.rule_diffs:
+        if not item.changed:
+            continue
+        if item.change_class in review_classes:
+            review_reasons.append(
+                f"{item.rule_id}: {item.change_class.value} requires human review"
+            )
+            continue
+
+        candidate_rule = _changed_candidate_rule(candidate, item)
+        if candidate_rule is None:
+            continue
+
         if (
             item.change_class == ChangeClass.SOURCE_REFRESH_NO_CHANGE
             and item.rule_class in STRUCTURAL_RULE_CLASSES
-            and item.changed_paths
         ):
-            reasons.append(
+            review_reasons.append(
                 f"{item.rule_id}: source refresh on structural rule requires human review"
             )
-        if (
-            item.change_class == ChangeClass.PARAMETER_CHANGE
-            and not item.auto_publish_declared
-        ):
-            reasons.append(
+            continue
+
+        if item.change_class == ChangeClass.PARAMETER_CHANGE and not item.auto_publish_declared:
+            review_reasons.append(
                 f"{item.rule_id}: parameter change is not declared auto-publishable"
             )
+            continue
 
-    if reasons:
+        if item.change_class in {
+            ChangeClass.SOURCE_REFRESH_NO_CHANGE,
+            ChangeClass.PARAMETER_CHANGE,
+        }:
+            parser_backed = any(
+                evidence.status == SourceObservationStatus.AVAILABLE
+                and evidence.snapshot_sha256
+                and evidence.parser_id
+                and evidence.parser_version
+                for evidence in candidate_rule.provenance
+            )
+            if not parser_backed:
+                review_reasons.append(
+                    f"{item.rule_id}: automatic promotion requires parser-backed hashed evidence"
+                )
+
+    if review_reasons:
         return PromotionAssessmentV1(
             outcome=PromotionOutcome.REVIEW_REQUIRED,
-            reasons=tuple(sorted(set(reasons))),
+            reasons=tuple(sorted(set(review_reasons))),
             diff=diff,
         )
 
@@ -446,6 +494,6 @@ def assess_promotion(
 
     return PromotionAssessmentV1(
         outcome=PromotionOutcome.AUTO_PUBLISH_ALLOWED,
-        reasons=("only validated auto-publishable source refresh/parameter changes detected",),
+        reasons=("only validated parser-backed auto-publishable refresh/parameter changes detected",),
         diff=diff,
     )
