@@ -24,12 +24,14 @@ def _require(condition: bool, message: str) -> None:
 def main() -> None:
     policy = _load("docs/phase6-c60a-human-review-policy-v1.json")
     _require(policy.get("decision_id") == "phase6.c60a.human_review_ux", "policy decision_id drift")
+    _require(policy.get("status") == "C6_0a_complete", "C6.0a policy is not complete")
 
     packet = policy.get("review_packet", {})
     _require(packet.get("path") == "state/fiscal-release-v12-review.json", "review packet path drift")
     _require(packet.get("volatile_observation_clocks_change_review_key") is False, "volatile clocks may rotate review_key")
     _require(packet.get("source_snapshot_change_changes_review_key") is True, "source evidence no longer binds review_key")
     _require(packet.get("semantic_change_changes_review_key") is True, "semantic change no longer binds review_key")
+    _require(packet.get("same_review_key_rewrites_durable_packet_or_state") is False, "same review may create durable clock churn")
     _require(packet.get("bootstrap_distinguishes_historical_inheritance_from_new_materialization") is True, "bootstrap baseline distinction disabled")
     _require(packet.get("bootstrap_expected_historical_materialized_rules") == 21, "bootstrap historical baseline count drift")
     _require(packet.get("bootstrap_expected_newly_materialized_rules") == 11, "bootstrap materialization count drift")
@@ -37,7 +39,7 @@ def main() -> None:
     issue = policy.get("github_issue", {})
     for key in (
         "automatic_on_review_required",
-        "same_review_key_updates_existing_issue",
+        "same_review_key_updates_existing_issue_when_content_changes",
         "new_review_key_closes_prior_pending_issue_as_stale",
         "assigned_to_repository_owner",
         "github_notification_expected",
@@ -48,6 +50,7 @@ def main() -> None:
         "includes_full_regression_status",
     ):
         _require(issue.get(key) is True, f"GitHub Issue invariant disabled: {key}")
+    _require(issue.get("same_review_key_noop_patch_when_content_identical") is False, "identical Issue still receives no-op PATCH")
     _require(issue.get("email_delivery_guaranteed_by_repository") is False, "policy falsely guarantees email delivery")
     _require(issue.get("email_delivery_depends_on_github_account_notification_settings") is True, "email settings dependency missing")
 
@@ -85,6 +88,8 @@ def main() -> None:
         "assert_review_approval_matches",
         'state["publication_status"] = "REVIEW_STALE"',
         'state["review_issue_action"] = "UPSERT_REQUIRED"',
+        "same pending review_key; preserved durable review/state bytes without clock churn",
+        "_write_pending_review_state",
     ):
         _require(marker in publisher, f"publisher review marker missing: {marker}")
 
@@ -96,6 +101,8 @@ def main() -> None:
         "_close_stale",
         "close_review",
         '"state": "closed"',
+        "REUSED_UNCHANGED",
+        "_same_issue_payload",
     ):
         _require(marker in issue_script, f"Issue automation marker missing: {marker}")
 
@@ -123,13 +130,23 @@ def main() -> None:
     ):
         _require(marker in tests, f"C6.0a regression test missing: {marker}")
 
+    idempotence_tests = _read("tests/test_publish_review_state_v1.py")
+    for marker in (
+        "test_same_review_key_preserves_review_packet_bytes",
+        "test_same_pending_review_key_preserves_last_attempt_bytes",
+        "test_new_review_key_replaces_pending_review_state",
+    ):
+        _require(marker in idempotence_tests, f"C6.0a idempotence regression missing: {marker}")
+
     docs = _read("docs/phase6-c60a-human-review.md")
     for marker in (
+        "**Status:** CONCLUÍDO",
         "Human Review UX",
         "21 regras materializadas + 11 regras",
         "/approve <review_key>",
         "não é possível revisar A e publicar silenciosamente B",
-        "entrega por e-mail depende",
+        "O repositório não promete entrega por e-mail",
+        "não cria churn Git nem nova notificação",
         "#2726",
     ):
         _require(marker in docs, f"C6.0a documentation marker missing: {marker}")
@@ -137,7 +154,7 @@ def main() -> None:
     remake = _read(".github/workflows/remake-ci.yml")
     _require("scripts/validate_phase6_c60a_gate.py" in remake, "C6.0a gate missing from Remake CI")
 
-    print("Phase 6 C6.0a gate: PASS (actionable review Issue + deterministic review_key + stale-approval protection anchored)")
+    print("Phase 6 C6.0a gate: PASS (actionable review Issue + deterministic review_key + stale-approval protection + no-churn pending review anchored)")
 
 
 if __name__ == "__main__":
