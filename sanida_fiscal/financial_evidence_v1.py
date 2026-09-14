@@ -15,6 +15,11 @@ FINANCIAL_PROVENANCE = {
     "cdi": "BCB_CDI_DAILY_SGS_12",
 }
 
+# A05 — a preserved last-good remains auditable storage, not a current input.
+# If a newly collected snapshot cannot be parsed by the registered parser, the
+# previous candidate must not be re-consumed into a newly generated artifact.
+PARSER_INCOMPATIBLE_LAST_GOOD_POLICY = "preserve_auditable_block_new_consumption"
+
 
 class FinancialEvidenceError(RuntimeError):
     pass
@@ -59,17 +64,12 @@ def _verify_file_sha256(root: Path, relative_path: str, expected_sha256: str, la
     return target
 
 
-def verify_financial_source_provenance(
+def _verify_financial_source_provenance(
     *,
     sources: Mapping[str, Any],
     runtime_root: Path,
+    require_current_parsed: bool,
 ) -> dict[str, dict[str, str]]:
-    """Verify Selic/CDI provenance against durable snapshot/candidate/state evidence.
-
-    This function intentionally accepts an already-extracted provenance mapping so
-    both `taxas_bacen.json` and the nested financial provenance copied into
-    `dados_fiscais.json` can be verified by the same code path.
-    """
     runtime_root = Path(runtime_root)
     if not isinstance(sources, Mapping):
         raise FinancialEvidenceError("financial source provenance must be an object")
@@ -91,8 +91,17 @@ def verify_financial_source_provenance(
         state = state_store.load(source_id)
         if state is None:
             raise FinancialEvidenceError(f"missing operational state for {source_id}")
-        if state.last_parse_status != ParseStatus.PARSED:
-            raise FinancialEvidenceError(f"{source_id} has no last-good PARSED state")
+
+        if require_current_parsed:
+            if state.last_parse_status == ParseStatus.PARSER_INCOMPATIBLE:
+                raise FinancialEvidenceError(
+                    f"{source_id} current parser state is PARSER_INCOMPATIBLE; "
+                    "preserved last-good is quarantined and cannot be consumed into a new artifact"
+                )
+            if state.last_parse_status != ParseStatus.PARSED:
+                raise FinancialEvidenceError(
+                    f"{source_id} current PARSED state is required for new financial-artifact consumption"
+                )
 
         snapshot_sha = provenance.get("snapshot_sha256")
         candidate_sha = provenance.get("candidate_sha256")
@@ -135,13 +144,44 @@ def verify_financial_source_provenance(
     return verified
 
 
-def verify_financial_artifact_evidence(
+def verify_financial_source_provenance(
     *,
-    artifact_path: Path,
+    sources: Mapping[str, Any],
     runtime_root: Path,
 ) -> dict[str, dict[str, str]]:
+    """Verify provenance for a *new* downstream consumption.
+
+    A05 is fail-closed: a current ``PARSER_INCOMPATIBLE`` state quarantines the
+    preserved last-good. The old evidence remains intact, but it may not be used
+    to compose or certify a newly generated artifact until a current parse succeeds.
+    """
+    return _verify_financial_source_provenance(
+        sources=sources,
+        runtime_root=runtime_root,
+        require_current_parsed=True,
+    )
+
+
+def verify_preserved_financial_last_good_provenance(
+    *,
+    sources: Mapping[str, Any],
+    runtime_root: Path,
+) -> dict[str, dict[str, str]]:
+    """Audit preserved last-good evidence without authorizing new consumption.
+
+    This exists so an incompatible current parser does not erase or make the prior
+    evidence unauditable. Passing this verifier is *not* permission to regenerate
+    ``taxas_bacen.json`` or embed the values in a fresh ``dados_fiscais.json``.
+    """
+    return _verify_financial_source_provenance(
+        sources=sources,
+        runtime_root=runtime_root,
+        require_current_parsed=False,
+    )
+
+
+def _read_financial_artifact_sources(artifact_path: Path) -> Mapping[str, Any]:
     artifact_path = Path(artifact_path)
-    runtime_root = Path(runtime_root)
     if not artifact_path.is_file():
         raise FinancialEvidenceError(f"financial artifact does not exist: {artifact_path}")
 
@@ -156,8 +196,26 @@ def verify_financial_artifact_evidence(
     sources = meta.get("sources") if isinstance(meta, dict) else None
     if not isinstance(sources, dict):
         raise FinancialEvidenceError("financial artifact has no source provenance")
+    return sources
 
+
+def verify_financial_artifact_evidence(
+    *,
+    artifact_path: Path,
+    runtime_root: Path,
+) -> dict[str, dict[str, str]]:
     return verify_financial_source_provenance(
-        sources=sources,
-        runtime_root=runtime_root,
+        sources=_read_financial_artifact_sources(Path(artifact_path)),
+        runtime_root=Path(runtime_root),
+    )
+
+
+def verify_preserved_financial_last_good_artifact_evidence(
+    *,
+    artifact_path: Path,
+    runtime_root: Path,
+) -> dict[str, dict[str, str]]:
+    return verify_preserved_financial_last_good_provenance(
+        sources=_read_financial_artifact_sources(Path(artifact_path)),
+        runtime_root=Path(runtime_root),
     )
