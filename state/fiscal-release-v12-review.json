@@ -1,0 +1,5478 @@
+{
+  "affected_calculators": [
+    "H26",
+    "H27",
+    "H28",
+    "H29"
+  ],
+  "approval": {
+    "required_command": "/approve 054a4b4efc13a5fdfd58f2f57fce0e3ac0ca8d8c76f8f13c238f9117d321c8a3",
+    "stale_review_must_block_publication": true
+  },
+  "bootstrap_baseline": {
+    "historical_rules_present": 21,
+    "newly_materialized_rules": 11
+  },
+  "candidate_contract_api_version": "1.2.0",
+  "candidate_rule_count": 32,
+  "candidate_schema_version": "1.2.0",
+  "contract_changed_paths": [],
+  "created_at_utc": "2026-09-14T14:22:31.698316Z",
+  "previous_release_id": null,
+  "promotion_outcome": "REVIEW_REQUIRED",
+  "reasons": [
+    "inss.employee.progressive_table: RULE_ADDED requires human review",
+    "irrf.deductions_by_income_type: RULE_ADDED requires human review",
+    "irrf.dependent_deduction: RULE_ADDED requires human review",
+    "irrf.income_type: RULE_ADDED requires human review",
+    "irrf.monthly.progressive_table: RULE_ADDED requires human review",
+    "irrf.reduction.2026: RULE_ADDED requires human review",
+    "irrf.simplified_monthly_discount: RULE_ADDED requires human review",
+    "technical.contract_vigency_and_quality: RULE_ADDED requires human review",
+    "technical.money_decimal_and_rounding: RULE_ADDED requires human review",
+    "termination.acquired_and_overdue_vacation: RULE_ADDED requires human review",
+    "termination.partial_output_scope: RULE_ADDED requires human review",
+    "termination.reason_scope: RULE_ADDED requires human review",
+    "termination.salary_balance: RULE_ADDED requires human review",
+    "termination.thirteenth_proportional: RULE_ADDED requires human review",
+    "termination.vacation_indemnity_tax_treatment: RULE_ADDED requires human review",
+    "termination.vacation_proportional: RULE_ADDED requires human review",
+    "thirteenth.accrual.twelfths: RULE_ADDED requires human review",
+    "thirteenth.advance: RULE_ADDED requires human review",
+    "thirteenth.inss.separate_assessment: RULE_ADDED requires human review",
+    "thirteenth.irrf.exclusive_assessment: RULE_ADDED requires human review",
+    "thirteenth.irrf.reduction.2026: RULE_ADDED requires human review",
+    "thirteenth.reference_remuneration: RULE_ADDED requires human review",
+    "thirteenth.variable_remuneration: RULE_ADDED requires human review",
+    "vacation.abono.ir_exemption: RULE_ADDED requires human review",
+    "vacation.abono_constitutional_third.ir_incidence: RULE_ADDED requires human review",
+    "vacation.abono_pecuniario: RULE_ADDED requires human review",
+    "vacation.acquisition_period: RULE_ADDED requires human review",
+    "vacation.entitlement_days_by_absences: RULE_ADDED requires human review",
+    "vacation.inss.enjoyed: RULE_ADDED requires human review",
+    "vacation.irrf.reduction.2026: RULE_ADDED requires human review",
+    "vacation.irrf.separate_assessment: RULE_ADDED requires human review",
+    "vacation.remuneration_and_constitutional_third: RULE_ADDED requires human review"
+  ],
+  "review_key": "054a4b4efc13a5fdfd58f2f57fce0e3ac0ca8d8c76f8f13c238f9117d321c8a3",
+  "review_kind": "BOOTSTRAP",
+  "rules": [
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "employee_social_security_contribution_base",
+        "calculation_order": 20,
+        "calculators": [
+          "H26",
+          "H27",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "monthly",
+          "thirteenth",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Tabela progressiva da contribuição previdenciária do segurado empregado vigente em 2026.",
+        "domain": "social_security",
+        "payload": {
+          "brackets": [
+            {
+              "deduction": "0",
+              "rate": "0.075",
+              "upper_bound": "1621.00"
+            },
+            {
+              "deduction": "0",
+              "rate": "0.09",
+              "upper_bound": "2902.84"
+            },
+            {
+              "deduction": "0",
+              "rate": "0.12",
+              "upper_bound": "4354.27"
+            },
+            {
+              "deduction": "0",
+              "rate": "0.14",
+              "upper_bound": "8475.55"
+            }
+          ],
+          "calculation_method": "marginal_by_bracket",
+          "cap_base": "8475.55",
+          "type": "progressive_table"
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "per_assessment_result"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameterizable_rule",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "not_materialized_in_historical_v1.1_candidate",
+      "before": null,
+      "calculators": [
+        "H26",
+        "H27",
+        "H28",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "parser_id": "inss_employee_table_v1",
+          "parser_version": "1.0.1",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "INSS_TABLE_2026/e2/e2772669ddd3b5681d3ca988b3210fc868c08b61f2b7c353616958ba19443f17.html",
+          "snapshot_sha256": "e2772669ddd3b5681d3ca988b3210fc868c08b61f2b7c353616958ba19443f17",
+          "source_id": "INSS_TABLE_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [],
+      "evidence_changed": [
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "parser_id": "inss_employee_table_v1",
+              "parser_version": "1.0.1",
+              "retrieval_method": "http_html",
+              "role": "official_operational",
+              "snapshot_path": "INSS_TABLE_2026/e2/e2772669ddd3b5681d3ca988b3210fc868c08b61f2b7c353616958ba19443f17.html",
+              "snapshot_sha256": "e2772669ddd3b5681d3ca988b3210fc868c08b61f2b7c353616958ba19443f17",
+              "source_id": "INSS_TABLE_2026",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": []
+        }
+      ],
+      "historical_semantic_status": "NEWLY_MATERIALIZED",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "inss.employee.progressive_table",
+      "semantic_changes": [
+        {
+          "after": {
+            "applicability": [],
+            "applies_to": "employee_social_security_contribution_base",
+            "calculation_order": 20,
+            "calculators": [
+              "H26",
+              "H27",
+              "H28",
+              "H29"
+            ],
+            "competence": {
+              "basis": "payment_date",
+              "context_overrides": {},
+              "context_rule_specific_keys": {}
+            },
+            "contexts": [
+              "monthly",
+              "thirteenth",
+              "vacation_enjoyed",
+              "termination"
+            ],
+            "dependencies": [],
+            "description": "Tabela progressiva da contribuição previdenciária do segurado empregado vigente em 2026.",
+            "domain": "social_security",
+            "payload": {
+              "brackets": [
+                {
+                  "deduction": "0",
+                  "rate": "0.075",
+                  "upper_bound": "1621.00"
+                },
+                {
+                  "deduction": "0",
+                  "rate": "0.09",
+                  "upper_bound": "2902.84"
+                },
+                {
+                  "deduction": "0",
+                  "rate": "0.12",
+                  "upper_bound": "4354.27"
+                },
+                {
+                  "deduction": "0",
+                  "rate": "0.14",
+                  "upper_bound": "8475.55"
+                }
+              ],
+              "calculation_method": "marginal_by_bracket",
+              "cap_base": "8475.55",
+              "type": "progressive_table"
+            },
+            "rounding_policy": {
+              "decimal_places": 2,
+              "mode": "ROUND_HALF_UP",
+              "stage": "per_assessment_result"
+            },
+            "update_policy": {
+              "auto_publish": true,
+              "rule_class": "parameterizable_rule",
+              "structural_review_required": false
+            },
+            "vigency": {
+              "effective_from": "2026-01-01"
+            }
+          },
+          "before": null,
+          "path": "$root"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "monthly_or_thirteenth_or_vacation_irrf_assessment",
+        "calculation_order": 12,
+        "calculators": [
+          "H26",
+          "H27",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "monthly",
+          "thirteenth",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Deduções de IR tipadas por contexto de apuração.",
+        "domain": "income_tax",
+        "payload": {
+          "assertions": [
+            "deductions_must_match_assessment_context",
+            "pension_must_not_be_silently_zeroed_when_applicable"
+          ],
+          "policy_kind": "deductions_by_income_type",
+          "type": "policy"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "monthly_or_thirteenth_or_vacation_irrf_assessment",
+        "calculation_order": 12,
+        "calculators": [
+          "H26",
+          "H27",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date"
+        },
+        "contexts": [
+          "monthly",
+          "thirteenth",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Deduções de IR tipadas por contexto de apuração.",
+        "domain": "income_tax",
+        "payload": {
+          "assertions": [
+            "deductions_must_match_assessment_context",
+            "pension_must_not_be_silently_zeroed_when_applicable"
+          ],
+          "policy_kind": "deductions_by_income_type",
+          "type": "policy"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "calculators": [
+        "H26",
+        "H27",
+        "H28",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "administrative_norm",
+          "snapshot_path": "RFB_IN_1500_2014/2e/2e96f3517260a3e0d61197e112b18e4929682eacdae1861c774ea200821fd73a.html",
+          "snapshot_sha256": "2e96f3517260a3e0d61197e112b18e4929682eacdae1861c774ea200821fd73a",
+          "source_id": "RFB_IN_1500_2014",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "administrative_norm",
+          "source_id": "RFB_IN_1500_2014",
+          "status": "AVAILABLE"
+        },
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_operational",
+          "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "administrative_norm",
+            "snapshot_path": "RFB_IN_1500_2014/2e/2e96f3517260a3e0d61197e112b18e4929682eacdae1861c774ea200821fd73a.html",
+            "snapshot_sha256": "2e96f3517260a3e0d61197e112b18e4929682eacdae1861c774ea200821fd73a",
+            "source_id": "RFB_IN_1500_2014",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "administrative_norm",
+            "source_id": "RFB_IN_1500_2014",
+            "status": "AVAILABLE"
+          }
+        },
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "administrative_norm",
+              "snapshot_path": "RFB_IN_1500_2014/2e/2e96f3517260a3e0d61197e112b18e4929682eacdae1861c774ea200821fd73a.html",
+              "snapshot_sha256": "2e96f3517260a3e0d61197e112b18e4929682eacdae1861c774ea200821fd73a",
+              "source_id": "RFB_IN_1500_2014",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": [
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "administrative_norm",
+              "source_id": "RFB_IN_1500_2014",
+              "status": "AVAILABLE"
+            },
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "official_operational",
+              "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
+              "status": "AVAILABLE"
+            }
+          ]
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "irrf.deductions_by_income_type",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "legal_deductions_for_matching_income_type",
+        "calculation_order": 15,
+        "calculators": [
+          "H26",
+          "H27",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "monthly",
+          "thirteenth",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Dedução unitária por dependente para a apuração correspondente.",
+        "domain": "income_tax",
+        "payload": {
+          "type": "scalar",
+          "unit": "BRL_per_dependent",
+          "value": "189.59"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameter",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "legal_deductions_for_matching_income_type",
+        "calculation_order": 15,
+        "calculators": [
+          "H26",
+          "H27",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date"
+        },
+        "contexts": [
+          "monthly",
+          "thirteenth",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Dedução unitária por dependente para a apuração correspondente.",
+        "domain": "income_tax",
+        "payload": {
+          "type": "scalar",
+          "unit": "BRL_per_dependent",
+          "value": "189.59"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameter",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "calculators": [
+        "H26",
+        "H27",
+        "H28",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "parser_id": "rfb_irrf_table_v1",
+          "parser_version": "1.0.0",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+          "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+          "source_id": "RFB_IRRF_TABLE_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_operational",
+          "source_id": "RFB_IRRF_TABLE_2026",
+          "status": "AVAILABLE"
+        },
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_operational",
+          "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "parser_id": "rfb_irrf_table_v1",
+            "parser_version": "1.0.0",
+            "retrieval_method": "http_html",
+            "role": "official_operational",
+            "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+            "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+            "source_id": "RFB_IRRF_TABLE_2026",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "official_operational",
+            "source_id": "RFB_IRRF_TABLE_2026",
+            "status": "AVAILABLE"
+          }
+        },
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "parser_id": "rfb_irrf_table_v1",
+              "parser_version": "1.0.0",
+              "retrieval_method": "http_html",
+              "role": "official_operational",
+              "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+              "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+              "source_id": "RFB_IRRF_TABLE_2026",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": [
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "official_operational",
+              "source_id": "RFB_IRRF_TABLE_2026",
+              "status": "AVAILABLE"
+            },
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "official_operational",
+              "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
+              "status": "AVAILABLE"
+            }
+          ]
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "irrf.dependent_deduction",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "irrf_assessment_context",
+        "calculation_order": 1,
+        "calculators": [
+          "H26",
+          "H27",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "monthly",
+          "thirteenth",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Partição obrigatória entre apurações mensal, 13º e férias; o contexto de rescisão não cria um quarto tipo de rendimento.",
+        "domain": "income_tax",
+        "payload": {
+          "assertions": [
+            "monthly_thirteenth_and_vacation_are_distinct_assessments"
+          ],
+          "policy_kind": "income_type_partition",
+          "type": "policy"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "not_materialized_in_historical_v1.1_candidate",
+      "before": null,
+      "calculators": [
+        "H26",
+        "H27",
+        "H28",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "ESOCIAL_TABLES_S13_NT07_2026/ae/aeb2e11379e9aeeb90ed59da7d6934d08b3db4684e3911fc8907840aad515647.html",
+          "snapshot_sha256": "aeb2e11379e9aeeb90ed59da7d6934d08b3db4684e3911fc8907840aad515647",
+          "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [],
+      "evidence_changed": [
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "official_operational",
+              "snapshot_path": "ESOCIAL_TABLES_S13_NT07_2026/ae/aeb2e11379e9aeeb90ed59da7d6934d08b3db4684e3911fc8907840aad515647.html",
+              "snapshot_sha256": "aeb2e11379e9aeeb90ed59da7d6934d08b3db4684e3911fc8907840aad515647",
+              "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": []
+        }
+      ],
+      "historical_semantic_status": "NEWLY_MATERIALIZED",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "irrf.income_type",
+      "semantic_changes": [
+        {
+          "after": {
+            "applicability": [],
+            "applies_to": "irrf_assessment_context",
+            "calculation_order": 1,
+            "calculators": [
+              "H26",
+              "H27",
+              "H28",
+              "H29"
+            ],
+            "competence": {
+              "basis": "payment_date",
+              "context_overrides": {},
+              "context_rule_specific_keys": {}
+            },
+            "contexts": [
+              "monthly",
+              "thirteenth",
+              "vacation_enjoyed",
+              "termination"
+            ],
+            "dependencies": [],
+            "description": "Partição obrigatória entre apurações mensal, 13º e férias; o contexto de rescisão não cria um quarto tipo de rendimento.",
+            "domain": "income_tax",
+            "payload": {
+              "assertions": [
+                "monthly_thirteenth_and_vacation_are_distinct_assessments"
+              ],
+              "policy_kind": "income_type_partition",
+              "type": "policy"
+            },
+            "update_policy": {
+              "auto_publish": false,
+              "rule_class": "structural_rule",
+              "structural_review_required": true
+            },
+            "vigency": {
+              "effective_from": "2026-01-01"
+            }
+          },
+          "before": null,
+          "path": "$root"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "irrf_tax_base_after_allowed_deductions",
+        "calculation_order": 30,
+        "calculators": [
+          "H26",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "monthly",
+          "thirteenth",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Tabela progressiva mensal do IRRF vigente em 2026.",
+        "domain": "income_tax",
+        "payload": {
+          "brackets": [
+            {
+              "deduction": "0.00",
+              "rate": "0",
+              "upper_bound": "2428.80"
+            },
+            {
+              "deduction": "182.16",
+              "rate": "0.075",
+              "upper_bound": "2826.65"
+            },
+            {
+              "deduction": "394.16",
+              "rate": "0.15",
+              "upper_bound": "3751.05"
+            },
+            {
+              "deduction": "675.49",
+              "rate": "0.225",
+              "upper_bound": "4664.68"
+            },
+            {
+              "deduction": "908.73",
+              "rate": "0.275"
+            }
+          ],
+          "calculation_method": "rate_times_base_minus_deduction",
+          "type": "progressive_table"
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "per_assessment_result"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameterizable_rule",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "irrf_tax_base_after_allowed_deductions",
+        "calculation_order": 30,
+        "calculators": [
+          "H26",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date"
+        },
+        "contexts": [
+          "monthly",
+          "thirteenth",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Tabela progressiva mensal do IRRF vigente em 2026.",
+        "domain": "income_tax",
+        "payload": {
+          "brackets": [
+            {
+              "deduction": "0",
+              "rate": "0",
+              "upper_bound": "2428.80"
+            },
+            {
+              "deduction": "182.16",
+              "rate": "0.075",
+              "upper_bound": "2826.65"
+            },
+            {
+              "deduction": "394.16",
+              "rate": "0.15",
+              "upper_bound": "3751.05"
+            },
+            {
+              "deduction": "675.49",
+              "rate": "0.225",
+              "upper_bound": "4664.68"
+            },
+            {
+              "deduction": "908.73",
+              "rate": "0.275",
+              "upper_bound": null
+            }
+          ],
+          "calculation_method": "rate_times_base_minus_deduction",
+          "type": "progressive_table"
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "per_assessment_result"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameterizable_rule",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "calculators": [
+        "H26",
+        "H28",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "parser_id": "rfb_irrf_table_v1",
+          "parser_version": "1.0.0",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+          "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+          "source_id": "RFB_IRRF_TABLE_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_operational",
+          "source_id": "RFB_IRRF_TABLE_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "parser_id": "rfb_irrf_table_v1",
+            "parser_version": "1.0.0",
+            "retrieval_method": "http_html",
+            "role": "official_operational",
+            "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+            "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+            "source_id": "RFB_IRRF_TABLE_2026",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "official_operational",
+            "source_id": "RFB_IRRF_TABLE_2026",
+            "status": "AVAILABLE"
+          }
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [
+        "rfd_irrf_2026_salary_3036",
+        "rfd_irrf_2026_salary_4000",
+        "rfd_irrf_2026_salary_5000",
+        "rfd_irrf_2026_salary_6000_A01_regression"
+      ],
+      "rule_id": "irrf.monthly.progressive_table",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        },
+        {
+          "after": "0.00",
+          "before": "0",
+          "path": "payload.brackets[0].deduction"
+        },
+        {
+          "after": null,
+          "before": null,
+          "path": "payload.brackets[4].upper_bound"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "taxable_income_subject_to_monthly_incidence_before_irrf_deductions",
+        "calculation_order": 40,
+        "calculators": [
+          "H26",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "monthly",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [
+          "irrf.monthly.progressive_table"
+        ],
+        "description": "Redução de IR de 2026 aplicada ao rendimento tributável sujeito à incidência mensal antes das deduções do IRRF.",
+        "domain": "income_tax",
+        "payload": {
+          "above_phaseout_behavior": "zero",
+          "floor_at_zero": true,
+          "full_relief_behavior": "max_reduction",
+          "full_relief_income_limit": "5000.00",
+          "input_semantic": "taxable_income_subject_to_monthly_incidence_before_irrf_deductions",
+          "intercept": "978.62",
+          "max_reduction": "312.89",
+          "phaseout_formula": "intercept_minus_slope_times_input",
+          "phaseout_income_limit": "7350.00",
+          "slope": "0.133145",
+          "type": "affine_reduction"
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "after_pre_reduction_irrf"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameterizable_rule",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01",
+          "effective_until": "2026-12-31"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "taxable_income_subject_to_monthly_incidence_before_irrf_deductions",
+        "calculation_order": 40,
+        "calculators": [
+          "H26",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date"
+        },
+        "contexts": [
+          "monthly",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [
+          "irrf.monthly.progressive_table"
+        ],
+        "description": "Redução de IR de 2026 aplicada ao rendimento tributável sujeito à incidência mensal antes das deduções do IRRF.",
+        "domain": "income_tax",
+        "payload": {
+          "above_phaseout_behavior": "zero",
+          "floor_at_zero": true,
+          "full_relief_behavior": "max_reduction",
+          "full_relief_income_limit": "5000.00",
+          "input_semantic": "taxable_income_subject_to_monthly_incidence_before_irrf_deductions",
+          "intercept": "978.62",
+          "max_reduction": "312.89",
+          "phaseout_formula": "intercept_minus_slope_times_input",
+          "phaseout_income_limit": "7350.00",
+          "slope": "0.133145",
+          "type": "affine_reduction"
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "after_pre_reduction_irrf"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameterizable_rule",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01",
+          "effective_until": "2026-12-31"
+        }
+      },
+      "calculators": [
+        "H26",
+        "H28",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "parser_id": "rfb_irrf_table_v1",
+          "parser_version": "1.0.0",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+          "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+          "source_id": "RFB_IRRF_TABLE_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "normative_primary",
+          "source_id": "PLANALTO_LEI_15270_2025",
+          "status": "AVAILABLE"
+        },
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_reference_case",
+          "source_id": "RFB_IRRF_EXAMPLES_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "parser_id": "rfb_irrf_table_v1",
+            "parser_version": "1.0.0",
+            "retrieval_method": "http_html",
+            "role": "official_operational",
+            "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+            "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+            "source_id": "RFB_IRRF_TABLE_2026",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "normative_primary",
+            "source_id": "PLANALTO_LEI_15270_2025",
+            "status": "AVAILABLE"
+          }
+        },
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "parser_id": "rfb_irrf_table_v1",
+              "parser_version": "1.0.0",
+              "retrieval_method": "http_html",
+              "role": "official_operational",
+              "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+              "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+              "source_id": "RFB_IRRF_TABLE_2026",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": [
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "normative_primary",
+              "source_id": "PLANALTO_LEI_15270_2025",
+              "status": "AVAILABLE"
+            },
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "official_reference_case",
+              "source_id": "RFB_IRRF_EXAMPLES_2026",
+              "status": "AVAILABLE"
+            }
+          ]
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [
+        "rfd_irrf_2026_salary_4000",
+        "rfd_irrf_2026_salary_5000",
+        "rfd_irrf_2026_salary_6000_A01_regression",
+        "rfd_irrf_2026_salary_7607_20_boundary_semantics"
+      ],
+      "rule_id": "irrf.reduction.2026",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "deduction_choice_within_each_irrf_assessment",
+        "calculation_order": 14,
+        "calculators": [
+          "H26",
+          "H27",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "monthly",
+          "thirteenth",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Limite do desconto simplificado comparado separadamente dentro de cada apuração de IRRF suportada.",
+        "domain": "income_tax",
+        "payload": {
+          "type": "scalar",
+          "unit": "BRL",
+          "value": "607.20"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameterizable_rule",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "not_materialized_in_historical_v1.1_candidate",
+      "before": null,
+      "calculators": [
+        "H26",
+        "H27",
+        "H28",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "parser_id": "rfb_irrf_table_v1",
+          "parser_version": "1.0.0",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+          "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+          "source_id": "RFB_IRRF_TABLE_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [],
+      "evidence_changed": [
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "parser_id": "rfb_irrf_table_v1",
+              "parser_version": "1.0.0",
+              "retrieval_method": "http_html",
+              "role": "official_operational",
+              "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+              "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+              "source_id": "RFB_IRRF_TABLE_2026",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": []
+        }
+      ],
+      "historical_semantic_status": "NEWLY_MATERIALIZED",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "irrf.simplified_monthly_discount",
+      "semantic_changes": [
+        {
+          "after": {
+            "applicability": [],
+            "applies_to": "deduction_choice_within_each_irrf_assessment",
+            "calculation_order": 14,
+            "calculators": [
+              "H26",
+              "H27",
+              "H28",
+              "H29"
+            ],
+            "competence": {
+              "basis": "payment_date",
+              "context_overrides": {},
+              "context_rule_specific_keys": {}
+            },
+            "contexts": [
+              "monthly",
+              "thirteenth",
+              "vacation_enjoyed",
+              "termination"
+            ],
+            "dependencies": [],
+            "description": "Limite do desconto simplificado comparado separadamente dentro de cada apuração de IRRF suportada.",
+            "domain": "income_tax",
+            "payload": {
+              "type": "scalar",
+              "unit": "BRL",
+              "value": "607.20"
+            },
+            "update_policy": {
+              "auto_publish": true,
+              "rule_class": "parameterizable_rule",
+              "structural_review_required": false
+            },
+            "vigency": {
+              "effective_from": "2026-01-01"
+            }
+          },
+          "before": null,
+          "path": "$root"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "contract_selection_and_consumer_gate",
+        "calculation_order": 0,
+        "calculators": [
+          "H26",
+          "H27",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "rule_specific",
+          "context_overrides": {},
+          "context_rule_specific_keys": {},
+          "rule_specific_key": "technical_non_temporal"
+        },
+        "contexts": [
+          "technical"
+        ],
+        "dependencies": [],
+        "description": "Consumidores devem validar vigência, competência, proveniência, qualidade e compatibilidade antes de usar uma regra.",
+        "domain": "technical",
+        "payload": {
+          "assertions": [
+            "consumer_rejects_incompatible_vigency_or_quality",
+            "generated_at_does_not_prove_vigency"
+          ],
+          "policy_kind": "contract_vigency_and_quality",
+          "type": "policy"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "technical_contract_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "not_materialized_in_historical_v1.1_candidate",
+      "before": null,
+      "calculators": [
+        "H26",
+        "H27",
+        "H28",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "locator": "technical.contract_vigency_and_quality",
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "repository_snapshot",
+          "role": "internal_governance",
+          "snapshot_path": "SANIDA_TECHNICAL_CONTRACT_GATE_V12/ef/ef748c012bea93899fdbae27937ef9e83e7fa5837a448f1c5d30b8e1b24bb303.json",
+          "snapshot_sha256": "ef748c012bea93899fdbae27937ef9e83e7fa5837a448f1c5d30b8e1b24bb303",
+          "source_id": "SANIDA_TECHNICAL_CONTRACT_GATE_V12",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [],
+      "evidence_changed": [
+        {
+          "after": [
+            {
+              "locator": "technical.contract_vigency_and_quality",
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "repository_snapshot",
+              "role": "internal_governance",
+              "snapshot_path": "SANIDA_TECHNICAL_CONTRACT_GATE_V12/ef/ef748c012bea93899fdbae27937ef9e83e7fa5837a448f1c5d30b8e1b24bb303.json",
+              "snapshot_sha256": "ef748c012bea93899fdbae27937ef9e83e7fa5837a448f1c5d30b8e1b24bb303",
+              "source_id": "SANIDA_TECHNICAL_CONTRACT_GATE_V12",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": []
+        }
+      ],
+      "historical_semantic_status": "NEWLY_MATERIALIZED",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "technical.contract_vigency_and_quality",
+      "semantic_changes": [
+        {
+          "after": {
+            "applicability": [],
+            "applies_to": "contract_selection_and_consumer_gate",
+            "calculation_order": 0,
+            "calculators": [
+              "H26",
+              "H27",
+              "H28",
+              "H29"
+            ],
+            "competence": {
+              "basis": "rule_specific",
+              "context_overrides": {},
+              "context_rule_specific_keys": {},
+              "rule_specific_key": "technical_non_temporal"
+            },
+            "contexts": [
+              "technical"
+            ],
+            "dependencies": [],
+            "description": "Consumidores devem validar vigência, competência, proveniência, qualidade e compatibilidade antes de usar uma regra.",
+            "domain": "technical",
+            "payload": {
+              "assertions": [
+                "consumer_rejects_incompatible_vigency_or_quality",
+                "generated_at_does_not_prove_vigency"
+              ],
+              "policy_kind": "contract_vigency_and_quality",
+              "type": "policy"
+            },
+            "update_policy": {
+              "auto_publish": false,
+              "rule_class": "technical_contract_rule",
+              "structural_review_required": true
+            },
+            "vigency": {
+              "effective_from": "2026-01-01"
+            }
+          },
+          "before": null,
+          "path": "$root"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "all_monetary_operations",
+        "calculation_order": 0,
+        "calculators": [
+          "H26",
+          "H27",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "rule_specific",
+          "context_overrides": {},
+          "context_rule_specific_keys": {},
+          "rule_specific_key": "technical_non_temporal"
+        },
+        "contexts": [
+          "technical"
+        ],
+        "dependencies": [],
+        "description": "Contrato técnico exige Decimal para valores monetários e política explícita de arredondamento por fórmula/estágio.",
+        "domain": "technical",
+        "payload": {
+          "assertions": [
+            "money_uses_decimal",
+            "rounding_must_be_explicit_per_formula_stage"
+          ],
+          "policy_kind": "money_decimal_and_rounding",
+          "type": "policy"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "technical_contract_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "not_materialized_in_historical_v1.1_candidate",
+      "before": null,
+      "calculators": [
+        "H26",
+        "H27",
+        "H28",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "locator": "technical.money_decimal_and_rounding",
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "repository_snapshot",
+          "role": "internal_governance",
+          "snapshot_path": "SANIDA_TECHNICAL_MONEY_DECIMAL_V1/6f/6fb5f1234e40ff73a91104e78a5eae2f9aa3d84c757ed81b748f02484112291a.json",
+          "snapshot_sha256": "6fb5f1234e40ff73a91104e78a5eae2f9aa3d84c757ed81b748f02484112291a",
+          "source_id": "SANIDA_TECHNICAL_MONEY_DECIMAL_V1",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [],
+      "evidence_changed": [
+        {
+          "after": [
+            {
+              "locator": "technical.money_decimal_and_rounding",
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "repository_snapshot",
+              "role": "internal_governance",
+              "snapshot_path": "SANIDA_TECHNICAL_MONEY_DECIMAL_V1/6f/6fb5f1234e40ff73a91104e78a5eae2f9aa3d84c757ed81b748f02484112291a.json",
+              "snapshot_sha256": "6fb5f1234e40ff73a91104e78a5eae2f9aa3d84c757ed81b748f02484112291a",
+              "source_id": "SANIDA_TECHNICAL_MONEY_DECIMAL_V1",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": []
+        }
+      ],
+      "historical_semantic_status": "NEWLY_MATERIALIZED",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "technical.money_decimal_and_rounding",
+      "semantic_changes": [
+        {
+          "after": {
+            "applicability": [],
+            "applies_to": "all_monetary_operations",
+            "calculation_order": 0,
+            "calculators": [
+              "H26",
+              "H27",
+              "H28",
+              "H29"
+            ],
+            "competence": {
+              "basis": "rule_specific",
+              "context_overrides": {},
+              "context_rule_specific_keys": {},
+              "rule_specific_key": "technical_non_temporal"
+            },
+            "contexts": [
+              "technical"
+            ],
+            "dependencies": [],
+            "description": "Contrato técnico exige Decimal para valores monetários e política explícita de arredondamento por fórmula/estágio.",
+            "domain": "technical",
+            "payload": {
+              "assertions": [
+                "money_uses_decimal",
+                "rounding_must_be_explicit_per_formula_stage"
+              ],
+              "policy_kind": "money_decimal_and_rounding",
+              "type": "policy"
+            },
+            "update_policy": {
+              "auto_publish": false,
+              "rule_class": "technical_contract_rule",
+              "structural_review_required": true
+            },
+            "vigency": {
+              "effective_from": "2026-01-01"
+            }
+          },
+          "before": null,
+          "path": "$root"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "completed_vacation_acquisition_periods",
+        "calculation_order": 35,
+        "calculators": [
+          "H29"
+        ],
+        "competence": {
+          "basis": "termination_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "termination"
+        ],
+        "dependencies": [
+          "termination.reason_scope"
+        ],
+        "description": "Estados de períodos integrais adquiridos e vencidos na rescisão.",
+        "domain": "termination",
+        "payload": {
+          "initial_consumer_may_limit_to_one_period_if_disclosed": true,
+          "overdue_double_requires_explicit_rule": true,
+          "states": [
+            "acquired_within_concession_period",
+            "overdue_beyond_concession_period"
+          ],
+          "type": "period_state"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "completed_vacation_acquisition_periods",
+        "calculation_order": 35,
+        "calculators": [
+          "H29"
+        ],
+        "competence": {
+          "basis": "termination_date"
+        },
+        "contexts": [
+          "termination"
+        ],
+        "dependencies": [
+          "termination.reason_scope"
+        ],
+        "description": "Estados de períodos integrais adquiridos e vencidos na rescisão.",
+        "domain": "termination",
+        "payload": {
+          "initial_consumer_may_limit_to_one_period_if_disclosed": true,
+          "overdue_double_requires_explicit_rule": true,
+          "states": [
+            "acquired_within_concession_period",
+            "overdue_beyond_concession_period"
+          ],
+          "type": "period_state"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "calculators": [
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_CLT/80/80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041.html",
+          "snapshot_sha256": "80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "normative_primary",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        },
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_operational",
+          "source_id": "MTE_TERMINATION_FAQ",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "normative_primary",
+            "snapshot_path": "PLANALTO_CLT/80/80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041.html",
+            "snapshot_sha256": "80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041",
+            "source_id": "PLANALTO_CLT",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "normative_primary",
+            "source_id": "PLANALTO_CLT",
+            "status": "AVAILABLE"
+          }
+        },
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "normative_primary",
+              "snapshot_path": "PLANALTO_CLT/80/80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041.html",
+              "snapshot_sha256": "80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041",
+              "source_id": "PLANALTO_CLT",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": [
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "normative_primary",
+              "source_id": "PLANALTO_CLT",
+              "status": "AVAILABLE"
+            },
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "official_operational",
+              "source_id": "MTE_TERMINATION_FAQ",
+              "status": "AVAILABLE"
+            }
+          ]
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "termination.acquired_and_overdue_vacation",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "termination_result_promise",
+        "calculation_order": 5,
+        "calculators": [
+          "H29"
+        ],
+        "competence": {
+          "basis": "termination_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "termination"
+        ],
+        "dependencies": [
+          "termination.reason_scope"
+        ],
+        "description": "H29 declara resultado parcial enquanto verbas fora do escopo não forem modeladas.",
+        "domain": "termination",
+        "payload": {
+          "excluded_items": [
+            "notice_pay_or_notice_discount",
+            "fgts_termination_fine",
+            "fgts_withdrawal",
+            "unemployment_insurance",
+            "stability_indemnities",
+            "collective_bargaining_specific_items",
+            "fixed_term_contract_termination_rules",
+            "indirect_termination_without_judicially_resolved_context",
+            "variable_termination_items_not_explicitly_modeled"
+          ],
+          "included_items": [
+            "salary_balance",
+            "thirteenth_proportional",
+            "vacation_proportional",
+            "acquired_or_overdue_vacation"
+          ],
+          "promise": "partial_estimate",
+          "require_user_disclosure": true,
+          "type": "scope_declaration"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "product_scope_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "termination_result_promise",
+        "calculation_order": 5,
+        "calculators": [
+          "H29"
+        ],
+        "competence": {
+          "basis": "termination_date"
+        },
+        "contexts": [
+          "termination"
+        ],
+        "dependencies": [
+          "termination.reason_scope"
+        ],
+        "description": "H29 declara resultado parcial enquanto verbas fora do escopo não forem modeladas.",
+        "domain": "termination",
+        "payload": {
+          "excluded_items": [
+            "notice_pay_or_notice_discount",
+            "fgts_termination_fine",
+            "fgts_withdrawal",
+            "unemployment_insurance",
+            "stability_indemnities",
+            "collective_bargaining_specific_items",
+            "fixed_term_contract_termination_rules",
+            "indirect_termination_without_judicially_resolved_context",
+            "variable_termination_items_not_explicitly_modeled"
+          ],
+          "included_items": [
+            "salary_balance",
+            "thirteenth_proportional",
+            "vacation_proportional",
+            "acquired_or_overdue_vacation"
+          ],
+          "promise": "partial_estimate",
+          "require_user_disclosure": true,
+          "type": "scope_declaration"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "product_scope_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "calculators": [
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "MTE_TERMINATION_FAQ/62/6284abb3f4a7b4447843e26965a82a5d3b760688d96efd2fb1ff1a90b017950f.html",
+          "snapshot_sha256": "6284abb3f4a7b4447843e26965a82a5d3b760688d96efd2fb1ff1a90b017950f",
+          "source_id": "MTE_TERMINATION_FAQ",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_operational",
+          "source_id": "MTE_TERMINATION_FAQ",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "official_operational",
+            "snapshot_path": "MTE_TERMINATION_FAQ/62/6284abb3f4a7b4447843e26965a82a5d3b760688d96efd2fb1ff1a90b017950f.html",
+            "snapshot_sha256": "6284abb3f4a7b4447843e26965a82a5d3b760688d96efd2fb1ff1a90b017950f",
+            "source_id": "MTE_TERMINATION_FAQ",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "official_operational",
+            "source_id": "MTE_TERMINATION_FAQ",
+            "status": "AVAILABLE"
+          }
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "termination.partial_output_scope",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [
+          {
+            "field": "employment_regime",
+            "operator": "in",
+            "value": [
+              "monthly",
+              "biweekly"
+            ]
+          },
+          {
+            "field": "contract_term",
+            "operator": "eq",
+            "value": "indefinite"
+          }
+        ],
+        "applies_to": "termination_entitlement_matrix",
+        "calculation_order": 10,
+        "calculators": [
+          "H29"
+        ],
+        "competence": {
+          "basis": "termination_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Matriz inicial de elegibilidade das verbas parciais suportadas por H29 conforme Tabela 19/evidência operacional fechada na Fase 1.",
+        "domain": "termination",
+        "payload": {
+          "code_system": "esocial_table_19_termination_reason",
+          "rows": [
+            {
+              "code": "01",
+              "entitlements": {
+                "acquired_vacation_if_due": true,
+                "salary_balance": true,
+                "thirteenth_proportional": false,
+                "vacation_proportional": false
+              },
+              "label": "Justa causa pelo empregador"
+            },
+            {
+              "code": "02",
+              "entitlements": {
+                "acquired_vacation_if_due": true,
+                "salary_balance": true,
+                "thirteenth_proportional": true,
+                "vacation_proportional": true
+              },
+              "label": "Sem justa causa pelo empregador"
+            },
+            {
+              "code": "07",
+              "entitlements": {
+                "acquired_vacation_if_due": true,
+                "salary_balance": true,
+                "thirteenth_proportional": true,
+                "vacation_proportional": true
+              },
+              "label": "Pedido de demissão"
+            },
+            {
+              "code": "33",
+              "entitlements": {
+                "acquired_vacation_if_due": true,
+                "salary_balance": true,
+                "thirteenth_proportional": true,
+                "vacation_proportional": true
+              },
+              "label": "Acordo do art. 484-A"
+            }
+          ],
+          "type": "eligibility_matrix",
+          "unsupported_behavior": "UNSUPPORTED"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [
+          {
+            "field": "employment_regime",
+            "operator": "in",
+            "value": [
+              "monthly",
+              "biweekly"
+            ]
+          },
+          {
+            "field": "contract_term",
+            "operator": "eq",
+            "value": "indefinite"
+          }
+        ],
+        "applies_to": "termination_entitlement_matrix",
+        "calculation_order": 10,
+        "calculators": [
+          "H29"
+        ],
+        "competence": {
+          "basis": "termination_date"
+        },
+        "contexts": [
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Matriz inicial de elegibilidade das verbas parciais suportadas por H29 conforme Tabela 19/evidência operacional fechada na Fase 1.",
+        "domain": "termination",
+        "payload": {
+          "code_system": "esocial_table_19_termination_reason",
+          "rows": [
+            {
+              "code": "01",
+              "entitlements": {
+                "acquired_vacation_if_due": true,
+                "salary_balance": true,
+                "thirteenth_proportional": false,
+                "vacation_proportional": false
+              },
+              "label": "Justa causa pelo empregador"
+            },
+            {
+              "code": "02",
+              "entitlements": {
+                "acquired_vacation_if_due": true,
+                "salary_balance": true,
+                "thirteenth_proportional": true,
+                "vacation_proportional": true
+              },
+              "label": "Sem justa causa pelo empregador"
+            },
+            {
+              "code": "07",
+              "entitlements": {
+                "acquired_vacation_if_due": true,
+                "salary_balance": true,
+                "thirteenth_proportional": true,
+                "vacation_proportional": true
+              },
+              "label": "Pedido de demissão"
+            },
+            {
+              "code": "33",
+              "entitlements": {
+                "acquired_vacation_if_due": true,
+                "salary_balance": true,
+                "thirteenth_proportional": true,
+                "vacation_proportional": true
+              },
+              "label": "Acordo do art. 484-A"
+            }
+          ],
+          "type": "eligibility_matrix",
+          "unsupported_behavior": "UNSUPPORTED"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "calculators": [
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "ESOCIAL_TABLES_S13_NT07_2026/ae/aeb2e11379e9aeeb90ed59da7d6934d08b3db4684e3911fc8907840aad515647.html",
+          "snapshot_sha256": "aeb2e11379e9aeeb90ed59da7d6934d08b3db4684e3911fc8907840aad515647",
+          "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "locator": "Tabela 19",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_operational",
+          "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
+          "status": "AVAILABLE"
+        },
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_operational",
+          "source_id": "MTE_TERMINATION_FAQ",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "official_operational",
+            "snapshot_path": "ESOCIAL_TABLES_S13_NT07_2026/ae/aeb2e11379e9aeeb90ed59da7d6934d08b3db4684e3911fc8907840aad515647.html",
+            "snapshot_sha256": "aeb2e11379e9aeeb90ed59da7d6934d08b3db4684e3911fc8907840aad515647",
+            "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "locator": "Tabela 19",
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "official_operational",
+            "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
+            "status": "AVAILABLE"
+          }
+        },
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "official_operational",
+              "snapshot_path": "ESOCIAL_TABLES_S13_NT07_2026/ae/aeb2e11379e9aeeb90ed59da7d6934d08b3db4684e3911fc8907840aad515647.html",
+              "snapshot_sha256": "aeb2e11379e9aeeb90ed59da7d6934d08b3db4684e3911fc8907840aad515647",
+              "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": [
+            {
+              "locator": "Tabela 19",
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "official_operational",
+              "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
+              "status": "AVAILABLE"
+            },
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "official_operational",
+              "source_id": "MTE_TERMINATION_FAQ",
+              "status": "AVAILABLE"
+            }
+          ]
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [
+        "termination_reason_01_just_cause",
+        "termination_reason_02_without_just_cause",
+        "termination_reason_07_resignation",
+        "termination_reason_33_mutual_agreement"
+      ],
+      "rule_id": "termination.reason_scope",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "monthly_employee_salary_balance",
+        "calculation_order": 20,
+        "calculators": [
+          "H29"
+        ],
+        "competence": {
+          "basis": "termination_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "termination"
+        ],
+        "dependencies": [
+          "termination.reason_scope"
+        ],
+        "description": "Prorrateio de saldo para mensalista/quinzenalista no escopo v1.",
+        "domain": "termination",
+        "payload": {
+          "base_semantic": "monthly_base_salary",
+          "denominator_semantic": "calendar_days_in_month",
+          "formula": "base_times_numerator_over_denominator",
+          "numerator_semantic": "days_counted_through_termination",
+          "type": "proration",
+          "universal_fixed_denominator": false
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "salary_balance_result"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "monthly_employee_salary_balance",
+        "calculation_order": 20,
+        "calculators": [
+          "H29"
+        ],
+        "competence": {
+          "basis": "termination_date"
+        },
+        "contexts": [
+          "termination"
+        ],
+        "dependencies": [
+          "termination.reason_scope"
+        ],
+        "description": "Prorrateio de saldo para mensalista/quinzenalista no escopo v1.",
+        "domain": "termination",
+        "payload": {
+          "base_semantic": "monthly_base_salary",
+          "denominator_semantic": "calendar_days_in_month",
+          "formula": "base_times_numerator_over_denominator",
+          "numerator_semantic": "days_counted_through_termination",
+          "type": "proration",
+          "universal_fixed_denominator": false
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "salary_balance_result"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "calculators": [
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "ESOCIAL_WEB_MEI_2026/bf/bff5a00cf0501f20f575adb1b4b684c8c6be314e0ac834357442daf5c618e710.html",
+          "snapshot_sha256": "bff5a00cf0501f20f575adb1b4b684c8c6be314e0ac834357442daf5c618e710",
+          "source_id": "ESOCIAL_WEB_MEI_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_operational",
+          "source_id": "ESOCIAL_WEB_MEI_2026",
+          "status": "AVAILABLE"
+        },
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_operational",
+          "source_id": "MTE_TERMINATION_FAQ",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "official_operational",
+            "snapshot_path": "ESOCIAL_WEB_MEI_2026/bf/bff5a00cf0501f20f575adb1b4b684c8c6be314e0ac834357442daf5c618e710.html",
+            "snapshot_sha256": "bff5a00cf0501f20f575adb1b4b684c8c6be314e0ac834357442daf5c618e710",
+            "source_id": "ESOCIAL_WEB_MEI_2026",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "official_operational",
+            "source_id": "ESOCIAL_WEB_MEI_2026",
+            "status": "AVAILABLE"
+          }
+        },
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "official_operational",
+              "snapshot_path": "ESOCIAL_WEB_MEI_2026/bf/bff5a00cf0501f20f575adb1b4b684c8c6be314e0ac834357442daf5c618e710.html",
+              "snapshot_sha256": "bff5a00cf0501f20f575adb1b4b684c8c6be314e0ac834357442daf5c618e710",
+              "source_id": "ESOCIAL_WEB_MEI_2026",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": [
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "official_operational",
+              "source_id": "ESOCIAL_WEB_MEI_2026",
+              "status": "AVAILABLE"
+            },
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "official_operational",
+              "source_id": "MTE_TERMINATION_FAQ",
+              "status": "AVAILABLE"
+            }
+          ]
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [
+        "termination_salary_balance_monthly_31_days"
+      ],
+      "rule_id": "termination.salary_balance",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "termination_thirteenth_entitlement",
+        "calculation_order": 30,
+        "calculators": [
+          "H29"
+        ],
+        "competence": {
+          "basis": "termination_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "termination"
+        ],
+        "dependencies": [
+          "termination.reason_scope",
+          "thirteenth.accrual.twelfths"
+        ],
+        "description": "Elegibilidade do 13º proporcional por motivo suportado.",
+        "domain": "termination",
+        "payload": {
+          "code_system": "esocial_table_19_termination_reason",
+          "eligible_codes": [
+            "02",
+            "07",
+            "33"
+          ],
+          "ineligible_codes": [
+            "01"
+          ],
+          "type": "code_eligibility",
+          "unsupported_behavior": "UNSUPPORTED"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "termination_thirteenth_entitlement",
+        "calculation_order": 30,
+        "calculators": [
+          "H29"
+        ],
+        "competence": {
+          "basis": "termination_date"
+        },
+        "contexts": [
+          "termination"
+        ],
+        "dependencies": [
+          "termination.reason_scope",
+          "thirteenth.accrual.twelfths"
+        ],
+        "description": "Elegibilidade do 13º proporcional por motivo suportado.",
+        "domain": "termination",
+        "payload": {
+          "code_system": "esocial_table_19_termination_reason",
+          "eligible_codes": [
+            "02",
+            "07",
+            "33"
+          ],
+          "ineligible_codes": [
+            "01"
+          ],
+          "type": "code_eligibility",
+          "unsupported_behavior": "UNSUPPORTED"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "calculators": [
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/d8/d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27.html",
+          "snapshot_sha256": "d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27",
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "normative_primary",
+          "source_id": "PLANALTO_LEI_4090_1962",
+          "status": "AVAILABLE"
+        },
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "normative_primary",
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "status": "AVAILABLE"
+        },
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_operational",
+          "source_id": "MTE_TERMINATION_FAQ",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "normative_primary",
+            "snapshot_path": "PLANALTO_DECRETO_10854_2021/d8/d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27.html",
+            "snapshot_sha256": "d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27",
+            "source_id": "PLANALTO_DECRETO_10854_2021",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "normative_primary",
+            "source_id": "PLANALTO_LEI_4090_1962",
+            "status": "AVAILABLE"
+          }
+        },
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "normative_primary",
+              "snapshot_path": "PLANALTO_DECRETO_10854_2021/d8/d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27.html",
+              "snapshot_sha256": "d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27",
+              "source_id": "PLANALTO_DECRETO_10854_2021",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": [
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "normative_primary",
+              "source_id": "PLANALTO_LEI_4090_1962",
+              "status": "AVAILABLE"
+            },
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "normative_primary",
+              "source_id": "PLANALTO_DECRETO_10854_2021",
+              "status": "AVAILABLE"
+            },
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "official_operational",
+              "source_id": "MTE_TERMINATION_FAQ",
+              "status": "AVAILABLE"
+            }
+          ]
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "termination.thirteenth_proportional",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "indemnified_vacation_at_contract_end",
+        "calculation_order": 40,
+        "calculators": [
+          "H29"
+        ],
+        "competence": {
+          "basis": "termination_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "vacation_indemnified",
+          "termination"
+        ],
+        "dependencies": [
+          "vacation.remuneration_and_constitutional_third"
+        ],
+        "description": "Férias indenizadas na extinção têm natureza tributária/previdenciária explícita e não herdam incidência de férias gozadas.",
+        "domain": "termination",
+        "payload": {
+          "components": [
+            {
+              "component": "indemnified_vacation_principal",
+              "irrf": "no",
+              "social_security": "no"
+            },
+            {
+              "component": "indemnified_vacation_constitutional_third",
+              "irrf": "no",
+              "social_security": "no"
+            }
+          ],
+          "type": "incidence_profile"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "not_materialized_in_historical_v1.1_candidate",
+      "before": null,
+      "calculators": [
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_CP_INCIDENCE_TABLE/eb/ebfce5705e85f011ae411d4b5e5363eca19992c2873307851155b67a9b7c5948.html",
+          "snapshot_sha256": "ebfce5705e85f011ae411d4b5e5363eca19992c2873307851155b67a9b7c5948",
+          "source_id": "RFB_CP_INCIDENCE_TABLE",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [],
+      "evidence_changed": [
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "official_operational",
+              "snapshot_path": "RFB_CP_INCIDENCE_TABLE/eb/ebfce5705e85f011ae411d4b5e5363eca19992c2873307851155b67a9b7c5948.html",
+              "snapshot_sha256": "ebfce5705e85f011ae411d4b5e5363eca19992c2873307851155b67a9b7c5948",
+              "source_id": "RFB_CP_INCIDENCE_TABLE",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": []
+        }
+      ],
+      "historical_semantic_status": "NEWLY_MATERIALIZED",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "termination.vacation_indemnity_tax_treatment",
+      "semantic_changes": [
+        {
+          "after": {
+            "applicability": [],
+            "applies_to": "indemnified_vacation_at_contract_end",
+            "calculation_order": 40,
+            "calculators": [
+              "H29"
+            ],
+            "competence": {
+              "basis": "termination_date",
+              "context_overrides": {},
+              "context_rule_specific_keys": {}
+            },
+            "contexts": [
+              "vacation_indemnified",
+              "termination"
+            ],
+            "dependencies": [
+              "vacation.remuneration_and_constitutional_third"
+            ],
+            "description": "Férias indenizadas na extinção têm natureza tributária/previdenciária explícita e não herdam incidência de férias gozadas.",
+            "domain": "termination",
+            "payload": {
+              "components": [
+                {
+                  "component": "indemnified_vacation_principal",
+                  "irrf": "no",
+                  "social_security": "no"
+                },
+                {
+                  "component": "indemnified_vacation_constitutional_third",
+                  "irrf": "no",
+                  "social_security": "no"
+                }
+              ],
+              "type": "incidence_profile"
+            },
+            "update_policy": {
+              "auto_publish": false,
+              "rule_class": "structural_rule",
+              "structural_review_required": true
+            },
+            "vigency": {
+              "effective_from": "2026-01-01"
+            }
+          },
+          "before": null,
+          "path": "$root"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "current_vacation_acquisition_period_at_termination",
+        "calculation_order": 31,
+        "calculators": [
+          "H29"
+        ],
+        "competence": {
+          "basis": "termination_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "termination"
+        ],
+        "dependencies": [
+          "termination.reason_scope",
+          "vacation.acquisition_period"
+        ],
+        "description": "Elegibilidade das férias proporcionais no período aquisitivo corrente por motivo de desligamento suportado.",
+        "domain": "termination",
+        "payload": {
+          "code_system": "esocial_table_19_termination_reason",
+          "eligible_codes": [
+            "02",
+            "07",
+            "33"
+          ],
+          "ineligible_codes": [
+            "01"
+          ],
+          "type": "code_eligibility",
+          "unsupported_behavior": "UNSUPPORTED"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "current_vacation_acquisition_period_at_termination",
+        "calculation_order": 31,
+        "calculators": [
+          "H29"
+        ],
+        "competence": {
+          "basis": "termination_date"
+        },
+        "contexts": [
+          "termination"
+        ],
+        "dependencies": [
+          "termination.reason_scope",
+          "vacation.acquisition_period"
+        ],
+        "description": "Elegibilidade das férias proporcionais no período aquisitivo corrente por motivo de desligamento suportado.",
+        "domain": "termination",
+        "payload": {
+          "code_system": "esocial_table_19_termination_reason",
+          "eligible_codes": [
+            "02",
+            "07",
+            "33"
+          ],
+          "ineligible_codes": [
+            "01"
+          ],
+          "type": "code_eligibility",
+          "unsupported_behavior": "UNSUPPORTED"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "calculators": [
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_CLT/80/80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041.html",
+          "snapshot_sha256": "80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "normative_primary",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        },
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_operational",
+          "source_id": "MTE_TERMINATION_FAQ",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "normative_primary",
+            "snapshot_path": "PLANALTO_CLT/80/80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041.html",
+            "snapshot_sha256": "80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041",
+            "source_id": "PLANALTO_CLT",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "normative_primary",
+            "source_id": "PLANALTO_CLT",
+            "status": "AVAILABLE"
+          }
+        },
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "normative_primary",
+              "snapshot_path": "PLANALTO_CLT/80/80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041.html",
+              "snapshot_sha256": "80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041",
+              "source_id": "PLANALTO_CLT",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": [
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "normative_primary",
+              "source_id": "PLANALTO_CLT",
+              "status": "AVAILABLE"
+            },
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "official_operational",
+              "source_id": "MTE_TERMINATION_FAQ",
+              "status": "AVAILABLE"
+            }
+          ]
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [
+        "vacation_period_cross_year_A02_regression",
+        "termination_reason_01_just_cause",
+        "termination_reason_02_without_just_cause",
+        "termination_reason_07_resignation",
+        "termination_reason_33_mutual_agreement"
+      ],
+      "rule_id": "termination.vacation_proportional",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "thirteenth_entitlement",
+        "calculation_order": 10,
+        "calculators": [
+          "H27",
+          "H29"
+        ],
+        "competence": {
+          "basis": "rule_specific",
+          "context_overrides": {},
+          "context_rule_specific_keys": {},
+          "description": "Ano de referência para 13º normal; período até a extinção para 13º rescisório dentro da modalidade suportada.",
+          "rule_specific_key": "thirteenth_accrual_reference_year_or_termination_period"
+        },
+        "contexts": [
+          "thirteenth",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "1/12 por mês de serviço; fração igual ou superior a 15 dias conta como mês integral.",
+        "domain": "thirteenth_salary",
+        "payload": {
+          "fraction_denominator": 12,
+          "fraction_numerator": 1,
+          "max_units": 12,
+          "method": "one_unit_per_month_if_days_gte_threshold",
+          "qualifying_days": 15,
+          "type": "threshold_accrual"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "1962-07-13"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "thirteenth_entitlement",
+        "calculation_order": 10,
+        "calculators": [
+          "H27",
+          "H29"
+        ],
+        "competence": {
+          "basis": "rule_specific",
+          "description": "Ano de referência para 13º normal; período até a extinção para 13º rescisório dentro da modalidade suportada.",
+          "rule_specific_key": "thirteenth_accrual_reference_year_or_termination_period"
+        },
+        "contexts": [
+          "thirteenth",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "1/12 por mês de serviço; fração igual ou superior a 15 dias conta como mês integral.",
+        "domain": "thirteenth_salary",
+        "payload": {
+          "fraction_denominator": 12,
+          "fraction_numerator": 1,
+          "max_units": 12,
+          "method": "one_unit_per_month_if_days_gte_threshold",
+          "qualifying_days": 15,
+          "type": "threshold_accrual"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "1962-07-13"
+        }
+      },
+      "calculators": [
+        "H27",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/d8/d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27.html",
+          "snapshot_sha256": "d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27",
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "normative_primary",
+          "source_id": "PLANALTO_LEI_4090_1962",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "normative_primary",
+            "snapshot_path": "PLANALTO_DECRETO_10854_2021/d8/d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27.html",
+            "snapshot_sha256": "d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27",
+            "source_id": "PLANALTO_DECRETO_10854_2021",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "normative_primary",
+            "source_id": "PLANALTO_LEI_4090_1962",
+            "status": "AVAILABLE"
+          }
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [
+        "thirteenth_accrual_14_days_no_avo",
+        "thirteenth_accrual_15_days_one_avo"
+      ],
+      "rule_id": "thirteenth.accrual.twelfths",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "first_installment_of_thirteenth",
+        "calculation_order": 20,
+        "calculators": [
+          "H27"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "thirteenth"
+        ],
+        "dependencies": [],
+        "description": "Adiantamento do 13º com referência fixa no salário do mês anterior e exceções estruturais.",
+        "domain": "thirteenth_salary",
+        "payload": {
+          "fixed_reference": "previous_month_salary",
+          "fraction_denominator": 2,
+          "fraction_numerator": 1,
+          "payment_window_end_month": 11,
+          "payment_window_start_month": 2,
+          "special_handling": [
+            "admission_in_year",
+            "variable_remuneration"
+          ],
+          "type": "thirteenth_advance"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "1965-08-12"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "first_installment_of_thirteenth",
+        "calculation_order": 20,
+        "calculators": [
+          "H27"
+        ],
+        "competence": {
+          "basis": "payment_date"
+        },
+        "contexts": [
+          "thirteenth"
+        ],
+        "dependencies": [],
+        "description": "Adiantamento do 13º com referência fixa no salário do mês anterior e exceções estruturais.",
+        "domain": "thirteenth_salary",
+        "payload": {
+          "fixed_reference": "previous_month_salary",
+          "fraction_denominator": 2,
+          "fraction_numerator": 1,
+          "payment_window_end_month": 11,
+          "payment_window_start_month": 2,
+          "special_handling": [
+            "admission_in_year",
+            "variable_remuneration"
+          ],
+          "type": "thirteenth_advance"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "1965-08-12"
+        }
+      },
+      "calculators": [
+        "H27"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/d8/d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27.html",
+          "snapshot_sha256": "d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27",
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "normative_primary",
+          "source_id": "PLANALTO_LEI_4749_1965",
+          "status": "AVAILABLE"
+        },
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "normative_primary",
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "normative_primary",
+            "snapshot_path": "PLANALTO_DECRETO_10854_2021/d8/d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27.html",
+            "snapshot_sha256": "d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27",
+            "source_id": "PLANALTO_DECRETO_10854_2021",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "normative_primary",
+            "source_id": "PLANALTO_LEI_4749_1965",
+            "status": "AVAILABLE"
+          }
+        },
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "normative_primary",
+              "snapshot_path": "PLANALTO_DECRETO_10854_2021/d8/d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27.html",
+              "snapshot_sha256": "d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27",
+              "source_id": "PLANALTO_DECRETO_10854_2021",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": [
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "normative_primary",
+              "source_id": "PLANALTO_LEI_4749_1965",
+              "status": "AVAILABLE"
+            },
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "normative_primary",
+              "source_id": "PLANALTO_DECRETO_10854_2021",
+              "status": "AVAILABLE"
+            }
+          ]
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [
+        "thirteenth_fixed_advance_previous_month_4000"
+      ],
+      "rule_id": "thirteenth.advance",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "thirteenth_social_security_assessment",
+        "calculation_order": 25,
+        "calculators": [
+          "H27",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "thirteenth",
+          "termination"
+        ],
+        "dependencies": [
+          "inss.employee.progressive_table"
+        ],
+        "description": "A contribuição previdenciária do 13º é apurada separadamente da remuneração mensal.",
+        "domain": "social_security",
+        "payload": {
+          "assertions": [
+            "thirteenth_social_security_is_separate_from_monthly"
+          ],
+          "policy_kind": "separate_social_security_assessment",
+          "type": "policy"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "not_materialized_in_historical_v1.1_candidate",
+      "before": null,
+      "calculators": [
+        "H27",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "parser_id": "inss_employee_table_v1",
+          "parser_version": "1.0.1",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "INSS_TABLE_2026/e2/e2772669ddd3b5681d3ca988b3210fc868c08b61f2b7c353616958ba19443f17.html",
+          "snapshot_sha256": "e2772669ddd3b5681d3ca988b3210fc868c08b61f2b7c353616958ba19443f17",
+          "source_id": "INSS_TABLE_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [],
+      "evidence_changed": [
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "parser_id": "inss_employee_table_v1",
+              "parser_version": "1.0.1",
+              "retrieval_method": "http_html",
+              "role": "official_operational",
+              "snapshot_path": "INSS_TABLE_2026/e2/e2772669ddd3b5681d3ca988b3210fc868c08b61f2b7c353616958ba19443f17.html",
+              "snapshot_sha256": "e2772669ddd3b5681d3ca988b3210fc868c08b61f2b7c353616958ba19443f17",
+              "source_id": "INSS_TABLE_2026",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": []
+        }
+      ],
+      "historical_semantic_status": "NEWLY_MATERIALIZED",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "thirteenth.inss.separate_assessment",
+      "semantic_changes": [
+        {
+          "after": {
+            "applicability": [],
+            "applies_to": "thirteenth_social_security_assessment",
+            "calculation_order": 25,
+            "calculators": [
+              "H27",
+              "H29"
+            ],
+            "competence": {
+              "basis": "payment_date",
+              "context_overrides": {},
+              "context_rule_specific_keys": {}
+            },
+            "contexts": [
+              "thirteenth",
+              "termination"
+            ],
+            "dependencies": [
+              "inss.employee.progressive_table"
+            ],
+            "description": "A contribuição previdenciária do 13º é apurada separadamente da remuneração mensal.",
+            "domain": "social_security",
+            "payload": {
+              "assertions": [
+                "thirteenth_social_security_is_separate_from_monthly"
+              ],
+              "policy_kind": "separate_social_security_assessment",
+              "type": "policy"
+            },
+            "update_policy": {
+              "auto_publish": false,
+              "rule_class": "structural_rule",
+              "structural_review_required": true
+            },
+            "vigency": {
+              "effective_from": "2026-01-01"
+            }
+          },
+          "before": null,
+          "path": "$root"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "thirteenth_irrf_assessment",
+        "calculation_order": 26,
+        "calculators": [
+          "H27",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "thirteenth",
+          "termination"
+        ],
+        "dependencies": [
+          "irrf.monthly.progressive_table",
+          "irrf.deductions_by_income_type"
+        ],
+        "description": "O IRRF do 13º constitui apuração exclusiva, com deduções vinculadas à própria apuração.",
+        "domain": "income_tax",
+        "payload": {
+          "assertions": [
+            "thirteenth_irrf_is_exclusive_assessment"
+          ],
+          "policy_kind": "exclusive_irrf_assessment",
+          "type": "policy"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "not_materialized_in_historical_v1.1_candidate",
+      "before": null,
+      "calculators": [
+        "H27",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "administrative_norm",
+          "snapshot_path": "RFB_IN_1500_2014/2e/2e96f3517260a3e0d61197e112b18e4929682eacdae1861c774ea200821fd73a.html",
+          "snapshot_sha256": "2e96f3517260a3e0d61197e112b18e4929682eacdae1861c774ea200821fd73a",
+          "source_id": "RFB_IN_1500_2014",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [],
+      "evidence_changed": [
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "administrative_norm",
+              "snapshot_path": "RFB_IN_1500_2014/2e/2e96f3517260a3e0d61197e112b18e4929682eacdae1861c774ea200821fd73a.html",
+              "snapshot_sha256": "2e96f3517260a3e0d61197e112b18e4929682eacdae1861c774ea200821fd73a",
+              "source_id": "RFB_IN_1500_2014",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": []
+        }
+      ],
+      "historical_semantic_status": "NEWLY_MATERIALIZED",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "thirteenth.irrf.exclusive_assessment",
+      "semantic_changes": [
+        {
+          "after": {
+            "applicability": [],
+            "applies_to": "thirteenth_irrf_assessment",
+            "calculation_order": 26,
+            "calculators": [
+              "H27",
+              "H29"
+            ],
+            "competence": {
+              "basis": "payment_date",
+              "context_overrides": {},
+              "context_rule_specific_keys": {}
+            },
+            "contexts": [
+              "thirteenth",
+              "termination"
+            ],
+            "dependencies": [
+              "irrf.monthly.progressive_table",
+              "irrf.deductions_by_income_type"
+            ],
+            "description": "O IRRF do 13º constitui apuração exclusiva, com deduções vinculadas à própria apuração.",
+            "domain": "income_tax",
+            "payload": {
+              "assertions": [
+                "thirteenth_irrf_is_exclusive_assessment"
+              ],
+              "policy_kind": "exclusive_irrf_assessment",
+              "type": "policy"
+            },
+            "update_policy": {
+              "auto_publish": false,
+              "rule_class": "structural_rule",
+              "structural_review_required": true
+            },
+            "vigency": {
+              "effective_from": "2026-01-01"
+            }
+          },
+          "before": null,
+          "path": "$root"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "thirteenth_taxable_income_before_irrf_deductions",
+        "calculation_order": 40,
+        "calculators": [
+          "H27",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "thirteenth"
+        ],
+        "dependencies": [
+          "irrf.monthly.progressive_table"
+        ],
+        "description": "Aplicação da redução de IR de 2026 à apuração exclusiva do 13º salário.",
+        "domain": "thirteenth_salary",
+        "payload": {
+          "above_phaseout_behavior": "zero",
+          "floor_at_zero": true,
+          "full_relief_behavior": "max_reduction",
+          "full_relief_income_limit": "5000.00",
+          "input_semantic": "thirteenth_taxable_income_before_irrf_deductions",
+          "intercept": "978.62",
+          "max_reduction": "312.89",
+          "phaseout_formula": "intercept_minus_slope_times_input",
+          "phaseout_income_limit": "7350.00",
+          "slope": "0.133145",
+          "type": "affine_reduction"
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "after_pre_reduction_thirteenth_irrf"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameterizable_rule",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01",
+          "effective_until": "2026-12-31"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "thirteenth_taxable_income_before_irrf_deductions",
+        "calculation_order": 40,
+        "calculators": [
+          "H27",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date"
+        },
+        "contexts": [
+          "thirteenth"
+        ],
+        "dependencies": [
+          "irrf.monthly.progressive_table"
+        ],
+        "description": "Aplicação da redução de IR de 2026 à apuração exclusiva do 13º salário.",
+        "domain": "thirteenth_salary",
+        "payload": {
+          "above_phaseout_behavior": "zero",
+          "floor_at_zero": true,
+          "full_relief_behavior": "max_reduction",
+          "full_relief_income_limit": "5000.00",
+          "input_semantic": "thirteenth_taxable_income_before_irrf_deductions",
+          "intercept": "978.62",
+          "max_reduction": "312.89",
+          "phaseout_formula": "intercept_minus_slope_times_input",
+          "phaseout_income_limit": "7350.00",
+          "slope": "0.133145",
+          "type": "affine_reduction"
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "after_pre_reduction_thirteenth_irrf"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameterizable_rule",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01",
+          "effective_until": "2026-12-31"
+        }
+      },
+      "calculators": [
+        "H27",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_LEI_15270_2025/a8/a8f01e10fe4bd9d2e0eaa7ae87afd539b47c7b4612ffb77240740c7cbbbd3c7b.html",
+          "snapshot_sha256": "a8f01e10fe4bd9d2e0eaa7ae87afd539b47c7b4612ffb77240740c7cbbbd3c7b",
+          "source_id": "PLANALTO_LEI_15270_2025",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "normative_primary",
+          "source_id": "PLANALTO_LEI_15270_2025",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "normative_primary",
+            "snapshot_path": "PLANALTO_LEI_15270_2025/a8/a8f01e10fe4bd9d2e0eaa7ae87afd539b47c7b4612ffb77240740c7cbbbd3c7b.html",
+            "snapshot_sha256": "a8f01e10fe4bd9d2e0eaa7ae87afd539b47c7b4612ffb77240740c7cbbbd3c7b",
+            "source_id": "PLANALTO_LEI_15270_2025",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "normative_primary",
+            "source_id": "PLANALTO_LEI_15270_2025",
+            "status": "AVAILABLE"
+          }
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "thirteenth.irrf.reduction.2026",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "thirteenth_gross_reference",
+        "calculation_order": 11,
+        "calculators": [
+          "H27",
+          "H29"
+        ],
+        "competence": {
+          "basis": "rule_specific",
+          "context_overrides": {},
+          "context_rule_specific_keys": {},
+          "description": "Rule-specific competence defined by the Phase 1 decision.",
+          "rule_specific_key": "thirteenth_reference_remuneration_cycle"
+        },
+        "contexts": [
+          "thirteenth",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Referência remuneratória do 13º anual e rescisório.",
+        "domain": "thirteenth_salary",
+        "payload": {
+          "annual_reference": "december_due_remuneration",
+          "termination_reference": "termination_month_remuneration",
+          "type": "remuneration_reference"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2021-11-10"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "thirteenth_gross_reference",
+        "calculation_order": 11,
+        "calculators": [
+          "H27",
+          "H29"
+        ],
+        "competence": {
+          "basis": "rule_specific",
+          "description": "Rule-specific competence defined by the Phase 1 decision.",
+          "rule_specific_key": "thirteenth_reference_remuneration_cycle"
+        },
+        "contexts": [
+          "thirteenth",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Referência remuneratória do 13º anual e rescisório.",
+        "domain": "thirteenth_salary",
+        "payload": {
+          "annual_reference": "december_due_remuneration",
+          "termination_reference": "termination_month_remuneration",
+          "type": "remuneration_reference"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2021-11-10"
+        }
+      },
+      "calculators": [
+        "H27",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/d8/d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27.html",
+          "snapshot_sha256": "d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27",
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "normative_primary",
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "status": "AVAILABLE"
+        },
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_operational",
+          "source_id": "MTE_TERMINATION_FAQ",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "normative_primary",
+            "snapshot_path": "PLANALTO_DECRETO_10854_2021/d8/d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27.html",
+            "snapshot_sha256": "d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27",
+            "source_id": "PLANALTO_DECRETO_10854_2021",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "normative_primary",
+            "source_id": "PLANALTO_DECRETO_10854_2021",
+            "status": "AVAILABLE"
+          }
+        },
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "normative_primary",
+              "snapshot_path": "PLANALTO_DECRETO_10854_2021/d8/d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27.html",
+              "snapshot_sha256": "d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27",
+              "source_id": "PLANALTO_DECRETO_10854_2021",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": [
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "normative_primary",
+              "source_id": "PLANALTO_DECRETO_10854_2021",
+              "status": "AVAILABLE"
+            },
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "official_operational",
+              "source_id": "MTE_TERMINATION_FAQ",
+              "status": "AVAILABLE"
+            }
+          ]
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "thirteenth.reference_remuneration",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "variable_component_of_thirteenth",
+        "calculation_order": 12,
+        "calculators": [
+          "H27",
+          "H29"
+        ],
+        "competence": {
+          "basis": "rule_specific",
+          "context_overrides": {},
+          "context_rule_specific_keys": {},
+          "description": "Rule-specific competence defined by the Phase 1 decision.",
+          "rule_specific_key": "thirteenth_variable_remuneration_cycle"
+        },
+        "contexts": [
+          "thirteenth",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Tratamento canônico da remuneração variável do 13º.",
+        "domain": "thirteenth_salary",
+        "payload": {
+          "accrual_through_month": 11,
+          "include_december_in_final_revision": true,
+          "precomputed_average_allowed_only_as_external_input": true,
+          "revision_deadline_day": 10,
+          "revision_deadline_month": 1,
+          "type": "variable_remuneration"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2021-11-10"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "variable_component_of_thirteenth",
+        "calculation_order": 12,
+        "calculators": [
+          "H27",
+          "H29"
+        ],
+        "competence": {
+          "basis": "rule_specific",
+          "description": "Rule-specific competence defined by the Phase 1 decision.",
+          "rule_specific_key": "thirteenth_variable_remuneration_cycle"
+        },
+        "contexts": [
+          "thirteenth",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Tratamento canônico da remuneração variável do 13º.",
+        "domain": "thirteenth_salary",
+        "payload": {
+          "accrual_through_month": 11,
+          "include_december_in_final_revision": true,
+          "precomputed_average_allowed_only_as_external_input": true,
+          "revision_deadline_day": 10,
+          "revision_deadline_month": 1,
+          "type": "variable_remuneration"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2021-11-10"
+        }
+      },
+      "calculators": [
+        "H27",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/d8/d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27.html",
+          "snapshot_sha256": "d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27",
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "normative_primary",
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "normative_primary",
+            "snapshot_path": "PLANALTO_DECRETO_10854_2021/d8/d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27.html",
+            "snapshot_sha256": "d8bd8de8d0e723720776a3a6574067e80063c91a2a7ab77a9b96572d6b9cad27",
+            "source_id": "PLANALTO_DECRETO_10854_2021",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "normative_primary",
+            "source_id": "PLANALTO_DECRETO_10854_2021",
+            "status": "AVAILABLE"
+          }
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "thirteenth.variable_remuneration",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "cash_allowance_principal",
+        "calculation_order": 20,
+        "calculators": [
+          "H28"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "vacation_cash_allowance"
+        ],
+        "dependencies": [
+          "vacation.abono_pecuniario"
+        ],
+        "description": "Tratamento do principal do abono pecuniário: sem IRRF e sem contribuição previdenciária.",
+        "domain": "vacation",
+        "payload": {
+          "components": [
+            {
+              "component": "cash_allowance_principal",
+              "irrf": "no",
+              "social_security": "no"
+            }
+          ],
+          "type": "incidence_profile"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "cash_allowance_principal",
+        "calculation_order": 20,
+        "calculators": [
+          "H28"
+        ],
+        "competence": {
+          "basis": "payment_date"
+        },
+        "contexts": [
+          "vacation_cash_allowance"
+        ],
+        "dependencies": [
+          "vacation.abono_pecuniario"
+        ],
+        "description": "Tratamento do principal do abono pecuniário: sem IRRF e sem contribuição previdenciária.",
+        "domain": "vacation",
+        "payload": {
+          "components": [
+            {
+              "component": "cash_allowance_principal",
+              "irrf": "no",
+              "social_security": "no"
+            }
+          ],
+          "type": "incidence_profile"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "calculators": [
+        "H28"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "administrative_norm",
+          "snapshot_path": "RFB_SC_209_2021/18/1829da06e23305ad9cf9cd5971e9d3e3efc539882c31da0a9a6bcd911e0b474e.html",
+          "snapshot_sha256": "1829da06e23305ad9cf9cd5971e9d3e3efc539882c31da0a9a6bcd911e0b474e",
+          "source_id": "RFB_SC_209_2021",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_operational",
+          "source_id": "RFB_QA_IRPF_2026",
+          "status": "AVAILABLE"
+        },
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "administrative_norm",
+          "source_id": "RFB_SC_209_2021",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "administrative_norm",
+            "snapshot_path": "RFB_SC_209_2021/18/1829da06e23305ad9cf9cd5971e9d3e3efc539882c31da0a9a6bcd911e0b474e.html",
+            "snapshot_sha256": "1829da06e23305ad9cf9cd5971e9d3e3efc539882c31da0a9a6bcd911e0b474e",
+            "source_id": "RFB_SC_209_2021",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "official_operational",
+            "source_id": "RFB_QA_IRPF_2026",
+            "status": "AVAILABLE"
+          }
+        },
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "administrative_norm",
+              "snapshot_path": "RFB_SC_209_2021/18/1829da06e23305ad9cf9cd5971e9d3e3efc539882c31da0a9a6bcd911e0b474e.html",
+              "snapshot_sha256": "1829da06e23305ad9cf9cd5971e9d3e3efc539882c31da0a9a6bcd911e0b474e",
+              "source_id": "RFB_SC_209_2021",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": [
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "official_operational",
+              "source_id": "RFB_QA_IRPF_2026",
+              "status": "AVAILABLE"
+            },
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "administrative_norm",
+              "source_id": "RFB_SC_209_2021",
+              "status": "AVAILABLE"
+            }
+          ]
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [
+        "vacation_abono_principal_tax_treatment"
+      ],
+      "rule_id": "vacation.abono.ir_exemption",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "constitutional_third_on_cash_allowance",
+        "calculation_order": 20,
+        "calculators": [
+          "H28"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "vacation_cash_allowance"
+        ],
+        "dependencies": [
+          "vacation.abono_pecuniario"
+        ],
+        "description": "Tratamento do terço constitucional sobre o abono: com IRRF e sem contribuição previdenciária no escopo fechado.",
+        "domain": "vacation",
+        "payload": {
+          "components": [
+            {
+              "component": "constitutional_third_on_cash_allowance",
+              "irrf": "yes",
+              "social_security": "no"
+            }
+          ],
+          "type": "incidence_profile"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "constitutional_third_on_cash_allowance",
+        "calculation_order": 20,
+        "calculators": [
+          "H28"
+        ],
+        "competence": {
+          "basis": "payment_date"
+        },
+        "contexts": [
+          "vacation_cash_allowance"
+        ],
+        "dependencies": [
+          "vacation.abono_pecuniario"
+        ],
+        "description": "Tratamento do terço constitucional sobre o abono: com IRRF e sem contribuição previdenciária no escopo fechado.",
+        "domain": "vacation",
+        "payload": {
+          "components": [
+            {
+              "component": "constitutional_third_on_cash_allowance",
+              "irrf": "yes",
+              "social_security": "no"
+            }
+          ],
+          "type": "incidence_profile"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "calculators": [
+        "H28"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "administrative_norm",
+          "snapshot_path": "RFB_SC_209_2021/18/1829da06e23305ad9cf9cd5971e9d3e3efc539882c31da0a9a6bcd911e0b474e.html",
+          "snapshot_sha256": "1829da06e23305ad9cf9cd5971e9d3e3efc539882c31da0a9a6bcd911e0b474e",
+          "source_id": "RFB_SC_209_2021",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "administrative_norm",
+          "source_id": "RFB_SC_209_2021",
+          "status": "AVAILABLE"
+        },
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_operational",
+          "source_id": "ESOCIAL_SIMPLIFIED_ABONO_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "administrative_norm",
+            "snapshot_path": "RFB_SC_209_2021/18/1829da06e23305ad9cf9cd5971e9d3e3efc539882c31da0a9a6bcd911e0b474e.html",
+            "snapshot_sha256": "1829da06e23305ad9cf9cd5971e9d3e3efc539882c31da0a9a6bcd911e0b474e",
+            "source_id": "RFB_SC_209_2021",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "administrative_norm",
+            "source_id": "RFB_SC_209_2021",
+            "status": "AVAILABLE"
+          }
+        },
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "administrative_norm",
+              "snapshot_path": "RFB_SC_209_2021/18/1829da06e23305ad9cf9cd5971e9d3e3efc539882c31da0a9a6bcd911e0b474e.html",
+              "snapshot_sha256": "1829da06e23305ad9cf9cd5971e9d3e3efc539882c31da0a9a6bcd911e0b474e",
+              "source_id": "RFB_SC_209_2021",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": [
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "administrative_norm",
+              "source_id": "RFB_SC_209_2021",
+              "status": "AVAILABLE"
+            },
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "official_operational",
+              "source_id": "ESOCIAL_SIMPLIFIED_ABONO_2026",
+              "status": "AVAILABLE"
+            }
+          ]
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [
+        "vacation_abono_constitutional_third_tax_treatment_P0"
+      ],
+      "rule_id": "vacation.abono_constitutional_third.ir_incidence",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "vacation_entitled_days",
+        "calculation_order": 10,
+        "calculators": [
+          "H28"
+        ],
+        "competence": {
+          "basis": "acquisition_period",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "vacation_cash_allowance"
+        ],
+        "dependencies": [],
+        "description": "Conversão em pecúnia de um terço do período de férias a que o empregado tem direito.",
+        "domain": "vacation",
+        "payload": {
+          "denominator": 3,
+          "numerator": 1,
+          "rounding": "statutory",
+          "type": "fraction"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "1977-04-13"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "vacation_entitled_days",
+        "calculation_order": 10,
+        "calculators": [
+          "H28"
+        ],
+        "competence": {
+          "basis": "acquisition_period"
+        },
+        "contexts": [
+          "vacation_cash_allowance"
+        ],
+        "dependencies": [],
+        "description": "Conversão em pecúnia de um terço do período de férias a que o empregado tem direito.",
+        "domain": "vacation",
+        "payload": {
+          "denominator": 3,
+          "numerator": 1,
+          "rounding": "statutory",
+          "type": "fraction"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "1977-04-13"
+        }
+      },
+      "calculators": [
+        "H28"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_CLT/80/80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041.html",
+          "snapshot_sha256": "80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "locator": "art. 143",
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "normative_primary",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "normative_primary",
+            "snapshot_path": "PLANALTO_CLT/80/80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041.html",
+            "snapshot_sha256": "80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041",
+            "source_id": "PLANALTO_CLT",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "locator": "art. 143",
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "normative_primary",
+            "source_id": "PLANALTO_CLT",
+            "status": "AVAILABLE"
+          }
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [
+        "vacation_abono_entitlement_30_days"
+      ],
+      "rule_id": "vacation.abono_pecuniario",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "vacation_entitlement_period",
+        "calculation_order": 10,
+        "calculators": [
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "acquisition_period",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "vacation_enjoyed",
+          "vacation_indemnified",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Período aquisitivo de doze meses ancorado no vínculo, sem reset no ano civil; proporcionalidade conta 1/12 por mês aquisitivo ou fração de pelo menos 15 dias.",
+        "domain": "vacation",
+        "payload": {
+          "anchor": "employment_start_anniversary",
+          "calendar_year_reset": false,
+          "duration_months": 12,
+          "proportional_accrual_method": "one_twelfth_per_acquisition_month_or_fraction_gte_days",
+          "proportional_qualifying_days": 15,
+          "type": "period_rule"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "1943-05-01"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "vacation_entitlement_period",
+        "calculation_order": 10,
+        "calculators": [
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "acquisition_period"
+        },
+        "contexts": [
+          "vacation_enjoyed",
+          "vacation_indemnified",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Período aquisitivo de doze meses ancorado no vínculo, sem reset no ano civil; proporcionalidade conta 1/12 por mês aquisitivo ou fração de pelo menos 15 dias.",
+        "domain": "vacation",
+        "payload": {
+          "anchor": "employment_start_anniversary",
+          "calendar_year_reset": false,
+          "duration_months": 12,
+          "proportional_accrual_method": "one_twelfth_per_acquisition_month_or_fraction_gte_days",
+          "proportional_qualifying_days": 15,
+          "type": "period_rule"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "1943-05-01"
+        }
+      },
+      "calculators": [
+        "H28",
+        "H29"
+      ],
+      "candidate_rule_version": "1.1.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_CLT/80/80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041.html",
+          "snapshot_sha256": "80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "normative_primary",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "normative_primary",
+            "snapshot_path": "PLANALTO_CLT/80/80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041.html",
+            "snapshot_sha256": "80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041",
+            "source_id": "PLANALTO_CLT",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "normative_primary",
+            "source_id": "PLANALTO_CLT",
+            "status": "AVAILABLE"
+          }
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [
+        "vacation_period_cross_year_A02_regression"
+      ],
+      "rule_id": "vacation.acquisition_period",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "vacation_entitled_days",
+        "calculation_order": 11,
+        "calculators": [
+          "H28"
+        ],
+        "competence": {
+          "basis": "acquisition_period",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "vacation_enjoyed"
+        ],
+        "dependencies": [],
+        "description": "Faixas de dias de férias por faltas injustificadas conforme inventário fechado.",
+        "domain": "vacation",
+        "payload": {
+          "bands": [
+            {
+              "entitled_days": 30,
+              "max_absences": 5,
+              "min_absences": 0
+            },
+            {
+              "entitled_days": 24,
+              "max_absences": 14,
+              "min_absences": 6
+            },
+            {
+              "entitled_days": 18,
+              "max_absences": 23,
+              "min_absences": 15
+            },
+            {
+              "entitled_days": 12,
+              "max_absences": 32,
+              "min_absences": 24
+            }
+          ],
+          "input_semantic": "unjustified_absences_in_acquisition_period",
+          "outside_behavior": "UNSUPPORTED",
+          "type": "entitlement_bands"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "1943-05-01"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "vacation_entitled_days",
+        "calculation_order": 11,
+        "calculators": [
+          "H28"
+        ],
+        "competence": {
+          "basis": "acquisition_period"
+        },
+        "contexts": [
+          "vacation_enjoyed"
+        ],
+        "dependencies": [],
+        "description": "Faixas de dias de férias por faltas injustificadas conforme inventário fechado.",
+        "domain": "vacation",
+        "payload": {
+          "bands": [
+            {
+              "entitled_days": 30,
+              "max_absences": 5,
+              "min_absences": 0
+            },
+            {
+              "entitled_days": 24,
+              "max_absences": 14,
+              "min_absences": 6
+            },
+            {
+              "entitled_days": 18,
+              "max_absences": 23,
+              "min_absences": 15
+            },
+            {
+              "entitled_days": 12,
+              "max_absences": 32,
+              "min_absences": 24
+            }
+          ],
+          "input_semantic": "unjustified_absences_in_acquisition_period",
+          "outside_behavior": "UNSUPPORTED",
+          "type": "entitlement_bands"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "1943-05-01"
+        }
+      },
+      "calculators": [
+        "H28"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_CLT/80/80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041.html",
+          "snapshot_sha256": "80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "normative_primary",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "normative_primary",
+            "snapshot_path": "PLANALTO_CLT/80/80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041.html",
+            "snapshot_sha256": "80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041",
+            "source_id": "PLANALTO_CLT",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "normative_primary",
+            "source_id": "PLANALTO_CLT",
+            "status": "AVAILABLE"
+          }
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [
+        "vacation_entitlement_absences_5",
+        "vacation_entitlement_absences_6",
+        "vacation_entitlement_absences_15",
+        "vacation_entitlement_absences_24",
+        "vacation_entitlement_absences_32"
+      ],
+      "rule_id": "vacation.entitlement_days_by_absences",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "enjoyed_vacation_and_constitutional_third",
+        "calculation_order": 30,
+        "calculators": [
+          "H28"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "vacation_enjoyed"
+        ],
+        "dependencies": [
+          "inss.employee.progressive_table",
+          "vacation.remuneration_and_constitutional_third"
+        ],
+        "description": "Férias gozadas e o respectivo terço integram a base previdenciária do empregado.",
+        "domain": "social_security",
+        "payload": {
+          "components": [
+            {
+              "component": "enjoyed_vacation_remuneration",
+              "irrf": "yes",
+              "social_security": "yes"
+            },
+            {
+              "component": "enjoyed_vacation_constitutional_third",
+              "irrf": "yes",
+              "social_security": "yes"
+            }
+          ],
+          "type": "incidence_profile"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "not_materialized_in_historical_v1.1_candidate",
+      "before": null,
+      "calculators": [
+        "H28"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_CP_INCIDENCE_TABLE/eb/ebfce5705e85f011ae411d4b5e5363eca19992c2873307851155b67a9b7c5948.html",
+          "snapshot_sha256": "ebfce5705e85f011ae411d4b5e5363eca19992c2873307851155b67a9b7c5948",
+          "source_id": "RFB_CP_INCIDENCE_TABLE",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [],
+      "evidence_changed": [
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "official_operational",
+              "snapshot_path": "RFB_CP_INCIDENCE_TABLE/eb/ebfce5705e85f011ae411d4b5e5363eca19992c2873307851155b67a9b7c5948.html",
+              "snapshot_sha256": "ebfce5705e85f011ae411d4b5e5363eca19992c2873307851155b67a9b7c5948",
+              "source_id": "RFB_CP_INCIDENCE_TABLE",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": []
+        }
+      ],
+      "historical_semantic_status": "NEWLY_MATERIALIZED",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "vacation.inss.enjoyed",
+      "semantic_changes": [
+        {
+          "after": {
+            "applicability": [],
+            "applies_to": "enjoyed_vacation_and_constitutional_third",
+            "calculation_order": 30,
+            "calculators": [
+              "H28"
+            ],
+            "competence": {
+              "basis": "payment_date",
+              "context_overrides": {},
+              "context_rule_specific_keys": {}
+            },
+            "contexts": [
+              "vacation_enjoyed"
+            ],
+            "dependencies": [
+              "inss.employee.progressive_table",
+              "vacation.remuneration_and_constitutional_third"
+            ],
+            "description": "Férias gozadas e o respectivo terço integram a base previdenciária do empregado.",
+            "domain": "social_security",
+            "payload": {
+              "components": [
+                {
+                  "component": "enjoyed_vacation_remuneration",
+                  "irrf": "yes",
+                  "social_security": "yes"
+                },
+                {
+                  "component": "enjoyed_vacation_constitutional_third",
+                  "irrf": "yes",
+                  "social_security": "yes"
+                }
+              ],
+              "type": "incidence_profile"
+            },
+            "update_policy": {
+              "auto_publish": false,
+              "rule_class": "structural_rule",
+              "structural_review_required": true
+            },
+            "vigency": {
+              "effective_from": "2026-01-01"
+            }
+          },
+          "before": null,
+          "path": "$root"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "taxable_vacation_income_subject_to_separate_monthly_irrf_assessment_before_deductions",
+        "calculation_order": 40,
+        "calculators": [
+          "H28"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "vacation_enjoyed"
+        ],
+        "dependencies": [
+          "vacation.irrf.separate_assessment",
+          "irrf.monthly.progressive_table"
+        ],
+        "description": "Redução de IR de 2026 aplicada à apuração separada das férias tributáveis, preservando o rendimento pré-deduções como alvo semântico.",
+        "domain": "income_tax",
+        "payload": {
+          "above_phaseout_behavior": "zero",
+          "floor_at_zero": true,
+          "full_relief_behavior": "max_reduction",
+          "full_relief_income_limit": "5000.00",
+          "input_semantic": "taxable_vacation_income_subject_to_separate_monthly_irrf_assessment_before_deductions",
+          "intercept": "978.62",
+          "max_reduction": "312.89",
+          "phaseout_formula": "intercept_minus_slope_times_input",
+          "phaseout_income_limit": "7350.00",
+          "slope": "0.133145",
+          "type": "affine_reduction"
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "after_pre_reduction_vacation_irrf"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameterizable_rule",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01",
+          "effective_until": "2026-12-31"
+        }
+      },
+      "baseline": "not_materialized_in_historical_v1.1_candidate",
+      "before": null,
+      "calculators": [
+        "H28"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_LEI_15270_2025/a8/a8f01e10fe4bd9d2e0eaa7ae87afd539b47c7b4612ffb77240740c7cbbbd3c7b.html",
+          "snapshot_sha256": "a8f01e10fe4bd9d2e0eaa7ae87afd539b47c7b4612ffb77240740c7cbbbd3c7b",
+          "source_id": "PLANALTO_LEI_15270_2025",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [],
+      "evidence_changed": [
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "normative_primary",
+              "snapshot_path": "PLANALTO_LEI_15270_2025/a8/a8f01e10fe4bd9d2e0eaa7ae87afd539b47c7b4612ffb77240740c7cbbbd3c7b.html",
+              "snapshot_sha256": "a8f01e10fe4bd9d2e0eaa7ae87afd539b47c7b4612ffb77240740c7cbbbd3c7b",
+              "source_id": "PLANALTO_LEI_15270_2025",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": []
+        }
+      ],
+      "historical_semantic_status": "NEWLY_MATERIALIZED",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "vacation.irrf.reduction.2026",
+      "semantic_changes": [
+        {
+          "after": {
+            "applicability": [],
+            "applies_to": "taxable_vacation_income_subject_to_separate_monthly_irrf_assessment_before_deductions",
+            "calculation_order": 40,
+            "calculators": [
+              "H28"
+            ],
+            "competence": {
+              "basis": "payment_date",
+              "context_overrides": {},
+              "context_rule_specific_keys": {}
+            },
+            "contexts": [
+              "vacation_enjoyed"
+            ],
+            "dependencies": [
+              "vacation.irrf.separate_assessment",
+              "irrf.monthly.progressive_table"
+            ],
+            "description": "Redução de IR de 2026 aplicada à apuração separada das férias tributáveis, preservando o rendimento pré-deduções como alvo semântico.",
+            "domain": "income_tax",
+            "payload": {
+              "above_phaseout_behavior": "zero",
+              "floor_at_zero": true,
+              "full_relief_behavior": "max_reduction",
+              "full_relief_income_limit": "5000.00",
+              "input_semantic": "taxable_vacation_income_subject_to_separate_monthly_irrf_assessment_before_deductions",
+              "intercept": "978.62",
+              "max_reduction": "312.89",
+              "phaseout_formula": "intercept_minus_slope_times_input",
+              "phaseout_income_limit": "7350.00",
+              "slope": "0.133145",
+              "type": "affine_reduction"
+            },
+            "rounding_policy": {
+              "decimal_places": 2,
+              "mode": "ROUND_HALF_UP",
+              "stage": "after_pre_reduction_vacation_irrf"
+            },
+            "update_policy": {
+              "auto_publish": true,
+              "rule_class": "parameterizable_rule",
+              "structural_review_required": false
+            },
+            "vigency": {
+              "effective_from": "2026-01-01",
+              "effective_until": "2026-12-31"
+            }
+          },
+          "before": null,
+          "path": "$root"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "taxable_vacation_payment",
+        "calculation_order": 25,
+        "calculators": [
+          "H28"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "vacation_enjoyed"
+        ],
+        "dependencies": [
+          "irrf.monthly.progressive_table",
+          "irrf.deductions_by_income_type"
+        ],
+        "description": "Férias gozadas são apuradas separadamente para IRRF no mês do pagamento.",
+        "domain": "income_tax",
+        "payload": {
+          "assertions": [
+            "vacation_irrf_is_separate_assessment"
+          ],
+          "policy_kind": "separate_vacation_irrf_assessment",
+          "type": "policy"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "not_materialized_in_historical_v1.1_candidate",
+      "before": null,
+      "calculators": [
+        "H28"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "administrative_norm",
+          "snapshot_path": "RFB_IN_1500_2014/2e/2e96f3517260a3e0d61197e112b18e4929682eacdae1861c774ea200821fd73a.html",
+          "snapshot_sha256": "2e96f3517260a3e0d61197e112b18e4929682eacdae1861c774ea200821fd73a",
+          "source_id": "RFB_IN_1500_2014",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [],
+      "evidence_changed": [
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "administrative_norm",
+              "snapshot_path": "RFB_IN_1500_2014/2e/2e96f3517260a3e0d61197e112b18e4929682eacdae1861c774ea200821fd73a.html",
+              "snapshot_sha256": "2e96f3517260a3e0d61197e112b18e4929682eacdae1861c774ea200821fd73a",
+              "source_id": "RFB_IN_1500_2014",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": []
+        }
+      ],
+      "historical_semantic_status": "NEWLY_MATERIALIZED",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "vacation.irrf.separate_assessment",
+      "semantic_changes": [
+        {
+          "after": {
+            "applicability": [],
+            "applies_to": "taxable_vacation_payment",
+            "calculation_order": 25,
+            "calculators": [
+              "H28"
+            ],
+            "competence": {
+              "basis": "payment_date",
+              "context_overrides": {},
+              "context_rule_specific_keys": {}
+            },
+            "contexts": [
+              "vacation_enjoyed"
+            ],
+            "dependencies": [
+              "irrf.monthly.progressive_table",
+              "irrf.deductions_by_income_type"
+            ],
+            "description": "Férias gozadas são apuradas separadamente para IRRF no mês do pagamento.",
+            "domain": "income_tax",
+            "payload": {
+              "assertions": [
+                "vacation_irrf_is_separate_assessment"
+              ],
+              "policy_kind": "separate_vacation_irrf_assessment",
+              "type": "policy"
+            },
+            "update_policy": {
+              "auto_publish": false,
+              "rule_class": "structural_rule",
+              "structural_review_required": true
+            },
+            "vigency": {
+              "effective_from": "2026-01-01"
+            }
+          },
+          "before": null,
+          "path": "$root"
+        }
+      ]
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "vacation_remuneration",
+        "calculation_order": 20,
+        "calculators": [
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "vacation_enjoyed",
+          "vacation_indemnified",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Componentes da remuneração de férias e adicional constitucional.",
+        "domain": "vacation",
+        "payload": {
+          "components": [
+            {
+              "basis": "vacation_pay_base",
+              "component": "vacation_remuneration",
+              "multiplier": "1"
+            },
+            {
+              "basis": "vacation_remuneration",
+              "component": "constitutional_third",
+              "multiplier": "0.3333333333333333333333333333"
+            }
+          ],
+          "type": "component_formula"
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "per_component"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "1988-10-05"
+        }
+      },
+      "baseline": "historical_v1.1_candidate",
+      "before": {
+        "applicability": [],
+        "applies_to": "vacation_remuneration",
+        "calculation_order": 20,
+        "calculators": [
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date"
+        },
+        "contexts": [
+          "vacation_enjoyed",
+          "vacation_indemnified",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Componentes da remuneração de férias e adicional constitucional.",
+        "domain": "vacation",
+        "payload": {
+          "components": [
+            {
+              "basis": "vacation_pay_base",
+              "component": "vacation_remuneration",
+              "multiplier": "1"
+            },
+            {
+              "basis": "vacation_remuneration",
+              "component": "constitutional_third",
+              "multiplier": "0.3333333333333333333333333333"
+            }
+          ],
+          "type": "component_formula"
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "per_component"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "1988-10-05"
+        }
+      },
+      "calculators": [
+        "H28",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.0",
+      "change_class": "RULE_ADDED",
+      "changed_paths": [
+        "$rule"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_CLT/80/80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041.html",
+          "snapshot_sha256": "80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "normative_primary",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        },
+        {
+          "observed_at_utc": "2026-09-13T12:00:00Z",
+          "retrieval_method": "manual",
+          "role": "official_operational",
+          "source_id": "RFB_QA_IRPF_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+            "retrieval_method": "http_html",
+            "role": "normative_primary",
+            "snapshot_path": "PLANALTO_CLT/80/80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041.html",
+            "snapshot_sha256": "80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041",
+            "source_id": "PLANALTO_CLT",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-13T12:00:00Z",
+            "retrieval_method": "manual",
+            "role": "normative_primary",
+            "source_id": "PLANALTO_CLT",
+            "status": "AVAILABLE"
+          }
+        },
+        {
+          "after": [
+            {
+              "observed_at_utc": "2026-09-14T14:22:31.698316Z",
+              "retrieval_method": "http_html",
+              "role": "normative_primary",
+              "snapshot_path": "PLANALTO_CLT/80/80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041.html",
+              "snapshot_sha256": "80a1857e5acf4876893921a6d3a368afa50b36ecbb5eaeb72e3be617280f8041",
+              "source_id": "PLANALTO_CLT",
+              "status": "AVAILABLE"
+            }
+          ],
+          "before": [
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "normative_primary",
+              "source_id": "PLANALTO_CLT",
+              "status": "AVAILABLE"
+            },
+            {
+              "observed_at_utc": "2026-09-13T12:00:00Z",
+              "retrieval_method": "manual",
+              "role": "official_operational",
+              "source_id": "RFB_QA_IRPF_2026",
+              "status": "AVAILABLE"
+            }
+          ]
+        }
+      ],
+      "historical_semantic_status": "CHANGED_FROM_HISTORICAL",
+      "occurrence": 0,
+      "previous_rule_version": null,
+      "reference_case_ids": [],
+      "rule_id": "vacation.remuneration_and_constitutional_third",
+      "semantic_changes": [
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_overrides"
+        },
+        {
+          "after": {},
+          "before": null,
+          "path": "competence.context_rule_specific_keys"
+        }
+      ]
+    }
+  ],
+  "schema_version": "1.0.0"
+}
