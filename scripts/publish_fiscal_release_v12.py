@@ -148,6 +148,14 @@ def main() -> int:
     store = FiscalReleaseStore(RELEASE_ROOT)
     previous = store.load_current()
 
+    if previous is None and args.scheduled:
+        if args.human_approval_reference or args.expected_review_key:
+            print("Fiscal v1.2: scheduled bootstrap cannot carry human approval.", file=sys.stderr)
+            return EXIT_BLOCKED
+        print(
+            "Fiscal v1.2: bootstrap pending; scheduled run cannot create first release; preparing review packet only."
+        )
+
     try:
         authority = collect_authority_evidence(
             source_registry_path=SOURCE_REGISTRY,
