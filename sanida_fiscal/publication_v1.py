@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .contract_v1 import FiscalContractV1
+from .contract_v1_2 import parse_fiscal_contract
 from .semantic_diff_v1 import ContractDiffV1, PromotionOutcome, assess_promotion
 from .types_v1 import ChangeClass, ContractStatus, ReleaseApprovalMode
 
@@ -140,7 +141,7 @@ def reconcile_transition_change_classes(
     if missing:
         raise PublicationError(f"semantic diff contains unmatched candidate rules: {missing}")
 
-    return FiscalContractV1.model_validate(data)
+    return parse_fiscal_contract(data)
 
 
 def prepare_published_release(
@@ -155,8 +156,9 @@ def prepare_published_release(
 
     This function does not persist bytes. It applies Phase 5 completeness,
     semantic-diff and approval gates, reconciles release-relative change metadata,
-    and then re-validates the result through the existing Phase 2 PUBLISHED
-    invariants.
+    and then re-validates the result through the existing Phase 2/P5 PUBLISHED
+    invariants. Both historical schema 1.1 and the additive schema 1.2 are parsed
+    explicitly; compatibility is never guessed.
     """
     _require_utc(published_at_utc)
     if candidate.status != ContractStatus.CANDIDATE:
@@ -208,7 +210,7 @@ def prepare_published_release(
     # identity therefore comes from the reconciled successor, never from the raw
     # CANDIDATE carrying historical labels.
     data["release_id"] = reconciled.expected_release_id()
-    published = FiscalContractV1.model_validate(data)
+    published = parse_fiscal_contract(data)
     published.assert_consumable()
     return published
 
@@ -304,7 +306,7 @@ class FiscalReleaseStore:
             payload = json.loads(body.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise ReleaseStoreIntegrityError("current release artifact is not valid JSON") from exc
-        contract = FiscalContractV1.model_validate(payload)
+        contract = parse_fiscal_contract(payload)
         contract.assert_consumable()
         if contract.release_id != release_id:
             raise ReleaseStoreIntegrityError("manifest release_id differs from artifact")
