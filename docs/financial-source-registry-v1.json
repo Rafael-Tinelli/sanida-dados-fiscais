@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "domain": "financial_reference",
   "status": "phase4_migrated_in_branch",
-  "as_of": "2026-09-13",
+  "as_of": "2026-09-14",
   "policy": {
     "separate_from_payroll_fiscal_registry": true,
     "structured_official_source_preferred": true,
@@ -14,10 +14,13 @@
       "source_id": "BCB_SELIC_META_SGS_432",
       "authority": "Banco Central do Brasil",
       "role": "official_structured_api",
-      "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json",
+      "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?formato=json",
       "machine_readability": "json",
       "series_code": 432,
       "source_value_semantic": "selic_meta_percent_per_year",
+      "selection_policy": "latest_observation_on_or_before_brazil_calendar_date",
+      "calendar_timezone": "America/Sao_Paulo",
+      "runtime_query": "bounded_date_window_ending_on_current_brazil_date",
       "legacy_artifact_target": "taxas.selic"
     },
     {
