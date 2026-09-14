@@ -1,0 +1,119 @@
+{
+  "schema_version": "1.0.0",
+  "decision_id": "phase5.semantic_diff_and_promotion_policy_v1",
+  "status": "phase5_foundation",
+  "as_of": "2026-09-14",
+  "scope": {
+    "included": [
+      "fiscal_contract_semantic_diff",
+      "rule_change_classification",
+      "promotion_decision",
+      "rule_version_gate",
+      "evidence_gate"
+    ],
+    "excluded": [
+      "wordpress_consumer_migration",
+      "folha_core_migration",
+      "H26_H29_frontend_migration",
+      "financial_reference_release_contract"
+    ]
+  },
+  "change_classes": {
+    "SOURCE_REFRESH_NO_CHANGE": {
+      "meaning": "no computational semantic delta; only provenance/quality/description/version metadata may differ",
+      "auto_publish_possible": true,
+      "conditions": [
+        "rule is not structural when refresh content changed",
+        "changed rule has AVAILABLE hashed parser-backed evidence",
+        "quality is VALIDATED",
+        "PATCH rule_version bump when rule bytes changed"
+      ]
+    },
+    "PARAMETER_CHANGE": {
+      "meaning": "numeric payload values changed while typed payload shape and semantic strings stayed identical",
+      "auto_publish_possible": true,
+      "conditions": [
+        "rule class is parameter or parameterizable_rule",
+        "update_policy.auto_publish is true",
+        "AVAILABLE hashed parser-backed evidence exists",
+        "quality is VALIDATED",
+        "PATCH rule_version bump"
+      ]
+    },
+    "EFFECTIVE_DATE_CHANGE": {
+      "meaning": "vigency window changed without higher-precedence structural change",
+      "auto_publish_possible": false,
+      "required_outcome": "REVIEW_REQUIRED",
+      "version_policy": "PATCH"
+    },
+    "STRUCTURAL_CHANGE": {
+      "meaning": "typed shape, semantic target, formula/method, context, dependency, applicability, governance or nonnumeric payload semantic changed",
+      "auto_publish_possible": false,
+      "required_outcome": "REVIEW_REQUIRED",
+      "version_policy": "MINOR_or_MAJOR_only"
+    },
+    "RULE_ADDED": {
+      "auto_publish_possible": false,
+      "required_outcome": "REVIEW_REQUIRED"
+    },
+    "RULE_REMOVED": {
+      "auto_publish_possible": false,
+      "required_outcome": "REVIEW_REQUIRED"
+    },
+    "SOURCE_UNAVAILABLE": {
+      "auto_publish_possible": false,
+      "required_outcome": "BLOCKED_or_last_good_policy_outside_new_release"
+    },
+    "PARSER_INCOMPATIBLE": {
+      "auto_publish_possible": false,
+      "required_outcome": "BLOCKED",
+      "phase4_policy_reference": "preserve_auditable_block_new_consumption"
+    }
+  },
+  "classifier": {
+    "trust_declared_change_class": false,
+    "computed_change_class_is_authoritative": true,
+    "numeric_parameter_detection": "erase numeric leaves and compare remaining typed payload shape",
+    "booleans_are_numeric_parameters": false,
+    "semantic_strings_are_numeric_parameters": false,
+    "payload_type_change_is_structural": true,
+    "list_or_object_shape_change_is_structural": true,
+    "contract_level_semantic_or_governance_change": "REVIEW_REQUIRED",
+    "unchanged_rule_must_preserve_rule_version": true,
+    "unchanged_rule_need_not_redeclare_change_class": true
+  },
+  "version_policy": {
+    "SOURCE_REFRESH_NO_CHANGE_with_changed_rule_bytes": "PATCH",
+    "PARAMETER_CHANGE": "PATCH",
+    "EFFECTIVE_DATE_CHANGE": "PATCH",
+    "STRUCTURAL_CHANGE": [
+      "MINOR",
+      "MAJOR"
+    ],
+    "RULE_ADDED": "existing_valid_semver_accepted_for_bootstrap_or_prepublication_history",
+    "RULE_REMOVED": "not_applicable"
+  },
+  "evidence_policy": {
+    "all_candidate_rules_require_at_least_one_available_hashed_snapshot_before_promotion": true,
+    "automatic_parameter_or_refresh_promotion_requires_parser_id_and_parser_version": true,
+    "manual_numeric_edit_is_not_sufficient_for_auto_publish": true,
+    "structural_source_refresh_requires_human_review": true
+  },
+  "bootstrap_policy": {
+    "no_previous_published_release": "all candidate rules classify as RULE_ADDED",
+    "automatic_first_publication": false,
+    "first_release_requires_human_review": true,
+    "first_release_still_requires_hashed_official_evidence": true
+  },
+  "promotion_outcomes": [
+    "NO_PUBLISH_REQUIRED",
+    "AUTO_PUBLISH_ALLOWED",
+    "REVIEW_REQUIRED",
+    "BLOCKED"
+  ],
+  "phase_boundary": {
+    "source_collection_and_parser_evidence": "phase4",
+    "semantic_diff_and_release_promotion": "phase5",
+    "consumer_migration": "phase6"
+  }
+}
