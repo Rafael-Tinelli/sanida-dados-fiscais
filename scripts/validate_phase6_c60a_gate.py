@@ -29,7 +29,11 @@ def main() -> None:
     packet = policy.get("review_packet", {})
     _require(packet.get("path") == "state/fiscal-release-v12-review.json", "review packet path drift")
     _require(packet.get("volatile_observation_clocks_change_review_key") is False, "volatile clocks may rotate review_key")
-    _require(packet.get("source_snapshot_change_changes_review_key") is True, "source evidence no longer binds review_key")
+    _require(packet.get("raw_snapshot_hashes_remain_in_release_and_review_packet") is True, "raw evidence hashes are no longer preserved")
+    _require(packet.get("parser_backed_snapshot_change_changes_review_key") is True, "parser-backed evidence no longer binds review_key")
+    _require(packet.get("unparsed_html_transport_or_markup_churn_changes_review_key") is False, "presentation-only HTML churn may rotate review_key")
+    _require(packet.get("unparsed_html_visible_text_or_link_change_changes_review_key") is True, "material unparsed HTML changes no longer rotate review_key")
+    _require(packet.get("unparsed_html_review_fingerprint") == "html-visible-text-links-v1", "unparsed HTML review fingerprint drift")
     _require(packet.get("semantic_change_changes_review_key") is True, "semantic change no longer binds review_key")
     _require(packet.get("same_review_key_rewrites_durable_packet_or_state") is False, "same review may create durable clock churn")
     _require(packet.get("bootstrap_distinguishes_historical_inheritance_from_new_materialization") is True, "bootstrap baseline distinction disabled")
@@ -60,6 +64,8 @@ def main() -> None:
     _require(approval.get("issue_comment_approver") == "repository_owner_only", "approval actor boundary weakened")
     _require(approval.get("fresh_candidate_review_key_must_equal_approved_review_key") is True, "stale approval protection disabled")
     _require(approval.get("stale_approval_blocks_publication") is True, "stale approval no longer blocks publication")
+    _require(approval.get("material_evidence_change_invalidates_approval") is True, "material evidence changes may reuse approval")
+    _require(approval.get("presentation_only_html_churn_does_not_invalidate_approval") is True, "transport-only HTML churn may deadlock approval")
 
     schedule = policy.get("schedule", {})
     _require(schedule.get("may_prepare_bootstrap_review") is True, "schedule cannot prepare bootstrap review")
@@ -79,12 +85,27 @@ def main() -> None:
     ):
         _require(marker in review, f"human review module marker missing: {marker}")
 
+    evidence_identity = _read("sanida_fiscal/review_evidence_identity_v1.py")
+    for marker in (
+        "html-visible-text-links-v1",
+        "raw-snapshot-sha256-v1",
+        "canonical_html_review_fingerprint",
+        "build_review_identity_candidate",
+        "snapshot integrity mismatch",
+        "parser_id",
+        "visible_text",
+        "links",
+    ):
+        _require(marker in evidence_identity, f"review evidence identity marker missing: {marker}")
+
     publisher = _read("scripts/publish_fiscal_release_v12.py")
     for marker in (
         "REVIEW_PATH = ROOT / \"state/fiscal-release-v12-review.json\"",
         "EXIT_STALE_REVIEW = 6",
         "--expected-review-key",
         "build_review_packet",
+        "build_review_identity_candidate",
+        'review_packet["review_evidence_identity"]',
         "assert_review_approval_matches",
         'state["publication_status"] = "REVIEW_STALE"',
         'state["review_issue_action"] = "UPSERT_REQUIRED"',
@@ -130,6 +151,16 @@ def main() -> None:
     ):
         _require(marker in tests, f"C6.0a regression test missing: {marker}")
 
+    evidence_tests = _read("tests/test_review_evidence_identity_v1.py")
+    for marker in (
+        "test_html_review_fingerprint_ignores_markup_whitespace_attributes_scripts_and_comments",
+        "test_html_review_fingerprint_changes_when_visible_text_or_link_target_changes",
+        "test_unparsed_html_review_identity_is_stable_across_presentation_only_raw_hash_churn",
+        "test_parser_backed_html_remains_bound_to_exact_raw_snapshot_hash",
+        "test_snapshot_integrity_mismatch_fails_closed",
+    ):
+        _require(marker in evidence_tests, f"review evidence stability regression missing: {marker}")
+
     idempotence_tests = _read("tests/test_publish_review_state_v1.py")
     for marker in (
         "test_same_review_key_preserves_review_packet_bytes",
@@ -154,7 +185,7 @@ def main() -> None:
     remake = _read(".github/workflows/remake-ci.yml")
     _require("scripts/validate_phase6_c60a_gate.py" in remake, "C6.0a gate missing from Remake CI")
 
-    print("Phase 6 C6.0a gate: PASS (actionable review Issue + deterministic review_key + stale-approval protection + no-churn pending review anchored)")
+    print("Phase 6 C6.0a gate: PASS (actionable review Issue + material evidence identity + deterministic review_key + stale-approval protection + no-churn pending review anchored)")
 
 
 if __name__ == "__main__":
