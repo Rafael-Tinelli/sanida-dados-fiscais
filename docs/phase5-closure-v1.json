@@ -1,0 +1,86 @@
+{
+  "schema_version": "1.0.0",
+  "phase": "Fase 5 — Diff semântico e gates de publicação",
+  "status": "formal_closure_authorized",
+  "as_of": "2026-09-14",
+  "contract": {
+    "historical_schema_preserved": "1.1.0",
+    "publication_schema": "1.2.0",
+    "contract_api_version": "1.2.0",
+    "inventory_rule_count": 32,
+    "release_requires_exact_inventory": true,
+    "v11_representative_candidate_publishable": false,
+    "v12_reason": "technical_contract_rule needed hash-addressed internal governance evidence without fabricating government authority"
+  },
+  "evidence_boundary": {
+    "legal_fiscal_authority_registry": "docs/source-registry-v1.json",
+    "internal_governance_registry": "docs/governance-source-registry-v1.json",
+    "technical_rules_use_internal_governance_only": true,
+    "legal_fiscal_rules_reject_internal_governance": true,
+    "technical_rules_reject_external_authority_as_own_governance": true,
+    "authority_snapshots": "evidence/fiscal-authority-v1",
+    "governance_snapshots": "evidence/governance-v1"
+  },
+  "semantic_diff": {
+    "declared_change_class_is_not_trusted": true,
+    "numeric_parameter_change_requires_same_typed_semantic_shape": true,
+    "effective_date_change_requires_human_review": true,
+    "structural_change_requires_human_review": true,
+    "rule_added_removed_requires_human_review": true,
+    "change_class_is_release_relative": true,
+    "unchanged_successor_creates_new_release": false
+  },
+  "automatic_promotion": {
+    "allowed_only_for_known_parameter_or_source_refresh": true,
+    "requires_validated_rule": true,
+    "requires_hashed_evidence": true,
+    "requires_parser_backing_for_automatic_changed_source": true,
+    "current_parser_bindings": [
+      "RFB_IRRF_TABLE_2026",
+      "INSS_TABLE_2026"
+    ],
+    "structural_raw_snapshots_are_not_interpreted_automatically": true
+  },
+  "publication": {
+    "store_root": "releases/fiscal-v1",
+    "release_files_immutable": true,
+    "current_pointer": "releases/fiscal-v1/current.json",
+    "current_pointer_atomic": true,
+    "release_identity": "content_addressed_sha256",
+    "bootstrap_mode": "manual_human_review_only",
+    "scheduled_bootstrap_allowed": false,
+    "scheduled_successor_evaluation_after_bootstrap": true,
+    "workflow": ".github/workflows/fiscal-release-v12.yml",
+    "workflow_schedule_utc": "09:40",
+    "writer_concurrency_group": "sanida-dados-fiscais-writes-main",
+    "first_production_release_status": "pending_manual_bootstrap_after_merge"
+  },
+  "schema": {
+    "generator": "scripts/generate_contract_schema_v12.py",
+    "canonical_public_path": "contracts/fiscal-contract-v1.2.schema.json",
+    "generation_is_deterministic": true,
+    "schema_is_generated_and_checked_by_ci": true,
+    "canonical_file_materialization": "publication_workflow"
+  },
+  "consumer_boundary": {
+    "wordpress_plugin_migration": "phase6",
+    "folha_core_migration": "phase6",
+    "H26_H29_migration": "phase6",
+    "legacy_artifacts_are_not_declared_replaced_by_phase5": true
+  },
+  "formal_validation": {
+    "technical_head_before_handoff_docs": "b1daaf30737743081a79ae3e4182da9368f08e1c",
+    "remake_ci_run_number": 304,
+    "remake_ci_run_id": 34802354014,
+    "test_count": 237,
+    "all_phase3_to_phase5_gates_passed": true
+  },
+  "handoff": {
+    "document": "docs/phase5-to-phase6-handoff.md",
+    "status": "delivered",
+    "first_checkpoint": "C6.0 bootstrap v1.2 + C6.1 WordPress consumer adapter",
+    "consumer_migration_must_wait_for_first_published_v12_release": true
+  },
+  "closure_gate": "scripts/validate_phase5_closure_gate.py",
+  "next_phase": "Fase 6 — Migração dos consumidores"
+}

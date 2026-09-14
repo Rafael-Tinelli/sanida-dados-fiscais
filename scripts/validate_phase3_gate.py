@@ -56,7 +56,15 @@ REQUIRED_PHASE3_FILES = {
     "docs/phase3-closure-gate.md",
 }
 
-ALLOWED_WORKFLOWS = {"main.yml", "taxas.yml", "remake-ci.yml"}
+# Permanent repository workflows. This remains an exact allowlist so the Phase 3
+# hygiene gate still catches throwaway/debug workflows; Phase 5's fiscal release
+# workflow is a permanent production successor and therefore belongs here.
+ALLOWED_WORKFLOWS = {
+    "main.yml",
+    "taxas.yml",
+    "remake-ci.yml",
+    "fiscal-release-v12.yml",
+}
 
 
 def D(value: str | int) -> Decimal:

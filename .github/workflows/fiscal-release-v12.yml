@@ -1,0 +1,126 @@
+name: Fiscal Contract v1.2 Publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      approval_reference:
+        description: "Referência explícita de revisão humana para bootstrap/mudança estrutural"
+        required: false
+        type: string
+  schedule:
+    # 09:40 UTC = 06:40 BRT. Bootstrap nunca ocorre pelo schedule.
+    - cron: "40 9 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sanida-dados-fiscais-writes-main
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Materialize public v1.2 JSON Schema
+        run: |
+          python scripts/generate_contract_schema_v12.py
+
+      - name: Run v1.2 publication gate
+        id: publish
+        shell: bash
+        env:
+          APPROVAL_REFERENCE: ${{ inputs.approval_reference || '' }}
+        run: |
+          set +e
+          args=()
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            args+=(--scheduled)
+          fi
+          if [ -n "$APPROVAL_REFERENCE" ]; then
+            args+=(--human-approval-reference "$APPROVAL_REFERENCE")
+          fi
+          python scripts/publish_fiscal_release_v12.py "${args[@]}"
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Validate repository after publication attempt
+        if: steps.publish.outputs.exit_code == '0'
+        run: |
+          python scripts/validate_repository.py
+          python scripts/validate_contract_v1.py
+          python scripts/generate_contract_schema_v12.py --check
+          python scripts/validate_phase3_gate.py
+          python scripts/validate_phase4_closure_gate.py
+          python scripts/validate_phase5_closure_gate.py
+
+      - name: Persist schema, evidence, release and actionable state
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add contracts/fiscal-contract-v1.2.schema.json
+          for path in \
+            evidence/fiscal-authority-v1 \
+            evidence/governance-v1 \
+            releases/fiscal-v1 \
+            state/fiscal-release-v12-last-attempt.json
+          do
+            if [ -e "$path" ]; then
+              git add "$path"
+            fi
+          done
+
+          if git diff --cached --quiet; then
+            echo "No durable publication/evidence/schema delta to commit."
+            exit 0
+          fi
+
+          git commit -m "chore(release): atualizar contrato fiscal v1.2 e evidências"
+          git pull --rebase origin main
+          git push origin main
+
+      - name: Enforce fail-closed publication outcome
+        shell: bash
+        run: |
+          code="${{ steps.publish.outputs.exit_code }}"
+          case "$code" in
+            0)
+              echo "Fiscal v1.2 publication gate completed successfully."
+              ;;
+            3)
+              echo "Human review is required before publication."
+              exit 1
+              ;;
+            4)
+              echo "Fiscal v1.2 promotion was blocked by semantic/publication gates."
+              exit 1
+              ;;
+            5)
+              echo "Fiscal v1.2 source collection or assembly failed closed."
+              exit 1
+              ;;
+            *)
+              echo "Unexpected publication exit code: $code"
+              exit 1
+              ;;
+          esac

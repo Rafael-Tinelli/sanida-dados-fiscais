@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0.0",
+  "status": "phase5_v12_checkpoint",
+  "as_of": "2026-09-14",
+  "policy": {
+    "role": "internal_governance",
+    "legal_or_fiscal_authority": false,
+    "technical_rules_only": true,
+    "snapshot_strategy": "hash_manifest_of_versioned_repository_paths"
+  },
+  "sources": [
+    {
+      "source_id": "SANIDA_TECHNICAL_MONEY_DECIMAL_V1",
+      "role": "internal_governance",
+      "covers": [
+        "technical.money_decimal_and_rounding"
+      ],
+      "repository_paths": [
+        "sanida_fiscal/types_v1.py",
+        "sanida_fiscal/engine_v1.py",
+        "docs/phase3-library-v1.md"
+      ],
+      "notes": "Evidência interna do uso de Decimal e da política tipada de arredondamento. Não constitui autoridade jurídico-fiscal externa."
+    },
+    {
+      "source_id": "SANIDA_TECHNICAL_CONTRACT_GATE_V12",
+      "role": "internal_governance",
+      "covers": [
+        "technical.contract_vigency_and_quality"
+      ],
+      "repository_paths": [
+        "sanida_fiscal/contract_v1.py",
+        "sanida_fiscal/contract_v1_2.py",
+        "docs/contract-coverage-v1.json",
+        "docs/rule-inventory-v1.json"
+      ],
+      "notes": "Evidência interna dos gates de vigência, qualidade, compatibilidade e proveniência do contrato. Não constitui autoridade jurídico-fiscal externa."
+    }
+  ]
+}

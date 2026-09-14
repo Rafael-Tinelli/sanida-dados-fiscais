@@ -43,6 +43,19 @@ jobs:
         run: |
           python scripts/validate_contract_v1.py
 
+      - name: Validate Fiscal Contract v1.2 schema generation
+        run: |
+          python scripts/generate_contract_schema_v12.py --output /tmp/fiscal-contract-v1.2.schema.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          schema = json.loads(Path('/tmp/fiscal-contract-v1.2.schema.json').read_text(encoding='utf-8'))
+          assert schema['$id'] == 'https://sanida.com.br/schemas/fiscal-contract-v1.2.schema.json'
+          assert schema['properties']['schema_version']['const'] == '1.2.0'
+          assert 'GovernanceEvidenceObservation' in schema['$defs']
+          print('Fiscal Contract v1.2 generated schema: PASS')
+          PY
+
       - name: Run contract and fiscal-engine tests
         run: |
           python -m pytest -q tests
@@ -62,3 +75,15 @@ jobs:
       - name: Validate Phase 4 formal closure gate
         run: |
           python scripts/validate_phase4_closure_gate.py
+
+      - name: Validate Phase 5 semantic-diff foundation
+        run: |
+          python scripts/validate_phase5_foundation.py
+
+      - name: Validate Phase 5 publication foundation
+        run: |
+          python scripts/validate_phase5_publication_foundation.py
+
+      - name: Validate Phase 5 formal closure gate
+        run: |
+          python scripts/validate_phase5_closure_gate.py
