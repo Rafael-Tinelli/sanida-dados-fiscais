@@ -39,6 +39,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
+      - name: Materialize public v1.2 JSON Schema
+        run: |
+          python scripts/generate_contract_schema_v12.py
+
       - name: Run v1.2 publication gate
         id: publish
         shell: bash
@@ -63,24 +67,31 @@ jobs:
         run: |
           python scripts/validate_repository.py
           python scripts/validate_contract_v1.py
+          python scripts/generate_contract_schema_v12.py --check
           python scripts/validate_phase3_gate.py
           python scripts/validate_phase4_closure_gate.py
           python scripts/validate_phase5_closure_gate.py
 
-      - name: Persist evidence, release and actionable state
+      - name: Persist schema, evidence, release and actionable state
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add \
+          git add contracts/fiscal-contract-v1.2.schema.json
+          for path in \
             evidence/fiscal-authority-v1 \
             evidence/governance-v1 \
             releases/fiscal-v1 \
-            state/fiscal-release-v12-last-attempt.json 2>/dev/null || true
+            state/fiscal-release-v12-last-attempt.json
+          do
+            if [ -e "$path" ]; then
+              git add "$path"
+            fi
+          done
 
           if git diff --cached --quiet; then
-            echo "No durable publication/evidence delta to commit."
+            echo "No durable publication/evidence/schema delta to commit."
             exit 0
           fi
 
