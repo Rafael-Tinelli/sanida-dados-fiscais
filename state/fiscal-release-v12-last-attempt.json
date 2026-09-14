@@ -1,5 +1,5 @@
 {
-  "attempted_at_utc": "2026-09-14T14:22:31.698316Z",
+  "attempted_at_utc": "2026-09-14T14:37:20.120504Z",
   "candidate_release_id": "candidate-v1-2",
   "changed_rules": [
     {
@@ -327,7 +327,7 @@
   "contract_schema_version": "1.2.0",
   "previous_release_id": null,
   "promotion_outcome": "REVIEW_REQUIRED",
-  "publication_status": "REVIEW_REQUIRED",
+  "publication_status": "REVIEW_STALE",
   "reasons": [
     "inss.employee.progressive_table: RULE_ADDED requires human review",
     "irrf.deductions_by_income_type: RULE_ADDED requires human review",
@@ -360,9 +360,10 @@
     "vacation.inss.enjoyed: RULE_ADDED requires human review",
     "vacation.irrf.reduction.2026: RULE_ADDED requires human review",
     "vacation.irrf.separate_assessment: RULE_ADDED requires human review",
-    "vacation.remuneration_and_constitutional_third: RULE_ADDED requires human review"
+    "vacation.remuneration_and_constitutional_third: RULE_ADDED requires human review",
+    "review approval is stale: reviewed=054a4b4efc13a5fdfd58f2f57fce0e3ac0ca8d8c76f8f13c238f9117d321c8a3 current=13cc6f278f7d7e52f0b2f17753da52d9aed88afbeb211d2b6d9a717f021da5c2"
   ],
   "review_issue_action": "UPSERT_REQUIRED",
-  "review_key": "054a4b4efc13a5fdfd58f2f57fce0e3ac0ca8d8c76f8f13c238f9117d321c8a3",
+  "review_key": "13cc6f278f7d7e52f0b2f17753da52d9aed88afbeb211d2b6d9a717f021da5c2",
   "schema_version": "1.0.0"
 }
