@@ -171,7 +171,7 @@ O workflow possui:
 - geração/materialização do schema público v1.2;
 - nova execução de testes e gates antes de persistir uma publicação bem-sucedida.
 
-O schedule pode detectar e preparar revisão, mas não pode criar a primeira release `PUBLISHED` sem aprovação humana.
+**Bootstrap exige** revisão humana explícita do candidato 32/32 e aprovação vinculada ao `review_key` exato. O schedule pode detectar e preparar revisão, mas não pode criar a primeira release `PUBLISHED` sem essa aprovação.
 
 ## 10. Store imutável
 
