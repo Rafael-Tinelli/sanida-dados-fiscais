@@ -54,3 +54,7 @@ jobs:
       - name: Validate Phase 4 foundation
         run: |
           python scripts/validate_phase4_foundation.py
+
+      - name: Validate Phase 4 pre-closure boundary
+        run: |
+          python scripts/validate_phase4_preclosure_gate.py
