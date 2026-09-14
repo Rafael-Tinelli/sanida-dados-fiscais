@@ -53,7 +53,7 @@ def _require(condition: bool, message: str) -> None:
 
 def validate_closure_policy() -> None:
     policy = _load("docs/phase5-closure-v1.json")
-    _require(policy.get("status") == "formal_closure_candidate", "closure policy status drift")
+    _require(policy.get("status") == "formal_closure_authorized", "closure policy does not authorize Phase 5 closure")
     contract = policy.get("contract", {})
     _require(contract.get("historical_schema_preserved") == "1.1.0", "v1.1 history no longer preserved")
     _require(contract.get("publication_schema") == "1.2.0", "publication schema is not v1.2")
@@ -79,6 +79,9 @@ def validate_closure_policy() -> None:
     _require(publication.get("release_files_immutable") is True, "release immutability disabled")
     _require(publication.get("current_pointer_atomic") is True, "current pointer is not atomic")
     _require(publication.get("writer_concurrency_group") == "sanida-dados-fiscais-writes-main", "writer concurrency group drift")
+    _require(publication.get("first_production_release_status") == "pending_manual_bootstrap_after_merge", "bootstrap status drift")
+    schema = policy.get("schema", {})
+    _require(schema.get("canonical_file_materialization") == "publication_workflow", "public schema materialization boundary drift")
     _require(policy.get("next_phase") == "Fase 6 — Migração dos consumidores", "handoff target drift")
 
 
@@ -109,11 +112,7 @@ def validate_v12_schema_contract() -> None:
 
 def validate_governance_registry() -> None:
     registry = load_governance_registry(ROOT / "docs/governance-source-registry-v1.json")
-    covered = {
-        rule_id
-        for item in registry.values()
-        for rule_id in item["covers"]
-    }
+    covered = {rule_id for item in registry.values() for rule_id in item["covers"]}
     _require(covered == EXPECTED_TECHNICAL, "governance registry does not cover technical rules exactly")
     for item in registry.values():
         _require(item["role"] == "internal_governance", "governance registry role drift")
@@ -121,7 +120,7 @@ def validate_governance_registry() -> None:
 
     builder = _read("sanida_fiscal/governance_evidence_v12.py")
     for marker in (
-        "hash_manifest_of_versioned_repository_paths" if False else "repository path escapes root",
+        "repository path escapes root",
         "governance evidence hash collision or corruption",
         "technical.money_decimal_and_rounding",
         "technical.contract_vigency_and_quality",
@@ -202,10 +201,12 @@ def validate_publication_and_workflow() -> None:
         'cron: "40 9 * * *"',
         "contents: write",
         "group: sanida-dados-fiscais-writes-main",
+        "python scripts/generate_contract_schema_v12.py",
         "--scheduled",
         "--human-approval-reference",
         "python scripts/publish_fiscal_release_v12.py",
         "python scripts/validate_phase5_closure_gate.py",
+        "contracts/fiscal-contract-v1.2.schema.json",
         "evidence/fiscal-authority-v1",
         "evidence/governance-v1",
         "releases/fiscal-v1",
