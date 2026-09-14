@@ -99,10 +99,24 @@ def main() -> None:
     _require("scripts/validate_phase4_closure_gate.py" in workflow, "Phase 4 formal closure gate missing from CI")
 
     phase4_doc = _read("docs/phase4-sources-sensors-v1.md")
+    _require("**Status:** CONCLUÍDA" in phase4_doc, "Phase 4 detailed document is not CONCLUÍDA")
+    _require("preserve_auditable_block_new_consumption" in phase4_doc, "Phase 4 detailed document lost A05 policy")
     _require("Fase 5" in phase4_doc, "Phase 4 handoff does not preserve Phase 5 boundary")
     _require("Fase 6" in phase4_doc, "Phase 4 handoff does not preserve Phase 6 boundary")
 
-    print("Phase 4 closure gate: PASS (A01-A05 corrected; formal closure authorized)")
+    readme = _read("README.md")
+    _require(
+        "### Fase 4 — Fontes e sensores\n\n**Status: CONCLUÍDA**" in readme,
+        "README master does not mark Phase 4 as CONCLUÍDA",
+    )
+    _require("preserve_auditable_block_new_consumption" in readme, "README master lost A05 policy")
+    _require("## 20. Próxima etapa\n\nIniciar a **Fase 5" in readme, "README master does not hand off to Phase 5")
+
+    closure_doc = _read("docs/phase4-closure-gate.md")
+    _require("preserve_auditable_block_new_consumption" in closure_doc, "closure record lost A05 policy")
+    _require("Fase 5" in closure_doc and "Fase 6" in closure_doc, "closure record lost phase boundaries")
+
+    print("Phase 4 closure gate: PASS (A01-A05 corrected; formal closure authorized; docs synchronized)")
 
 
 if __name__ == "__main__":
