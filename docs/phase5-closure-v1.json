@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "phase": "Fase 5 — Diff semântico e gates de publicação",
-  "status": "formal_closure_candidate",
+  "status": "formal_closure_authorized",
   "as_of": "2026-09-14",
   "contract": {
     "historical_schema_preserved": "1.1.0",
@@ -52,13 +52,15 @@
     "scheduled_successor_evaluation_after_bootstrap": true,
     "workflow": ".github/workflows/fiscal-release-v12.yml",
     "workflow_schedule_utc": "09:40",
-    "writer_concurrency_group": "sanida-dados-fiscais-writes-main"
+    "writer_concurrency_group": "sanida-dados-fiscais-writes-main",
+    "first_production_release_status": "pending_manual_bootstrap_after_merge"
   },
   "schema": {
     "generator": "scripts/generate_contract_schema_v12.py",
     "canonical_public_path": "contracts/fiscal-contract-v1.2.schema.json",
     "generation_is_deterministic": true,
-    "schema_is_generated_and_checked_by_ci": true
+    "schema_is_generated_and_checked_by_ci": true,
+    "canonical_file_materialization": "publication_workflow"
   },
   "consumer_boundary": {
     "wordpress_plugin_migration": "phase6",
