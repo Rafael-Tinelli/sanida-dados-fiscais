@@ -1,7 +1,7 @@
 {
-  "schema_version": "1.1.0",
+  "schema_version": "1.2.0",
   "decision_id": "phase4.financial_reference.source_policy",
-  "status": "migrated_and_boundary_hardened_in_branch",
+  "status": "migrated_boundary_hardened_and_A05_resolved",
   "as_of": "2026-09-13",
   "domain": "financial_reference",
   "canonical_inputs": {
@@ -47,7 +47,18 @@
     "persist_operational_failure_state": true,
     "preserve_existing_artifact_bytes": true,
     "write_static_fallback": false,
-    "refresh_generated_at_without_new_observation": false
+    "refresh_generated_at_without_new_observation": false,
+    "parser_incompatible_last_good": {
+      "policy_id": "preserve_auditable_block_new_consumption",
+      "preserve_previous_snapshot_candidate_and_artifact": true,
+      "allow_audit_of_preserved_last_good": true,
+      "allow_new_taxas_artifact_generation": false,
+      "allow_new_dados_fiscais_composition": false,
+      "allow_generated_at_refresh": false,
+      "allow_value_relabel_as_current": false,
+      "resume_condition": "a current collection must again produce PARSED with valid evidence",
+      "reason": "A successful fetch followed by PARSER_INCOMPATIBLE is evidence that the source format changed. Reusing the old candidate in a newly generated artifact would hide that incompatibility and falsely imply current parsing success."
+    }
   },
   "consumer_boundary": {
     "scraper_may_consume_only_local_artifact": true,
@@ -58,6 +69,8 @@
       "BCB_CDI_DAILY_SGS_12"
     ],
     "financial_evidence_must_validate_before_payroll_consumption": true,
+    "current_parser_incompatible_blocks_new_consumption": true,
+    "preserved_last_good_is_audit_only_until_parser_recovers": true,
     "remote_raw_github_fallback_allowed": false,
     "arbitrary_url_override_allowed": false
   },
