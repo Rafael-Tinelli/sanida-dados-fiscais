@@ -1,14 +1,18 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "decision_id": "phase6.c60a.human_review_ux",
   "status": "C6_0a_complete",
   "as_of": "2026-09-14",
   "scope": "Fiscal Contract v1.2 REVIEW_REQUIRED decisions before consumer migration",
   "review_packet": {
     "path": "state/fiscal-release-v12-review.json",
-    "review_key": "sha256_of_stable_candidate_semantics_evidence_and_diff",
+    "review_key": "sha256_of_stable_candidate_semantics_material_evidence_and_diff",
     "volatile_observation_clocks_change_review_key": false,
-    "source_snapshot_change_changes_review_key": true,
+    "raw_snapshot_hashes_remain_in_release_and_review_packet": true,
+    "parser_backed_snapshot_change_changes_review_key": true,
+    "unparsed_html_transport_or_markup_churn_changes_review_key": false,
+    "unparsed_html_visible_text_or_link_change_changes_review_key": true,
+    "unparsed_html_review_fingerprint": "html-visible-text-links-v1",
     "semantic_change_changes_review_key": true,
     "same_review_key_rewrites_durable_packet_or_state": false,
     "bootstrap_distinguishes_historical_inheritance_from_new_materialization": true,
@@ -42,6 +46,8 @@
     "approval_reference_format": "issue#N@comment#ID@actor:LOGIN@review:SHA256",
     "fresh_candidate_review_key_must_equal_approved_review_key": true,
     "stale_approval_blocks_publication": true,
+    "material_evidence_change_invalidates_approval": true,
+    "presentation_only_html_churn_does_not_invalidate_approval": true,
     "manual_workflow_fallback_requires_approval_reference_and_review_key": true
   },
   "schedule": {
@@ -54,12 +60,15 @@
     "regression_result_path": "state/fiscal-release-v12-review-regressions.json",
     "full_pytest_suite_runs_again_before_successful_publication_is_persisted": true,
     "same_review_key_idempotence_is_tested": true,
-    "manual_prepare_command_is_tested": true
+    "manual_prepare_command_is_tested": true,
+    "unparsed_html_presentation_churn_stability_is_tested": true,
+    "unparsed_html_material_text_or_link_change_is_tested": true,
+    "parser_backed_raw_hash_strictness_is_tested": true
   },
   "consumer_boundary": {
     "C6_0_bootstrap_may_start_only_after_C6_0a_green": true,
     "C6_1_wordpress_migration_before_bootstrap": false,
     "consumer_migration_changes_in_C6_0a": false
   },
-  "next_required_action": "Use /prepare (or workflow_dispatch/schedule) to generate the C6.0 bootstrap review packet; publish only after repository-owner approval of the exact review_key."
+  "next_required_action": "Generate the C6.0 bootstrap review packet, prove review_key stability across repeated recollection, then publish only after repository-owner approval of that exact stable review_key."
 }
