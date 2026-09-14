@@ -179,9 +179,7 @@ def main() -> int:
     )
 
     if assessment.outcome == PromotionOutcome.NO_PUBLISH_REQUIRED:
-        state["publication_status"] = "NO_PUBLICATION_REQUIRED"
-        _write_state(state)
-        print("Phase 5 v1.2: no semantic/evidence delta; current release preserved.")
+        print("Phase 5 v1.2: no semantic/evidence delta; current release preserved byte-for-byte.")
         return EXIT_OK
 
     if assessment.outcome == PromotionOutcome.BLOCKED:
@@ -209,8 +207,6 @@ def main() -> int:
         )
         manifest = store.publish(published)
     except NoPublicationRequired:
-        state["publication_status"] = "NO_PUBLICATION_REQUIRED"
-        _write_state(state)
         return EXIT_OK
     except HumanReviewRequiredError as exc:
         state["publication_status"] = "REVIEW_REQUIRED"
