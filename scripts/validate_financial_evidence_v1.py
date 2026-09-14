@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 from sanida_fiscal.financial_evidence_v1 import verify_financial_artifact_evidence
 
