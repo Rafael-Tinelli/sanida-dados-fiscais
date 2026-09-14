@@ -2,14 +2,14 @@
   "schema_version": "1.0.0",
   "decision_id": "phase4.inss.canonical_source_resolution",
   "status": "resolved",
-  "as_of": "2026-09-13",
+  "as_of": "2026-09-14",
   "registry_source_id": "INSS_TABLE_2026",
   "canonical_source": {
     "url": "https://www.gov.br/inss/pt-br/direitos-e-deveres/inscricao-e-contribuicao/tabela-de-contribuicao-mensal",
     "role": "official_operational",
     "collection_mode": "direct_registered_url",
     "parser_id": "inss_employee_table_v1",
-    "parser_version": "1.0.0",
+    "parser_version": "1.0.1",
     "reference_year": 2026,
     "effective_from": "2026-01-01"
   },
@@ -26,12 +26,14 @@
     "canonical_failure_state": "SOURCE_UNAVAILABLE",
     "url_change_requires_registry_change": true,
     "legacy_news_may_feed_phase4_parser": false,
-    "legacy_news_may_be_manual_corroboration_only": true
+    "legacy_news_may_be_manual_corroboration_only": true,
+    "presentational_whitespace_around_normative_punctuation_is_non_semantic": true
   },
   "rationale": [
     "The Phase 1 source registry already names the contribution-table URL as INSS_TABLE_2026.",
     "The canonical table explicitly exposes the employee, domestic-employee and casual-worker progressive bands for competence January 2026.",
     "The canonical table ties the 2026 values to Portaria Interministerial MPS/MF 13 of 2026 and states that 13th-salary contribution assessment is separate from monthly remuneration.",
+    "Parser 1.0.1 tolerates whitespace introduced by HTML tag boundaries around punctuation, while still requiring the same Portaria number and date.",
     "A yearly news article or search result is discovery/reference material, not a stable machine contract and must not silently replace the registered source.",
     "If the registered canonical page is unavailable, the safe operational state is SOURCE_UNAVAILABLE rather than discovery of a different page."
   ]
