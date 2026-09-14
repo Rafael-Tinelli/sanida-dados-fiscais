@@ -1,7 +1,7 @@
 {
-  "schema_version": "1.1.0",
+  "schema_version": "1.2.0",
   "decision_id": "phase4.production_source_evidence_persistence",
-  "status": "prepared_for_activation_with_phase4_merge",
+  "status": "prepared_for_activation_with_phase4_merge_after_boundary_audit",
   "as_of": "2026-09-13",
   "production_environment": {
     "runner": "github_actions_ubuntu_latest_ephemeral",
@@ -10,7 +10,10 @@
       ".github/workflows/taxas.yml"
     ],
     "branch": "main",
-    "shared_concurrency_group": "sanida-dados-fiscais-writes-main"
+    "shared_concurrency_group": "sanida-dados-fiscais-writes-main",
+    "queue_policy": "max",
+    "cancel_in_progress": false,
+    "reason": "Both writers mutate main and the same evidence tree; pending runs must queue rather than replace each other."
   },
   "persistence_backend": {
     "kind": "git_tracked_repository_path",
@@ -39,13 +42,16 @@
       "last_candidate_sha256",
       "last_candidate_path"
     ],
-    "current_failure_may_not_destroy_last_good_evidence_pointer": true
+    "current_failure_may_not_destroy_last_good_evidence_pointer": true,
+    "parser_incompatible_last_good_consumption_policy": "OPEN_A05"
   },
   "publication_transactions": {
     "payroll_compatibility": {
       "workflow": ".github/workflows/main.yml",
       "artifact": "dados_fiscais.json",
-      "evidence_gate": "scripts/validate_production_evidence_v1.py"
+      "evidence_gate": "scripts/validate_production_evidence_v1.py",
+      "evidence_scope": "RFB + INSS + nested Selic + CDI",
+      "financial_input_policy": "local taxas_bacen.json 1.4.0 only; no remote fallback"
     },
     "financial_reference_compatibility": {
       "workflow": ".github/workflows/taxas.yml",
@@ -71,7 +77,9 @@
     "state_last_good_hashes_must_equal_artifact_provenance": true,
     "state_last_good_parser_identity_must_equal_artifact_provenance": true,
     "state_last_parsed_timestamp_must_equal_artifact_provenance": true,
-    "paths_must_remain_inside_runtime_root": true
+    "paths_must_remain_inside_runtime_root": true,
+    "dados_fiscais_must_verify_all_four_sources": true,
+    "dados_fiscais_must_reject_remote_financial_origin": true
   },
   "scope": {
     "included_sources": [
@@ -80,9 +88,10 @@
       "BCB_SELIC_META_SGS_432",
       "BCB_CDI_DAILY_SGS_12"
     ],
-    "financial_reference": "migrated_in_branch_with_separate_registry_and_failure_policy",
+    "financial_reference": "migrated_in_branch_with_strict_local_consumer_boundary_and_source_specific_freshness",
     "semantic_diff": "phase5",
     "canonical_release_publication": "phase5",
-    "consumer_migration": "phase6"
+    "consumer_migration": "phase6",
+    "phase4_closure": "not_yet_authorized_until_A05_is_resolved"
   }
 }
