@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0.0",
+  "audit_id": "phase4.final_production_boundary.audit_v1",
+  "as_of": "2026-09-13",
+  "status": "preclosure_after_A01_A04_corrections",
+  "closure_authorized": false,
+  "findings": {
+    "A01": {
+      "severity": "P0",
+      "status": "CORRECTED",
+      "finding": "scraper.py accepted financial compatibility data without requiring the Phase 4 artifact/evidence contract",
+      "correction": [
+        "only local taxas_bacen.json may be consumed",
+        "schema_version 1.4.0 is mandatory",
+        "cdi_basis bcb_sgs_12_daily_compounded_252 is mandatory",
+        "SGS 432 and SGS 12 source identities are mandatory",
+        "artifact numeric values must reconcile with source provenance",
+        "verify_financial_artifact_evidence must pass before payroll consumption",
+        "dados_fiscais production evidence gate verifies all four external sources"
+      ]
+    },
+    "A02": {
+      "severity": "P1",
+      "status": "CORRECTED",
+      "finding": "financial observations had no source-specific freshness policy",
+      "correction": [
+        "Selic Meta is persistent-until-changed and has no maximum age",
+        "Selic future observation dates are rejected",
+        "CDI daily observation must be at most seven calendar days old",
+        "CDI future observation dates are rejected",
+        "freshness is evaluated before a new taxas_bacen.json compatibility artifact is built"
+      ]
+    },
+    "A03": {
+      "severity": "P1_OPERATIONAL",
+      "status": "CORRECTED",
+      "finding": "main.yml and taxas.yml shared a concurrency group but had asymmetric pending-run queue behavior",
+      "correction": [
+        "both workflows use group sanida-dados-fiscais-writes-main",
+        "both use cancel-in-progress false",
+        "both use queue max"
+      ]
+    },
+    "A04": {
+      "severity": "P1_GOVERNANCE",
+      "status": "CORRECTED",
+      "finding": "documentation and the foundation gate did not prove the complete final production boundary",
+      "correction": [
+        "legacy-artifact boundary documentation now reflects the migrated financial input",
+        "production persistence policy now records the four-source composed evidence gate",
+        "this machine-readable audit distinguishes foundation readiness from Phase 4 closure",
+        "scripts/validate_phase4_preclosure_gate.py is a dedicated executable pre-closure boundary gate",
+        "Remake CI runs foundation and pre-closure gates separately"
+      ]
+    },
+    "A05": {
+      "severity": "P1_LATENT",
+      "status": "OPEN",
+      "finding": "the policy for consuming a preserved financial last-good after a current PARSER_INCOMPATIBLE state remains unresolved",
+      "closure_effect": "BLOCKS_PHASE4_FORMAL_CLOSURE",
+      "note": "A01-A04 correction must not silently decide this policy."
+    }
+  },
+  "activation": {
+    "phase4_branch_may_still_contain_legacy_committed_artifacts": true,
+    "reason": "The branch has not been merged and production workflows have not yet generated the first evidence-gated artifacts.",
+    "merge_allowed_by_this_audit": false
+  },
+  "next_required_action": "Resolve A05, then execute a formal Phase 4 closure gate and closure review."
+}
