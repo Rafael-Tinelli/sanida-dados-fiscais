@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0.0",
+  "decision_id": "phase5.canonical_fiscal_release_publication_v1",
+  "status": "phase5_publication_foundation",
+  "as_of": "2026-09-14",
+  "canonical_store": {
+    "repository_root": "releases/fiscal-v1",
+    "immutable_release_pattern": "releases/fiscal-v1/releases/{release_id}.json",
+    "mutable_pointer": "releases/fiscal-v1/current.json",
+    "release_id_prefix": "fiscal-v1-sha256-",
+    "release_identity": "FiscalContractV1.expected_release_id content-addressed immutable payload",
+    "release_files_are_immutable": true,
+    "current_pointer_update": "atomic_replace"
+  },
+  "completeness_gate": {
+    "inventory_source": "docs/contract-coverage-v1.json",
+    "required_unique_rule_ids": 32,
+    "candidate_rule_id_set_must_equal_inventory": true,
+    "representative_21_rule_candidate_is_publishable": false,
+    "extra_rules_are_allowed": false
+  },
+  "promotion_gate": {
+    "semantic_policy": "docs/phase5-semantic-diff-policy-v1.json",
+    "BLOCKED": "never_publish",
+    "NO_PUBLISH_REQUIRED": "do_not_create_duplicate_release",
+    "REVIEW_REQUIRED": "require_explicit_human_approval_reference",
+    "AUTO_PUBLISH_ALLOWED": "publish_with_AUTO_VALIDATED_and_no_human_override"
+  },
+  "lineage": {
+    "bootstrap_supersedes_release_id": null,
+    "successor_must_supersede_exact_current_release": true,
+    "published_release_is_consumable_only_after_FiscalContractV1_assert_consumable": true
+  },
+  "integrity": {
+    "all_rules_VALIDATED": true,
+    "all_rules_have_available_hashed_snapshot": true,
+    "published_release_id_must_match_content_hash_identity": true,
+    "manifest_artifact_sha256_required": true,
+    "manifest_artifact_path_is_derived_from_release_id": true,
+    "store_read_revalidates_FiscalContractV1": true,
+    "existing_release_path_with_different_bytes_is_fatal": true
+  },
+  "workflow_boundary": {
+    "remake_ci": "read_only",
+    "publication_writer": "separate_workflow_not_yet_activated",
+    "consumer_migration": "phase6"
+  }
+}
