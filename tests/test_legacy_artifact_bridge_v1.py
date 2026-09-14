@@ -11,8 +11,14 @@ from sanida_fiscal.legacy_artifact_v1 import (
     build_legacy_dados_fiscais,
     build_legacy_payroll_fields,
 )
-from sanida_fiscal.inss_employee_v1 import parse_inss_employee_2026_snapshot
-from sanida_fiscal.rfb_irrf_v1 import parse_rfb_irrf_2026_snapshot
+from sanida_fiscal.inss_employee_v1 import (
+    PARSER_VERSION as INSS_PARSER_VERSION,
+    parse_inss_employee_2026_snapshot,
+)
+from sanida_fiscal.rfb_irrf_v1 import (
+    PARSER_VERSION as RFB_PARSER_VERSION,
+    parse_rfb_irrf_2026_snapshot,
+)
 from sanida_fiscal.source_catalog_v1 import run_registered_source_pipeline
 
 
@@ -92,11 +98,15 @@ def test_full_legacy_artifact_is_built_only_from_current_parsed_pipeline_runs(tm
     assert artifact["schema_version"] == "2.2.0"
     assert artifact["ano"] == 2026
     assert artifact["meta"]["warnings"] == ["phase4_legacy_compatibility_artifact"]
+    expected_parser_versions = {
+        "irrf": RFB_PARSER_VERSION,
+        "inss": INSS_PARSER_VERSION,
+    }
     for key in ("irrf", "inss"):
         meta = artifact["meta"]["sources"][key]
         assert meta["snapshot_sha256"]
         assert meta["candidate_sha256"]
-        assert meta["parser_version"] == "1.0.0"
+        assert meta["parser_version"] == expected_parser_versions[key]
         assert meta["collection_status"] == "COLLECTED"
 
 

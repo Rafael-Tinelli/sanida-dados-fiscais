@@ -10,7 +10,7 @@ from .sources_v1 import ParserIncompatibleError
 
 
 PARSER_ID = "inss_employee_table_v1"
-PARSER_VERSION = "1.0.0"
+PARSER_VERSION = "1.0.1"
 REFERENCE_YEAR = 2026
 CANONICAL_SOURCE_ID = "INSS_TABLE_2026"
 
@@ -121,7 +121,7 @@ def parse_inss_employee_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
     _assert_contiguous(bands)
 
     normative = re.search(
-        r"PORTARIA\s+INTERMINISTERIAL\s+MPS/MF\s+N[º°]?\s*13,\s*de\s*09/01/2026",
+        r"PORTARIA\s+INTERMINISTERIAL\s+MPS/MF\s+N[º°]?\s*13\s*,\s*de\s*09/01/2026",
         text,
         re.IGNORECASE,
     )
