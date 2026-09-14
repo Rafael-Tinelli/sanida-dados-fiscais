@@ -4,15 +4,22 @@ on:
   workflow_dispatch:
     inputs:
       approval_reference:
-        description: "Referência explícita de revisão humana para bootstrap/mudança estrutural"
+        description: "Fallback manual audit reference. Prefer approving from the generated review Issue."
+        required: false
+        type: string
+      review_key:
+        description: "Exact 64-char review_key that was reviewed; required with approval_reference."
         required: false
         type: string
   schedule:
-    # 09:40 UTC = 06:40 BRT. Bootstrap nunca ocorre pelo schedule.
+    # 09:40 UTC = 06:40 BRT. Schedule may prepare review, but never approves bootstrap.
     - cron: "40 9 * * *"
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: sanida-dados-fiscais-writes-main
@@ -20,6 +27,11 @@ concurrency:
 
 jobs:
   publish:
+    if: >-
+      ${{ github.event_name != 'issue_comment' ||
+          (github.event.issue.pull_request == null &&
+           github.actor == github.repository_owner &&
+           startsWith(github.event.comment.body, '/approve ')) }}
     runs-on: ubuntu-latest
 
     steps:
@@ -43,11 +55,53 @@ jobs:
         run: |
           python scripts/generate_contract_schema_v12.py
 
+      - name: Resolve human-approval context
+        id: approval
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          MANUAL_APPROVAL_REFERENCE: ${{ inputs.approval_reference || '' }}
+          MANUAL_REVIEW_KEY: ${{ inputs.review_key || '' }}
+          COMMENT_BODY: ${{ github.event.comment.body || '' }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || '' }}
+          COMMENT_ID: ${{ github.event.comment.id || '' }}
+          COMMENT_AUTHOR: ${{ github.event.comment.user.login || '' }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          approval_reference="$MANUAL_APPROVAL_REFERENCE"
+          review_key="$MANUAL_REVIEW_KEY"
+
+          if [ "$EVENT_NAME" = "issue_comment" ]; then
+            if [ "$COMMENT_AUTHOR" != "$REPOSITORY_OWNER" ]; then
+              echo "Only the repository owner may approve a fiscal review Issue."
+              exit 1
+            fi
+            read -r command review_key extra <<< "$COMMENT_BODY"
+            if [ "$command" != "/approve" ] || [ -z "$review_key" ] || [ -n "$extra" ]; then
+              echo "Approval comment must be exactly: /approve <review_key>"
+              exit 1
+            fi
+            if [[ ! "$review_key" =~ ^[0-9a-f]{64}$ ]]; then
+              echo "Invalid review_key in approval comment."
+              exit 1
+            fi
+            approval_reference="issue#${ISSUE_NUMBER}@comment#${COMMENT_ID}@actor:${COMMENT_AUTHOR}@review:${review_key}"
+          elif [ -n "$approval_reference" ] || [ -n "$review_key" ]; then
+            if [ -z "$approval_reference" ] || [[ ! "$review_key" =~ ^[0-9a-f]{64}$ ]]; then
+              echo "Manual approval requires both approval_reference and the exact 64-char review_key."
+              exit 1
+            fi
+          fi
+
+          echo "approval_reference=$approval_reference" >> "$GITHUB_OUTPUT"
+          echo "review_key=$review_key" >> "$GITHUB_OUTPUT"
+
       - name: Run v1.2 publication gate
         id: publish
         shell: bash
         env:
-          APPROVAL_REFERENCE: ${{ inputs.approval_reference || '' }}
+          APPROVAL_REFERENCE: ${{ steps.approval.outputs.approval_reference }}
+          EXPECTED_REVIEW_KEY: ${{ steps.approval.outputs.review_key }}
         run: |
           set +e
           args=()
@@ -56,21 +110,52 @@ jobs:
           fi
           if [ -n "$APPROVAL_REFERENCE" ]; then
             args+=(--human-approval-reference "$APPROVAL_REFERENCE")
+            args+=(--expected-review-key "$EXPECTED_REVIEW_KEY")
           fi
           python scripts/publish_fiscal_release_v12.py "${args[@]}"
           code=$?
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           exit 0
 
-      - name: Validate repository after publication attempt
+      - name: Run full regression suite for pending human review
+        if: steps.publish.outputs.exit_code == '3' || steps.publish.outputs.exit_code == '6'
+        shell: bash
+        run: |
+          set +e
+          python -m pytest -q tests 2>&1 | tee /tmp/fiscal-review-pytest.txt
+          code=${PIPESTATUS[0]}
+          set -e
+          python - "$code" <<'PY'
+          import json
+          from pathlib import Path
+          import sys
+
+          code = int(sys.argv[1])
+          text = Path('/tmp/fiscal-review-pytest.txt').read_text(encoding='utf-8', errors='replace')
+          lines = [line for line in text.splitlines() if line.strip()]
+          summary = '\n'.join(lines[-12:])
+          path = Path('state/fiscal-release-v12-review-regressions.json')
+          path.parent.mkdir(parents=True, exist_ok=True)
+          path.write_text(json.dumps({
+              'schema_version': '1.0.0',
+              'status': 'PASS' if code == 0 else 'FAIL',
+              'exit_code': code,
+              'command': 'python -m pytest -q tests',
+              'summary': summary,
+          }, indent=2, ensure_ascii=False, sort_keys=True) + '\n', encoding='utf-8')
+          PY
+
+      - name: Validate repository after successful publication
         if: steps.publish.outputs.exit_code == '0'
         run: |
+          python -m pytest -q tests
           python scripts/validate_repository.py
           python scripts/validate_contract_v1.py
           python scripts/generate_contract_schema_v12.py --check
           python scripts/validate_phase3_gate.py
           python scripts/validate_phase4_closure_gate.py
           python scripts/validate_phase5_closure_gate.py
+          python scripts/validate_phase6_c60a_gate.py
 
       - name: Persist schema, evidence, release and actionable state
         shell: bash
@@ -83,7 +168,9 @@ jobs:
             evidence/fiscal-authority-v1 \
             evidence/governance-v1 \
             releases/fiscal-v1 \
-            state/fiscal-release-v12-last-attempt.json
+            state/fiscal-release-v12-last-attempt.json \
+            state/fiscal-release-v12-review.json \
+            state/fiscal-release-v12-review-regressions.json
           do
             if [ -e "$path" ]; then
               git add "$path"
@@ -91,13 +178,40 @@ jobs:
           done
 
           if git diff --cached --quiet; then
-            echo "No durable publication/evidence/schema delta to commit."
+            echo "No durable publication/evidence/schema/review delta to commit."
             exit 0
           fi
 
-          git commit -m "chore(release): atualizar contrato fiscal v1.2 e evidências"
+          git commit -m "chore(release): atualizar contrato fiscal v1.2, evidências e revisão"
           git pull --rebase origin main
           git push origin main
+
+      - name: Create or update actionable human-review Issue
+        if: steps.publish.outputs.exit_code == '3' || steps.publish.outputs.exit_code == '6'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          args=(--packet state/fiscal-release-v12-review.json)
+          if [ -f state/fiscal-release-v12-review-regressions.json ]; then
+            args+=(--regression-result state/fiscal-release-v12-review-regressions.json)
+          fi
+          python scripts/upsert_fiscal_review_issue.py "${args[@]}"
+
+      - name: Close approved review Issue after publication
+        if: steps.publish.outputs.exit_code == '0' && steps.approval.outputs.review_key != ''
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          release_id=$(python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('state/fiscal-release-v12-last-attempt.json').read_text(encoding='utf-8'))
+          print(data.get('published_release_id', 'unknown-release'))
+          PY
+          )
+          python scripts/upsert_fiscal_review_issue.py \
+            --close-review-key "${{ steps.approval.outputs.review_key }}" \
+            --resolution "Candidato aprovado e publicado como ${release_id}."
 
       - name: Enforce fail-closed publication outcome
         shell: bash
@@ -108,8 +222,7 @@ jobs:
               echo "Fiscal v1.2 publication gate completed successfully."
               ;;
             3)
-              echo "Human review is required before publication."
-              exit 1
+              echo "Human review packet persisted and actionable Issue created/updated. Publication remains blocked."
               ;;
             4)
               echo "Fiscal v1.2 promotion was blocked by semantic/publication gates."
@@ -118,6 +231,9 @@ jobs:
             5)
               echo "Fiscal v1.2 source collection or assembly failed closed."
               exit 1
+              ;;
+            6)
+              echo "Stale approval rejected; current review packet persisted and Issue refreshed. Publication remains blocked."
               ;;
             *)
               echo "Unexpected publication exit code: $code"

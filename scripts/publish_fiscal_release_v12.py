@@ -19,6 +19,11 @@ from sanida_fiscal.governance_evidence_v12 import (
     GovernanceEvidenceError,
     build_governance_evidence,
 )
+from sanida_fiscal.human_review_v1 import (
+    StaleReviewApprovalError,
+    assert_review_approval_matches,
+    build_review_packet,
+)
 from sanida_fiscal.publication_v1 import (
     FiscalReleaseStore,
     HumanReviewRequiredError,
@@ -40,30 +45,73 @@ AUTHORITY_EVIDENCE_ROOT = ROOT / "evidence/fiscal-authority-v1"
 GOVERNANCE_EVIDENCE_ROOT = ROOT / "evidence/governance-v1"
 RELEASE_ROOT = ROOT / "releases/fiscal-v1"
 STATE_PATH = ROOT / "state/fiscal-release-v12-last-attempt.json"
+REVIEW_PATH = ROOT / "state/fiscal-release-v12-review.json"
 
 
 EXIT_OK = 0
 EXIT_REVIEW_REQUIRED = 3
 EXIT_BLOCKED = 4
 EXIT_SOURCE_OR_ASSEMBLY_ERROR = 5
+EXIT_STALE_REVIEW = 6
 
 
 def _load(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _load_optional(path: Path) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    try:
+        value = _load(path)
+    except (OSError, ValueError, json.JSONDecodeError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
 def _utc_text(value: datetime) -> str:
     return value.isoformat().replace("+00:00", "Z")
 
 
-def _write_state(payload: dict[str, Any]) -> None:
-    STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    tmp = STATE_PATH.with_suffix(STATE_PATH.suffix + ".tmp")
+def _write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(
         json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-    tmp.replace(STATE_PATH)
+    tmp.replace(path)
+
+
+def _write_state(payload: dict[str, Any]) -> None:
+    _write_json_atomic(STATE_PATH, payload)
+
+
+def _write_review(payload: dict[str, Any]) -> bool:
+    """Persist a new decision packet only when its review identity changed.
+
+    Repeated scheduled observations of the same semantic/evidence candidate must not
+    rotate `created_at_utc`, rewrite Git history or trigger Issue churn merely because
+    the wall clock advanced.
+    """
+    existing = _load_optional(REVIEW_PATH)
+    if existing is not None and existing.get("review_key") == payload.get("review_key"):
+        return False
+    _write_json_atomic(REVIEW_PATH, payload)
+    return True
+
+
+def _write_pending_review_state(payload: dict[str, Any]) -> bool:
+    existing = _load_optional(STATE_PATH)
+    if (
+        existing is not None
+        and existing.get("publication_status") == "REVIEW_REQUIRED"
+        and existing.get("review_key") == payload.get("review_key")
+        and existing.get("previous_release_id") == payload.get("previous_release_id")
+    ):
+        return False
+    _write_state(payload)
+    return True
 
 
 def _assessment_state(*, now: datetime, previous_release_id: str | None, candidate, assessment) -> dict[str, Any]:
@@ -97,7 +145,12 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--human-approval-reference",
         default=None,
-        help="Explicit review reference required for bootstrap or structural/effective changes.",
+        help="Explicit audit reference for the human approval that authorizes this exact review packet.",
+    )
+    parser.add_argument(
+        "--expected-review-key",
+        default=None,
+        help="SHA-256 review_key copied from the human-review Issue; must match the freshly assembled candidate.",
     )
     parser.add_argument(
         "--observed-at-utc",
@@ -107,7 +160,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--scheduled",
         action="store_true",
-        help="Scheduled mode: if no current release exists, exit cleanly without bootstrapping.",
+        help="Scheduled mode may prepare a review packet but can never bootstrap without explicit human approval.",
     )
     return parser.parse_args()
 
@@ -129,8 +182,12 @@ def main() -> int:
     previous = store.load_current()
 
     if previous is None and args.scheduled:
-        print("Phase 5 v1.2: bootstrap pending; scheduled run cannot create first release.")
-        return EXIT_OK
+        if args.human_approval_reference or args.expected_review_key:
+            print("Fiscal v1.2: scheduled bootstrap cannot carry human approval.", file=sys.stderr)
+            return EXIT_BLOCKED
+        print(
+            "Fiscal v1.2: bootstrap pending; scheduled run cannot create first release; preparing review packet only."
+        )
 
     try:
         authority = collect_authority_evidence(
@@ -146,8 +203,9 @@ def main() -> int:
             observed_at_utc=now,
         )
         governance_registry = _load(GOVERNANCE_REGISTRY)
+        historical_template = _load(TEMPLATE)
         candidate = assemble_candidate_v12(
-            template_v11=_load(TEMPLATE),
+            template_v11=historical_template,
             coverage=_load(COVERAGE),
             inventory=_load(INVENTORY),
             official_evidence=authority.evidence_by_source,
@@ -167,7 +225,7 @@ def main() -> int:
                 "reasons": [str(exc)],
             }
         )
-        print(f"Phase 5 v1.2: source/assembly blocked: {exc}", file=sys.stderr)
+        print(f"Fiscal v1.2: source/assembly blocked: {exc}", file=sys.stderr)
         return EXIT_SOURCE_OR_ASSEMBLY_ERROR
 
     assessment = assess_promotion(previous, candidate)
@@ -179,23 +237,63 @@ def main() -> int:
     )
 
     if assessment.outcome == PromotionOutcome.NO_PUBLISH_REQUIRED:
-        print("Phase 5 v1.2: no semantic/evidence delta; current release preserved byte-for-byte.")
+        print("Fiscal v1.2: no semantic/evidence delta; current release preserved byte-for-byte.")
         return EXIT_OK
 
     if assessment.outcome == PromotionOutcome.BLOCKED:
         state["publication_status"] = "BLOCKED"
         _write_state(state)
-        print("Phase 5 v1.2: promotion blocked: " + "; ".join(assessment.reasons), file=sys.stderr)
+        print("Fiscal v1.2: promotion blocked: " + "; ".join(assessment.reasons), file=sys.stderr)
         return EXIT_BLOCKED
 
-    if assessment.outcome == PromotionOutcome.REVIEW_REQUIRED and not args.human_approval_reference:
-        state["publication_status"] = "REVIEW_REQUIRED"
-        _write_state(state)
-        print(
-            "Phase 5 v1.2: human review required; rerun manually with --human-approval-reference.",
-            file=sys.stderr,
+    review_packet: dict[str, Any] | None = None
+    if assessment.outcome == PromotionOutcome.REVIEW_REQUIRED:
+        review_packet = build_review_packet(
+            previous=previous,
+            candidate=candidate,
+            assessment=assessment,
+            created_at_utc=now,
+            historical_template=historical_template if previous is None else None,
         )
-        return EXIT_REVIEW_REQUIRED
+        review_packet_changed = _write_review(review_packet)
+        state["review_key"] = review_packet["review_key"]
+
+        if not args.human_approval_reference:
+            state["publication_status"] = "REVIEW_REQUIRED"
+            state["review_issue_action"] = "UPSERT_REQUIRED"
+            state_changed = _write_pending_review_state(state)
+            if not review_packet_changed and not state_changed:
+                print(
+                    "Fiscal v1.2: same pending review_key; preserved durable review/state bytes without clock churn.",
+                    file=sys.stderr,
+                )
+            else:
+                print(
+                    "Fiscal v1.2: human review required; durable review packet prepared for GitHub Issue.",
+                    file=sys.stderr,
+                )
+            return EXIT_REVIEW_REQUIRED
+
+        try:
+            assert_review_approval_matches(
+                str(review_packet["review_key"]),
+                args.expected_review_key,
+            )
+        except StaleReviewApprovalError as exc:
+            state["publication_status"] = "REVIEW_STALE"
+            state["review_issue_action"] = "UPSERT_REQUIRED"
+            state["reasons"] = list(state.get("reasons", [])) + [str(exc)]
+            _write_state(state)
+            print(f"Fiscal v1.2: stale human approval blocked: {exc}", file=sys.stderr)
+            return EXIT_STALE_REVIEW
+
+    elif args.human_approval_reference is not None or args.expected_review_key is not None:
+        state["publication_status"] = "BLOCKED"
+        state["reasons"] = list(state.get("reasons", [])) + [
+            "human approval was supplied for a candidate that does not currently require human review"
+        ]
+        _write_state(state)
+        return EXIT_BLOCKED
 
     try:
         published = prepare_published_release(
@@ -211,6 +309,8 @@ def main() -> int:
     except HumanReviewRequiredError as exc:
         state["publication_status"] = "REVIEW_REQUIRED"
         state["reasons"] = [str(exc)]
+        if review_packet is not None:
+            state["review_key"] = review_packet["review_key"]
         _write_state(state)
         return EXIT_REVIEW_REQUIRED
     except (PromotionBlockedError, PublicationError, ValueError) as exc:
@@ -223,10 +323,12 @@ def main() -> int:
     state["published_release_id"] = published.release_id
     state["approval_mode"] = published.lifecycle.approval_mode.value
     state["approval_reference"] = published.lifecycle.approval_reference
+    if review_packet is not None:
+        state["review_key"] = review_packet["review_key"]
     state["manifest"] = manifest
     _write_state(state)
     print(
-        f"Phase 5 v1.2: published {published.release_id} ({published.lifecycle.approval_mode.value})."
+        f"Fiscal v1.2: published {published.release_id} ({published.lifecycle.approval_mode.value})."
     )
     return EXIT_OK
 
