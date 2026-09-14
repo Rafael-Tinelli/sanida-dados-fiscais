@@ -215,7 +215,9 @@ def collect_authority_evidence(
             raise AuthorityEvidenceError(f"source absent from registry: {source_id}")
         result = collector.collect(source, observed_at_utc=observed_at_utc)
         if result.status != CollectionStatus.COLLECTED or result.snapshot is None:
-            detail = result.error_detail or result.failure_kind.value if result.failure_kind else result.status.value
+            detail = result.error_detail or (
+                result.failure_kind.value if result.failure_kind else result.status.value
+            )
             raise AuthorityEvidenceError(f"{source_id}: official source unavailable: {detail}")
 
         parser_id = None
