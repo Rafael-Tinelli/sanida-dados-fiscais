@@ -226,11 +226,16 @@ def test_contract_level_governance_change_requires_review() -> None:
 def test_bootstrap_release_is_human_review_only() -> None:
     data = _example()
     _hash_all_available_evidence(data)
+    # The historical representative CANDIDATE contains pre-bootstrap change labels.
+    # A synthetic first-release comparison must describe every materialized rule as
+    # newly entering the publication lineage.
+    for rule in data["rules"]:
+        rule["change_class"] = "RULE_ADDED"
     candidate = FiscalContractV1.model_validate(data)
 
     assessment = assess_promotion(None, candidate)
 
-    assert assessment.outcome == PromotionOutcome.REVIEW_REQUIRED
+    assert assessment.outcome == PromotionOutcome.REVIEW_REQUIRED, assessment.reasons
     assert assessment.diff.change_classes == {ChangeClass.RULE_ADDED}
 
 
@@ -258,7 +263,7 @@ def test_added_and_removed_rules_are_detected() -> None:
     previous = _published_baseline()
     data = _successor_data(previous)
 
-    removed = _rule(data, "technical.contract_vigency_and_quality")
+    removed = _rule(data, "vacation.abono_pecuniario")
     data["rules"].remove(removed)
 
     added = deepcopy(_rule(data, "irrf.dependent_deduction"))
@@ -273,5 +278,5 @@ def test_added_and_removed_rules_are_detected() -> None:
     diff = diff_contracts(previous, candidate)
     changes = {(item.rule_id, item.change_class) for item in diff.rule_diffs if item.changed}
 
-    assert ("technical.contract_vigency_and_quality", ChangeClass.RULE_REMOVED) in changes
+    assert ("vacation.abono_pecuniario", ChangeClass.RULE_REMOVED) in changes
     assert ("irrf.synthetic_added_parameter", ChangeClass.RULE_ADDED) in changes
