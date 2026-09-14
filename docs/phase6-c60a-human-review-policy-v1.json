@@ -17,6 +17,9 @@
   },
   "github_issue": {
     "automatic_on_review_required": true,
+    "manual_prepare_command": "/prepare",
+    "manual_prepare_actor": "repository_owner_only",
+    "manual_prepare_grants_approval": false,
     "same_review_key_updates_existing_issue_when_content_changes": true,
     "same_review_key_noop_patch_when_content_identical": false,
     "new_review_key_closes_prior_pending_issue_as_stale": true,
@@ -50,12 +53,13 @@
     "full_pytest_suite_runs_before_issue_is_presented": true,
     "regression_result_path": "state/fiscal-release-v12-review-regressions.json",
     "full_pytest_suite_runs_again_before_successful_publication_is_persisted": true,
-    "same_review_key_idempotence_is_tested": true
+    "same_review_key_idempotence_is_tested": true,
+    "manual_prepare_command_is_tested": true
   },
   "consumer_boundary": {
     "C6_0_bootstrap_may_start_only_after_C6_0a_green": true,
     "C6_1_wordpress_migration_before_bootstrap": false,
     "consumer_migration_changes_in_C6_0a": false
   },
-  "next_required_action": "Correct the separate financial-reference pre-flight defect exposed by taxas_bacen workflow #2726, require green financial workflow, then execute C6.0 review/bootstrap."
+  "next_required_action": "Use /prepare (or workflow_dispatch/schedule) to generate the C6.0 bootstrap review packet; publish only after repository-owner approval of the exact review_key."
 }
