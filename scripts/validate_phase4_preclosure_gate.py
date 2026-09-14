@@ -25,8 +25,17 @@ def main() -> None:
     findings = audit.get("findings", {})
     for finding_id in ("A01", "A02", "A03", "A04"):
         _require(findings.get(finding_id, {}).get("status") == "CORRECTED", f"{finding_id} is not corrected")
-    _require(findings.get("A05", {}).get("status") == "OPEN", "A05 must remain explicitly OPEN at this checkpoint")
-    _require(audit.get("closure_authorized") is False, "pre-closure checkpoint must not authorize Phase 4 closure")
+
+    a05_status = findings.get("A05", {}).get("status")
+    _require(a05_status in {"OPEN", "CORRECTED"}, "A05 has an invalid lifecycle state")
+    if a05_status == "OPEN":
+        _require(audit.get("closure_authorized") is False, "OPEN A05 must not authorize Phase 4 closure")
+    else:
+        _require(audit.get("closure_authorized") is True, "CORRECTED A05 must authorize formal closure review")
+        _require(
+            findings.get("A05", {}).get("policy") == "preserve_auditable_block_new_consumption",
+            "A05 policy drift",
+        )
 
     scraper = _read("scraper.py")
     for forbidden in (
@@ -95,13 +104,40 @@ def main() -> None:
     integrity = persistence.get("integrity_gates", {})
     _require(integrity.get("dados_fiscais_must_verify_all_four_sources") is True, "A04 four-source integrity gate not documented")
     _require(integrity.get("dados_fiscais_must_reject_remote_financial_origin") is True, "A04 local-only financial integrity gate not documented")
-    _require(persistence.get("scope", {}).get("phase4_closure") == "not_yet_authorized_until_A05_is_resolved", "A04 closure status overclaims readiness")
+
+    if a05_status == "CORRECTED":
+        failure_policy = financial_policy.get("failure_policy", {}).get("parser_incompatible_last_good", {})
+        _require(
+            failure_policy.get("policy_id") == "preserve_auditable_block_new_consumption",
+            "A05 documented policy missing",
+        )
+        _require(failure_policy.get("allow_audit_of_preserved_last_good") is True, "A05 auditability missing")
+        _require(failure_policy.get("allow_new_taxas_artifact_generation") is False, "A05 allows new taxas generation")
+        _require(failure_policy.get("allow_new_dados_fiscais_composition") is False, "A05 allows new payroll composition")
+        _require(failure_policy.get("allow_generated_at_refresh") is False, "A05 allows timestamp refresh")
+
+        financial_evidence = _read("sanida_fiscal/financial_evidence_v1.py")
+        for marker in (
+            'PARSER_INCOMPATIBLE_LAST_GOOD_POLICY = "preserve_auditable_block_new_consumption"',
+            "verify_preserved_financial_last_good_provenance",
+            "verify_preserved_financial_last_good_artifact_evidence",
+            "current parser state is PARSER_INCOMPATIBLE",
+        ):
+            _require(marker in financial_evidence, f"A05 executable marker missing: {marker}")
+        _require(
+            integrity.get("current_financial_parser_incompatible_must_block_new_consumption") is True,
+            "A05 consumption quarantine missing from persistence policy",
+        )
+        _require(
+            integrity.get("preserved_financial_last_good_must_remain_auditable") is True,
+            "A05 audit-only preservation missing from persistence policy",
+        )
 
     remake = _read(".github/workflows/remake-ci.yml")
     _require("scripts/validate_phase4_foundation.py" in remake, "A04 foundation gate missing from CI")
     _require("scripts/validate_phase4_preclosure_gate.py" in remake, "A04 pre-closure gate missing from CI")
 
-    print("Phase 4 pre-closure: PASS (A01-A04 corrected; A05 OPEN; formal closure NOT authorized)")
+    print(f"Phase 4 pre-closure boundary: PASS (A01-A04 corrected; A05 {a05_status})")
 
 
 if __name__ == "__main__":
