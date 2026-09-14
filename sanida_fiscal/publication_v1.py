@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .contract_v1 import FiscalContractV1
-from .semantic_diff_v1 import PromotionOutcome, assess_promotion
-from .types_v1 import ContractStatus, ReleaseApprovalMode
+from .semantic_diff_v1 import ContractDiffV1, PromotionOutcome, assess_promotion
+from .types_v1 import ChangeClass, ContractStatus, ReleaseApprovalMode
 
 
 RELEASE_STORE_SCHEMA_VERSION = "1.0.0"
@@ -72,6 +72,77 @@ def assert_release_inventory_complete(
         )
 
 
+def _vigency_sort_key(rule: Mapping[str, Any]) -> tuple[str, str]:
+    vigency = rule.get("vigency")
+    if not isinstance(vigency, Mapping):
+        raise PublicationError("rule vigency missing during transition reconciliation")
+    effective_from = vigency.get("effective_from")
+    effective_until = vigency.get("effective_until")
+    if not isinstance(effective_from, str):
+        raise PublicationError("rule effective_from missing during transition reconciliation")
+    return effective_from, effective_until if isinstance(effective_until, str) else "9999-12-31"
+
+
+def reconcile_transition_change_classes(
+    candidate: FiscalContractV1,
+    diff: ContractDiffV1,
+) -> FiscalContractV1:
+    """Make ``change_class`` describe this release transition, not history.
+
+    A published rule can have entered an earlier release as ``RULE_ADDED`` or have
+    been structurally changed in an earlier release. Carrying that historical label
+    unchanged into every successor would make Phase 2 correctly demand human review
+    forever. Phase 5 therefore reconciles the successor just before publication:
+
+    * changed rules receive the computed class already checked against the candidate;
+    * unchanged comparable rules become ``SOURCE_REFRESH_NO_CHANGE``;
+    * newly added rules remain ``RULE_ADDED``.
+
+    This reconciliation changes immutable release bytes, so the final release_id is
+    calculated only after this step. It never weakens the Phase 2 PUBLISHED invariant.
+    """
+    data = candidate.model_dump(mode="json", exclude_none=True)
+    raw_rules = data.get("rules")
+    if not isinstance(raw_rules, list):
+        raise PublicationError("candidate rules missing during transition reconciliation")
+
+    grouped_indices: dict[str, list[int]] = {}
+    for index, rule in enumerate(raw_rules):
+        if not isinstance(rule, dict) or not isinstance(rule.get("rule_id"), str):
+            raise PublicationError("invalid rule while reconciling transition classes")
+        grouped_indices.setdefault(rule["rule_id"], []).append(index)
+    for indices in grouped_indices.values():
+        indices.sort(key=lambda index: _vigency_sort_key(raw_rules[index]))
+
+    diff_map = {
+        (item.rule_id, item.occurrence): item
+        for item in diff.rule_diffs
+        if item.change_class != ChangeClass.RULE_REMOVED
+    }
+
+    seen: set[tuple[str, int]] = set()
+    for rule_id, indices in grouped_indices.items():
+        for occurrence, index in enumerate(indices):
+            key = (rule_id, occurrence)
+            item = diff_map.get(key)
+            if item is None:
+                raise PublicationError(
+                    f"semantic diff has no candidate rule occurrence for {rule_id}[{occurrence}]"
+                )
+            raw_rules[index]["change_class"] = (
+                item.change_class.value
+                if item.changed
+                else ChangeClass.SOURCE_REFRESH_NO_CHANGE.value
+            )
+            seen.add(key)
+
+    missing = sorted(set(diff_map) - seen)
+    if missing:
+        raise PublicationError(f"semantic diff contains unmatched candidate rules: {missing}")
+
+    return FiscalContractV1.model_validate(data)
+
+
 def prepare_published_release(
     *,
     previous: FiscalContractV1 | None,
@@ -83,8 +154,9 @@ def prepare_published_release(
     """Promote one complete CANDIDATE into an immutable PUBLISHED contract.
 
     This function does not persist bytes. It applies Phase 5 completeness,
-    semantic-diff and approval gates and then re-validates the result through the
-    existing FiscalContractV1 PUBLISHED invariants from Phase 2.
+    semantic-diff and approval gates, reconciles release-relative change metadata,
+    and then re-validates the result through the existing Phase 2 PUBLISHED
+    invariants.
     """
     _require_utc(published_at_utc)
     if candidate.status != ContractStatus.CANDIDATE:
@@ -121,7 +193,8 @@ def prepare_published_release(
         approval_mode = ReleaseApprovalMode.AUTO_VALIDATED
         approval_reference = "phase5:auto-promotion-v1"
 
-    data = candidate.model_dump(mode="json", exclude_none=True)
+    reconciled = reconcile_transition_change_classes(candidate, assessment.diff)
+    data = reconciled.model_dump(mode="json", exclude_none=True)
     data["status"] = ContractStatus.PUBLISHED.value
     data["lifecycle"] = {
         "validated_at_utc": published_at_utc.isoformat().replace("+00:00", "Z"),
@@ -131,10 +204,10 @@ def prepare_published_release(
         "block_reasons": [],
     }
 
-    # release_id is derived from the immutable payload. Lifecycle/status are not
-    # part of that hash by Phase 2 design, so the candidate already contains all
-    # content necessary to calculate the final identity.
-    data["release_id"] = candidate.expected_release_id()
+    # ``change_class`` is release-relative immutable metadata. The canonical
+    # identity therefore comes from the reconciled successor, never from the raw
+    # CANDIDATE carrying historical labels.
+    data["release_id"] = reconciled.expected_release_id()
     published = FiscalContractV1.model_validate(data)
     published.assert_consumable()
     return published
