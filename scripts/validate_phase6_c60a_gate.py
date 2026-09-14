@@ -23,6 +23,7 @@ def _require(condition: bool, message: str) -> None:
 
 def main() -> None:
     policy = _load("docs/phase6-c60a-human-review-policy-v1.json")
+    _require(policy.get("schema_version") == "1.2.0", "policy schema_version drift")
     _require(policy.get("decision_id") == "phase6.c60a.human_review_ux", "policy decision_id drift")
     _require(policy.get("status") == "C6_0a_complete", "C6.0a policy is not complete")
 
@@ -30,7 +31,10 @@ def main() -> None:
     _require(packet.get("path") == "state/fiscal-release-v12-review.json", "review packet path drift")
     _require(packet.get("volatile_observation_clocks_change_review_key") is False, "volatile clocks may rotate review_key")
     _require(packet.get("raw_snapshot_hashes_remain_in_release_and_review_packet") is True, "raw evidence hashes are no longer preserved")
-    _require(packet.get("parser_backed_snapshot_change_changes_review_key") is True, "parser-backed evidence no longer binds review_key")
+    _require(packet.get("parser_backed_raw_snapshot_churn_changes_review_key") is False, "parser-backed raw markup churn may rotate review_key")
+    _require(packet.get("parser_backed_normalized_payload_change_changes_review_key") is True, "parser-backed normalized payload no longer binds review_key")
+    _require(packet.get("parser_backed_parser_identity_change_changes_review_key") is True, "parser identity/version no longer binds review_key")
+    _require(packet.get("parser_backed_review_fingerprint") == "parsed-normalized-payload-v1", "parser-backed review fingerprint drift")
     _require(packet.get("unparsed_html_transport_or_markup_churn_changes_review_key") is False, "presentation-only HTML churn may rotate review_key")
     _require(packet.get("unparsed_html_visible_text_or_link_change_changes_review_key") is True, "material unparsed HTML changes no longer rotate review_key")
     _require(packet.get("unparsed_html_review_fingerprint") == "html-visible-text-links-v1", "unparsed HTML review fingerprint drift")
@@ -66,6 +70,7 @@ def main() -> None:
     _require(approval.get("stale_approval_blocks_publication") is True, "stale approval no longer blocks publication")
     _require(approval.get("material_evidence_change_invalidates_approval") is True, "material evidence changes may reuse approval")
     _require(approval.get("presentation_only_html_churn_does_not_invalidate_approval") is True, "transport-only HTML churn may deadlock approval")
+    _require(approval.get("parser_backed_raw_markup_churn_with_same_normalized_payload_does_not_invalidate_approval") is True, "parser-backed transport churn may deadlock approval")
 
     schedule = policy.get("schedule", {})
     _require(schedule.get("may_prepare_bootstrap_review") is True, "schedule cannot prepare bootstrap review")
@@ -88,11 +93,15 @@ def main() -> None:
     evidence_identity = _read("sanida_fiscal/review_evidence_identity_v1.py")
     for marker in (
         "html-visible-text-links-v1",
+        "parsed-normalized-payload-v1",
         "raw-snapshot-sha256-v1",
         "canonical_html_review_fingerprint",
+        "canonical_parsed_review_fingerprint",
         "build_review_identity_candidate",
+        "normalized_candidates",
         "snapshot integrity mismatch",
         "parser_id",
+        "parser_version",
         "visible_text",
         "links",
     ):
@@ -105,6 +114,7 @@ def main() -> None:
         "--expected-review-key",
         "build_review_packet",
         "build_review_identity_candidate",
+        "normalized_candidates=authority.normalized_candidates",
         'review_packet["review_evidence_identity"]',
         "assert_review_approval_matches",
         'state["publication_status"] = "REVIEW_STALE"',
@@ -156,7 +166,10 @@ def main() -> None:
         "test_html_review_fingerprint_ignores_markup_whitespace_attributes_scripts_and_comments",
         "test_html_review_fingerprint_changes_when_visible_text_or_link_target_changes",
         "test_unparsed_html_review_identity_is_stable_across_presentation_only_raw_hash_churn",
-        "test_parser_backed_html_remains_bound_to_exact_raw_snapshot_hash",
+        "test_parser_backed_html_uses_normalized_payload_identity_and_preserves_raw_candidate",
+        "test_parser_backed_review_identity_is_stable_across_raw_html_churn_when_parsed_payload_is_same",
+        "test_parser_backed_review_identity_changes_on_normalized_payload_or_parser_version",
+        "test_parser_backed_missing_or_mismatched_normalized_candidate_fails_closed",
         "test_snapshot_integrity_mismatch_fails_closed",
     ):
         _require(marker in evidence_tests, f"review evidence stability regression missing: {marker}")
@@ -178,6 +191,7 @@ def main() -> None:
         "não é possível revisar A e publicar silenciosamente B",
         "O repositório não promete entrega por e-mail",
         "não cria churn Git nem nova notificação",
+        "parsed-normalized-payload-v1",
         "#2726",
     ):
         _require(marker in docs, f"C6.0a documentation marker missing: {marker}")
