@@ -834,6 +834,19 @@ Sexto checkpoint executável:
 - B3 permanece referência de metodologia/corroboração do DI, mas o FTP legado deixa de ser input/fallback automático;
 - suíte integral chega a **200 testes verdes** e o gate registra `Selic SGS 432 + CDI SGS 12 migrated; static financial fallback removed`.
 
+
+Sétimo checkpoint executável — auditoria da fronteira final e correções A01–A04:
+
+- **A01 corrigido:** `scraper.py` só aceita o `taxas_bacen.json` local no contrato 1.4.0, com `cdi_basis=bcb_sgs_12_daily_compounded_252`, source IDs SGS 432/12, reconciliação dos valores com a proveniência e `verify_financial_artifact_evidence()` antes do consumo;
+- removidos `SFA_TAXAS_JSON_URL`, raw GitHub e qualquer fallback remoto do consumidor financeiro;
+- `scripts/validate_production_evidence_v1.py` passa a validar a cadeia composta das quatro fontes externas: RFB, INSS, Selic e CDI;
+- **A02 corrigido:** Selic Meta segue sem idade máxima por ser persistente até mudança, mas não aceita data futura; CDI diário não aceita data futura nem observação com mais de 7 dias corridos;
+- **A03 corrigido:** `main.yml` e `taxas.yml` compartilham `sanida-dados-fiscais-writes-main`, `cancel-in-progress: false` e `queue: max`;
+- **A04 corrigido:** documentação de fronteira/persistência foi alinhada ao comportamento real e `scripts/validate_phase4_preclosure_gate.py` separa explicitamente fundação de fechamento formal;
+- `docs/phase4-final-boundary-audit-v1.json` registra A01–A04 como `CORRECTED`, A05 como `OPEN` e `closure_authorized=false`;
+- suíte integral chega a **209 testes verdes**;
+- o pre-closure gate encerra com `PASS (A01-A04 corrected; A05 OPEN; formal closure NOT authorized)`.
+
 ### Fase 5 — Diff semântico e gates de publicação
 
 **Status: PENDENTE**
@@ -913,6 +926,10 @@ Objetivos:
 37. Selic de compatibilidade usa BCB SGS 432 como entrada operacional estruturada; CDI usa BCB SGS 12 na unidade diária de origem e só é anualizado no bridge legado em base de 252 dias úteis.
 38. FTP B3/Cetip não é fallback automático nem input de produção após a migração; B3 permanece autoridade/metodologia do benchmark DI e fonte de corroboração humana.
 39. Falha financeira nunca autoriza fallback estático nem refresh de timestamp: `taxas_bacen.json` só é reescrito com dois candidatos atuais `PARSED` e evidência persistida validada.
+40. `scraper.py` só pode consumir `taxas_bacen.json` local no contrato 1.4.0 e após validação da evidência financeira; raw GitHub, URL arbitrária e artefato 1.3/B3 legado não são fallback de produção.
+41. Freshness de `financial_reference` é específica por série: Selic Meta é persistente até mudança e não possui idade máxima, enquanto CDI diário possui tolerância máxima de 7 dias corridos; nenhuma das duas aceita observação futura.
+42. `main.yml` e `taxas.yml` são escritores serializados do mesmo `main`/runtime e usam o mesmo concurrency group com `cancel-in-progress: false` e `queue: max`.
+43. `validate_phase4_foundation.py` continua sendo gate de fundação; `validate_phase4_preclosure_gate.py` prova A01–A04 sem autorizar fechamento. A Fase 4 permanece aberta enquanto A05 não tiver política explícita.
 
 ---
 
@@ -921,7 +938,7 @@ Objetivos:
 As Fases 1, 2 e 3 estão formalmente concluídas. Se a implementação posterior revelar uma lacuna semântica objetiva, o processo exige emenda explícita e versionada do contrato em vez de hardcode no engine. A primeira ocorrência foi A02, corrigida na Fase 3 como Contrato v1.1. As questões abertas restantes pertencem às fases posteriores:
 
 - critérios de confirmação multi-fonte para mudanças paramétricas — Fase 4/5;
-- revisão final da fronteira entre `taxas.yml`, `main.yml`, `taxas_bacen.json` e `dados_fiscais.json` — fechamento da Fase 4;
+- A05: política explícita para consumo (ou invalidação) do last-good financeiro quando a tentativa corrente entra em `PARSER_INCOMPATIBLE` — bloqueia o fechamento formal da Fase 4;
 - mecanismo de semantic diff e promoção — Fase 5;
 - distribuição para WordPress/SFA e migração dos consumidores — Fase 6.
 
@@ -929,9 +946,9 @@ As Fases 1, 2 e 3 estão formalmente concluídas. Se a implementação posterior
 
 ## 20. Próxima etapa
 
-Continuar a **Fase 4 — Fontes e sensores** com os quatro coletores externos já migrados na branch: RFB, INSS, Selic/SGS 432 e CDI/SGS 12.
+Continuar a **Fase 4 — Fontes e sensores** com a fronteira final de produção corrigida para A01–A04 e protegida pelo pre-closure gate.
 
-Próximo checkpoint: revisar a **fronteira final de produção** entre `taxas.yml`, `main.yml`, `taxas_bacen.json` e `dados_fiscais.json`, confirmar que nenhuma rota legada de coleta/fallback permanece alcançável e executar o gate formal de fechamento da Fase 4. Semantic diff, promoção e publicação continuam reservados à Fase 5.
+Próximo checkpoint: resolver **A05**, definindo a política para o last-good financeiro diante de uma tentativa corrente `PARSER_INCOMPATIBLE`. Somente depois disso executar o gate formal de fechamento da Fase 4 e revisar se a fase pode ser promovida a `CONCLUÍDA`. Semantic diff, promoção e publicação continuam reservados à Fase 5.
 
 Qualquer necessidade de reinterpretar regra jurídica ou alterar a biblioteca da Fase 3 deve voltar explicitamente ao contrato/inventário com evidência concreta, não ser resolvida silenciosamente dentro de collector ou parser.
 
@@ -954,6 +971,17 @@ Uma fase só deve ser marcada como `CONCLUÍDA` quando seus critérios de conclu
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-13 — correções A01–A04 da auditoria de fronteira
+
+- fechado o bypass que permitia ao `scraper.py` aceitar `taxas_bacen.json` legado apenas pela presença de números;
+- consumo financeiro passa a exigir artefato local 1.4.0, proveniência SGS 432/12, reconciliação de valores e evidência persistida;
+- o gate de `dados_fiscais.json` passa de duas para quatro fontes externas verificadas;
+- instituída freshness específica: Selic persistente até mudança; CDI diário com máximo de 7 dias corridos; datas futuras rejeitadas;
+- alinhado `taxas.yml` a `main.yml` com `queue: max` no mesmo concurrency group;
+- criado `docs/phase4-final-boundary-audit-v1.json` e `scripts/validate_phase4_preclosure_gate.py`;
+- A01–A04 estão `CORRECTED`; A05 permanece `OPEN` e bloqueia fechamento/merge da Fase 4;
+- suíte integral chega a **209 testes verdes**.
 
 ### 2026-09-13 — migração de Selic e CDI na Fase 4
 
