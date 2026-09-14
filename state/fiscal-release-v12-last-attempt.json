@@ -1,9 +1,9 @@
 {
-  "attempted_at_utc": "2026-09-14T13:54:59.471580Z",
+  "attempted_at_utc": "2026-09-14T14:16:57.807612Z",
   "previous_release_id": null,
   "promotion_outcome": "BLOCKED_BEFORE_DIFF",
   "reasons": [
-    "PLANALTO_CLT: official source unavailable: ConnectionError"
+    "PLANALTO_DECRETO_10854_2021: official source unavailable: RemoteProtocolError"
   ],
   "schema_version": "1.0.0"
 }
