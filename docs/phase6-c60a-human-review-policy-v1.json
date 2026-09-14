@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0.0",
+  "decision_id": "phase6.c60a.human_review_ux",
+  "status": "implemented_in_branch",
+  "as_of": "2026-09-14",
+  "scope": "Fiscal Contract v1.2 REVIEW_REQUIRED decisions before consumer migration",
+  "review_packet": {
+    "path": "state/fiscal-release-v12-review.json",
+    "review_key": "sha256_of_stable_candidate_semantics_evidence_and_diff",
+    "volatile_observation_clocks_change_review_key": false,
+    "source_snapshot_change_changes_review_key": true,
+    "semantic_change_changes_review_key": true,
+    "bootstrap_distinguishes_historical_inheritance_from_new_materialization": true,
+    "bootstrap_expected_historical_materialized_rules": 21,
+    "bootstrap_expected_newly_materialized_rules": 11
+  },
+  "github_issue": {
+    "automatic_on_review_required": true,
+    "same_review_key_updates_existing_issue": true,
+    "new_review_key_closes_prior_pending_issue_as_stale": true,
+    "assigned_to_repository_owner": true,
+    "github_notification_expected": true,
+    "email_delivery_guaranteed_by_repository": false,
+    "email_delivery_depends_on_github_account_notification_settings": true,
+    "includes_before_after": true,
+    "includes_change_class": true,
+    "includes_affected_calculators": true,
+    "includes_source_snapshot_hashes": true,
+    "includes_parser_identity_when_available": true,
+    "includes_reference_case_ids_when_available": true,
+    "includes_full_regression_status": true
+  },
+  "approval": {
+    "preferred_surface": "review_issue_comment",
+    "command": "/approve <review_key>",
+    "issue_comment_approver": "repository_owner_only",
+    "approval_reference_format": "issue#N@comment#ID@actor:LOGIN@review:SHA256",
+    "fresh_candidate_review_key_must_equal_approved_review_key": true,
+    "stale_approval_blocks_publication": true,
+    "manual_workflow_fallback_requires_approval_reference_and_review_key": true
+  },
+  "schedule": {
+    "may_prepare_bootstrap_review": true,
+    "may_publish_bootstrap_without_human_approval": false,
+    "review_required_is_actionable_pending_state_not_publication_success": true
+  },
+  "regression": {
+    "full_pytest_suite_runs_before_issue_is_presented": true,
+    "regression_result_path": "state/fiscal-release-v12-review-regressions.json",
+    "full_pytest_suite_runs_again_before_successful_publication_is_persisted": true
+  },
+  "consumer_boundary": {
+    "C6_0_bootstrap_may_start_only_after_C6_0a_green": true,
+    "C6_1_wordpress_migration_before_bootstrap": false,
+    "consumer_migration_changes_in_C6_0a": false
+  }
+}
