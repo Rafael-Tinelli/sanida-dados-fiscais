@@ -171,12 +171,14 @@
 
     toFixed(decimalPlaces, mode) {
       const q = this.quantize(decimalPlaces, mode || 'ROUND_HALF_UP');
-      const negative = q.coefficient < 0n;
-      let digits = (negative ? -q.coefficient : q.coefficient).toString();
-      if (decimalPlaces === 0) return (negative ? '-' : '') + digits;
-      if (digits.length <= decimalPlaces) digits = '0'.repeat(decimalPlaces - digits.length + 1) + digits;
-      const split = digits.length - decimalPlaces;
-      return (negative ? '-' : '') + digits.slice(0, split) + '.' + digits.slice(split);
+      if (decimalPlaces === 0) return q.toString().split('.')[0];
+      const raw = q.toString();
+      const negative = raw.startsWith('-');
+      const plain = negative ? raw.slice(1) : raw;
+      const parts = plain.split('.');
+      const whole = parts[0];
+      const fraction = (parts[1] || '').padEnd(decimalPlaces, '0');
+      return (negative ? '-' : '') + whole + '.' + fraction;
     }
   }
 
