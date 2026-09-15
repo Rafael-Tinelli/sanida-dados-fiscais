@@ -8,9 +8,12 @@
 
 if (!defined('ABSPATH')) exit;
 
-require_once plugin_dir_path(__FILE__) . 'includes/trait-sanida-fiscal-release.php';
+require_once plugin_dir_path(__FILE__) . 'includes/trait-sanida-fiscal-network.php';
+require_once plugin_dir_path(__FILE__) . 'includes/trait-sanida-fiscal-contract.php';
 require_once plugin_dir_path(__FILE__) . 'includes/trait-sanida-taxas.php';
-require_once plugin_dir_path(__FILE__) . 'includes/trait-sanida-shortcodes.php';
+require_once plugin_dir_path(__FILE__) . 'includes/trait-sanida-shortcodes-core.php';
+require_once plugin_dir_path(__FILE__) . 'includes/trait-sanida-calc13.php';
+require_once plugin_dir_path(__FILE__) . 'includes/trait-sanida-salary-calc.php';
 require_once plugin_dir_path(__FILE__) . 'includes/trait-sanida-admin-debug.php';
 
 final class Sanida_Fiscais_Git {
@@ -41,9 +44,12 @@ final class Sanida_Fiscais_Git {
   const TTL_TAXAS_SUCCESS = 10 * MINUTE_IN_SECONDS;
   const TTL_TAXAS_FAIL    = 5 * MINUTE_IN_SECONDS;
 
-  use Sanida_Fiscais_Fiscal_Release_Trait;
+  use Sanida_Fiscais_Fiscal_Network_Trait;
+  use Sanida_Fiscais_Fiscal_Contract_Trait;
   use Sanida_Fiscais_Taxas_Trait;
-  use Sanida_Fiscais_Shortcodes_Trait;
+  use Sanida_Fiscais_Shortcodes_Core_Trait;
+  use Sanida_Fiscais_Calc13_Trait;
+  use Sanida_Fiscais_Salary_Calc_Trait;
   use Sanida_Fiscais_Admin_Debug_Trait;
 
   public function __construct(){
