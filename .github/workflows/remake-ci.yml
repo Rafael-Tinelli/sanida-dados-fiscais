@@ -91,3 +91,7 @@ jobs:
       - name: Validate Phase 6 C6.0a human-review gate
         run: |
           python scripts/validate_phase6_c60a_gate.py
+
+      - name: Validate Phase 6 C6.1 WordPress consumer gate
+        run: |
+          python scripts/validate_phase6_c61_gate.py
