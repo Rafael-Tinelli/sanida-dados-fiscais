@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
+import json
 from pathlib import Path
 
-from sanida_fiscal.contract_v1_2 import FiscalContractV12
+from sanida_fiscal.contract_v1_2 import FiscalContractV12, parse_fiscal_contract
 from sanida_fiscal.engine_v1 import (
     IrrfAssessmentIdentity,
     IrrfIncomeType,
@@ -21,6 +22,9 @@ from sanida_fiscal.types_v1 import AssessmentContext, ChangeClass, FractionPaylo
 ROOT = Path(__file__).resolve().parents[1]
 STORE = ROOT / "releases/fiscal-v1"
 TARGET_DATE = date(2026, 9, 15)
+C65_ABONO_APPLIES_TO = (
+    "vacation_entitled_days_and_corresponding_remuneration_components"
+)
 
 
 def _current_release():
@@ -30,8 +34,39 @@ def _current_release():
     return release
 
 
+def _load_release(release_id: str):
+    store = FiscalReleaseStore(STORE)
+    path = store.release_path(release_id)
+    assert path.is_file(), f"missing immutable predecessor release: {release_id}"
+    release = parse_fiscal_contract(json.loads(path.read_text(encoding="utf-8")))
+    release.assert_consumable()
+    return release
+
+
+def _baseline_before_c65_overlay():
+    """Resolve the immutable pre-C6.5 baseline even after C6.5 is published.
+
+    The publication workflow validates the repository again after materializing a
+    successor in its workspace. Tests for the transition must therefore not assume
+    that ``current`` still points to the predecessor. Walk the immutable release
+    chain until the C6.5 abono semantic overlay is absent.
+    """
+    release = _current_release()
+    for _ in range(16):
+        abono = release.select_rule(
+            "vacation.abono_pecuniario",
+            TARGET_DATE,
+            AssessmentContext.VACATION_CASH_ALLOWANCE,
+        )
+        if abono.applies_to != C65_ABONO_APPLIES_TO:
+            return release
+        assert release.supersedes_release_id is not None
+        release = _load_release(release.supersedes_release_id)
+    raise AssertionError("could not resolve pre-C6.5 immutable baseline")
+
+
 def _candidate_with_c65_overlay():
-    previous = _current_release()
+    previous = _baseline_before_c65_overlay()
     data = previous.model_dump(mode="json", exclude_none=True)
     data["release_id"] = "candidate-c65-vacation-successor"
     data["status"] = "CANDIDATE"
@@ -84,9 +119,7 @@ def test_c65_cash_allowance_fraction_explicitly_covers_corresponding_remuneratio
     assert new.payload.numerator == 1
     assert new.payload.denominator == 3
     assert new.payload == old.payload
-    assert new.applies_to == (
-        "vacation_entitled_days_and_corresponding_remuneration_components"
-    )
+    assert new.applies_to == C65_ABONO_APPLIES_TO
     assert new.rule_version != old.rule_version
 
 
