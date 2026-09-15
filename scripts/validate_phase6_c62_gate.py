@@ -87,7 +87,7 @@ def main() -> int:
     doc = DOC.read_text(encoding="utf-8")
     for marker in (
         "**Status:** CONCLUÍDO",
-        "`/blog/wp-json/sfa/v1/fiscal-release`",
+        "/blog/wp-json/sfa/v1/fiscal-release",
         "BigInt",
         "paridade",
         "C6.3",
