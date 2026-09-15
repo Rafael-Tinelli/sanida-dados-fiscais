@@ -53,7 +53,7 @@ _RULE_CONTEXT_BY_INCOME_TYPE: dict[IrrfIncomeType, AssessmentContext] = {
 _REDUCTION_RULE_BY_INCOME_TYPE: dict[IrrfIncomeType, str] = {
     IrrfIncomeType.MONTHLY: "irrf.reduction.2026",
     IrrfIncomeType.THIRTEENTH: "thirteenth.irrf.reduction.2026",
-    IrrfIncomeType.VACATION: "irrf.reduction.2026",
+    IrrfIncomeType.VACATION: "vacation.irrf.reduction.2026",
 }
 
 _REDUCTION_INPUT_SEMANTIC_BY_INCOME_TYPE: dict[IrrfIncomeType, str] = {
@@ -62,9 +62,14 @@ _REDUCTION_INPUT_SEMANTIC_BY_INCOME_TYPE: dict[IrrfIncomeType, str] = {
     ),
     IrrfIncomeType.THIRTEENTH: "thirteenth_taxable_income_before_irrf_deductions",
     IrrfIncomeType.VACATION: (
-        "taxable_income_subject_to_monthly_incidence_before_irrf_deductions"
+        "taxable_vacation_income_subject_to_separate_monthly_irrf_assessment_before_deductions"
     ),
 }
+
+_LEGACY_V11_VACATION_REDUCTION_RULE_ID = "irrf.reduction.2026"
+_LEGACY_V11_VACATION_REDUCTION_INPUT_SEMANTIC = (
+    "taxable_income_subject_to_monthly_incidence_before_irrf_deductions"
+)
 
 
 @dataclass(frozen=True)
@@ -203,6 +208,26 @@ def build_irrf_legal_deductions(
     )
 
 
+def _reduction_identity(
+    contract: FiscalContractV1, assessment: IrrfAssessmentIdentity
+) -> tuple[str, str]:
+    if (
+        assessment.income_type == IrrfIncomeType.VACATION
+        and contract.schema_version == "1.1.0"
+    ):
+        # Historical schema 1.1 predates the dedicated vacation reduction rule.
+        # This branch is explicit backward compatibility for archived contracts,
+        # never a runtime fallback for current schema 1.2 releases.
+        return (
+            _LEGACY_V11_VACATION_REDUCTION_RULE_ID,
+            _LEGACY_V11_VACATION_REDUCTION_INPUT_SEMANTIC,
+        )
+    return (
+        _REDUCTION_RULE_BY_INCOME_TYPE[assessment.income_type],
+        _REDUCTION_INPUT_SEMANTIC_BY_INCOME_TYPE[assessment.income_type],
+    )
+
+
 def select_irrf_rule_bundle(
     contract: FiscalContractV1,
     target_date: date,
@@ -216,7 +241,7 @@ def select_irrf_rule_bundle(
     """
     rule_context = assessment.rule_context
     progressive_rule_id = "irrf.monthly.progressive_table"
-    reduction_rule_id = _REDUCTION_RULE_BY_INCOME_TYPE[assessment.income_type]
+    reduction_rule_id, expected_semantic = _reduction_identity(contract, assessment)
 
     progressive_rule = contract.select_rule(
         progressive_rule_id, target_date, rule_context
@@ -232,9 +257,6 @@ def select_irrf_rule_bundle(
     if reduction_rule.rounding_policy is None:
         raise FiscalEngineError("selected IRRF reduction lacks rounding policy")
 
-    expected_semantic = _REDUCTION_INPUT_SEMANTIC_BY_INCOME_TYPE[
-        assessment.income_type
-    ]
     if reduction_rule.payload.input_semantic != expected_semantic:
         raise FiscalEngineError(
             "reduction input semantic does not match IRRF income type: "

@@ -42,9 +42,9 @@ def _digest(seed: str) -> str:
 def _official_evidence(previous) -> dict[str, EvidenceObservation]:
     """Reuse exact official provenance from the immutable baseline release.
 
-    This prevents the regression test itself from manufacturing unrelated
-    authority-snapshot changes and therefore proves that only the intended
-    technical-governance rule changes in this successor.
+    This prevents the regression test from manufacturing unrelated authority-
+    snapshot deltas. Canonical structural overlays approved after that baseline
+    remain visible and are asserted explicitly by the successor test.
     """
     output: dict[str, EvidenceObservation] = {}
     for rule in previous.rules:
@@ -192,10 +192,16 @@ def test_rounding_successor_is_structural_and_review_required() -> None:
 
     assessment = assess_promotion(previous, candidate)
     assert assessment.outcome == PromotionOutcome.REVIEW_REQUIRED
-    changed = [item for item in assessment.diff.rule_diffs if item.changed]
-    assert [(item.rule_id, item.change_class.value) for item in changed] == [
-        ("technical.money_decimal_and_rounding", "STRUCTURAL_CHANGE")
-    ]
+    changed = {
+        (item.rule_id, item.change_class.value)
+        for item in assessment.diff.rule_diffs
+        if item.changed
+    }
+    assert changed == {
+        ("technical.money_decimal_and_rounding", "STRUCTURAL_CHANGE"),
+        ("vacation.abono_pecuniario", "STRUCTURAL_CHANGE"),
+        ("vacation.remuneration_and_constitutional_third", "STRUCTURAL_CHANGE"),
+    }
 
 
 def test_governance_registry_versions_the_rounding_decision() -> None:
