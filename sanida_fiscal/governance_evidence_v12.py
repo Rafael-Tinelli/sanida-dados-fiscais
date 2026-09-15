@@ -22,7 +22,7 @@ def _canonical_bytes(payload: dict[str, Any]) -> bytes:
 
 def load_governance_registry(path: Path) -> dict[str, dict[str, Any]]:
     raw = json.loads(Path(path).read_text(encoding="utf-8"))
-    if raw.get("schema_version") != "1.0.0":
+    if raw.get("schema_version") not in {"1.0.0", "1.1.0"}:
         raise GovernanceEvidenceError("unsupported governance source registry schema")
     sources = raw.get("sources")
     if not isinstance(sources, list) or not sources:
