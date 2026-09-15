@@ -53,7 +53,7 @@ _RULE_CONTEXT_BY_INCOME_TYPE: dict[IrrfIncomeType, AssessmentContext] = {
 _REDUCTION_RULE_BY_INCOME_TYPE: dict[IrrfIncomeType, str] = {
     IrrfIncomeType.MONTHLY: "irrf.reduction.2026",
     IrrfIncomeType.THIRTEENTH: "thirteenth.irrf.reduction.2026",
-    IrrfIncomeType.VACATION: "irrf.reduction.2026",
+    IrrfIncomeType.VACATION: "vacation.irrf.reduction.2026",
 }
 
 _REDUCTION_INPUT_SEMANTIC_BY_INCOME_TYPE: dict[IrrfIncomeType, str] = {
@@ -62,7 +62,7 @@ _REDUCTION_INPUT_SEMANTIC_BY_INCOME_TYPE: dict[IrrfIncomeType, str] = {
     ),
     IrrfIncomeType.THIRTEENTH: "thirteenth_taxable_income_before_irrf_deductions",
     IrrfIncomeType.VACATION: (
-        "taxable_income_subject_to_monthly_incidence_before_irrf_deductions"
+        "taxable_vacation_income_subject_to_separate_monthly_irrf_assessment_before_deductions"
     ),
 }
 
