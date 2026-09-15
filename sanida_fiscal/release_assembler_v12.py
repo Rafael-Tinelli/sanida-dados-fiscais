@@ -25,6 +25,12 @@ class ReleaseAssemblyError(RuntimeError):
 RFB_SOURCE_ID = "RFB_IRRF_TABLE_2026"
 INSS_SOURCE_ID = "INSS_TABLE_2026"
 
+TECHNICAL_MONEY_ROUNDING_POLICY: dict[str, Any] = {
+    "decimal_places": 2,
+    "mode": "ROUND_HALF_UP",
+    "stage": "per_component",
+}
+
 
 EXTERNAL_EVIDENCE_PREFERENCES = {
     "inss.employee.progressive_table": INSS_SOURCE_ID,
@@ -119,6 +125,7 @@ MISSING_RULE_SPECS: dict[str, dict[str, Any]] = {
         "dependencies": [],
         "calculation_order": 0,
         "vigency": {"effective_from": "2026-01-01"},
+        "rounding_policy": TECHNICAL_MONEY_ROUNDING_POLICY,
         "payload_builder": "policy",
     },
     "technical.contract_vigency_and_quality": {
@@ -471,6 +478,20 @@ def _hydrate_parameter_rules(
     }
 
 
+def _apply_structural_successor_overlays(rules: dict[str, dict[str, Any]]) -> None:
+    """Apply canonical structural decisions that post-date the first v1.2 release.
+
+    The legal 13th-salary accrual rule stays sourced only from external authority.
+    Monetary quantization is supplied by the technical governance rule instead.
+    Re-applying the overlay is idempotent; semantic diff decides whether review is
+    required against the current PUBLISHED release.
+    """
+    technical = rules.get("technical.money_decimal_and_rounding")
+    if technical is None:
+        raise ReleaseAssemblyError("technical.money_decimal_and_rounding rule missing")
+    technical["rounding_policy"] = deepcopy(TECHNICAL_MONEY_ROUNDING_POLICY)
+
+
 def _bump_patch(version: str) -> str:
     major, minor, patch = (int(part) for part in version.split("."))
     return f"{major}.{minor}.{patch + 1}"
@@ -576,6 +597,8 @@ def assemble_candidate_v12(
         raise ReleaseAssemblyError(
             f"assembled rule set is not 32/32; missing={sorted(required-set(rules))} extra={sorted(set(rules)-required)}"
         )
+
+    _apply_structural_successor_overlays(rules)
 
     # Attach one durable authorized authority snapshot to every legal/fiscal rule,
     # and one internal-governance snapshot only to technical contract rules.

@@ -1,7 +1,7 @@
 {
-  "schema_version": "1.0.0",
-  "status": "phase5_v12_checkpoint",
-  "as_of": "2026-09-14",
+  "schema_version": "1.1.0",
+  "status": "phase6_rounding_successor_checkpoint",
+  "as_of": "2026-09-15",
   "policy": {
     "role": "internal_governance",
     "legal_or_fiscal_authority": false,
@@ -18,9 +18,10 @@
       "repository_paths": [
         "sanida_fiscal/types_v1.py",
         "sanida_fiscal/engine_v1.py",
-        "docs/phase3-library-v1.md"
+        "docs/phase3-library-v1.md",
+        "docs/technical-money-rounding-policy-v1.md"
       ],
-      "notes": "Evidência interna do uso de Decimal e da política tipada de arredondamento. Não constitui autoridade jurídico-fiscal externa."
+      "notes": "Evidência interna do uso de Decimal, da política tipada de arredondamento e da política monetária canônica/fail-closed para componentes sem regra específica. Não constitui autoridade jurídico-fiscal externa."
     },
     {
       "source_id": "SANIDA_TECHNICAL_CONTRACT_GATE_V12",
