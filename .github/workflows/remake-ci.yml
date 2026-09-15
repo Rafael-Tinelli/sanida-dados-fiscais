@@ -95,3 +95,7 @@ jobs:
       - name: Validate Phase 6 C6.1 WordPress consumer gate
         run: |
           python scripts/validate_phase6_c61_gate.py
+
+      - name: Validate Phase 6 C6.2 folha-core gate
+        run: |
+          python scripts/validate_phase6_c62_gate.py
