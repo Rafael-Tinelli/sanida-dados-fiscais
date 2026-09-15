@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+from decimal import Decimal
 import json
 from pathlib import Path
 import shutil
@@ -125,10 +126,10 @@ def test_c62_progressive_and_irrf_runtime_match_python_engine() -> None:
         rules=bundle,
     )
 
-    assert result["inss"]["amount"] == f"{inss.amount:.2f}"
-    assert result["irrf"]["irrf_tax_base"] == str(irrf.irrf_tax_base)
-    assert result["irrf"]["pre_reduction_irrf"] == f"{irrf.pre_reduction_irrf:.2f}"
-    assert result["irrf"]["reduction_input_income"] == str(irrf.reduction_input_income)
-    assert result["irrf"]["reduction_amount"] == f"{irrf.reduction_amount:.2f}"
-    assert result["irrf"]["final_irrf"] == f"{irrf.final_irrf:.2f}"
+    assert Decimal(result["inss"]["amount"]) == inss.amount
+    assert Decimal(result["irrf"]["irrf_tax_base"]) == irrf.irrf_tax_base
+    assert Decimal(result["irrf"]["pre_reduction_irrf"]) == irrf.pre_reduction_irrf
+    assert Decimal(result["irrf"]["reduction_input_income"]) == irrf.reduction_input_income
+    assert Decimal(result["irrf"]["reduction_amount"]) == irrf.reduction_amount
+    assert Decimal(result["irrf"]["final_irrf"]) == irrf.final_irrf
     assert result["irrf"]["audit"]["release_id"] == release.release_id
