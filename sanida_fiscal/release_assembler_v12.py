@@ -479,17 +479,59 @@ def _hydrate_parameter_rules(
 
 
 def _apply_structural_successor_overlays(rules: dict[str, dict[str, Any]]) -> None:
-    """Apply canonical structural decisions that post-date the first v1.2 release.
+    """Apply canonical structural decisions approved after the first v1.2 release.
 
-    The legal 13th-salary accrual rule stays sourced only from external authority.
-    Monetary quantization is supplied by the technical governance rule instead.
-    Re-applying the overlay is idempotent; semantic diff decides whether review is
-    required against the current PUBLISHED release.
+    The legal 13th-salary accrual rule stays sourced only from external authority;
+    monetary quantization is supplied by the technical governance rule instead.
+
+    C6.5 also closes the vacation cash-allowance representation gap without adding
+    a 33rd canonical rule. The existing 1/3 allowance fraction is explicitly scoped
+    to the corresponding remuneration components, while the existing vacation
+    remuneration/constitutional-third formula becomes selectable in the cash-
+    allowance context. Tax incidence remains controlled by the dedicated allowance
+    principal and constitutional-third incidence rules.
+
+    Re-applying these overlays is idempotent; semantic diff decides whether human
+    review is required against the current PUBLISHED release.
     """
     technical = rules.get("technical.money_decimal_and_rounding")
     if technical is None:
         raise ReleaseAssemblyError("technical.money_decimal_and_rounding rule missing")
     technical["rounding_policy"] = deepcopy(TECHNICAL_MONEY_ROUNDING_POLICY)
+
+    allowance = rules.get("vacation.abono_pecuniario")
+    if allowance is None:
+        raise ReleaseAssemblyError("vacation.abono_pecuniario rule missing")
+    allowance["description"] = (
+        "Conversão de 1/3 do período de férias a que o empregado tem direito e da "
+        "parcela correspondente da remuneração de férias, preservando principal e "
+        "terço constitucional como componentes separados."
+    )
+    allowance["applies_to"] = (
+        "vacation_entitled_days_and_corresponding_remuneration_components"
+    )
+
+    remuneration = rules.get("vacation.remuneration_and_constitutional_third")
+    if remuneration is None:
+        raise ReleaseAssemblyError(
+            "vacation.remuneration_and_constitutional_third rule missing"
+        )
+    contexts = remuneration.get("contexts")
+    if not isinstance(contexts, list):
+        raise ReleaseAssemblyError(
+            "vacation.remuneration_and_constitutional_third contexts missing"
+        )
+    if "vacation_cash_allowance" not in contexts:
+        contexts.append("vacation_cash_allowance")
+    remuneration["description"] = (
+        "Componentes da remuneração de férias e do adicional constitucional; no "
+        "contexto vacation_cash_allowance, a base representa o principal do abono "
+        "correspondente aos dias convertidos, mantendo o terço como componente "
+        "separado."
+    )
+    remuneration["applies_to"] = (
+        "vacation_remuneration_components_and_constitutional_third"
+    )
 
 
 def _bump_patch(version: str) -> str:
