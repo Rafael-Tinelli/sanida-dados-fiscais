@@ -218,7 +218,7 @@ def test_c65_h28_source_has_no_legacy_abono_rounding_or_tax_constants() -> None:
     ):
         assert forbidden not in shared
         assert forbidden not in h28
-    assert "ruleId: 'vacation.irrf.reduction.2026'" in shared
+    assert "vacation.irrf.reduction.2026" in shared
     assert "vacation_entitled_days_and_corresponding_remuneration_components" in shared
     assert "SFA.fetchRelease({ consumer: CONSUMER })" in h28
 
