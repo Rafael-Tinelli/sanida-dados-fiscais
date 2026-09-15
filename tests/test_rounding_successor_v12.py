@@ -4,8 +4,7 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 
-from sanida_fiscal.contract_v1_2 import GovernanceEvidenceObservation
-from sanida_fiscal.publication_v1 import FiscalReleaseStore
+from sanida_fiscal.contract_v1_2 import GovernanceEvidenceObservation, parse_fiscal_contract
 from sanida_fiscal.release_assembler_v12 import assemble_candidate_v12
 from sanida_fiscal.semantic_diff_v1 import PromotionOutcome, assess_promotion
 from sanida_fiscal.sources_v1 import NormalizedSourceCandidate, ParseStatus
@@ -19,10 +18,20 @@ INVENTORY = ROOT / "docs/rule-inventory-v1.json"
 SOURCE_REGISTRY = ROOT / "docs/source-registry-v1.json"
 GOVERNANCE_REGISTRY = ROOT / "docs/governance-source-registry-v1.json"
 NOW = datetime(2026, 9, 15, 12, 0, tzinfo=timezone.utc)
+BASELINE_RELEASE_ID = "fiscal-v1-sha256-8a249de1077ea2bef727f9179130455011639188a2645a3d2f040247d9941b6d"
 
 
 def _load(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _load_pre_rounding_baseline():
+    path = STORE / "releases" / f"{BASELINE_RELEASE_ID}.json"
+    assert path.is_file(), "immutable pre-rounding fiscal baseline is missing"
+    previous = parse_fiscal_contract(_load(path))
+    previous.assert_consumable()
+    assert previous.release_id == BASELINE_RELEASE_ID
+    return previous
 
 
 def _digest(seed: str) -> str:
@@ -31,7 +40,7 @@ def _digest(seed: str) -> str:
 
 
 def _official_evidence(previous) -> dict[str, EvidenceObservation]:
-    """Reuse exact official provenance from the current PUBLISHED release.
+    """Reuse exact official provenance from the immutable baseline release.
 
     This prevents the regression test itself from manufacturing unrelated
     authority-snapshot changes and therefore proves that only the intended
@@ -146,9 +155,7 @@ def _governance_evidence(previous) -> dict[str, GovernanceEvidenceObservation]:
 
 
 def test_rounding_successor_is_structural_and_review_required() -> None:
-    previous = FiscalReleaseStore(STORE).load_current()
-    assert previous is not None
-    previous.assert_consumable()
+    previous = _load_pre_rounding_baseline()
 
     registry = _load(GOVERNANCE_REGISTRY)
     candidate = assemble_candidate_v12(
