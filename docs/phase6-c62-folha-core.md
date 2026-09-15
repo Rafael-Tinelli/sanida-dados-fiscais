@@ -151,7 +151,9 @@ O gate faz `node --check`, rejeita sinais do consumidor fiscal legado e exige a 
 
 C6.2 entrega o runtime compartilhado. Ainda não declara H26, H27, H28 ou H29 migradas.
 
-Próximo checkpoint: **C6.3 — H26 — salário líquido CLT**, que deve adaptar a página/JS da calculadora ao novo core e provar o caso A01 completo, inclusive base `5350.40`, redutor sobre `6000.00`, IRRF final `382.88` e `release_id` exibível/auditável.
+O handoff original para C6.3 citava como caso A01 `5350.40 / 382.88` para rendimento `6000.00`. C6.3 confirmou que esse vetor pressupõe uma dedução previdenciária **externamente fornecida de `649.60`** e, por isso, é mantido como regressão isolada do redutor de IRRF.
+
+A execução E2E do H26 deve, porém, consumir a regra INSS da própria release PUBLISHED. Na primeira release v1.2, essa regra produz INSS `641.51` sobre `6000.00`, base IRRF `5358.49` e IRRF final `385.10`. A distinção é documentada e testada em `docs/phase6-c63-h26.md`; não representa reabertura do C6.2.
 
 ## 11. Implantação
 
