@@ -70,30 +70,25 @@ trait Sanida_Fiscais_Fiscal_Contract_Trait {
     return true;
   }
 
-  private function is_list_array($value){
-    if (!is_array($value)) return false;
-    $i = 0;
-    foreach ($value as $k => $_) {
-      if ($k !== $i) return false;
-      $i++;
-    }
-    return true;
-  }
-
   private function canonicalize_json_value($value){
-    if (!is_array($value)) return $value;
-    if ($this->is_list_array($value)) {
+    if (is_object($value)) {
+      $vars = get_object_vars($value);
+      ksort($vars, SORT_STRING);
+      $out = new stdClass();
+      foreach ($vars as $key => $item) {
+        $out->{$key} = $this->canonicalize_json_value($item);
+      }
+      return $out;
+    }
+    if (is_array($value)) {
       $out = [];
       foreach ($value as $item) $out[] = $this->canonicalize_json_value($item);
       return $out;
     }
-    ksort($value, SORT_STRING);
-    $out = [];
-    foreach ($value as $k => $item) $out[$k] = $this->canonicalize_json_value($item);
-    return $out;
+    return $value;
   }
 
-  private function canonical_json($value){
+  private function canonical_json_object($value){
     $json = wp_json_encode(
       $this->canonicalize_json_value($value),
       JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
@@ -101,41 +96,50 @@ trait Sanida_Fiscais_Fiscal_Contract_Trait {
     return is_string($json) ? $json : null;
   }
 
-  private function release_artifact_sha256($release){
-    $json = $this->canonical_json($release);
-    return is_string($json) ? hash('sha256', $json."\n") : null;
+  private function release_from_raw_body($raw_body){
+    if (!is_string($raw_body) || $raw_body === '') return null;
+    $decoded = json_decode($raw_body, true);
+    return is_array($decoded) ? $decoded : null;
   }
 
-  private function expected_release_id($release){
-    if (!is_array($release)) return null;
+  private function release_artifact_sha256($raw_body){
+    return is_string($raw_body) && $raw_body !== '' ? hash('sha256', $raw_body) : null;
+  }
+
+  private function expected_release_id_from_raw_body($raw_body){
+    if (!is_string($raw_body) || $raw_body === '') return null;
+    $release = json_decode($raw_body);
+    if (!is_object($release)) return null;
+
     $required = [
       'schema_version', 'contract_id', 'jurisdiction', 'source_registry_version',
       'rule_inventory_version', 'versioning_policy', 'consumer_compatibility',
       'last_good_policy', 'rules', 'governance_source_registry_version',
     ];
     foreach ($required as $key) {
-      if (!array_key_exists($key, $release)) return null;
+      if (!property_exists($release, $key)) return null;
     }
-    $payload = [
-      'schema_version' => $release['schema_version'],
-      'contract_id' => $release['contract_id'],
-      'jurisdiction' => $release['jurisdiction'],
-      'source_registry_version' => $release['source_registry_version'],
-      'rule_inventory_version' => $release['rule_inventory_version'],
-      'versioning_policy' => $release['versioning_policy'],
-      'consumer_compatibility' => $release['consumer_compatibility'],
-      'supersedes_release_id' => array_key_exists('supersedes_release_id', $release)
-        ? $release['supersedes_release_id']
-        : null,
-      'last_good_policy' => $release['last_good_policy'],
-      'rules' => $release['rules'],
-      'governance_source_registry_version' => $release['governance_source_registry_version'],
-    ];
-    $json = $this->canonical_json($payload);
+
+    $payload = new stdClass();
+    $payload->schema_version = $release->schema_version;
+    $payload->contract_id = $release->contract_id;
+    $payload->jurisdiction = $release->jurisdiction;
+    $payload->source_registry_version = $release->source_registry_version;
+    $payload->rule_inventory_version = $release->rule_inventory_version;
+    $payload->versioning_policy = $release->versioning_policy;
+    $payload->consumer_compatibility = $release->consumer_compatibility;
+    $payload->supersedes_release_id = property_exists($release, 'supersedes_release_id')
+      ? $release->supersedes_release_id
+      : null;
+    $payload->last_good_policy = $release->last_good_policy;
+    $payload->rules = $release->rules;
+    $payload->governance_source_registry_version = $release->governance_source_registry_version;
+
+    $json = $this->canonical_json_object($payload);
     return is_string($json) ? 'fiscal-v1-sha256-'.hash('sha256', $json) : null;
   }
 
-  private function validate_release($r, $manifest = null){
+  private function validate_release($r, $manifest = null, $raw_body = null){
     if (!is_array($r)) return false;
     foreach (['schema_version','contract_id','release_id','status','consumer_compatibility','lifecycle','last_good_policy','rules'] as $k) {
       if (!array_key_exists($k, $r)) return false;
@@ -144,7 +148,7 @@ trait Sanida_Fiscais_Fiscal_Contract_Trait {
     if ($r['schema_version'] !== self::SUPPORTED_SCHEMA_VERSION) return false;
     if ($r['contract_id'] !== self::CONTRACT_ID) return false;
     if (!is_string($r['release_id']) || !preg_match('/^fiscal-v1-sha256-[0-9a-f]{64}$/', $r['release_id'])) return false;
-    $expected_release_id = $this->expected_release_id($r);
+    $expected_release_id = $this->expected_release_id_from_raw_body($raw_body);
     if (!is_string($expected_release_id) || !hash_equals($expected_release_id, $r['release_id'])) return false;
     if ($r['status'] !== 'PUBLISHED') return false;
 
@@ -223,10 +227,12 @@ trait Sanida_Fiscais_Fiscal_Contract_Trait {
   }
 
   private function validate_release_package($package){
-    if (!is_array($package) || !isset($package['manifest'], $package['release'])) return false;
-    if (!$this->validate_manifest($package['manifest'])
-        || !$this->validate_release($package['release'], $package['manifest'])) return false;
-    $artifact_sha = $this->release_artifact_sha256($package['release']);
+    if (!is_array($package) || !isset($package['manifest'], $package['release'], $package['artifact_body'])) return false;
+    if (!$this->validate_manifest($package['manifest'])) return false;
+    $decoded = $this->release_from_raw_body($package['artifact_body']);
+    if (!is_array($decoded) || $decoded !== $package['release']) return false;
+    if (!$this->validate_release($decoded, $package['manifest'], $package['artifact_body'])) return false;
+    $artifact_sha = $this->release_artifact_sha256($package['artifact_body']);
     return is_string($artifact_sha)
       && hash_equals($package['manifest']['artifact_sha256'], $artifact_sha);
   }
