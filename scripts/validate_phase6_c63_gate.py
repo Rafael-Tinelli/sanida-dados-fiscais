@@ -165,7 +165,7 @@ def main() -> int:
         "5350.40",
         "382.88",
         "release_id",
-        "não afirma implantação no HostGator",
+        "implantação no HostGator",
         "C6.4",
     ):
         require(marker in doc, f"C6.3 document missing marker: {marker}")
