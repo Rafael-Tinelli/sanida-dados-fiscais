@@ -5,11 +5,15 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import sys
+
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 from sanida_fiscal.publication_v1 import FiscalReleaseStore, required_inventory_rule_ids
 
 
-ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "consumers/wordpress/sanida-fiscais-auto.php"
 DOC = ROOT / "docs/phase6-c61-wordpress-consumer.md"
 CI = ROOT / ".github/workflows/remake-ci.yml"
