@@ -257,10 +257,11 @@ trait Sanida_Fiscais_Fiscal_Network_Trait {
       if (($artifact['code'] ?? null) === 200 && is_string($artifact['body'])) {
         $actual_sha = hash('sha256', $artifact['body']);
         if (hash_equals($manifest['artifact_sha256'], $actual_sha)
-            && $this->validate_release($artifact['json'], $manifest)) {
+            && $this->validate_release($artifact['json'], $manifest, $artifact['body'])) {
           $package = [
             'manifest' => $manifest,
             'release' => $artifact['json'],
+            'artifact_body' => $artifact['body'],
           ];
           $package = $this->with_package_runtime($package, 'remote_verified_release', [
             'current_url' => $current_url,
@@ -360,7 +361,7 @@ trait Sanida_Fiscais_Fiscal_Network_Trait {
     }
 
     $effective_from = (string)($irrf_rule['vigency']['effective_from'] ?? '');
-    $year = preg_match('/^(\d{4})-/', $effective_from, $m) ? (int)$m[1] : null;
+    $year = preg_match('/^(\\d{4})-/', $effective_from, $m) ? (int)$m[1] : null;
     if (!$year) return $this->unavailable_fiscal_payload('adapter_vigencia_incompativel');
 
     $rp = $red_rule['payload'];
