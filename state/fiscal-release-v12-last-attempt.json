@@ -1,5 +1,7 @@
 {
-  "attempted_at_utc": "2026-09-14T22:03:58.873615Z",
+  "approval_mode": "HUMAN_REVIEWED",
+  "approval_reference": "issue#23@comment#5672583961@actor:Rafael-Tinelli@review:9a3dcf913730cc807a1dee46c2330817be2138913beb125e01a3be423ff70650",
+  "attempted_at_utc": "2026-09-15T00:04:36.564924Z",
   "candidate_release_id": "candidate-v1-2",
   "changed_rules": [
     {
@@ -325,9 +327,21 @@
   ],
   "contract_changed_paths": [],
   "contract_schema_version": "1.2.0",
+  "manifest": {
+    "artifact": "releases/fiscal-v1-sha256-8a249de1077ea2bef727f9179130455011639188a2645a3d2f040247d9941b6d.json",
+    "artifact_sha256": "ca1986146fc22eee1fd14abb7d9c66b57cfbe5e0e1e31bc3123d91dfea8e597d",
+    "contract_api_version": "1.2.0",
+    "contract_id": "br.sanida.fiscal",
+    "published_at_utc": "2026-09-15T00:04:36.564924Z",
+    "release_id": "fiscal-v1-sha256-8a249de1077ea2bef727f9179130455011639188a2645a3d2f040247d9941b6d",
+    "schema_version": "1.0.0",
+    "schema_version_contract": "1.2.0",
+    "supersedes_release_id": null
+  },
   "previous_release_id": null,
   "promotion_outcome": "REVIEW_REQUIRED",
-  "publication_status": "REVIEW_REQUIRED",
+  "publication_status": "PUBLISHED",
+  "published_release_id": "fiscal-v1-sha256-8a249de1077ea2bef727f9179130455011639188a2645a3d2f040247d9941b6d",
   "reasons": [
     "inss.employee.progressive_table: RULE_ADDED requires human review",
     "irrf.deductions_by_income_type: RULE_ADDED requires human review",
@@ -362,7 +376,6 @@
     "vacation.irrf.separate_assessment: RULE_ADDED requires human review",
     "vacation.remuneration_and_constitutional_third: RULE_ADDED requires human review"
   ],
-  "review_issue_action": "UPSERT_REQUIRED",
   "review_key": "9a3dcf913730cc807a1dee46c2330817be2138913beb125e01a3be423ff70650",
   "schema_version": "1.0.0"
 }
