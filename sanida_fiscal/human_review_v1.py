@@ -86,6 +86,14 @@ def _stable_evidence(item: Mapping[str, Any]) -> dict[str, Any]:
 
 def _review_identity_rule(rule: Mapping[str, Any]) -> dict[str, Any]:
     data = dict(rule)
+    # Transition metadata is deliberately excluded from the human-decision identity.
+    # It can change solely because a fresh evidence snapshot was observed, while the
+    # rule semantics and normalized review evidence remain identical. Material
+    # semantic/version changes are still represented by the non-refresh diff entries
+    # below, and evidence materiality is represented by normalized provenance hashes.
+    data.pop("change_class", None)
+    data.pop("rule_version", None)
+
     quality = data.get("quality")
     if isinstance(quality, Mapping):
         quality = dict(quality)
@@ -101,6 +109,22 @@ def _review_identity_rule(rule: Mapping[str, Any]) -> dict[str, Any]:
     return data
 
 
+def _identity_rule_diff(item: Any) -> dict[str, Any] | None:
+    if not item.changed:
+        return None
+    change_class = item.change_class.value
+    if change_class == "SOURCE_REFRESH_NO_CHANGE":
+        return None
+    return {
+        "rule_id": item.rule_id,
+        "occurrence": item.occurrence,
+        "change_class": change_class,
+        "changed_paths": list(item.changed_paths),
+        "previous_rule_version": item.previous_rule_version,
+        "candidate_rule_version": item.candidate_rule_version,
+    }
+
+
 def _candidate_review_identity(candidate: FiscalContractV1, assessment: PromotionAssessmentV1) -> dict[str, Any]:
     data = candidate.model_dump(mode="json", exclude_none=True)
     rules = data.get("rules")
@@ -112,6 +136,13 @@ def _candidate_review_identity(candidate: FiscalContractV1, assessment: Promotio
             if isinstance(rule, Mapping)
         ]
         stable_rules.sort(key=lambda rule: (str(rule.get("rule_id")), *_vigency_key(rule)))
+
+    stable_rule_diffs = []
+    for item in assessment.diff.rule_diffs:
+        identity_diff = _identity_rule_diff(item)
+        if identity_diff is not None:
+            stable_rule_diffs.append(identity_diff)
+
     return {
         "schema_version": data.get("schema_version"),
         "source_registry_version": data.get("source_registry_version"),
@@ -120,18 +151,7 @@ def _candidate_review_identity(candidate: FiscalContractV1, assessment: Promotio
         "supersedes_release_id": data.get("supersedes_release_id"),
         "rules": stable_rules,
         "contract_changed_paths": list(assessment.diff.contract_changed_paths),
-        "rule_diffs": [
-            {
-                "rule_id": item.rule_id,
-                "occurrence": item.occurrence,
-                "change_class": item.change_class.value,
-                "changed_paths": list(item.changed_paths),
-                "previous_rule_version": item.previous_rule_version,
-                "candidate_rule_version": item.candidate_rule_version,
-            }
-            for item in assessment.diff.rule_diffs
-            if item.changed
-        ],
+        "rule_diffs": stable_rule_diffs,
     }
 
 
