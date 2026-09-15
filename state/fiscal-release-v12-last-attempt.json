@@ -1,5 +1,7 @@
 {
-  "attempted_at_utc": "2026-09-15T16:23:40.025141Z",
+  "approval_mode": "HUMAN_REVIEWED",
+  "approval_reference": "issue#33@comment#5686587265@actor:Rafael-Tinelli@review:0c388d20934ef4796bc1e7a4b5079f50a1643d45373cd133badb3400c12f0756",
+  "attempted_at_utc": "2026-09-15T19:11:57.285668Z",
   "candidate_release_id": "candidate-v1-2",
   "changed_rules": [
     {
@@ -15,7 +17,52 @@
       ],
       "occurrence": 0,
       "previous_rule_version": "1.0.0",
-      "rule_id": "inss.employee.progressive_table"
+      "rule_id": "irrf.dependent_deduction"
+    },
+    {
+      "candidate_rule_version": "1.0.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "change_class",
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.0",
+      "rule_id": "irrf.monthly.progressive_table"
+    },
+    {
+      "candidate_rule_version": "1.0.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "change_class",
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.0",
+      "rule_id": "irrf.reduction.2026"
+    },
+    {
+      "candidate_rule_version": "1.0.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "change_class",
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.0",
+      "rule_id": "irrf.simplified_monthly_discount"
     },
     {
       "candidate_rule_version": "1.1.0",
@@ -108,21 +155,6 @@
       "occurrence": 0,
       "previous_rule_version": "1.0.0",
       "rule_id": "thirteenth.advance"
-    },
-    {
-      "candidate_rule_version": "1.0.1",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "change_class",
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.0",
-      "rule_id": "thirteenth.inss.separate_assessment"
     },
     {
       "candidate_rule_version": "1.0.1",
@@ -249,9 +281,21 @@
     "governance_source_registry_version"
   ],
   "contract_schema_version": "1.2.0",
+  "manifest": {
+    "artifact": "releases/fiscal-v1-sha256-5f12803f8cf79912acf9e116f0dde8431136d878a44f64da9c2833a6abf74f03.json",
+    "artifact_sha256": "9c83b6cf3079bd9ab634a628190d18cac0280ebd5732ee47d1ed08612639639a",
+    "contract_api_version": "1.2.0",
+    "contract_id": "br.sanida.fiscal",
+    "published_at_utc": "2026-09-15T19:11:57.285668Z",
+    "release_id": "fiscal-v1-sha256-5f12803f8cf79912acf9e116f0dde8431136d878a44f64da9c2833a6abf74f03",
+    "schema_version": "1.0.0",
+    "schema_version_contract": "1.2.0",
+    "supersedes_release_id": "fiscal-v1-sha256-8a249de1077ea2bef727f9179130455011639188a2645a3d2f040247d9941b6d"
+  },
   "previous_release_id": "fiscal-v1-sha256-8a249de1077ea2bef727f9179130455011639188a2645a3d2f040247d9941b6d",
   "promotion_outcome": "REVIEW_REQUIRED",
-  "publication_status": "REVIEW_REQUIRED",
+  "publication_status": "PUBLISHED",
+  "published_release_id": "fiscal-v1-sha256-5f12803f8cf79912acf9e116f0dde8431136d878a44f64da9c2833a6abf74f03",
   "reasons": [
     "contract-level semantic/governance fields changed: governance_source_registry_version",
     "technical.money_decimal_and_rounding: STRUCTURAL_CHANGE requires human review",
@@ -260,7 +304,6 @@
     "termination.vacation_proportional: source refresh on structural rule requires human review",
     "thirteenth.accrual.twelfths: source refresh on structural rule requires human review",
     "thirteenth.advance: source refresh on structural rule requires human review",
-    "thirteenth.inss.separate_assessment: source refresh on structural rule requires human review",
     "thirteenth.irrf.reduction.2026: automatic promotion requires parser-backed hashed evidence",
     "thirteenth.reference_remuneration: source refresh on structural rule requires human review",
     "thirteenth.variable_remuneration: source refresh on structural rule requires human review",
@@ -270,7 +313,6 @@
     "vacation.irrf.reduction.2026: automatic promotion requires parser-backed hashed evidence",
     "vacation.remuneration_and_constitutional_third: source refresh on structural rule requires human review"
   ],
-  "review_issue_action": "UPSERT_REQUIRED",
   "review_key": "0c388d20934ef4796bc1e7a4b5079f50a1643d45373cd133badb3400c12f0756",
   "schema_version": "1.0.0"
 }
