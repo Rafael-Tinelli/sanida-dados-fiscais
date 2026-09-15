@@ -103,3 +103,7 @@ jobs:
       - name: Validate Phase 6 C6.3 H26 gate
         run: |
           python scripts/validate_phase6_c63_gate.py
+
+      - name: Validate Phase 6 C6.4 H27 gate
+        run: |
+          python scripts/validate_phase6_c64_gate.py
