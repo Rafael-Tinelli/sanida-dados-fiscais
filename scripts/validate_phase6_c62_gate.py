@@ -1,0 +1,142 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from sanida_fiscal.publication_v1 import FiscalReleaseStore
+
+
+CORE = ROOT / "consumers/frontend/folha-core.js"
+DOC = ROOT / "docs/phase6-c62-folha-core.md"
+NODE_RUNTIME = ROOT / "tests/js/phase6_c62_runtime.cjs"
+PYTEST_FILE = ROOT / "tests/test_folha_core_c62.py"
+CI = ROOT / ".github/workflows/remake-ci.yml"
+STORE = ROOT / "releases/fiscal-v1"
+
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise SystemExit(f"C6.2 gate failed: {message}")
+
+
+def main() -> int:
+    for path in (CORE, DOC, NODE_RUNTIME, PYTEST_FILE):
+        require(path.is_file(), f"required C6.2 file missing: {path.relative_to(ROOT)}")
+
+    release = FiscalReleaseStore(STORE).load_current()
+    require(release is not None, "current fiscal release unavailable")
+    assert release is not None
+    require(release.status.value == "PUBLISHED", "current release is not PUBLISHED")
+    require(release.schema_version == "1.2.0", "current release schema is not 1.2.0")
+    require(
+        release.consumer_compatibility.contract_api_version == "1.2.0",
+        "current release API is not 1.2.0",
+    )
+    require(len(release.rules) == 32, "current release is not 32/32")
+
+    text = CORE.read_text(encoding="utf-8")
+    forbidden = (
+        "dados_fiscais.json",
+        "/blog/wp-json/sfa/v1/folha",
+        "SFA.endpoints",
+        "SFA.calcINSS",
+        "SFA.calcIR",
+        "startOfCurrentVacationPeriod",
+        "avosFeriasProporcionais",
+        "daysInTerminationMonth",
+        "607.20",
+        "189.59",
+        "1621.00",
+        "2902.84",
+        "4354.27",
+        "8475.55",
+    )
+    for token in forbidden:
+        require(token not in text, f"legacy/duplicated fiscal logic remains in folha-core: {token}")
+
+    required_markers = (
+        "/blog/wp-json/sfa/v1/fiscal-release",
+        "SUPPORTED_CONSUMERS",
+        "unsupported_behavior !== 'hard_fail'",
+        "release.status !== 'PUBLISHED'",
+        "release.rules.length !== 32",
+        "class DecimalValue",
+        "BigInt",
+        "binary_float_rejected",
+        "function selectRule(",
+        "rule_version",
+        "function assessmentIdentity(",
+        "function competenceBasisFor(",
+        "function executeProgressive(",
+        "function executeAffineReduction(",
+        "function assessInss(",
+        "function assessIrrf(",
+        "release_id",
+        "input_semantic",
+    )
+    for marker in required_markers:
+        require(marker in text, f"folha-core missing required C6.2 marker: {marker}")
+
+    doc = DOC.read_text(encoding="utf-8")
+    for marker in (
+        "**Status:** CONCLUÍDO",
+        "`/blog/wp-json/sfa/v1/fiscal-release`",
+        "BigInt",
+        "paridade",
+        "C6.3",
+        "não afirma implantação no HostGator",
+    ):
+        require(marker in doc, f"C6.2 document missing marker: {marker}")
+
+    node = shutil.which("node")
+    require(node is not None, "node is required for C6.2 validation")
+    syntax = subprocess.run(
+        [node, "--check", str(CORE)],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    require(syntax.returncode == 0, f"node --check failed: {syntax.stderr or syntax.stdout}")
+
+    manifest = json.loads((STORE / "current.json").read_text(encoding="utf-8"))
+    artifact = STORE / manifest["artifact"]
+    runtime = subprocess.run(
+        [node, str(NODE_RUNTIME), str(CORE), str(artifact)],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    require(runtime.returncode == 0, f"C6.2 Node runtime failed: {runtime.stderr or runtime.stdout}")
+    payload = json.loads(runtime.stdout)
+    require(payload.get("release_id") == release.release_id, "Node runtime used a different release_id")
+    require(payload.get("float_rejected") is True, "binary float was not rejected")
+    require(payload.get("missing_rule_rejected") is True, "missing rule did not fail closed")
+    require(
+        payload.get("incompatible_assessment_rejected") is True,
+        "invalid assessment identity did not fail closed",
+    )
+
+    ci = CI.read_text(encoding="utf-8")
+    require(
+        "python scripts/validate_phase6_c62_gate.py" in ci,
+        "Remake CI does not execute the permanent C6.2 gate",
+    )
+
+    print(
+        "Phase 6 C6.2 folha-core gate: PASS "
+        f"(release={release.release_id}, rules={len(release.rules)})"
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
