@@ -115,7 +115,7 @@ def main() -> int:
     doc = DOC.read_text(encoding="utf-8")
     for marker in (
         "**Status:** CONCLUÍDO",
-        "`releases/fiscal-v1/current.json`",
+        "releases/fiscal-v1/current.json",
         "`HUMAN_REVIEWED`",
         "adaptador de compatibilidade",
         "C6.2",
