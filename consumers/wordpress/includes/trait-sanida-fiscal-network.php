@@ -130,15 +130,78 @@ trait Sanida_Fiscais_Fiscal_Network_Trait {
     return $package;
   }
 
+  /*
+   * C7.2: once a valid current.json announces a release different from the
+   * validated last-good, that knowledge must survive requests. Otherwise a
+   * later current.json outage could incorrectly resurrect the predecessor.
+   */
+  private function known_successor_state(){
+    $state = get_option(self::OPT_KNOWN_SUCCESSOR);
+    if ($state === false) return null;
+    if (!is_array($state)) return ['invalid' => true];
+    $release_id = $state['release_id'] ?? null;
+    $artifact_sha256 = $state['artifact_sha256'] ?? null;
+    if (!is_string($release_id) || !preg_match('/^fiscal-v1-sha256-[0-9a-f]{64}$/', $release_id)) {
+      return ['invalid' => true];
+    }
+    if (!is_string($artifact_sha256) || !preg_match('/^[0-9a-f]{64}$/', $artifact_sha256)) {
+      return ['invalid' => true];
+    }
+    return [
+      'release_id' => $release_id,
+      'artifact_sha256' => $artifact_sha256,
+      'observed_at_utc' => isset($state['observed_at_utc']) ? (string)$state['observed_at_utc'] : null,
+    ];
+  }
+
+  private function persist_known_successor($manifest){
+    if (!$this->validate_manifest($manifest)) return false;
+    update_option(self::OPT_KNOWN_SUCCESSOR, [
+      'release_id' => $manifest['release_id'],
+      'artifact_sha256' => $manifest['artifact_sha256'],
+      'observed_at_utc' => gmdate('c'),
+    ], false);
+    return true;
+  }
+
+  private function known_successor_blocks_package($package){
+    $state = $this->known_successor_state();
+    if ($state === null) return false;
+    if (!empty($state['invalid'])) return true;
+    if (!$this->validate_release_package($package)) return true;
+    return ($package['release']['release_id'] ?? null) !== $state['release_id']
+      || ($package['manifest']['artifact_sha256'] ?? null) !== $state['artifact_sha256'];
+  }
+
+  private function resolve_known_successor_with_verified_package($package){
+    $state = $this->known_successor_state();
+    if ($state === null) return;
+    if (!empty($state['invalid'])) {
+      delete_option(self::OPT_KNOWN_SUCCESSOR);
+      return;
+    }
+    if ($this->validate_release_package($package)
+        && ($package['release']['release_id'] ?? null) === $state['release_id']
+        && ($package['manifest']['artifact_sha256'] ?? null) === $state['artifact_sha256']) {
+      delete_option(self::OPT_KNOWN_SUCCESSOR);
+    }
+  }
+
   private function get_release_package(){
     $cached = get_transient(self::T_CACHE);
     if ($this->validate_release_package($cached)) {
-      if (!isset($cached['_runtime']) || !is_array($cached['_runtime'])) {
-        $cached = $this->with_package_runtime($cached, 'transient_cache');
+      if ($this->known_successor_blocks_package($cached)) {
+        delete_transient(self::T_CACHE);
+      } else {
+        $previous_origin = is_array($cached['_runtime'] ?? null) ? ($cached['_runtime']['origin'] ?? null) : null;
+        return $this->with_package_runtime($cached, 'transient_cache', [
+          'cached_from_origin' => $previous_origin,
+          'release_id' => $cached['release']['release_id'],
+        ]);
       }
-      return $cached;
+    } elseif ($cached !== false) {
+      delete_transient(self::T_CACHE);
     }
-    if ($cached !== false) delete_transient(self::T_CACHE);
 
     $current_url = $this->current_json_url();
     $etag = get_option(self::OPT_CURRENT_ETAG);
@@ -149,74 +212,103 @@ trait Sanida_Fiscais_Fiscal_Network_Trait {
     $error = $current['error'];
     $body_sample = $this->body_sample($current['body'] ?? '');
     $known_successor = false;
+    $known_successor_release_id = null;
 
     if (($current['code'] ?? null) === 304) {
       $last_good = get_option(self::OPT_LAST_GOOD);
-      if ($this->package_allows_last_good($last_good)) {
+      $known_successor = $this->known_successor_blocks_package($last_good);
+      $state = $this->known_successor_state();
+      if (is_array($state) && empty($state['invalid'])) $known_successor_release_id = $state['release_id'];
+      if ($this->package_allows_last_good($last_good, $known_successor)) {
         $last_good = $this->with_package_runtime($last_good, 'current_304_last_good', [
           'current_url' => $current_url,
           'http_code' => 304,
           'etag_sent' => true,
           'release_id' => $last_good['release']['release_id'],
+          'known_successor' => false,
         ]);
         set_transient(self::T_CACHE, $last_good, self::TTL_SUCCESS);
         return $last_good;
       }
-      $error = 'current_304_without_valid_last_good';
+      $error = $known_successor ? 'current_304_with_known_successor' : 'current_304_without_valid_last_good';
     }
 
     if (($current['code'] ?? null) === 200 && $this->validate_manifest($current['json'])) {
       $manifest = $current['json'];
       $last_good = get_option(self::OPT_LAST_GOOD);
-      if ($this->validate_release_package($last_good)) {
-        $last_good_id = $last_good['release']['release_id'] ?? null;
-        $known_successor = is_string($last_good_id) && $last_good_id !== $manifest['release_id'];
-      }
+      $persisted = $this->known_successor_state();
 
-      if ($this->validate_release_package($last_good)
-          && ($last_good['manifest']['release_id'] ?? null) === $manifest['release_id']
-          && ($last_good['manifest']['artifact_sha256'] ?? null) === $manifest['artifact_sha256']) {
-        if (!empty($current['etag'])) update_option(self::OPT_CURRENT_ETAG, $current['etag'], false);
-        $last_good = $this->with_package_runtime($last_good, 'current_200_same_release_last_good', [
-          'current_url' => $current_url,
-          'http_code' => 200,
-          'release_id' => $manifest['release_id'],
-          'artifact_sha256' => $manifest['artifact_sha256'],
-        ]);
-        set_transient(self::T_CACHE, $last_good, self::TTL_SUCCESS);
-        return $last_good;
-      }
+      if (is_array($persisted) && empty($persisted['invalid'])
+          && $manifest['release_id'] !== $persisted['release_id']) {
+        $known_successor = true;
+        $known_successor_release_id = $persisted['release_id'];
+        $error = 'current_manifest_regressed_behind_known_successor';
+      } else {
+        if ($this->validate_release_package($last_good)) {
+          $last_good_id = $last_good['release']['release_id'] ?? null;
+          if (is_string($last_good_id) && $last_good_id !== $manifest['release_id']) {
+            $this->persist_known_successor($manifest);
+            $known_successor = true;
+            $known_successor_release_id = $manifest['release_id'];
+          } else {
+            $known_successor = $this->known_successor_blocks_package($last_good);
+            $state = $this->known_successor_state();
+            if (is_array($state) && empty($state['invalid'])) $known_successor_release_id = $state['release_id'];
+          }
+        } elseif ($persisted !== null) {
+          $known_successor = true;
+          if (is_array($persisted) && empty($persisted['invalid'])) $known_successor_release_id = $persisted['release_id'];
+        }
 
-      $artifact_url = $this->release_base_url() . ltrim($manifest['artifact'], '/');
-      $artifact = $this->fetch_json_document($artifact_url);
-      if (($artifact['code'] ?? null) === 200 && is_string($artifact['body'])) {
-        $actual_sha = hash('sha256', $artifact['body']);
-        if (hash_equals($manifest['artifact_sha256'], $actual_sha)
-            && $this->validate_release($artifact['json'], $manifest, $artifact['body'])) {
-          $package = [
-            'manifest' => $manifest,
-            'release' => $artifact['json'],
-            'artifact_body' => $artifact['body'],
-          ];
-          $package = $this->with_package_runtime($package, 'remote_verified_release', [
+        if (!$known_successor
+            && $this->validate_release_package($last_good)
+            && ($last_good['manifest']['release_id'] ?? null) === $manifest['release_id']
+            && ($last_good['manifest']['artifact_sha256'] ?? null) === $manifest['artifact_sha256']) {
+          if (!empty($current['etag'])) update_option(self::OPT_CURRENT_ETAG, $current['etag'], false);
+          $last_good = $this->with_package_runtime($last_good, 'current_200_same_release_last_good', [
             'current_url' => $current_url,
-            'artifact_url' => $artifact_url,
             'http_code' => 200,
             'release_id' => $manifest['release_id'],
-            'artifact_sha256' => $actual_sha,
+            'artifact_sha256' => $manifest['artifact_sha256'],
+            'known_successor' => false,
           ]);
-          if (!empty($current['etag'])) update_option(self::OPT_CURRENT_ETAG, $current['etag'], false);
-          update_option(self::OPT_LAST_GOOD, $package, false);
-          set_transient(self::T_CACHE, $package, self::TTL_SUCCESS);
-          return $package;
+          set_transient(self::T_CACHE, $last_good, self::TTL_SUCCESS);
+          return $last_good;
         }
-        $error = hash_equals($manifest['artifact_sha256'], $actual_sha)
-          ? 'release_incompativel_ou_invalida'
-          : 'artifact_sha256_divergente';
-        $body_sample = $this->body_sample($artifact['body']);
-      } else {
-        $error = $artifact['error'] ?: ('artifact_http_'.(string)($artifact['code'] ?? 'unknown'));
-        $body_sample = $this->body_sample($artifact['body'] ?? '');
+
+        $artifact_url = $this->release_base_url() . ltrim($manifest['artifact'], '/');
+        $artifact = $this->fetch_json_document($artifact_url);
+        if (($artifact['code'] ?? null) === 200 && is_string($artifact['body'])) {
+          $actual_sha = hash('sha256', $artifact['body']);
+          if (hash_equals($manifest['artifact_sha256'], $actual_sha)
+              && $this->validate_release($artifact['json'], $manifest, $artifact['body'])) {
+            $package = [
+              'manifest' => $manifest,
+              'release' => $artifact['json'],
+              'artifact_body' => $artifact['body'],
+            ];
+            $package = $this->with_package_runtime($package, 'remote_verified_release', [
+              'current_url' => $current_url,
+              'artifact_url' => $artifact_url,
+              'http_code' => 200,
+              'release_id' => $manifest['release_id'],
+              'artifact_sha256' => $actual_sha,
+              'known_successor' => false,
+            ]);
+            if (!empty($current['etag'])) update_option(self::OPT_CURRENT_ETAG, $current['etag'], false);
+            update_option(self::OPT_LAST_GOOD, $package, false);
+            $this->resolve_known_successor_with_verified_package($package);
+            set_transient(self::T_CACHE, $package, self::TTL_SUCCESS);
+            return $package;
+          }
+          $error = hash_equals($manifest['artifact_sha256'], $actual_sha)
+            ? 'release_incompativel_ou_invalida'
+            : 'artifact_sha256_divergente';
+          $body_sample = $this->body_sample($artifact['body']);
+        } else {
+          $error = $artifact['error'] ?: ('artifact_http_'.(string)($artifact['code'] ?? 'unknown'));
+          $body_sample = $this->body_sample($artifact['body'] ?? '');
+        }
       }
     } elseif (($current['code'] ?? null) === 200) {
       $error = 'manifest_invalido_ou_incompativel';
@@ -225,6 +317,13 @@ trait Sanida_Fiscais_Fiscal_Network_Trait {
     }
 
     $last_good = get_option(self::OPT_LAST_GOOD);
+    $persistent_block = $this->known_successor_blocks_package($last_good);
+    $known_successor = $known_successor || $persistent_block;
+    $state = $this->known_successor_state();
+    if ($known_successor_release_id === null && is_array($state) && empty($state['invalid'])) {
+      $known_successor_release_id = $state['release_id'];
+    }
+
     if ($this->package_allows_last_good($last_good, $known_successor)) {
       $last_good = $this->with_package_runtime($last_good, 'option_last_good', [
         'current_url' => $current_url,
@@ -248,6 +347,7 @@ trait Sanida_Fiscais_Fiscal_Network_Trait {
         'last_fetch_error' => $error,
         'body_sample' => $body_sample,
         'known_successor' => (bool)$known_successor,
+        'known_successor_release_id' => $known_successor_release_id,
       ]),
     ];
   }

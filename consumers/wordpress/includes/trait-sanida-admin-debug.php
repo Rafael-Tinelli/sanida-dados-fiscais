@@ -16,6 +16,8 @@ trait Sanida_Fiscais_Admin_Debug_Trait {
 
     delete_transient(self::T_CACHE);
     delete_option(self::OPT_CURRENT_ETAG);
+    // C7.2: OPT_KNOWN_SUCCESSOR is a safety latch, not cache. Manual cache
+    // refresh must not erase knowledge that a newer release was observed.
     delete_transient(self::T_TAXAS_CACHE);
     delete_option(self::OPT_TAXAS_ETAG);
 
@@ -38,6 +40,7 @@ trait Sanida_Fiscais_Admin_Debug_Trait {
       'fiscais_release_base_url' => $this->release_base_url(),
       'fiscais_cached_transient' => (bool) get_transient(self::T_CACHE),
       'fiscais_has_last_good' => (bool) get_option(self::OPT_LAST_GOOD),
+      'fiscais_known_successor' => $this->known_successor_state(),
       'fiscais_release_valid' => $this->validate_release_package($package),
       'fiscais_origin' => $package['_runtime']['origin'] ?? null,
       'fiscais_release_id' => $release['release_id'] ?? null,

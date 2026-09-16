@@ -29,9 +29,10 @@ final class Sanida_Fiscais_Git {
   const SUPPORTED_CONTRACT_API_VERSION = '1.2.0';
   const SUPPORTED_MANIFEST_VERSION     = '1.0.0';
 
-  const T_CACHE          = 'sfa_fiscal_v12_cache';
-  const OPT_LAST_GOOD    = 'sfa_fiscal_v12_last_good';
-  const OPT_CURRENT_ETAG = 'sfa_fiscal_v12_current_etag';
+  const T_CACHE              = 'sfa_fiscal_v12_cache';
+  const OPT_LAST_GOOD        = 'sfa_fiscal_v12_last_good';
+  const OPT_CURRENT_ETAG     = 'sfa_fiscal_v12_current_etag';
+  const OPT_KNOWN_SUCCESSOR  = 'sfa_fiscal_v12_known_successor';
 
   const T_TAXAS_CACHE       = 'sfa_git_v2_taxas_cache';
   const OPT_TAXAS_LAST_GOOD = 'sfa_git_v2_taxas_last_good';

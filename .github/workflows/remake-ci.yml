@@ -128,6 +128,22 @@ jobs:
         run: |
           python scripts/validate_phase7_c71_gate.py
 
+      - name: Run Phase 7 C7.2 operational evergreen E2E
+        run: |
+          python scripts/run_phase7_c72_operational_e2e.py | tee /tmp/c72-operational-e2e.json
+
+      - name: Validate Phase 7 C7.2 evergreen recovery gate
+        run: |
+          python scripts/validate_phase7_c72_gate.py
+
+      - name: Upload Phase 7 C7.2 operational evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: c72-operational-evidence-${{ github.sha }}
+          path: /tmp/c72-operational-e2e.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload Phase 7 C7.1 pre-deploy bundle
         uses: actions/upload-artifact@v4
         with:

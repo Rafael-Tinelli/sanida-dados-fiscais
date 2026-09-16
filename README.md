@@ -228,7 +228,8 @@ Tabela, legislação, vigência e exemplos oficiais são reconciliados. HTML é 
 14. `generated_at` não pode mascarar observação antiga;
 15. H26–H29 não podem usar `dados_fiscais.json`, raw `main` ou `/sfa/v1/folha` como autoridade fiscal;
 16. compatibilidade temporária precisa de consumidor identificado, finalidade restrita e prazo de retirada;
-17. bundle de implantação só pode conter arquivos gerenciados conhecidos; dependências externas precisam ser declaradas e rollback precisa restaurar os bytes pré-deploy.
+17. bundle de implantação só pode conter arquivos gerenciados conhecidos; dependências externas precisam ser declaradas e rollback precisa restaurar os bytes pré-deploy;
+18. uma sucessora fiscal conhecida precisa permanecer conhecida entre requisições até que o próprio pacote da sucessora seja verificado; cache, 304 ou indisponibilidade posterior não podem ressuscitar silenciosamente a predecessora.
 
 ---
 
@@ -379,17 +380,18 @@ C6.7 não afirma implantação no HostGator.
 
 **Status: EM ANDAMENTO**
 
-Checkpoint concluído:
+Checkpoints concluídos:
 
 - **C7.1 — bundle pré-deploy e rollback**: retirou `wordpress_table_shortcodes_v1`; promoveu o **plugin 2.7.0** com shortcodes informativos lendo diretamente a release; definiu 32 arquivos gerenciados e 11 dependências pré-existentes; constrói bundle determinístico; executa H26–H29 sobre os bytes empacotados; e prova apply/rollback exato em ambiente temporário sem mutar o HostGator.
+- **C7.2 — E2E operacional, falhas e recuperação evergreen**: prova cold start, transient, ETag/304, indisponibilidade, `last_good`, sucessão real de release e recuperação até H26–H29. Corrige a lacuna pela qual uma sucessora conhecida podia ser esquecida entre requisições: `OPT_KNOWN_SUCCESSOR` passa a manter um latch persistente até a sucessora correspondente ser integralmente verificada. O fluxo fail-closed retorna `503` enquanto a sucessora conhecida não puder ser validada. `production_deployed=false` permanece obrigatório.
 
 Objetivos restantes:
 
-- simulação operacional de indisponibilidade, troca de release e recuperação;
-- validação da atualização automática/evergreen no caminho operacional completo;
-- documentação operacional, runbook e observabilidade;
-- implantação controlada no HostGator;
-- validação pós-deploy e critérios objetivos de encerramento do remake.
+- consolidar runbook, rollback de produção e observabilidade operacional;
+- verificar no ambiente real as 11 dependências pré-existentes declaradas pelo bundle;
+- realizar pré-flight e definir critérios objetivos de autorização do deploy;
+- realizar implantação controlada no HostGator em checkpoint posterior;
+- validar o pós-deploy e fechar os critérios objetivos do remake.
 
 ---
 
@@ -452,17 +454,20 @@ Objetivos restantes:
 55. Adaptador temporário só pode permanecer com consumidor nomeado e prazo; `wordpress_table_shortcodes_v1` expirou e foi retirado em C7.1 antes de qualquer deploy.
 56. A Fase 6 fecha migração de consumidores; deployment e operação evergreen pertencem à Fase 7.
 57. O bundle de implantação distingue arquivos gerenciados de dependências pré-existentes; nenhum arquivo externo é inventado, e rollback restaura os bytes capturados antes da aplicação sem tocar em arquivos não gerenciados.
+58. Conhecimento de sucessora fiscal é estado de segurança durável, não cache: depois que `current.json` anuncia uma sucessora, a predecessora fica bloqueada entre requisições até que o pacote da sucessora seja verificado ou o estado seja resolvido de forma explícita.
+59. O refresh administrativo pode limpar transient e ETag, mas não pode apagar `OPT_KNOWN_SUCCESSOR`.
+60. A cadeia evergreen é deliberadamente cacheada: transient válido evita rede; após expiração/refresh, `current.json` é revalidado por ETag e uma release nova só substitui `last_good` após validação integral.
 
 ---
 
 ## 19. Questões em aberto
 
-As **Fases 0–6 estão formalmente concluídas** e C7.1 está concluído. Restam para a Fase 7:
+As **Fases 0–6 estão formalmente concluídas**, e C7.1–C7.2 estão concluídos. Restam para a Fase 7:
 
-- simular indisponibilidade, sucessão de release, cache/last-good e recuperação no caminho operacional completo;
-- validar operação evergreen das automações no caminho real até o consumidor;
 - consolidar runbook, rollback de produção e observabilidade operacional;
-- realizar implantação controlada no HostGator;
+- verificar as 11 dependências pré-existentes no ambiente real antes do deploy;
+- executar pré-flight de produção e definir critérios objetivos de go/no-go;
+- realizar implantação controlada no HostGator em checkpoint posterior;
 - validar o pós-deploy e fechar os critérios objetivos do remake.
 
 Se a Fase 7 revelar lacuna semântica objetiva, a correção volta explicitamente à camada responsável; não será escondida em collector, parser ou consumidor.
@@ -471,9 +476,9 @@ Se a Fase 7 revelar lacuna semântica objetiva, a correção volta explicitament
 
 ## 20. Próxima etapa
 
-Executar **C7.2 — E2E operacional, falhas e recuperação evergreen**.
+Executar **C7.3 — runbook, observabilidade e pré-flight de produção**.
 
-C7.2 deve provar indisponibilidade, cache/last-good, sucessão de release e recuperação no caminho operacional antes de qualquer autorização para implantação controlada no HostGator. O bundle C7.1 permanece pré-deploy e `production_deployed=false`.
+C7.3 deve transformar as provas C7.1/C7.2 em procedimento operacional: verificar dependências do HostGator sem mutá-las, definir backup/rollback, health checks, sinais de observabilidade e critérios objetivos de autorização. A implantação continua fora de escopo neste checkpoint e `production_deployed=false` permanece obrigatório.
 
 ---
 
@@ -492,6 +497,21 @@ Uma fase só é `CONCLUÍDA` quando seus critérios objetivos e gates correspond
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-16 — C7.2 — E2E operacional, falhas e recuperação evergreen
+
+- criado E2E operacional contra os traits WordPress reais reconstruídos no bundle C7.1;
+- transição usa a release atual e seu `supersedes_release_id` real, sem fabricar regra fiscal;
+- provados cold start, transient, `last_good`, ETag/304, indisponibilidade, sucessão e recuperação;
+- detectada e corrigida a perda de memória de sucessora conhecida entre requisições;
+- criado `OPT_KNOWN_SUCCESSOR` como latch persistente de segurança;
+- falha do artefato da sucessora passa a manter a predecessora bloqueada inclusive em requisições posteriores e REST responde `503`;
+- recuperação válida promove exatamente a sucessora, atualiza `last_good`/ETag e resolve o latch;
+- release recuperada é executada por H26–H29 a partir dos bytes do bundle;
+- debug administrativo passa a expor `fiscais_known_successor`;
+- evidência operacional JSON e gate C7.2 passam a integrar o `Remake CI`;
+- nenhum deploy foi realizado; `production_deployed=false`;
+- próxima fronteira: **C7.3 — runbook, observabilidade e pré-flight de produção**.
 
 ### 2026-09-16 — C7.1 — bundle pré-deploy e rollback
 
