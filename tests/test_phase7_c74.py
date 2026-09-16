@@ -10,6 +10,7 @@ STATE = ROOT / "state/phase7-c74-deployment.json"
 DOC = ROOT / "docs/phase7-c74-controlled-deployment.md"
 DEPLOY = ROOT / "scripts/run_phase7_c74_controlled_deploy.py"
 ROLLBACK = ROOT / "scripts/run_phase7_c74_rollback.py"
+CI = ROOT / ".github/workflows/remake-ci.yml"
 
 
 def test_c74_authorization_is_single_use_and_exactly_bound() -> None:
@@ -72,3 +73,11 @@ def test_c74_deploy_has_fail_closed_and_health_boundaries() -> None:
     assert "**Status:** EM ANDAMENTO" in doc
     assert "single-use" in doc
     assert "APPLIED_HEALTHY" in doc
+
+
+def test_c74_ci_cannot_mask_evidence_pipeline_failures() -> None:
+    ci = CI.read_text(encoding="utf-8")
+    assert ci.count("set -o pipefail") >= 3
+    assert "PYTHONPATH=. python scripts/simulate_phase7_c73_preflight.py | tee" in ci
+    assert "PYTHONPATH=. python scripts/simulate_phase7_c74_controlled_deployment.py | tee" in ci
+    assert "PYTHONPATH=. python scripts/validate_phase7_c74_gate.py" in ci
