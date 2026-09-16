@@ -15,27 +15,56 @@ HOST_VALIDATOR = ROOT / "scripts/validate_phase7_c75_remote_evidence.py"
 EXTERNAL_PROBE = ROOT / "scripts/run_phase7_c75_external_delivery_probe.ps1"
 EXTERNAL_VALIDATOR = ROOT / "scripts/validate_phase7_c75_external_delivery_evidence.py"
 INITIAL_RECORD = ROOT / "docs/phase7-c75-initial-host-observation.json"
+FINAL_RECORD = ROOT / "docs/phase7-c75-final-production-validation-record.json"
 DOC = ROOT / "docs/phase7-c75-postdeploy-closure.md"
 
+HOST_SHA = "996561d9acaee9473d4bbd2035ce32c8d1bff85c8e9e6eb38b10e2f26a8ff447"
+EXTERNAL_BLOCKED_SHA = "908551d36f340d97fbaa1277768fd1330651c1a555f7312c286003300843fd70"
+EXTERNAL_PASS_SHA = "e162b1f7d60427bc9fd2679bdce683adac566ecdfcd349637dfef883cb981284"
+AUTHORIZED_COMMIT = "ccc5a31c3da7c1c93570df0337e553e5a06404ac"
 
-def test_c75_state_is_read_only_and_waits_for_external_client_evidence() -> None:
+
+def test_c75_state_is_formally_concluded_without_production_file_mutation() -> None:
     state = json.loads(STATE.read_text(encoding="utf-8"))
     assert state["checkpoint"] == "C7.5"
-    assert state["schema_version"] == "1.1.0"
-    assert state["status"] == "AWAITING_EXTERNAL_CLIENT_DELIVERY_VALIDATION"
-    assert state["phase7_status"] == "EM ANDAMENTO"
+    assert state["schema_version"] == "1.2.0"
+    assert state["status"] == "CONCLUÍDO"
+    assert state["phase7_status"] == "CONCLUÍDA"
+    assert state["remake_status"] == "CONCLUÍDO"
     assert state["production_deployed"] is True
     assert state["production_mutation_allowed"] is False
-    assert state["minimum_postdeploy_window_seconds"] == 600
-    assert state["host_origin_observation"]["raw_evidence_sha256"] == "996561d9acaee9473d4bbd2035ce32c8d1bff85c8e9e6eb38b10e2f26a8ff447"
-    assert state["delivery_boundary"]["external_client_evidence_required"] is True
-    required = state["required_validation"]
-    assert required["managed_files_match_c74_bundle"] == 32
-    assert required["preexisting_dependencies_match_c73_baseline"] == 11
-    assert required["planned_directories_still_safe"] == 4
-    assert required["external_client_public_js_matches_authorized_commit"] == 8
-    assert required["independent_http_probes_minimum"] == 2
-    assert required["production_mutated_by_c75"] is False
+    assert state["production_files_mutated_by_c75"] is False
+    assert state["edge_cache_remediation_performed"] is True
+    assert state["closure_condition_met"] is True
+    assert state["host_origin_evidence"]["raw_evidence_sha256"] == HOST_SHA
+    assert state["host_origin_evidence"]["formal_revalidation_status"] == "PASS"
+    assert state["external_delivery_evidence"]["initial_blocked_sha256"] == EXTERNAL_BLOCKED_SHA
+    assert state["external_delivery_evidence"]["final_pass_sha256"] == EXTERNAL_PASS_SHA
+    assert state["external_delivery_evidence"]["final_assets_matching"] == 8
+    assert state["external_delivery_evidence"]["authorized_commit"] == AUTHORIZED_COMMIT
+    assert state["cache_remediation"]["c74_redeployment_performed"] is False
+    assert state["cache_remediation"]["production_files_rewritten"] is False
+
+
+def test_c75_final_record_preserves_blocked_and_pass_evidence() -> None:
+    record = json.loads(FINAL_RECORD.read_text(encoding="utf-8"))
+    assert record["record_type"] == "phase7_final_postdeploy_closure"
+    assert record["status"] == "PASS"
+    assert record["phase7_status"] == "CONCLUÍDA"
+    assert record["production_files_mutated_by_c75"] is False
+    assert record["host_origin"]["raw_evidence_sha256"] == HOST_SHA
+    assert record["host_origin"]["formal_revalidation_status"] == "PASS"
+    assert record["external_delivery_initial"]["status"] == "BLOCKED"
+    assert record["external_delivery_initial"]["evidence_sha256"] == EXTERNAL_BLOCKED_SHA
+    assert record["external_delivery_initial"]["assets_matching"] == 5
+    assert record["external_delivery_final"]["status"] == "PASS"
+    assert record["external_delivery_final"]["evidence_sha256"] == EXTERNAL_PASS_SHA
+    assert record["external_delivery_final"]["assets_matching"] == 8
+    assert len(record["external_delivery_final"]["assets"]) == 8
+    assert record["cache_diagnosis"]["cache_control"] == "max-age=31536000"
+    assert record["cache_diagnosis"]["cache_busted_origin_matches"] == 3
+    assert record["closure_conditions"]["c74_redeployment_performed"] is False
+    assert record["closure_conditions"]["phase7_close_recommended"] is True
 
 
 def test_c75_simulation_proves_stability_and_fail_closed_drift() -> None:
@@ -63,7 +92,7 @@ def _external_evidence() -> dict:
         assets.append(
             {
                 "asset": name,
-                "expected_source_url": f"https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/ccc5a31c3da7c1c93570df0337e553e5a06404ac/consumers/frontend/{name}",
+                "expected_source_url": f"https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/{AUTHORIZED_COMMIT}/consumers/frontend/{name}",
                 "expected_http_status": 200,
                 "expected_sha256": sha,
                 "public_url": f"https://sanida.com.br/financas/calculadoras/assets/{name}",
@@ -78,7 +107,7 @@ def _external_evidence() -> dict:
         "mode": "external_client_public_delivery_validation",
         "status": "PASS",
         "production_mutated": False,
-        "authorized_commit": "ccc5a31c3da7c1c93570df0337e553e5a06404ac",
+        "authorized_commit": AUTHORIZED_COMMIT,
         "assets_expected": 8,
         "assets_matching": 8,
         "assets": assets,
@@ -105,40 +134,28 @@ def test_c75_external_delivery_validator_rejects_public_sha_drift() -> None:
         validate_external(evidence)
 
 
-def test_c75_origin_and_external_delivery_boundaries_are_explicit() -> None:
+def test_c75_origin_external_and_cache_boundaries_are_explicit() -> None:
     runner = RUNNER.read_text(encoding="utf-8")
     host_validator = HOST_VALIDATOR.read_text(encoding="utf-8")
     external_probe = EXTERNAL_PROBE.read_text(encoding="utf-8")
     external_validator = EXTERNAL_VALIDATOR.read_text(encoding="utf-8")
     initial_record = json.loads(INITIAL_RECORD.read_text(encoding="utf-8"))
+    final_record = json.loads(FINAL_RECORD.read_text(encoding="utf-8"))
     doc = DOC.read_text(encoding="utf-8")
 
-    for marker in (
-        "post_deploy_read_only_validation",
-        "postdeploy_window_too_short",
-        "managed_file_drift:",
-        "dependency_drift:",
-        "c74_temporary_files_left_behind",
-        "canonical_artifact_sha_mismatch",
-        "fiscal_health_not_healthy",
-        "legacy_folha_not_410",
-        "public_js_delivery_drift:",
-        '"production_mutated": False',
-    ):
-        assert marker in runner
     assert "run_phase7_c74_controlled_deploy" not in runner
     assert "os.replace" not in runner
     assert ".unlink(" not in runner
     assert ".write_bytes(" not in runner
-
     assert 'startswith("public_js_delivery_drift:")' in host_validator
     assert 'external_delivery_required' in host_validator
     assert 'external_client_public_delivery_validation' in external_probe
-    assert 'ccc5a31c3da7c1c93570df0337e553e5a06404ac' in external_probe
-    assert 'raw.githubusercontent.com' in external_probe
+    assert AUTHORIZED_COMMIT in external_probe
     assert 'public_http_status' in external_validator
     assert initial_record["status"] == "BLOCKED"
     assert initial_record["origin_validation"]["managed_files_matching"] == 32
     assert initial_record["followup_diagnosis"]["production_files_changed"] is False
-    assert "cliente externo" in doc
-    assert "não deve ser reimplantada" in doc
+    assert final_record["edge_cache_remediation_performed"] is True
+    assert "max-age=31536000" in doc
+    assert "purga seletiva" in doc
+    assert "não reimplantou" in doc
