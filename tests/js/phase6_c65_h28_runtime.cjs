@@ -81,6 +81,23 @@ try {
   pensionOmissionRejected = Boolean(error && error.code === 'vacation_pension_required');
 }
 
+let missingPaymentDateRejected = false;
+try { calculate({ targetDate: '' }); } catch (error) {
+  missingPaymentDateRejected = Boolean(error && error.code === 'h28_payment_date_required');
+}
+
+let whitespacePaymentDateRejected = false;
+try { calculate({ targetDate: '   ' }); } catch (error) {
+  whitespacePaymentDateRejected = Boolean(error && error.code === 'h28_payment_date_required');
+}
+
+let impossiblePaymentDateRejected = false;
+try { calculate({ targetDate: '2026-02-31' }); } catch (error) {
+  impossiblePaymentDateRejected = Boolean(error && error.code === 'h28_payment_date_invalid');
+}
+
+const explicitPaymentDate = calculate({ targetDate: '2026-09-15' });
+
 const ids = standard.fiscal_metadata.rules.map(function (item) { return item.rule_id; });
 const output = {
   release_id: release.release_id,
@@ -90,6 +107,10 @@ const output = {
   unsupported_absences_rejected: unsupportedAbsencesRejected,
   negative_input_rejected: negativeRejected,
   pension_omission_rejected: pensionOmissionRejected,
+  missing_payment_date_rejected: missingPaymentDateRejected,
+  whitespace_payment_date_rejected: whitespacePaymentDateRejected,
+  impossible_payment_date_rejected: impossiblePaymentDateRejected,
+  explicit_payment_date_preserved: explicitPaymentDate.reference_date === '2026-09-15',
   dedicated_reduction_present: ids.includes('vacation.irrf.reduction.2026'),
   generic_reduction_absent: !ids.includes('irrf.reduction.2026'),
   cash_principal_profile_present: ids.includes('vacation.abono.ir_exemption'),
