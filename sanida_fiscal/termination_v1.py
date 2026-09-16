@@ -314,8 +314,8 @@ def calculate_salary_balance(
         raise FiscalEngineError("salary balance numerator exceeds calendar month")
 
     base = as_decimal(monthly_base_salary, name="monthly_base_salary")
-    if base < ZERO:
-        raise FiscalEngineError("monthly_base_salary cannot be negative")
+    if base <= ZERO:
+        raise FiscalEngineError("monthly_base_salary must be greater than zero")
 
     raw = base * Decimal(days_counted_through_termination) / Decimal(calendar_days)
     amount = quantize(raw, rounding_policy)
@@ -387,6 +387,10 @@ def calculate_h29_limited_estimate(
             payload=thirteenth_bundle.reference,
             termination_month_remuneration=termination_month_remuneration,
         )
+        if reference.total_reference <= ZERO:
+            raise FiscalEngineError(
+                "termination_month_remuneration must be greater than zero for H29 proportional thirteenth"
+            )
         gross = calculate_thirteenth_gross(
             reference=reference,
             accrual=accrual,

@@ -27,12 +27,12 @@ for (const file of [corePath, terminationPath, h29Path]) {
 }
 
 const SFA = sandbox.SFA_FOLHA;
-if (!SFA || !SFA.TERMINATION) throw new Error('H29 termination runtime was not registered');
+if (!SFA || !SFA.TERMINATION || !SFA.H29) throw new Error('H29 runtime was not registered');
 const release = JSON.parse(fs.readFileSync(releasePath, 'utf8'));
 SFA.assertRelease(release, 'H29');
 
 function calculate(overrides) {
-  return SFA.TERMINATION.calculate(release, Object.assign({
+  return SFA.H29.calculate(release, Object.assign({
     esocialReason: '02',
     employmentRegime: 'monthly',
     contractTerm: 'indefinite',
@@ -42,6 +42,15 @@ function calculate(overrides) {
     daysCountedThroughTermination: 10,
     terminationMonthRemuneration: '3600.00'
   }, overrides || {}));
+}
+
+function rejectsWith(overrides, code) {
+  try {
+    calculate(overrides);
+    return false;
+  } catch (error) {
+    return Boolean(error && error.code === code);
+  }
 }
 
 const standard = calculate();
@@ -94,6 +103,14 @@ try { calculate({ monthlyBaseSalary: '-1.00' }); } catch (error) {
   negativeMoneyRejected = Boolean(error && error.code === 'termination_negative_input');
 }
 
+let reason01AllowsEmptyThirteenthReference = false;
+try {
+  const reason01 = calculate({ esocialReason: '01', terminationMonthRemuneration: '' });
+  reason01AllowsEmptyThirteenthReference = reason01.thirteenth_proportional === null;
+} catch (error) {
+  reason01AllowsEmptyThirteenthReference = false;
+}
+
 const ids = standard.fiscal_metadata.rules.map(function (item) { return item.rule_id; });
 process.stdout.write(JSON.stringify({
   release_id: release.release_id,
@@ -114,6 +131,20 @@ process.stdout.write(JSON.stringify({
   fixed_term_rejected: fixedTermRejected,
   excess_days_rejected: excessDaysRejected,
   negative_money_rejected: negativeMoneyRejected,
+  empty_salary_rejected: rejectsWith({ monthlyBaseSalary: '' }, 'termination_required_input'),
+  whitespace_salary_rejected: rejectsWith({ monthlyBaseSalary: '   ' }, 'termination_required_input'),
+  zero_salary_rejected: rejectsWith({ monthlyBaseSalary: '0' }, 'termination_positive_input'),
+  empty_thirteenth_reference_rejected: rejectsWith({ terminationMonthRemuneration: '' }, 'termination_required_input'),
+  zero_thirteenth_reference_rejected: rejectsWith({ terminationMonthRemuneration: '0.00' }, 'termination_positive_input'),
+  reason01_allows_empty_thirteenth_reference: reason01AllowsEmptyThirteenthReference,
+  suggested_days: {
+    same_month_midmonth: SFA.H29.suggestedDaysCounted('2026-09-10', '2026-09-20'),
+    same_month_from_first: SFA.H29.suggestedDaysCounted('2026-09-01', '2026-09-20'),
+    leap_february: SFA.H29.suggestedDaysCounted('2028-02-28', '2028-02-29'),
+    prior_month_admission: SFA.H29.suggestedDaysCounted('2026-08-15', '2026-09-20'),
+    no_admission_yet: SFA.H29.suggestedDaysCounted('', '2026-09-20'),
+    admission_after_termination: SFA.H29.suggestedDaysCounted('2026-09-21', '2026-09-20')
+  },
   required_rules_present: [
     'termination.reason_scope',
     'termination.partial_output_scope',
