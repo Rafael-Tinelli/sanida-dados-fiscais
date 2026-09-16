@@ -129,28 +129,31 @@ def main() -> int:
         "aplicarReducao(",
         "total13 / 2",
         "data-sfa=\"folha\"",
+        "SHORTCODE_DISPLAY_ADAPTER_RETIRE_BY",
+        "build_shortcode_display_adapter",
+        "wordpress_table_shortcodes_v1",
+        "compatibility_adapter",
+        "adapter_consumers",
+        "shortcode-display-v1",
     ):
-        require(forbidden not in plugin_text, f"retired fiscal runtime remains in WordPress plugin: {forbidden}")
+        require(forbidden not in plugin_text, f"retired fiscal runtime/adapter remains in WordPress plugin: {forbidden}")
 
     for marker in (
-        "Version:     2.6.0",
+        "Version:     2.7.0",
         "register_rest_route('sfa/v1', '/fiscal-release'",
         "register_rest_route('sfa/v1', '/folha'",
         "sfa_legacy_folha_retired",
         "'status' => 410",
         "'/wp-json/sfa/v1/fiscal-release'",
-        "SHORTCODE_DISPLAY_ADAPTER_RETIRE_BY",
-        "C7.1-before-production-deployment",
-        "build_shortcode_display_adapter",
-        "wordpress_table_shortcodes_v1",
-        "'adapter_consumers' => ['ano_ref','inss_tabela','irrf_tabela']",
+        "canonical_rules_for_shortcodes",
+        "presentation_shortcodes_mode' => 'direct_canonical_release'",
         "data-sfa-retired=\"folha\"",
         "data-sfa-retired=\"calc_salario_liquido\"",
         "data-sfa-retired=\"calc13_assets\"",
         "/financas/calculadoras/salario-liquido-clt/",
         "/financas/calculadoras/decimo-terceiro/",
     ):
-        require(marker in plugin_text, f"C6.7 WordPress marker missing: {marker}")
+        require(marker in plugin_text, f"C6.7/C7.1 WordPress marker missing: {marker}")
 
     node = shutil.which("node")
     require(node is not None, "node is required for Phase 6 closure validation")
@@ -177,6 +180,8 @@ def main() -> int:
         marker = f"python scripts/validate_phase6_c6{index}_gate.py"
         require(marker in ci, f"Remake CI missing permanent Phase 6 gate C6.{index}")
 
+    # C6.7's historical record intentionally documents the temporary adapter that
+    # existed at closure. Later phases may retire it from executable code.
     doc = DOC.read_text(encoding="utf-8")
     for marker in (
         "**Status:** CONCLUÍDO",
@@ -187,14 +192,13 @@ def main() -> int:
         "não afirma implantação no HostGator",
         "Fase 7 — fechamento E2E e operação evergreen",
     ):
-        require(marker in doc, f"C6.7 closure document missing marker: {marker}")
+        require(marker in doc, f"C6.7 closure document missing historical marker: {marker}")
 
     readme = README.read_text(encoding="utf-8")
     for marker in (
         "### Fase 6 — Migração dos consumidores",
         "**Status: CONCLUÍDA**",
         "C6.7 — remoção controlada do legado",
-        "C7.1-before-production-deployment",
         "Fase 7 — Fechamento e operação evergreen",
         "Fases 0–6 estão formalmente concluídas",
     ):
