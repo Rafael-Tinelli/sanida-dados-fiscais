@@ -4,12 +4,19 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import tempfile
 
-from scripts.simulate_phase7_c73_preflight import run_simulation
+import pytest
+
+from scripts.build_phase7_c71_bundle import build_bundle
+from scripts.run_phase7_c73_host_preflight import run_preflight
+from scripts.simulate_phase7_c73_preflight import run_simulation, seed_host
+from scripts.validate_phase7_c73_remote_evidence import validate_remote_evidence
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = ROOT / "docs/phase7-c73-preflight-contract-v1.json"
 STORE = ROOT / "releases/fiscal-v1"
+DEPLOYMENT_MANIFEST = ROOT / "docs/phase7-c71-deployment-manifest-v1.json"
 PLUGIN = ROOT / "consumers/wordpress/sanida-fiscais-auto.php"
 ADMIN = ROOT / "consumers/wordpress/includes/trait-sanida-admin-debug.php"
 NETWORK = ROOT / "consumers/wordpress/includes/trait-sanida-fiscal-network.php"
@@ -49,6 +56,31 @@ def test_c73_simulated_preflight_proves_positive_negative_and_non_mutation() -> 
     assert result["missing_dependency_blocked"] is True
     assert result["missing_parent_blocked"] is True
     assert result["non_mutation_verified"] is True
+
+
+def test_c73_remote_evidence_validator_accepts_only_real_pass_shape() -> None:
+    with tempfile.TemporaryDirectory(prefix="c73-remote-validator-") as raw:
+        tmp = Path(raw)
+        bundle_dir = tmp / "bundle"
+        bundle = build_bundle(DEPLOYMENT_MANIFEST, bundle_dir)
+        roots = seed_host(bundle, tmp / "host")
+        evidence = run_preflight(bundle_dir / "bundle-manifest.json", roots["site_root"], roots["wordpress_plugin_dir"])
+        evidence_path = tmp / "remote-evidence.json"
+        evidence_path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+        validated = validate_remote_evidence(evidence_path, bundle_dir / "bundle-manifest.json")
+        assert validated["status"] == "PASS"
+        assert validated["technical_go_no_go"] == "GO"
+        assert validated["managed_targets"] == 32
+        assert validated["preexisting_dependencies"] == 11
+        assert validated["production_mutated"] is False
+        assert validated["deployment_authorized"] is False
+
+        evidence["status"] = "BLOCKED"
+        evidence["technical_go_no_go"] = "NO_GO"
+        evidence_path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        with pytest.raises(SystemExit):
+            validate_remote_evidence(evidence_path, bundle_dir / "bundle-manifest.json")
 
 
 def test_c73_observability_route_is_registered_without_new_fiscal_authority() -> None:
