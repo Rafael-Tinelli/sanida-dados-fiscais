@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint": "C7.5",
+  "record_type": "initial_host_postdeploy_observation",
+  "recorded_from": "operator_terminal_output",
+  "observed_at_utc": "2026-09-16T17:54:05Z",
+  "source_commit": "b36f2a4efc07c25ae6814455e2cf88f4c6b8d573",
+  "host_evidence": {
+    "path": "~/c75-evidence/c75-hostgator-postdeploy-20260916T175405Z.json",
+    "sha256": "996561d9acaee9473d4bbd2035ce32c8d1bff85c8e9e6eb38b10e2f26a8ff447"
+  },
+  "status": "BLOCKED",
+  "phase7_close_recommended": false,
+  "production_deployed": true,
+  "production_mutated": false,
+  "postdeploy_window_seconds": 1934.422414,
+  "release_id": "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e",
+  "origin_validation": {
+    "journal_sha_match": true,
+    "managed_files_matching": 32,
+    "managed_files_expected": 32,
+    "preexisting_dependencies_matching": 11,
+    "preexisting_dependencies_expected": 11,
+    "created_directories": 4,
+    "c74_temporary_files": 0,
+    "canonical_current_http_status": 200,
+    "canonical_artifact_http_status": 200,
+    "canonical_artifact_sha_match": true,
+    "http_probes": 2,
+    "probe_1": {"fiscal_health_http": 200, "fiscal_health_status": "healthy", "fiscal_release_http": 200, "legacy_folha_http": 410, "H26": 200, "H27": 200, "H28": 200, "H29": 200},
+    "probe_2": {"fiscal_health_http": 200, "fiscal_health_status": "healthy", "fiscal_release_http": 200, "legacy_folha_http": 410, "H26": 200, "H27": 200, "H28": 200, "H29": 200}
+  },
+  "host_public_js_observation": {
+    "matching": 5,
+    "expected": 8,
+    "block_reasons": [
+      "public_js_delivery_drift:financas/calculadoras/assets/ferias-clt.js",
+      "public_js_delivery_drift:financas/calculadoras/assets/folha-core.js",
+      "public_js_delivery_drift:financas/calculadoras/assets/rescisao-clt.js"
+    ]
+  },
+  "followup_diagnosis": {
+    "observed_at_utc": "2026-09-16T17:58:35Z",
+    "finding": "HostGator-to-public-domain requests for the three divergent assets returned HTTP 403 from Cloudflare for both direct and cache-busted URLs, so the compared bodies were edge-denial responses rather than JavaScript payloads.",
+    "production_files_changed": false,
+    "cache_purged": false,
+    "c74_redeployment_performed": false
+  },
+  "interpretation": "Origin integrity is proven by the 32/32 bundle match. Public client delivery must be validated from a separate client-side network path; the HostGator server is not a valid external-client vantage point when the Cloudflare policy rejects its egress request."
+}
