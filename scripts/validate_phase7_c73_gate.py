@@ -18,6 +18,8 @@ from scripts.simulate_phase7_c73_preflight import run_simulation
 STORE = ROOT / "releases/fiscal-v1"
 SPEC = ROOT / "docs/phase7-c73-preflight-contract-v1.json"
 RUNBOOK = ROOT / "docs/phase7-c73-production-runbook.md"
+READINESS = ROOT / "state/phase7-c73-readiness.json"
+REMOTE_VALIDATOR = ROOT / "scripts/validate_phase7_c73_remote_evidence.py"
 README = ROOT / "README.md"
 CI = ROOT / ".github/workflows/remake-ci.yml"
 DEPLOYMENT_MANIFEST = ROOT / "docs/phase7-c71-deployment-manifest-v1.json"
@@ -39,6 +41,8 @@ def main() -> int:
     for path in (
         SPEC,
         RUNBOOK,
+        READINESS,
+        REMOTE_VALIDATOR,
         README,
         CI,
         DEPLOYMENT_MANIFEST,
@@ -86,6 +90,16 @@ def main() -> int:
     require(spec.get("technical_go_no_go", {}).get("GO_does_not_replace_explicit_deployment_authorization") is True, "technical GO replaces explicit authorization")
     require(spec.get("rollback_preconditions", {}).get("new_directories_may_not_be_created_by_deploy") is True, "new directory rollback boundary missing")
 
+    readiness = json.loads(READINESS.read_text(encoding="utf-8"))
+    require(readiness.get("checkpoint") == "C7.3", "readiness checkpoint drift")
+    require(readiness.get("status") == "EM_REVISÃO", "C7.3 must remain EM_REVISÃO before real remote evidence")
+    require(readiness.get("repository_readiness") == "READY", "repository-side C7.3 readiness not marked READY")
+    require(readiness.get("remote_preflight") == "REQUIRED_NOT_EXECUTED", "remote preflight state drift")
+    require(readiness.get("technical_go_no_go") == "NO_GO_REMOTE_EVIDENCE_REQUIRED", "go/no-go must remain blocked without remote evidence")
+    require(readiness.get("deployment_authorized") is False, "readiness incorrectly authorizes deployment")
+    require(readiness.get("production_deployed") is False, "readiness incorrectly claims deployment")
+    require(readiness.get("production_mutated_by_c73") is False, "C7.3 readiness claims production mutation")
+
     host_preflight_text = HOST_PREFLIGHT.read_text(encoding="utf-8")
     for marker in (
         '"mode": "read_only_host_preflight"',
@@ -101,6 +115,17 @@ def main() -> int:
         require(marker in host_preflight_text, f"host preflight missing fail-closed marker: {marker}")
     for forbidden in ("unlink(", "mkdir(", "chmod(", "write_bytes("):
         require(forbidden not in host_preflight_text, f"host preflight contains target mutation primitive: {forbidden}")
+
+    remote_validator_text = REMOTE_VALIDATOR.read_text(encoding="utf-8")
+    for marker in (
+        'evidence.get("status") == "PASS"',
+        'evidence.get("technical_go_no_go") == "GO"',
+        'evidence.get("production_mutated") is False',
+        'len(dependencies) == 11',
+        'len(managed) == 32',
+        'bundle manifest SHA mismatch',
+    ):
+        require(marker in remote_validator_text, f"remote evidence validator missing marker: {marker}")
 
     simulation = run_simulation()
     require(simulation.get("production_deployed") is False, "simulation claims production deployment")
@@ -181,14 +206,16 @@ def main() -> int:
     ):
         require(marker in runbook, f"runbook missing C7.3 marker: {marker}")
 
+    # README remains truthful while C7.3 is in review: it still identifies C7.3
+    # as the next production-preflight checkpoint and keeps deployment false.
     readme = README.read_text(encoding="utf-8")
     for marker in (
-        "C7.3 — runbook, observabilidade e pré-flight de produção",
-        "EM REVISÃO",
-        "remote read-only",
+        "Executar **C7.3 — runbook, observabilidade e pré-flight de produção**",
         "production_deployed=false",
+        "### Fase 7 — Fechamento e operação evergreen",
+        "**Status: EM ANDAMENTO**",
     ):
-        require(marker in readme, f"README missing C7.3 state marker: {marker}")
+        require(marker in readme, f"README lost active C7.3 boundary: {marker}")
 
     ci = CI.read_text(encoding="utf-8")
     require("python scripts/simulate_phase7_c73_preflight.py" in ci, "Remake CI does not run C7.3 preflight simulation")
@@ -197,7 +224,7 @@ def main() -> int:
 
     print(
         "Phase 7 C7.3 readiness gate: PASS "
-        f"(release={release.release_id}, managed=32, dependencies=11, health=verified, preflight=read-only, remote_preflight=REQUIRED, deployment_authorized=false, production_deployed=false)"
+        f"(release={release.release_id}, managed=32, dependencies=11, health=verified, preflight=read-only, remote_preflight=REQUIRED, technical_go_no_go=NO_GO_REMOTE_EVIDENCE_REQUIRED, deployment_authorized=false, production_deployed=false)"
     )
     return 0
 
