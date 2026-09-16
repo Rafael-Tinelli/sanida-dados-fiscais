@@ -13,10 +13,8 @@ trait Sanida_Fiscais_Shortcodes_Core_Trait {
       'selic_atual'          => 'sc_selic',
       'cdi_atual'            => 'sc_cdi',
       'sfa_bootstrap_folha'  => 'sc_bootstrap_folha',
-
       'sanida_calculadora_13' => 'sc_calc13_assets',
       'sfa_calc13_assets'     => 'sc_calc13_assets',
-
       'fiscais_debug'        => 'sc_debug',
     ];
 
@@ -30,64 +28,20 @@ trait Sanida_Fiscais_Shortcodes_Core_Trait {
     $u13 = $atts['url_13'] ?? '';
     $uf  = $atts['url_ferias'] ?? '';
     $ur  = $atts['url_rescisao'] ?? '';
-
     if ($u13 || $uf || $ur) {
-      return [
-        $u13 ? esc_url($u13) : '',
-        $uf  ? esc_url($uf)  : '',
-        $ur  ? esc_url($ur)  : ''
-      ];
+      return [$u13 ? esc_url($u13) : '', $uf ? esc_url($uf) : '', $ur ? esc_url($ur) : ''];
     }
-
-    if (defined('SFA_PATH_13') || defined('SFA_PATH_FERIAS') || defined('SFA_PATH_RESCISAO')) {
-      $p13 = defined('SFA_PATH_13') ? (string) SFA_PATH_13 : '';
-      $pf  = defined('SFA_PATH_FERIAS') ? (string) SFA_PATH_FERIAS : '';
-      $pr  = defined('SFA_PATH_RESCISAO') ? (string) SFA_PATH_RESCISAO : '';
-
-      $mk = function($p){
-        $p = trim((string)$p);
-        if ($p === '') return '';
-        if ($p[0] !== '/') $p = '/'.$p;
-        return esc_url(home_url($p));
-      };
-
-      return [$mk($p13), $mk($pf), $mk($pr)];
-    }
-
-    $u13 = defined('SFA_URL_13') ? (string) SFA_URL_13 : '';
-    $uf  = defined('SFA_URL_FERIAS') ? (string) SFA_URL_FERIAS : '';
-    $ur  = defined('SFA_URL_RESCISAO') ? (string) SFA_URL_RESCISAO : '';
-
-    if ($u13 || $uf || $ur) {
-      return [
-        $u13 ? esc_url($u13) : '',
-        $uf  ? esc_url($uf)  : '',
-        $ur  ? esc_url($ur)  : ''
-      ];
-    }
-
-    $resolve = function($slug){
-      $p = get_page_by_path($slug);
-      if ($p && !is_wp_error($p)) {
-        $link = get_permalink($p);
-        return $link ? esc_url($link) : '';
-      }
-      return '';
-    };
-
     return [
-      $resolve('calculadora-13o'),
-      $resolve('calculadora-ferias-abono'),
-      $resolve('calculadora-rescisao')
+      esc_url(home_url('/financas/calculadoras/decimo-terceiro/')),
+      esc_url(home_url('/financas/calculadoras/ferias-clt/')),
+      esc_url(home_url('/financas/calculadoras/rescisao-clt/')),
     ];
   }
 
   public function sc_ano(){
-    $d = $this->get_data();
-    if ($this->fiscais_shortcodes_blocked($d)) {
-      return $this->fiscais_unavailable_text('ano');
-    }
-    return esc_html((string)($d['ano'] ?? gmdate('Y')));
+    $d = $this->get_shortcode_display_data();
+    if ($this->shortcode_display_blocked($d)) return $this->fiscais_unavailable_text('ano');
+    return esc_html((string)($d['ano'] ?? ''));
   }
 
   public function sc_selic(){
@@ -103,94 +57,64 @@ trait Sanida_Fiscais_Shortcodes_Core_Trait {
   }
 
   public function sc_bootstrap_folha($atts = []){
-    $atts = shortcode_atts([
-      'id' => 'sfa-folha-data',
-      'include_meta' => '0',
-    ], $atts, 'sfa_bootstrap_folha');
-
-    $payload = $this->build_folha_payload(($atts['include_meta'] ?? '0') === '1');
-
-    $json = wp_json_encode(
-      $payload,
-      JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES |
-      JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
-    );
-
+    $atts = shortcode_atts(['id' => 'sfa-folha-retired'], $atts, 'sfa_bootstrap_folha');
     $id = preg_replace('/[^A-Za-z0-9\-_:.]/', '', (string)$atts['id']);
-    if ($id === '') $id = 'sfa-folha-data';
-
-    return '<script type="application/json" id="'.esc_attr($id).'" data-sfa="folha">'.esc_html($json).'</script>';
+    if ($id === '') $id = 'sfa-folha-retired';
+    $payload = [
+      'status' => 'retired',
+      'retired_at' => 'C6.7',
+      'replacement' => '/wp-json/sfa/v1/fiscal-release',
+      'message' => 'Bootstrap fiscal legado removido; nenhuma regra fiscal é publicada por este shortcode.',
+    ];
+    $json = wp_json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+    return '<script type="application/json" id="'.esc_attr($id).'" data-sfa-retired="folha">'.esc_html($json).'</script>';
   }
 
   public function sc_inss(){
-    $d = $this->get_data();
-    if ($this->fiscais_shortcodes_blocked($d)) {
-      return $this->fiscais_unavailable_text('inss');
-    }
-
+    $d = $this->get_shortcode_display_data();
+    if ($this->shortcode_display_blocked($d)) return $this->fiscais_unavailable_text('inss');
     $inss = is_array($d['inss'] ?? null) ? $d['inss'] : [];
-
     ob_start(); ?>
       <div class="sfa-tablewrap" style="overflow-x:auto">
         <table class="sfa-table sfa-table--inss" role="table">
-          <thead>
-            <tr><th>Salário (R$)</th><th>Alíquota</th></tr>
-          </thead>
+          <thead><tr><th>Salário (R$)</th><th>Alíquota</th></tr></thead>
           <tbody>
             <?php foreach($inss as $f):
-              $lim = (float)($f['limite'] ?? 0);
+              $lim = array_key_exists('limite', $f) ? $f['limite'] : null;
               $ali = (float)($f['aliquota'] ?? 0);
-              $label = ($lim > 9e4) ? 'Acima teto' : ('Até ' . number_format($lim,2,',','.'));
+              $label = ($lim === null) ? 'Sem limite superior' : ('Até ' . number_format((float)$lim,2,',','.'));
             ?>
-              <tr>
-                <td><?php echo esc_html($label); ?></td>
-                <td><?php echo esc_html(number_format($ali*100,1,',','.')) . '%'; ?></td>
-              </tr>
+              <tr><td><?php echo esc_html($label); ?></td><td><?php echo esc_html(number_format($ali*100,1,',','.')) . '%'; ?></td></tr>
             <?php endforeach; ?>
           </tbody>
         </table>
       </div>
-    <?php
-    return ob_get_clean();
+    <?php return ob_get_clean();
   }
 
   public function sc_irrf(){
-    $d = $this->get_data();
-    if ($this->fiscais_shortcodes_blocked($d)) {
-      return $this->fiscais_unavailable_text('irrf');
-    }
-
+    $d = $this->get_shortcode_display_data();
+    if ($this->shortcode_display_blocked($d)) return $this->fiscais_unavailable_text('irrf');
     $tab  = is_array($d['irrf']['tabela'] ?? null) ? $d['irrf']['tabela'] : [];
     $simp = (float)($d['irrf']['simplificado'] ?? 0);
-
     ob_start(); ?>
-      <p class="sfa-tablemeta" style="margin:.35rem 0 .6rem 0;opacity:.9">
-        <strong>Desconto simplificado:</strong> R$ <?php echo esc_html(number_format($simp,2,',','.')); ?>
-      </p>
-
+      <p class="sfa-tablemeta" style="margin:.35rem 0 .6rem 0;opacity:.9"><strong>Desconto simplificado:</strong> R$ <?php echo esc_html(number_format($simp,2,',','.')); ?></p>
       <div class="sfa-tablewrap" style="overflow-x:auto">
         <table class="sfa-table sfa-table--irrf" role="table">
-          <thead>
-            <tr><th>Base (R$)</th><th>Alíquota</th><th>Dedução</th></tr>
-          </thead>
+          <thead><tr><th>Base (R$)</th><th>Alíquota</th><th>Dedução</th></tr></thead>
           <tbody>
             <?php foreach($tab as $f):
-              $lim = (float)($f['limite'] ?? 0);
+              $lim = array_key_exists('limite', $f) ? $f['limite'] : null;
               $ali = (float)($f['aliquota'] ?? 0);
               $ded = (float)($f['deducao'] ?? 0);
-              $label = ($lim > 9e8) ? 'Acima' : ('Até ' . number_format($lim,2,',','.'));
+              $label = ($lim === null) ? 'Acima da faixa anterior' : ('Até ' . number_format((float)$lim,2,',','.'));
             ?>
-              <tr>
-                <td><?php echo esc_html($label); ?></td>
-                <td><?php echo esc_html(number_format($ali*100,1,',','.')) . '%'; ?></td>
-                <td><?php echo esc_html(number_format($ded,2,',','.')); ?></td>
-              </tr>
+              <tr><td><?php echo esc_html($label); ?></td><td><?php echo esc_html(number_format($ali*100,1,',','.')) . '%'; ?></td><td><?php echo esc_html(number_format($ded,2,',','.')); ?></td></tr>
             <?php endforeach; ?>
           </tbody>
         </table>
       </div>
-    <?php
-    return ob_get_clean();
+    <?php return ob_get_clean();
   }
 
   public function sc_bcb_box(){
@@ -198,11 +122,9 @@ trait Sanida_Fiscais_Shortcodes_Core_Trait {
     $t = $d['taxas'] ?? [];
     $sel = (float)($t['selic'] ?? 0);
     $cdi = (float)($t['cdi'] ?? 0);
-
     return "<div style='border:1px solid #ddd;padding:15px;border-radius:8px;display:flex;gap:20px;background:#fff'>"
       ."<div><strong>Selic</strong><br><span style='color:#007cba;font-size:1.4em'>".esc_html(number_format($sel,2,',','.'))."%</span></div>"
       ."<div><strong>CDI</strong><br><span style='color:#007cba;font-size:1.4em'>".esc_html(number_format($cdi,2,',','.'))."%</span></div>"
       ."</div>";
   }
-
 }
