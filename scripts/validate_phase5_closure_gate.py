@@ -237,14 +237,17 @@ def validate_regression_tests_and_docs() -> None:
     ):
         _require(marker in docs, f"Phase 5 documentation marker missing: {marker}")
 
+    # Like the Phase 4 gate, this gate validates Phase 5's immutable closure facts
+    # without forcing the master README to keep a stale "next phase" or bootstrap
+    # status after Phase 6 has legitimately advanced the project.
     readme = _read("README.md")
     for marker in (
         "### Fase 5 — Diff semântico e gates de publicação\n\n**Status: CONCLUÍDA**",
-        "Contrato Fiscal **v1.2.0**",
-        "primeira release de produção v1.2 permanece deliberadamente pendente",
-        "## 20. Próxima etapa\n\nIniciar a **Fase 6 — Migração dos consumidores**.",
+        "schema/API 1.2.0",
+        "### Fase 6 — Migração dos consumidores",
+        "### Fase 7 — Fechamento e operação evergreen",
     ):
-        _require(marker in readme, f"README Phase 5 handoff marker missing: {marker}")
+        _require(marker in readme, f"README Phase 5 closure/boundary marker missing: {marker}")
 
 
 def main() -> None:

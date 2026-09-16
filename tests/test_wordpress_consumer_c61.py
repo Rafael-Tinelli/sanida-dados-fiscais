@@ -54,12 +54,14 @@ def test_c61_current_manifest_points_to_exact_immutable_artifact() -> None:
 
 def test_c61_plugin_uses_manifest_and_immutable_release_not_legacy_json() -> None:
     text = _plugin_text()
-    assert "Version:     2.5.0" in text
+    assert "Version:     2.6.0" in text
     assert "/releases/fiscal-v1/current.json" in text
     assert "RELEASE_BASE_URL_DEFAULT" in text
     assert "dados_fiscais.json" not in text
     assert "SFA_FISCAIS_JSON_URL" not in text
     assert "private function minimal_fallback(" not in text
+    assert "private function build_legacy_adapter(" not in text
+    assert "private function get_data(" not in text
 
 
 def test_c61_plugin_verifies_bytes_release_identity_and_exact_compatibility() -> None:
@@ -109,16 +111,51 @@ def test_c61_last_good_is_fail_closed_and_never_relabels_known_successor() -> No
         assert forbidden not in text
 
 
-def test_c61_rest_exposes_canonical_release_and_auditable_legacy_adapter() -> None:
+def test_c61_rest_exposes_canonical_release_and_retires_legacy_folha_endpoint() -> None:
     text = _plugin_text()
     assert "register_rest_route('sfa/v1', '/fiscal-release'" in text
     assert "register_rest_route('sfa/v1', '/folha'" in text
     assert "X-Sanida-Fiscal-Release" in text
-    assert "legacy-folha-adapter-v1" in text
-    assert "'release_id' => $release['release_id']" in text
-    assert "'contract_schema_version' => $release['schema_version']" in text
-    assert "'contract_api_version' => $release['consumer_compatibility']['contract_api_version']" in text
+    assert "sfa_legacy_folha_retired" in text
+    assert "'status' => 410" in text
+    assert "'/wp-json/sfa/v1/fiscal-release'" in text
+    assert "legacy-folha-adapter-v1" not in text
+    assert "private function build_folha_payload(" not in text
     assert "['status' => 503]" in text
+
+
+def test_c61_only_named_presentation_adapter_survives_with_retirement_deadline() -> None:
+    text = _plugin_text()
+    for marker in (
+        "SHORTCODE_DISPLAY_ADAPTER_RETIRE_BY",
+        "C7.1-before-production-deployment",
+        "build_shortcode_display_adapter",
+        "wordpress_table_shortcodes_v1",
+        "'adapter_consumers' => ['ano_ref','inss_tabela','irrf_tabela']",
+    ):
+        assert marker in text
+    assert "legacy-folha-adapter-v1" not in text
+    assert "data-sfa=\"folha\"" not in text
+
+
+def test_c61_legacy_calculator_shortcodes_are_bridges_not_fiscal_engines() -> None:
+    text = _plugin_text()
+    for marker in (
+        "data-sfa-retired=\"folha\"",
+        "data-sfa-retired=\"calc_salario_liquido\"",
+        "data-sfa-retired=\"calc13_assets\"",
+        "/financas/calculadoras/salario-liquido-clt/",
+        "/financas/calculadoras/decimo-terceiro/",
+    ):
+        assert marker in text
+    for forbidden in (
+        "SFA_V2_Calc",
+        "calcINSS(",
+        "calcIRRF13(",
+        "aplicarReducao(",
+        "total13 / 2",
+    ):
+        assert forbidden not in text
 
 
 def test_c61_plugin_keeps_financial_reference_separate() -> None:

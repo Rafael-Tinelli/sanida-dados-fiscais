@@ -66,10 +66,20 @@ def main() -> int:
         "C6.1 WordPress source set is incomplete or contains obsolete PHP modules",
     )
     text = "\n".join(path.read_text(encoding="utf-8") for path in plugin_paths)
+
     forbidden = (
         "dados_fiscais.json",
         "SFA_FISCAIS_JSON_URL",
         "private function minimal_fallback(",
+        "private function build_legacy_adapter(",
+        "private function build_folha_payload(",
+        "legacy-folha-adapter-v1",
+        "private function get_data(",
+        "SFA_V2_Calc",
+        "calcINSS(",
+        "calcIRRF13(",
+        "aplicarReducao(",
+        "total13 / 2",
         "607.20",
         "189.59",
         "1621.00",
@@ -78,10 +88,10 @@ def main() -> int:
         "8475.55",
     )
     for token in forbidden:
-        require(token not in text, f"legacy fiscal authority/fallback remains in plugin: {token}")
+        require(token not in text, f"legacy fiscal authority/formula remains in plugin: {token}")
 
     required_markers = (
-        "Version:     2.5.0",
+        "Version:     2.6.0",
         "/releases/fiscal-v1/current.json",
         "RELEASE_BASE_URL_DEFAULT",
         "hash('sha256', $artifact['body'])",
@@ -99,12 +109,22 @@ def main() -> int:
         "historical_release_relabelled_as_current' => false",
         "register_rest_route('sfa/v1', '/fiscal-release'",
         "register_rest_route('sfa/v1', '/folha'",
-        "legacy-folha-adapter-v1",
+        "sfa_legacy_folha_retired",
+        "'status' => 410",
+        "'/wp-json/sfa/v1/fiscal-release'",
         "X-Sanida-Fiscal-Release",
         "['status' => 503]",
+        "SHORTCODE_DISPLAY_ADAPTER_RETIRE_BY",
+        "C7.1-before-production-deployment",
+        "build_shortcode_display_adapter",
+        "wordpress_table_shortcodes_v1",
+        "'adapter_consumers' => ['ano_ref','inss_tabela','irrf_tabela']",
+        "data-sfa-retired=\"folha\"",
+        "/financas/calculadoras/salario-liquido-clt/",
+        "/financas/calculadoras/decimo-terceiro/",
     )
     for marker in required_markers:
-        require(marker in text, f"plugin missing required C6.1 marker: {marker}")
+        require(marker in text, f"plugin missing required C6.1/C6.7 marker: {marker}")
 
     coverage = json.loads(COVERAGE.read_text(encoding="utf-8"))
     required_ids = required_inventory_rule_ids(coverage)
@@ -146,7 +166,7 @@ def main() -> int:
 
     print(
         "Phase 6 C6.1 WordPress consumer gate: PASS "
-        f"(release={release.release_id}, rules={len(release.rules)})"
+        f"(release={release.release_id}, rules={len(release.rules)}, legacy_fiscal_runtime=retired)"
     )
     return 0
 

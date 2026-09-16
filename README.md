@@ -23,23 +23,9 @@ Isso **não** significa permitir que um scraper interprete autonomamente legisla
 
 ## 2. Papel deste README
 
-Este README é o **documento-mestre do projeto**.
+Este README é o **documento-mestre do projeto**. Ele deve permanecer sincronizado com objetivos, limites, arquitetura, fontes, contratos, invariantes, gates, riscos, decisões pendentes e estado de cada fase.
 
-Ele deve registrar e permanecer sincronizado com:
-
-- objetivos e limites do sistema;
-- arquitetura vigente e arquitetura-alvo;
-- decisões metodológicas;
-- fontes oficiais;
-- contratos de dados e regras;
-- invariantes de segurança;
-- fases de implementação;
-- critérios de promoção de releases;
-- riscos conhecidos;
-- decisões ainda pendentes;
-- estado de cada etapa.
-
-Mudanças relevantes de arquitetura ou metodologia não devem existir apenas no código: devem ser refletidas aqui.
+Mudanças relevantes de arquitetura ou metodologia não devem existir apenas no código.
 
 ---
 
@@ -60,9 +46,7 @@ O `dados_fiscais.json` de baseline declarava `schema_version: 2.2.0`, ano 2026 e
 
 ## 4. Problema que estamos resolvendo
 
-A arquitetura inicial conseguia capturar vários parâmetros corretos, mas não modelava suficientemente a **semântica jurídica das regras**.
-
-O exemplo central é a redução mensal do IRRF de 2026. Não basta preservar coeficientes numéricos; o contrato deve preservar também a grandeza jurídica sobre a qual a fórmula incide.
+A arquitetura inicial capturava vários parâmetros corretos, mas não modelava suficientemente a **semântica jurídica das regras**. O exemplo central é a redução mensal do IRRF de 2026: não basta preservar coeficientes; o contrato também precisa declarar a grandeza jurídica sobre a qual a fórmula incide.
 
 ```text
 rule_id = irrf.monthly.reduction
@@ -70,7 +54,7 @@ applies_to = rendimento tributável sujeito à incidência mensal
 effective_from = 2026-01-01
 ```
 
-A ausência dessa semântica permitia que números corretos fossem aplicados sobre a variável errada.
+A ausência dessa semântica permitia aplicar números corretos sobre a variável errada.
 
 ---
 
@@ -90,27 +74,15 @@ Fontes privadas podem auxiliar investigação, mas não substituem autoridade of
 
 ### 5.2. Scraper não é autoridade jurídica
 
-Scrapers e parsers são sensores/coletadores. Eles podem detectar mudança, extrair parâmetros conhecidos, preservar snapshots e apontar divergências.
-
-Eles não devem:
-
-- inventar interpretação para regra nova;
-- promover silenciosamente mudança estrutural;
-- transformar ausência em zero;
-- relabelar dado antigo com competência nova;
-- tratar acessibilidade da página como prova suficiente de validade jurídica.
+Scrapers e parsers são sensores/coletadores. Eles podem detectar mudança, extrair parâmetros conhecidos, preservar snapshots e apontar divergências. Eles não devem inventar interpretação para regra nova, promover silenciosamente mudança estrutural, transformar ausência em zero, relabelar dado antigo com competência nova ou tratar acessibilidade da página como prova suficiente de validade jurídica.
 
 ### 5.3. Vigência é parte do dado
 
-Todo parâmetro ou regra relevante deve declarar, quando aplicável, início/fim de vigência, competência, data de publicação, data de coleta/verificação, fonte normativa, fonte operacional e versão do contrato.
-
-`generated_at` nunca deve ser confundido com vigência.
+Todo parâmetro ou regra relevante declara, quando aplicável, início/fim de vigência, competência, publicação, coleta/verificação, fonte, versão do contrato e política de atualização. `generated_at` nunca equivale a vigência.
 
 ### 5.4. Falhar com segurança
 
-O sistema distingue coleta sem mudança, coleta com mudança, fonte indisponível, parser incompatível, mudança estrutural, contrato inválido, last-good ainda utilizável e last-good apenas preservado para auditoria.
-
-Falha de coleta ou parser nunca deve produzir um número aparentemente atual por conveniência.
+O sistema distingue coleta sem mudança, coleta com mudança, fonte indisponível, parser incompatível, mudança estrutural, contrato inválido, last-good ainda utilizável e last-good preservado apenas para auditoria. Falha de coleta ou parser nunca produz um número aparentemente atual por conveniência.
 
 ### 5.5. Nunca relabelar dado antigo como novo
 
@@ -122,35 +94,24 @@ Valor zero real, valor ausente, não aplicável, não publicado, não encontrado
 
 ### 5.7. Dinheiro não deve depender de `float`
 
-O motor fiscal usa `Decimal` e política explícita de arredondamento. Conversões para números JSON legados só podem ocorrer em fronteiras de compatibilidade identificadas.
+O motor fiscal usa `Decimal` e política explícita de arredondamento. Conversões para números JSON de compatibilidade só podem ocorrer em fronteiras identificadas e nunca se tornam nova autoridade fiscal.
 
 ### 5.8. Toda regra crítica precisa de teste de referência
 
-Exemplos oficiais e regressões objetivas devem virar testes automatizados, complementados por invariantes e property-based testing.
+Exemplos oficiais e regressões objetivas viram testes automatizados, complementados por invariantes e property-based testing.
 
 ---
 
 ## 6. Classes de atualização
 
-### Classe A — fonte oficial estruturada
-
-Pode admitir automação quando schema, metadados, vigência, faixas e testes permanecem válidos.
-
-### Classe B — mudança paramétrica em regra conhecida
-
-Ex.: novas faixas mantendo a mesma estrutura jurídica. Pode admitir automação apenas após validação forte e política da Fase 5.
-
-### Classe C — mudança estrutural de regra
-
-Ex.: nova hipótese, nova base de incidência, exceção, ordem de cálculo, regra removida ou novo regime. Estado obrigatório: `REVIEW_REQUIRED`.
-
-### Classe D — fonte indisponível ou inconclusiva
-
-Pode preservar last-good apenas dentro da política explícita de validade e sem fingir nova observação.
+- **Classe A — fonte oficial estruturada:** pode admitir automação quando schema, metadados, vigência e testes permanecem válidos.
+- **Classe B — mudança paramétrica em regra conhecida:** pode admitir automação após validação forte e política de promoção.
+- **Classe C — mudança estrutural de regra:** estado obrigatório `REVIEW_REQUIRED`.
+- **Classe D — fonte indisponível ou inconclusiva:** last-good apenas dentro da política explícita e sem fingir nova observação.
 
 ---
 
-## 7. Arquitetura-alvo
+## 7. Arquitetura vigente
 
 ```text
 Fontes oficiais
@@ -180,12 +141,18 @@ Validation + promotion gates
 Versioned release
       │
       ▼
-Consumer contract
+releases/fiscal-v1/current.json
       │
-      ├── WordPress/plugin/cache
-      ├── folha-core
+      ▼
+WordPress/cache + /wp-json/sfa/v1/fiscal-release
+      │
+      ▼
+folha-core
+      │
       └── H26 / H27 / H28 / H29
 ```
+
+`/wp-json/sfa/v1/folha` não é mais canal de dados fiscais: desde C6.7 é somente um tombstone `410 Gone`.
 
 ---
 
@@ -203,23 +170,11 @@ Inclui Selic, CDI e eventuais indicadores financeiros futuros. Esses dados possu
 
 ## 9. Contrato Fiscal Canônico v1.1 / v1.2
 
-A **Fase 2 está concluída** e seu contrato v1.1 histórico permanece preservado. Ele possui:
+A Fase 2 fechou o contrato v1.1 histórico com modelos Pydantic, JSON Schema, cobertura **32/32 regras**, **18 famílias tipadas de payload**, compatibilidade exata/fail-closed, identidade content-addressed e supersessão explícita.
 
-- modelos Pydantic em `sanida_fiscal/types_v1.py` e `sanida_fiscal/contract_v1.py`;
-- JSON Schema público em `contracts/fiscal-contract-v1.schema.json`;
-- cobertura de **32/32 regras** do inventário;
-- **18 famílias tipadas de payload**;
-- compatibilidade exata/fail-closed;
-- `release_id` content-addressed para releases validadas/publicadas;
-- releases publicadas imutáveis com supersessão explícita.
+A Fase 5 evoluiu aditivamente para **schema/API 1.2.0** para separar `GovernanceEvidenceObservation` da proveniência jurídico-fiscal oficial. Evidência interna das `technical_contract_rule` não pode ser confundida com autoridade legal.
 
-Cada regra expressa, conforme aplicável, `rule_id`, versão, domínio, consumidores/contextos, target semântico, predicados, dependências, ordem de cálculo, competência, vigência, arredondamento, payload, proveniência, qualidade, classe de mudança e política de atualização.
-
-O contrato v1.1 incorporou explicitamente o limiar de 15 dias da aquisição proporcional de férias depois que a Fase 3 revelou essa lacuna computacional. Leitores 1.0 não aceitam silenciosamente 1.1.
-
-Na Fase 5 foi necessária uma evolução aditiva para **schema/API 1.2.0**. O motivo não foi mudança jurídico-fiscal: as duas `technical_contract_rule` do inventário não possuem autoridade governamental externa, mas releases `PUBLISHED` exigem evidência hashada. O v1.2 separa explicitamente `GovernanceEvidenceObservation` da proveniência jurídico-fiscal oficial, impedindo tanto que evidência interna seja usada como autoridade legal quanto que uma fonte governamental seja falsamente atribuída à política técnica interna.
-
-O histórico 1.1 continua parseável e imutável; a primeira release canônica 32/32 será v1.2. O schema v1.2 é gerado deterministicamente por `scripts/generate_contract_schema_v12.py` e materializado em `contracts/fiscal-contract-v1.2.schema.json` pelo workflow de publicação.
+Releases canônicas 32/32 são materializadas pelo assembler v1.2, validadas, publicadas de forma imutável em `releases/fiscal-v1/` e selecionadas por `current.json`. O schema v1.2 é gerado deterministicamente por `scripts/generate_contract_schema_v12.py`.
 
 ---
 
@@ -227,16 +182,14 @@ O histórico 1.1 continua parseável e imutável; a primeira release canônica 3
 
 ### 10.1. Banco Central
 
-O domínio `financial_reference` usa registro próprio em `docs/financial-source-registry-v1.json`.
-
 - Selic: **BCB SGS 432**;
 - CDI: **BCB SGS 12** na unidade diária de origem;
 - annualização do CDI em 252 dias úteis apenas na fronteira de compatibilidade;
-- B3 permanece referência metodológica/corroboração do benchmark DI, não fallback automático.
+- B3 permanece referência metodológica/corroboração, não fallback automático.
 
 ### 10.2. Receita Federal — IRRF
 
-Tabela, legislação, vigência e exemplos oficiais devem ser reconciliados. HTML é sensor de estrutura conhecida, não contrato computacional autônomo.
+Tabela, legislação, vigência e exemplos oficiais são reconciliados. HTML é sensor de estrutura conhecida, não contrato computacional autônomo.
 
 ### 10.3. INSS / MPS / eSocial
 
@@ -246,29 +199,14 @@ Tabela, legislação, vigência e exemplos oficiais devem ser reconciliados. HTM
 
 ## 11. Stack técnica
 
-### Núcleo
-
 - Python 3.11+;
 - `Decimal`;
 - Pydantic v2;
-- JSON Schema.
-
-### Testes
-
-- pytest;
-- Hypothesis;
-- casos oficiais;
-- fixtures/snapshots reproduzíveis.
-
-### Fontes
-
-- HTTPX com timeouts e falhas tipadas;
-- snapshots e candidatos content-addressed por SHA-256;
+- JSON Schema;
+- pytest + Hypothesis;
+- HTTPX com falhas tipadas;
+- snapshots/candidatos content-addressed por SHA-256;
 - estado operacional persistente.
-
-### Princípio de dependência
-
-Bibliotecas só entram no caminho crítico quando melhoram auditabilidade, segurança ou manutenção objetivamente.
 
 ---
 
@@ -286,41 +224,31 @@ Bibliotecas só entram no caminho crítico quando melhoram auditabilidade, segur
 10. todo cálculo crítico identifica versão de contrato/regras;
 11. arredondamentos são determinísticos e testados;
 12. exemplos oficiais são reproduzíveis;
-13. `PARSER_INCOMPATIBLE` preserva evidência, mas não autoriza consumo novo;
-14. `generated_at` não pode mascarar observação antiga.
+13. `PARSER_INCOMPATIBLE` preserva evidência, mas não autoriza novo consumo;
+14. `generated_at` não pode mascarar observação antiga;
+15. H26–H29 não podem usar `dados_fiscais.json`, raw `main` ou `/sfa/v1/folha` como autoridade fiscal;
+16. compatibilidade temporária precisa de consumidor identificado, finalidade restrita e prazo de retirada.
 
 ---
 
 ## 13. Snapshots e auditoria
-
-A evidência deve permitir responder qual conteúdo oficial foi observado, quando, em qual recurso, com qual hash, parser, candidato, contrato, testes, release e consumidor.
-
-Na Fase 4, a persistência de produção foi fixada em:
 
 ```text
 evidence/source-runtime-v1/
 ├── snapshots/
 ├── candidates/
 └── state/
+
+evidence/fiscal-authority-v1/   # snapshots oficiais usados pela release fiscal
+evidence/governance-v1/         # manifests internos das technical_contract_rule
+releases/fiscal-v1/              # releases imutáveis + current.json
 ```
 
 Snapshots e candidatos são content-addressed; estado corrente fica materializado e estados anteriores permanecem no histórico Git. A política v1 não faz pruning automático.
 
-A Fase 5 acrescenta duas trilhas de publicação:
-
-```text
-evidence/fiscal-authority-v1/   # snapshots oficiais usados pela release fiscal
-evidence/governance-v1/         # manifests internos apenas para technical_contract_rule
-releases/fiscal-v1/              # releases imutáveis + current.json
-```
-
 ---
 
 ## 14. Política de promoção
-
-Nenhum novo contrato/release é promovido apenas porque um scraper terminou sem exceção.
-
-Lifecycle conceitual:
 
 ```text
 DISCOVERED
@@ -340,29 +268,20 @@ APPROVED_FOR_AUTO_PUBLISH ou REVIEW_REQUIRED
 PUBLISHED
 ```
 
-A Fase 4 encerra aquisição, parsing, evidência e fronteiras de compatibilidade. A Fase 5, agora concluída, governa classificação semântica, confirmação, versionamento, aprovação e publicação. A distribuição efetiva aos consumidores pertence à Fase 6.
+A Fase 4 encerrou aquisição, parsing, evidência e fronteiras de compatibilidade. A Fase 5 encerrou diff semântico, aprovação e publicação. A Fase 6 encerrou a distribuição da release aos consumidores H26–H29 e retirou a autoridade fiscal legada do caminho de consumo.
 
 ---
 
 ## 15. Relação com as calculadoras H26–H29
 
-O repositório é a origem canônica; as calculadoras são consumidores.
+A correção das quatro calculadoras está fechada sobre uma cadeia única. O consumidor não reconstrói, infere ou completa silenciosamente regra ausente.
 
-```text
-sanida-dados-fiscais
-        ↓
-contrato/release validada
-        ↓
-camada WordPress/cache
-        ↓
-folha-core
-        ↓
-H26 / H27 / H28 / H29
-```
+- H26 usa o núcleo mensal canônico;
+- H27 mantém 13º como assessment próprio, com adiantamento limitado ao contrato;
+- H28 preserva período aquisitivo, direito/gozo/abono e incidências por componente;
+- H29 permanece `partial_estimate`, com matriz eSocial `01/02/07/33` e fronteira de escopo explícita.
 
-O consumidor não deve reconstruir, inferir ou completar silenciosamente regra ausente. A correção das calculadoras só estará encerrada quando produtor e consumidor compartilharem o mesmo contrato semântico.
-
-Outras páginas e matérias podem futuramente consumir valores/metadados do repositório, mas não definem o escopo da migração atual das calculadoras.
+Toda execução crítica mantém `release_id`, `rule_id` e `rule_version` auditáveis.
 
 ---
 
@@ -370,38 +289,19 @@ Outras páginas e matérias podem futuramente consumir valores/metadados do repo
 
 ### H26 — Salário líquido
 
-- INSS progressivo;
-- IRRF mensal;
-- desconto simplificado versus deduções;
-- dependentes;
-- redução mensal vigente;
-- ordem correta de cálculo;
-- transições de faixas;
-- arredondamento.
+INSS progressivo, IRRF mensal, desconto simplificado versus deduções, dependentes, redução mensal, ordem de cálculo, transições de faixas e arredondamento.
 
 ### H27 — 13º salário
 
-- avos e regra dos 15 dias;
-- ano de admissão;
-- referência remuneratória;
-- primeira parcela/adiantamento dentro do escopo suportado;
-- parcela final;
-- INSS e IRRF próprios do 13º;
-- deduções por apuração.
+Avos/regra dos 15 dias, admissão, referência remuneratória, primeira parcela no escopo suportado, parcela final, INSS/IRRF próprios e deduções confinadas à apuração.
 
 ### H28 — Férias
 
-- período aquisitivo;
-- direito/gozo;
-- férias integrais e proporcionais;
-- terço constitucional;
-- abono pecuniário como 1/3 do direito adquirido;
-- incidências distintas do principal e do terço sobre abono;
-- faltas somente quando efetivamente suportadas.
+Período aquisitivo, direito/gozo, proporcionais, terço constitucional, abono como 1/3 do direito adquirido, incidências distintas e faltas somente nas faixas suportadas.
 
 ### H29 — Rescisão
 
-Escopo v1 deliberadamente parcial. Suporta inicialmente os motivos eSocial `01`, `02`, `07` e `33`, com saldo salarial e proporcionais conforme a matriz fechada. Aviso, FGTS rescisório, seguro-desemprego, estabilidade, prazo determinado e demais verbas não modeladas permanecem fora do total.
+Escopo deliberadamente parcial. Motivos `01`, `02`, `07` e `33`, saldo salarial e proporcionais conforme matriz. Aviso, FGTS rescisório, seguro-desemprego, estabilidade, prazo determinado e demais verbas não modeladas permanecem fora da promessa automática.
 
 ---
 
@@ -417,7 +317,7 @@ README mestre, arquitetura inicial, princípios e invariantes congelados.
 
 **Status: CONCLUÍDA**
 
-Artefatos principais:
+Inventário, registro canônico de fontes e casos de referência formalizados. Artefatos históricos obrigatórios incluem:
 
 - `docs/inventario-juridico-fiscal-v1.md`;
 - `docs/rule-inventory-v1.json`;
@@ -425,132 +325,54 @@ Artefatos principais:
 - `docs/phase1-closure.md`;
 - `tests/reference_cases/phase1_reference_cases.json`.
 
-Nenhuma variável relevante de H26–H29 ficou sem origem/semântica definida no inventário.
-
 ### Fase 2 — Contrato Fiscal Canônico v1
 
 **Status: CONCLUÍDA**
 
-Fechamento com cobertura 32/32, 18 famílias de payload, lifecycle, proveniência, versionamento, compatibilidade exata e gates negativos.
+Cobertura 32/32, 18 famílias de payload, lifecycle, proveniência, SemVer, compatibilidade exata e gates negativos. O histórico v1.1 permanece preservado e a linha de publicação atual é v1.2.
 
 ### Fase 3 — Biblioteca fiscal e testes
 
 **Status: CONCLUÍDA**
 
-Estado final inclui:
-
-- engine determinístico em `Decimal`;
-- cinco casos oficiais RFB 2026;
-- regressão A01: renda tributável `6000.00`, base IR `5350.40`, redutor aplicado sobre `6000.00`, IRRF final `382.88`;
-- mensal, 13º e férias como apurações distintas;
-- 13º com avos, regra dos 15 dias, adiantamento simples suportado e branches não modeladas fail-closed;
-- férias ancoradas no período aquisitivo, A02 `01/09/2025 → 31/03/2026 = 7/12`;
-- abono com principal e terço constitucional separados nas incidências;
-- H29 limitado à matriz eSocial `01/02/07/33`;
-- saldo salarial por dias civis reais do mês no escopo padrão;
-- memória auditável comum sem fusão semântica;
-- fechamento histórico com **150 testes verdes** e `scripts/validate_phase3_gate.py` permanente.
+Engine determinístico em `Decimal`; regressões A01/A02; apurações mensal/13º/férias separadas; H29 limitado; memória auditável; property-based tests; gate `scripts/validate_phase3_gate.py` permanente.
 
 ### Fase 4 — Fontes e sensores
 
 **Status: CONCLUÍDA**
 
-A Fase 4 fechou:
+Collector → snapshot → parser → candidato; RFB/INSS canônicos; Selic SGS 432; CDI SGS 12; evidência persistente; writers serializados; freshness específica; A01–A05 encerrados. Sob `PARSER_INCOMPATIBLE`, aplica-se `preserve_auditable_block_new_consumption`.
 
-- separação `source registry → collector → raw snapshot → parser → normalized candidate`;
-- distinção `SOURCE_UNAVAILABLE` × `PARSER_INCOMPATIBLE`;
-- parsers canônicos para RFB e INSS;
-- eliminação do discovery/pinned do INSS;
-- bridge explícito para `dados_fiscais.json 2.2.0`;
-- persistência durável de snapshots/candidatos/estado em `evidence/source-runtime-v1`;
-- Selic BCB SGS 432 e CDI BCB SGS 12;
-- remoção do FTP Cetip/B3 e de fallbacks financeiros estáticos;
-- `taxas_bacen.json 1.4.0` como artefato financeiro de compatibilidade evidence-gated;
-- freshness específica: Selic persistente até mudança; CDI diário com máximo de 7 dias corridos; datas futuras rejeitadas;
-- writers de `main` serializados pelo mesmo concurrency group;
-- cadeia de evidência composta RFB + INSS + Selic + CDI;
-- auditoria A01–A05 concluída.
-
-#### A05 — decisão final
-
-Política:
-
-```text
-preserve_auditable_block_new_consumption
-```
-
-Se a tentativa corrente entra em `PARSER_INCOMPATIBLE`, o last-good permanece preservado e verificável para auditoria, mas fica em quarentena: não pode formar novo `taxas_bacen.json`, não pode entrar em novo `dados_fiscais.json`, não renova `generated_at` e não volta a ser consumível até que uma coleta corrente produza novamente `PARSED` com evidência válida.
-
-Artefatos de fechamento:
-
-- `docs/phase4-sources-sensors-v1.md`;
-- `docs/phase4-final-boundary-audit-v1.json`;
-- `docs/phase4-financial-reference-policy-v1.json`;
-- `docs/phase4-production-persistence-v1.json`;
-- `docs/phase4-closure-gate.md`;
-- `scripts/validate_phase4_foundation.py`;
-- `scripts/validate_phase4_preclosure_gate.py`;
-- `scripts/validate_phase4_closure_gate.py`.
-
-No head técnico de fechamento, o Remake CI run `34797878486` passou com **210 testes**, Phase 3 closure PASS, Phase 4 foundation PASS, production boundary PASS com A05 corrigido e formal closure gate PASS.
+`dados_fiscais.json` permanece artefato de compatibilidade/evidência do produtor; desde a Fase 6 ele não é autoridade fiscal para H26–H29.
 
 ### Fase 5 — Diff semântico e gates de publicação
 
 **Status: CONCLUÍDA**
 
-A Fase 5 fechou:
+Classificação semântica computada, promoção fail-closed, Contrato Fiscal v1.2, evidência oficial separada da governança interna, assembler 32/32, idempotência, release store imutável, bootstrap humano, sucessores com review-key vinculada e workflow `.github/workflows/fiscal-release-v12.yml`.
 
-- classificador semântico que calcula a classe da mudança em vez de confiar no rótulo declarado;
-- outcomes `NO_PUBLISH_REQUIRED`, `AUTO_PUBLISH_ALLOWED`, `REVIEW_REQUIRED` e `BLOCKED`;
-- separação entre alteração numérica paramétrica e mudança de forma/semântica estrutural;
-- versionamento executável por classe de mudança;
-- `change_class` relativo à transição da release, não um rótulo histórico permanente;
-- gate exato de completude **32/32**;
-- Contrato Fiscal **v1.2.0** para separar evidência oficial de evidência interna de governança das duas regras técnicas;
-- assembler que materializa as 11 regras ausentes do CANDIDATE representativo de 21 regras;
-- hidratação automática restrita aos parâmetros realmente parser-backed por RFB/INSS;
-- fontes estruturais preservadas como snapshots brutos, sem interpretação automática de legislação;
-- idempotência: mesma evidência/semântica não cria release nova nem renova timestamps por conveniência;
-- release store imutável e content-addressed com `current.json` atômico;
-- bootstrap exclusivamente manual com revisão humana explícita;
-- workflow permanente `.github/workflows/fiscal-release-v12.yml` para publicação e avaliação de sucessores;
-- schema v1.2 determinístico;
-- gate formal `scripts/validate_phase5_closure_gate.py`.
-
-Artefatos principais:
-
-- `sanida_fiscal/semantic_diff_v1.py`;
-- `sanida_fiscal/contract_v1_2.py`;
-- `sanida_fiscal/release_assembler_v12.py`;
-- `sanida_fiscal/authority_evidence_v12.py`;
-- `sanida_fiscal/governance_evidence_v12.py`;
-- `sanida_fiscal/publication_v1.py`;
-- `docs/governance-source-registry-v1.json`;
-- `docs/phase5-semantic-diff-policy-v1.json`;
-- `docs/phase5-publication-policy-v1.json`;
-- `docs/phase5-closure-v1.json`;
-- `docs/phase5-v12-publication.md`;
-- `scripts/generate_contract_schema_v12.py`;
-- `scripts/publish_fiscal_release_v12.py`;
-- `scripts/validate_phase5_foundation.py`;
-- `scripts/validate_phase5_publication_foundation.py`;
-- `scripts/validate_phase5_closure_gate.py`;
-- `tests/test_phase5_v12.py`.
-
-O checkpoint técnico que autorizou o fechamento passou no Remake CI run `34801976842` (#298), com **237 testes verdes**, schema v1.2 PASS, Fase 3 PASS, Fase 4 PASS e todos os gates da Fase 5 PASS.
-
-**Ativação ainda pendente:** o encerramento da Fase 5 não afirma que a primeira release v1.2 já foi publicada. Depois do merge, a primeira release 32/32 deve ser criada manualmente por `workflow_dispatch`, com `approval_reference` explícita. O schedule é incapaz de fazer bootstrap por construção.
+A ativação da primeira release v1.2 e sucessoras necessárias foi concluída posteriormente durante a Fase 6; a observação histórica de que isso estava pendente ao fechar a Fase 5 não representa o estado atual.
 
 ### Fase 6 — Migração dos consumidores
 
-**Status: PENDENTE**
+**Status: CONCLUÍDA**
 
-Objetivos:
+A Fase 6 fechou os checkpoints:
 
-- migrar plugin/cache;
-- migrar `folha-core`;
-- corrigir H26–H29 contra o contrato/release canônico;
-- remover duplicação de regra fiscal nos consumidores.
+- **C6.0a** — human-review gate determinístico;
+- **C6.1** — WordPress/cache sobre manifest + release imutável;
+- **C6.2** — `folha-core` como runtime compartilhado sem tabela fiscal duplicada;
+- **C6.3** — H26 salário líquido CLT;
+- **C6.4** — H27 décimo terceiro;
+- **C6.5** — H28 férias CLT;
+- **C6.6** — H29 rescisão CLT;
+- **C6.7 — remoção controlada do legado** e fechamento formal.
+
+C6.7 retirou as fórmulas fiscais duplicadas dos shortcodes antigos, aposentou o bootstrap fiscal legado e transformou `/sfa/v1/folha` em tombstone `410 Gone`. O único adaptador temporário preservado é `wordpress_table_shortcodes_v1`, exclusivamente para `ano_ref`, `inss_tabela` e `irrf_tabela`, com prazo `C7.1-before-production-deployment`.
+
+H26–H29 consomem a mesma release canônica e não usam `dados_fiscais.json`, raw `main` ou `/sfa/v1/folha` como autoridade fiscal. Os gates C6.1–C6.7 permanecem no `Remake CI`.
+
+C6.7 não afirma implantação no HostGator.
 
 ### Fase 7 — Fechamento e operação evergreen
 
@@ -558,11 +380,13 @@ Objetivos:
 
 Objetivos:
 
-- testes ponta a ponta;
-- simulação de falhas e mudanças;
-- validação da atualização automática;
-- documentação operacional;
-- critérios objetivos de encerramento.
+- fechamento ponta a ponta em ambiente de implantação;
+- simulação operacional de falhas, troca de release e recuperação;
+- validação da atualização automática/evergreen;
+- retirada do adaptador `wordpress_table_shortcodes_v1` em C7.1 antes do deploy;
+- documentação operacional e runbook;
+- implantação controlada no HostGator;
+- critérios objetivos de encerramento do remake.
 
 ---
 
@@ -570,87 +394,83 @@ Objetivos:
 
 1. `sanida-dados-fiscais` é a fonte canônica das regras/dados fiscais usados pelas calculadoras.
 2. O README é o centro documental do projeto.
-3. A solução não é um patch para 2026: a arquitetura deve prevenir obsolescência futura.
+3. A arquitetura deve prevenir obsolescência, não apenas corrigir 2026.
 4. Scraping HTML é sensor/parser, não autoridade jurídica autônoma.
 5. APIs oficiais estruturadas são preferidas quando disponíveis.
 6. Mudança paramétrica e estrutural possuem políticas diferentes.
 7. Mudança estrutural exige revisão humana.
 8. Fallback estático que possa fingir atualidade é proibido.
-9. Regras monetárias usam `Decimal` e rounding explícito.
+9. Regras monetárias usam `Decimal` e arredondamento explícito.
 10. H26–H29 são testadas individualmente mesmo quando compartilham motor.
-11. `payroll_fiscal` e `financial_reference` possuem contratos e políticas de validade independentes.
-12. A cadeia deve ser auditável retroativamente: fonte → snapshot → parser → candidato → contrato/testes → release → consumidor.
-13. Mensal, férias e 13º são apurações explícitas; `termination` é contexto de origem, não quarto tipo de IRRF.
-14. Redutor IR 2026 usa o rendimento tributável pertinente, nunca base pós-deduções por conveniência.
-15. H27 não usa `total13 * 0.5` como regra universal; branches não suportadas falham fechadas.
+11. `payroll_fiscal` e `financial_reference` possuem contratos e políticas independentes.
+12. A cadeia é auditável: fonte → snapshot → parser → candidato → contrato/testes → release → consumidor.
+13. Mensal, férias e 13º são apurações explícitas; `termination` é contexto de origem.
+14. Redutor IR usa o rendimento tributável pertinente, não base pós-deduções por conveniência.
+15. H27 não usa `total13 * 0.5` como regra universal.
 16. Férias separam direito, gozo, abono, natureza e componentes tributários.
-17. H29 v1 permanece `partial_estimate` com motivos eSocial `01/02/07/33`.
-18. H29 padrão não usa divisor 30 universal para saldo de salário.
-19. Inventário e registro de fontes da Fase 1 só são reabertos por evidência concreta.
-20. Toda PR do remake usa `Remake CI`; o CI de validação é read-only.
-21. `schema_version`, `contract_api_version` e `rule_version` seguem SemVer com compatibilidade exata testada.
+17. H29 permanece `partial_estimate` com motivos `01/02/07/33`.
+18. H29 não usa divisor 30 universal para saldo de salário.
+19. Inventário e registro da Fase 1 só reabrem por evidência concreta.
+20. Toda PR do remake usa `Remake CI`; CI de validação é read-only.
+21. `schema_version`, `contract_api_version` e `rule_version` usam compatibilidade exata testada.
 22. `release_id` é content-addressed do payload imutável.
 23. Release publicada é imutável; supersessão é declarada pela sucessora.
 24. Campos narrativos não decidem operação fiscal.
-25. Limiar proporcional de férias é parte explícita do contrato v1.1.
-26. H29 cruza a matriz geral com regras específicas; divergência/motivo não suportado é erro.
+25. Limiar proporcional de férias é parte explícita do contrato.
+26. H29 cruza matriz geral com regras específicas e falha fechado em divergência.
 27. Saldo salarial usa dias civis reais do mês no escopo padrão.
 28. Memória comum é envelope auditável, não fusão de regras.
-29. Fase 3 só foi encerrada com contrato, suíte, gate e documentação verdes no mesmo head.
-30. Fase 3 não é reaberta por redesign oportunista.
-31. Na Fase 4, coleta e interpretação são etapas distintas e o snapshot nasce antes do parser.
-32. Estado operacional preserva last-good sem transformá-lo automaticamente em autorização de uso.
+29. Fases só fecham com código, testes, gate e documentação verdes no mesmo head.
+30. Fases encerradas não reabrem por redesign oportunista.
+31. Coleta e interpretação são etapas distintas; snapshot nasce antes do parser.
+32. Estado operacional preserva last-good sem torná-lo automaticamente consumível.
 33. `INSS_TABLE_2026` usa somente a fonte registrada; notícia/search não são fallback.
-34. `dados_fiscais.json` é artefato temporário de compatibilidade e nova escrita exige candidatos atuais válidos.
+34. `dados_fiscais.json` é compatibilidade do produtor, não autoridade dos consumidores H26–H29.
 35. Evidência de produção não depende do filesystem efêmero do runner.
 36. `financial_reference` não herda vigência jurídica de `payroll_fiscal`.
 37. Selic usa SGS 432; CDI usa SGS 12 e annualização explícita no bridge.
-38. FTP B3/Cetip não é input/fallback automático após a migração.
-39. Falha financeira não autoriza fallback estático nem refresh de timestamp.
-40. `scraper.py` só consome `taxas_bacen.json` local 1.4.0 com evidência válida.
+38. FTP B3/Cetip não é fallback automático.
+39. Falha financeira não autoriza fallback estático nem refresh fictício de timestamp.
+40. `scraper.py` só consome `taxas_bacen.json` local evidence-gated.
 41. Freshness é específica por série; data futura é rejeitada.
-42. `main.yml` e `taxas.yml` são writers serializados do mesmo `main`/runtime.
-43. Fundação, fronteira de produção e fechamento formal da Fase 4 possuem gates separados e permanentes.
-44. Sob `PARSER_INCOMPATIBLE`, o last-good financeiro é **preservado para auditoria e bloqueado para novo consumo** (`preserve_auditable_block_new_consumption`).
-45. O fechamento da Fase 4 não antecipa semantic diff/promoção da Fase 5 nem migração de consumidores da Fase 6.
-46. `change_class` é calculado e relativo à transição da release; rótulo declarado não substitui o semantic diff.
-47. Mudança numérica só é paramétrica se forma tipada e semântica permanecerem iguais.
-48. Contrato Fiscal v1.2 separa autoridade jurídico-fiscal oficial de evidência interna de governança das `technical_contract_rule`.
-49. Release fiscal canônica exige conjunto exato 32/32; o CANDIDATE representativo de 21 regras nunca é publicável.
-50. Bootstrap da primeira release é exclusivamente manual e `HUMAN_REVIEWED`; schedule não pode bootstrapar.
-51. Autopromoção de mudança depende de evidência hashada e parser versionado; hoje os bindings automáticos são RFB e INSS.
-52. Fonte estrutural pode ser coletada/hashada automaticamente, mas mudança estrutural não é interpretada nem publicada automaticamente.
-53. Execução sem delta produz `NO_PUBLISH_REQUIRED` e não cria churn de release/timestamp.
-54. A Fase 5 fecha produtor/publicação; WordPress, `folha-core` e H26–H29 permanecem responsabilidade da Fase 6.
+42. Writers de `main` são serializados.
+43. Gates de Fases 3–6 são permanentes e cumulativos.
+44. `PARSER_INCOMPATIBLE` preserva auditoria e bloqueia novo consumo.
+45. `change_class` é calculado e relativo à transição.
+46. Mudança numérica só é paramétrica se forma e semântica permanecerem iguais.
+47. Contrato v1.2 separa autoridade jurídico-fiscal de governança técnica interna.
+48. Release fiscal exige conjunto exato 32/32.
+49. Bootstrap inicial é humano; schedule não pode bootstrapar.
+50. Autopromoção depende de evidência hashada e parser versionado.
+51. Fonte estrutural pode ser coletada automaticamente, mas mudança estrutural não é interpretada nem publicada automaticamente.
+52. Sem delta, o resultado é `NO_PUBLISH_REQUIRED`, sem churn de release/timestamp.
+53. A única API fiscal de dados para consumidores após C6.7 é `/wp-json/sfa/v1/fiscal-release`; `/wp-json/sfa/v1/folha` responde 410.
+54. Shortcodes legados de cálculo não executam mais fórmulas; são pontes para H26/H27.
+55. Adaptador temporário só pode permanecer com consumidor nomeado e prazo; `wordpress_table_shortcodes_v1` expira em `C7.1-before-production-deployment`.
+56. A Fase 6 fecha migração de consumidores; deployment e operação evergreen pertencem à Fase 7.
 
 ---
 
 ## 19. Questões em aberto
 
-As Fases 0–5 estão formalmente concluídas. Questões restantes pertencem às etapas posteriores ou à ativação controlada pós-merge:
+As **Fases 0–6 estão formalmente concluídas**. Restam para a Fase 7:
 
-- primeira publicação v1.2 32/32 por `workflow_dispatch` com referência explícita de revisão humana — ativação operacional pós-merge, sem reabrir a Fase 5;
-- distribuição para WordPress/SFA e migração dos consumidores — Fase 6;
-- remoção da lógica fiscal duplicada/legada após migração validada — Fase 6;
-- testes ponta a ponta e operação evergreen — Fase 7.
+- retirar `wordpress_table_shortcodes_v1` em C7.1 antes do deployment;
+- executar testes E2E do bundle real de implantação;
+- simular indisponibilidade, sucessão de release, cache/last-good e recuperação;
+- validar operação evergreen das automações no caminho real até o consumidor;
+- preparar runbook/rollback e observabilidade operacional;
+- realizar implantação controlada no HostGator e validação pós-deploy.
 
-Se uma fase posterior revelar lacuna semântica objetiva, a correção deve voltar explicitamente ao contrato/camada responsável; não será escondida em collector, parser ou consumidor.
+Se a Fase 7 revelar lacuna semântica objetiva, a correção volta explicitamente à camada responsável; não será escondida em collector, parser ou consumidor.
 
 ---
 
 ## 20. Próxima etapa
 
-Iniciar a **Fase 6 — Migração dos consumidores**.
+Iniciar a **Fase 7 — Fechamento e operação evergreen**.
 
-Antes de apontar qualquer consumidor para o novo contrato, executar a ativação controlada da primeira release v1.2:
-
-1. após o merge da Fase 5, executar manualmente `Fiscal Contract v1.2 Publication`;
-2. fornecer `approval_reference` explícita para o bootstrap 32/32;
-3. confirmar `releases/fiscal-v1/current.json`, artefato content-addressed, evidências e schema v1.2;
-4. somente então migrar `sanida-fiscais-auto`, cache/WordPress, `folha-core` e H26–H29;
-5. preservar fail-closed se o bootstrap ou qualquer fonte oficial não passar nos gates.
-
-A Fase 6 não deve reimplementar regra fiscal no frontend. Seu trabalho é consumir o contrato/release canônico, remover as duplicações legadas e validar a experiência real das quatro calculadoras.
+A primeira fronteira é **C7.1**: retirar o adaptador de apresentação `wordpress_table_shortcodes_v1`, montar o bundle de implantação somente com caminhos canônicos e provar E2E/rollback antes de qualquer alteração no HostGator.
 
 ---
 
@@ -670,119 +490,50 @@ Uma fase só é `CONCLUÍDA` quando seus critérios objetivos e gates correspond
 
 ## 22. Changelog do README
 
+### 2026-09-16 — fechamento formal da Fase 6 / C6.7
+
+- bootstrap humano e sucessoras v1.2 já publicados e integrados aos consumidores;
+- WordPress/cache, `folha-core` e H26–H29 concluídos em C6.1–C6.6;
+- `/sfa/v1/folha` aposentado como fonte de dados e transformado em tombstone 410;
+- `sfa_bootstrap_folha` deixou de transportar números fiscais;
+- calculadoras fiscais antigas embutidas no plugin foram removidas e os shortcodes viraram pontes para H26/H27;
+- `dados_fiscais.json` permanece somente na fronteira de compatibilidade/evidência do produtor, sem autoridade sobre H26–H29;
+- adaptador `wordpress_table_shortcodes_v1` restrito a três shortcodes informativos e com retirada obrigatória em `C7.1-before-production-deployment`;
+- criado `docs/phase6-c67-closure.md` e `scripts/validate_phase6_c67_gate.py`;
+- C6.7 integrado permanentemente ao `Remake CI`;
+- Fase 6 promovida a `CONCLUÍDA` após gate verde no mesmo head;
+- próxima etapa: **Fase 7 — Fechamento e operação evergreen**.
+
+### 2026-09-15 — checkpoints C6.3–C6.6
+
+- H26 migrou para `folha-core` e preservou A01;
+- H27 ganhou assessment próprio, rounding técnico e branches fail-closed;
+- H28 fechou direito/gozo/abono, incidências separadas e período aquisitivo;
+- H29 fechou matriz eSocial `01/02/07/33`, saldo por dias civis e `partial_estimate`.
+
 ### 2026-09-14 — fechamento formal da Fase 5 / Contrato Fiscal v1.2
 
 - semantic diff computado e fail-closed consolidado;
 - política de autopromoção separada de revisão estrutural;
-- `change_class` definido como metadado relativo à transição da release;
 - publicação exige inventário exato 32/32;
-- lacuna das 11 regras do CANDIDATE representativo materializada pelo assembler;
-- Contrato Fiscal evoluído aditivamente para schema/API 1.2.0;
-- criada evidência interna hash-addressed exclusiva para as duas regras técnicas, sem falsificar autoridade governamental;
-- RFB/INSS permanecem os únicos parsers automáticos de parâmetros fiscais neste checkpoint;
-- criado store content-addressed imutável com `current.json` atômico;
-- bootstrap tornou-se exclusivamente manual com `approval_reference`;
-- criado workflow permanente `fiscal-release-v12.yml`;
-- criado gerador determinístico do JSON Schema v1.2;
-- criada documentação e gate formal de fechamento da Fase 5;
-- checkpoint técnico Remake CI `34801976842` (#298): **237 testes verdes**, Fases 3–4 PASS e Fase 5 formal closure PASS;
-- primeira release de produção v1.2 permanece deliberadamente pendente do bootstrap humano pós-merge;
-- próxima etapa: **Fase 6 — Migração dos consumidores**.
+- Contrato Fiscal evoluído para schema/API 1.2.0;
+- evidência interna hash-addressed separada de autoridade governamental;
+- release store content-addressed e `current.json` atômico;
+- bootstrap definido como exclusivamente humano;
+- workflow permanente `fiscal-release-v12.yml` e gate formal da Fase 5 criados.
 
 ### 2026-09-13 — fechamento formal da Fase 4
 
-- A05 resolvido com política `preserve_auditable_block_new_consumption`;
-- last-good sob `PARSER_INCOMPATIBLE` permanece auditável, mas não pode alimentar artefato novo;
-- `sanida_fiscal/financial_evidence_v1.py` separa verificação de consumo de verificação audit-only;
-- adicionado teste de regressão A05;
-- auditoria final registra A01–A05 como `CORRECTED` e `closure_authorized=true`;
-- criado `scripts/validate_phase4_closure_gate.py` e integrado ao `Remake CI`;
-- criado `docs/phase4-closure-gate.md`;
-- Remake CI run `34797878486`: **210 passed**, Fase 3 PASS, Fase 4 foundation PASS, production boundary PASS e formal closure PASS;
-- Fase 4 promovida a `CONCLUÍDA`;
-- próxima etapa: **Fase 5 — Diff semântico e gates de publicação**.
+- A05 resolvido com `preserve_auditable_block_new_consumption`;
+- last-good sob `PARSER_INCOMPATIBLE` permanece auditável, mas não alimenta artefato novo;
+- gates de fundação, fronteira de produção e fechamento formal tornaram-se permanentes.
 
-### 2026-09-13 — correções A01–A04 da auditoria de fronteira
-
-- `scraper.py` passou a exigir `taxas_bacen.json` local 1.4.0, proveniência SGS 432/12 e evidência persistida;
-- gate de `dados_fiscais.json` passou a verificar RFB, INSS, Selic e CDI;
-- freshness específica instituída para Selic/CDI;
-- writers alinhados ao mesmo concurrency group e fila;
-- criada auditoria machine-readable e pre-closure gate;
-- checkpoint chegou a **209 testes verdes**, ainda com A05 aberto naquele momento.
-
-### 2026-09-13 — migração de Selic e CDI na Fase 4
-
-- criado registro próprio de `financial_reference`;
-- Selic migrou para SGS 432 e CDI para SGS 12;
-- removidos FTP Cetip/B3 e fallbacks financeiros estáticos;
-- criado `taxas_bacen.json 1.4.0` como compatibilidade evidence-gated;
-- checkpoint chegou a **200 testes verdes**.
-
-### 2026-09-13 — persistência real de evidências
-
-- definido `evidence/source-runtime-v1` como backend Git-tracked;
-- snapshots/candidatos content-addressed por SHA-256;
-- estado operacional separa tentativa corrente e last-good;
-- `main.yml` só stageia artefato comprovado;
-- checkpoint chegou a **187 testes verdes**.
-
-### 2026-09-13 — fronteira `scraper.py → dados_fiscais.json`
-
-- catálogo único de RFB/INSS;
-- parsers/discovery legados removidos de `scraper.py`;
-- bridge explícito para compatibilidade 2.2.0;
-- fallback fiscal estático removido;
-- checkpoint chegou a **180 testes verdes**.
-
-### 2026-09-13 — INSS canônico
-
-- divergência `INSS_TABLE_2026` × notícia anual encerrada;
-- notícia e `@@search` proibidos como fallback automático;
-- parser canônico de quatro faixas criado;
-- checkpoint chegou a **172 testes verdes**.
-
-### 2026-09-13 — primeiro pipeline real RFB
-
-- `RFB_IRRF_TABLE_2026` materializado em collector → snapshot → parser → candidato;
-- estado operacional persistente e validadores HTTP adicionados;
-- mudança de parser força refetch;
-- checkpoint chegou a **166 testes verdes**.
-
-### 2026-09-13 — início da Fase 4
-
-- superfície legada de coleta inventariada;
-- separação collector/snapshot/parser/candidato criada;
-- `SOURCE_UNAVAILABLE` e `PARSER_INCOMPATIBLE` separados;
-- primeiro gate de fundação criado;
-- checkpoint inicial com **160 testes verdes**.
-
-### 2026-09-13 — fechamento formal da Fase 3
-
-- biblioteca determinística, memória auditável e invariantes encerradas;
-- Fase 3 fechou com **150 testes verdes** e gate permanente;
-- Fase 4 passou a ser a próxima etapa.
-
-### 2026-09-13 — checkpoints da Fase 3
-
-- implementadas apurações separadas mensal/13º/férias;
-- 13º ganhou núcleo próprio;
-- contrato evoluiu para v1.1 para explicitar férias proporcionais;
-- H29 ganhou matriz limitada e fail-closed;
-- memória comum auditável e property-based tests foram consolidados.
-
-### 2026-09-13 — fechamento da Fase 2
-
-- Contrato Fiscal Canônico fechado com SemVer, compatibilidade exata, identidade content-addressed, imutabilidade/supersessão e auditoria semântica;
-- cobertura **32/32** e **18 famílias**;
-- suíte específica fechada em **52 testes verdes**.
-
-### 2026-09-13 — fechamento da Fase 1
+### 2026-09-13 — Fases 1–3
 
 - registro canônico de fontes e inventário machine-readable congelados;
-- casos de referência ampliados;
-- A01, A02, abono e escopo H29 formalizados;
-- `Remake CI` instituído.
+- Contrato Fiscal fechado com cobertura 32/32 e 18 famílias;
+- biblioteca determinística em `Decimal`, memória auditável, regressões A01/A02, H27/H28/H29 e property-based tests consolidados;
+- `Remake CI` instituído como gate do remake.
 
 ### 2026-09-13 — criação
 

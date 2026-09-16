@@ -17,54 +17,15 @@ trait Sanida_Fiscais_Fiscal_Network_Trait {
     ]);
   }
 
-  private function build_folha_payload($include_meta = false){
-    $d  = $this->get_data();
-    $tx = $this->get_taxas_data();
-
-    $payload = [
-      'schema_version' => $d['schema_version'] ?? null,
-      'ano'   => isset($d['ano']) && is_numeric($d['ano']) ? (int)$d['ano'] : null,
-      'dep'   => isset($d['dep']) && is_numeric($d['dep']) ? (float)$d['dep'] : null,
-      'inss'  => is_array($d['inss'] ?? null) ? $d['inss'] : [],
-      'irrf'  => [
-        'tabela'         => is_array($d['irrf']['tabela'] ?? null) ? $d['irrf']['tabela'] : [],
-        'simplificado'   => isset($d['irrf']['simplificado']) && is_numeric($d['irrf']['simplificado']) ? (float)$d['irrf']['simplificado'] : null,
-        'reducao_mensal' => (isset($d['irrf']['reducao_mensal']) && is_array($d['irrf']['reducao_mensal'])) ? $d['irrf']['reducao_mensal'] : null,
-      ],
-      'taxas' => is_array($tx['taxas'] ?? null) ? $tx['taxas'] : [],
-      'release' => is_array($d['_release'] ?? null) ? $d['_release'] : null,
-    ];
-
-    if ($include_meta) {
-      $payload['meta'] = [
-        'fiscais' => is_array($d['meta'] ?? null) ? $d['meta'] : null,
-        'taxas'   => is_array($tx['meta'] ?? null) ? $tx['meta'] : null,
-        'runtime' => [
-          'fiscais' => is_array($d['_runtime'] ?? null) ? $d['_runtime'] : null,
-          'taxas'   => is_array($tx['_runtime'] ?? null) ? $tx['_runtime'] : null,
-        ],
-      ];
-    }
-
-    return $payload;
-  }
-
   public function rest_get_folha(WP_REST_Request $req){
-    $include_meta = ((string)$req->get_param('include_meta') === '1');
-    $payload = $this->build_folha_payload($include_meta);
-
-    if (empty($payload['release']['release_id'])) {
-      return new WP_Error(
-        'sfa_fiscal_release_unavailable',
-        'Release fiscal canônica indisponível.',
-        ['status' => 503]
-      );
-    }
-
-    $res = rest_ensure_response($payload);
-    $res->header('Cache-Control', 'public, max-age=600, s-maxage=600');
-    $res->header('X-Sanida-Fiscal-Release', (string)$payload['release']['release_id']);
-    return $res;
+    return new WP_Error(
+      'sfa_legacy_folha_retired',
+      'Endpoint legado removido em C6.7. Consuma a release fiscal canônica.',
+      [
+        'status' => 410,
+        'replacement' => '/wp-json/sfa/v1/fiscal-release',
+      ]
+    );
   }
 
   public function rest_get_fiscal_release(WP_REST_Request $req){
@@ -157,28 +118,30 @@ trait Sanida_Fiscais_Fiscal_Network_Trait {
     ], is_array($extra) ? $extra : []);
   }
 
-  private function unavailable_fiscal_payload($reason, $extra = []){
+  private function unavailable_shortcode_display_payload($reason, $extra = []){
     return [
-      'schema_version' => null,
+      'schema_version' => 'shortcode-display-v1',
       'ano' => null,
-      'dep' => null,
       'inss' => [],
       'irrf' => [
         'tabela' => [],
         'simplificado' => null,
-        'reducao_mensal' => null,
       ],
       'meta' => [
         'errors' => [(string)$reason],
+        'presentation_only' => true,
       ],
       '_release' => null,
       '_runtime' => array_merge($this->release_runtime('unavailable', [
         'shortcodes_blocked' => true,
+        'compatibility_adapter' => 'wordpress_table_shortcodes_v1',
+        'adapter_consumers' => ['ano_ref','inss_tabela','irrf_tabela'],
+        'retire_by' => self::SHORTCODE_DISPLAY_ADAPTER_RETIRE_BY,
       ]), is_array($extra) ? $extra : []),
     ];
   }
 
-  private function fiscais_shortcodes_blocked($payload){
+  private function shortcode_display_blocked($payload){
     return !empty($payload['_runtime']['shortcodes_blocked']);
   }
 
@@ -326,35 +289,39 @@ trait Sanida_Fiscais_Fiscal_Network_Trait {
     return $out;
   }
 
-  private function build_legacy_adapter($package){
+  private function build_shortcode_display_adapter($package){
     if (!$this->validate_release_package($package)) {
       $runtime = is_array($package['_runtime'] ?? null) ? $package['_runtime'] : [];
-      return $this->unavailable_fiscal_payload('release_fiscal_indisponivel', $runtime);
+      return $this->unavailable_shortcode_display_payload('release_fiscal_indisponivel', $runtime);
     }
 
     $release = $package['release'];
     $rules = $this->index_rules($release);
-
-    $inss_rule = $rules['inss.employee.progressive_table'];
-    $irrf_rule = $rules['irrf.monthly.progressive_table'];
-    $dep_rule = $rules['irrf.dependent_deduction'];
-    $simp_rule = $rules['irrf.simplified_monthly_discount'];
-    $red_rule = $rules['irrf.reduction.2026'];
+    $inss_rule = $rules['inss.employee.progressive_table'] ?? null;
+    $irrf_rule = $rules['irrf.monthly.progressive_table'] ?? null;
+    $simp_rule = $rules['irrf.simplified_monthly_discount'] ?? null;
+    if (!is_array($inss_rule) || !is_array($irrf_rule) || !is_array($simp_rule)) {
+      return $this->unavailable_shortcode_display_payload('adapter_regras_incompletas');
+    }
 
     $inss = [];
     foreach (($inss_rule['payload']['brackets'] ?? []) as $b) {
-      if (!isset($b['upper_bound'], $b['rate'])) return $this->unavailable_fiscal_payload('adapter_inss_incompativel');
+      if (!array_key_exists('upper_bound', $b) || !isset($b['rate'])) {
+        return $this->unavailable_shortcode_display_payload('adapter_inss_incompativel');
+      }
       $inss[] = [
-        'limite' => (float)$b['upper_bound'],
+        'limite' => $b['upper_bound'] === null ? null : (float)$b['upper_bound'],
         'aliquota' => (float)$b['rate'],
       ];
     }
 
     $irrf = [];
     foreach (($irrf_rule['payload']['brackets'] ?? []) as $b) {
-      if (!isset($b['rate'], $b['deduction'])) return $this->unavailable_fiscal_payload('adapter_irrf_incompativel');
+      if (!array_key_exists('upper_bound', $b) || !isset($b['rate'], $b['deduction'])) {
+        return $this->unavailable_shortcode_display_payload('adapter_irrf_incompativel');
+      }
       $irrf[] = [
-        'limite' => array_key_exists('upper_bound', $b) ? (float)$b['upper_bound'] : 9e9,
+        'limite' => $b['upper_bound'] === null ? null : (float)$b['upper_bound'],
         'aliquota' => (float)$b['rate'],
         'deducao' => (float)$b['deduction'],
       ];
@@ -362,32 +329,27 @@ trait Sanida_Fiscais_Fiscal_Network_Trait {
 
     $effective_from = (string)($irrf_rule['vigency']['effective_from'] ?? '');
     $year = preg_match('/^(\\d{4})-/', $effective_from, $m) ? (int)$m[1] : null;
-    if (!$year) return $this->unavailable_fiscal_payload('adapter_vigencia_incompativel');
+    if (!$year) return $this->unavailable_shortcode_display_payload('adapter_vigencia_incompativel');
 
-    $rp = $red_rule['payload'];
     $runtime = is_array($package['_runtime'] ?? null) ? $package['_runtime'] : [];
     $runtime['shortcodes_blocked'] = false;
     $runtime['release_id'] = $release['release_id'];
+    $runtime['compatibility_adapter'] = 'wordpress_table_shortcodes_v1';
+    $runtime['adapter_consumers'] = ['ano_ref','inss_tabela','irrf_tabela'];
+    $runtime['retire_by'] = self::SHORTCODE_DISPLAY_ADAPTER_RETIRE_BY;
 
     return [
-      'schema_version' => 'legacy-folha-adapter-v1',
+      'schema_version' => 'shortcode-display-v1',
       'ano' => $year,
-      'dep' => (float)($dep_rule['payload']['value'] ?? 0),
       'inss' => $inss,
       'irrf' => [
         'tabela' => $irrf,
         'simplificado' => (float)($simp_rule['payload']['value'] ?? 0),
-        'reducao_mensal' => [
-          'isenta_ate' => (float)($rp['full_relief_income_limit'] ?? 0),
-          'reduz_ate' => (float)($rp['phaseout_income_limit'] ?? 0),
-          'max_reducao_ate_5000' => (float)($rp['max_reduction'] ?? 0),
-          'a' => (float)($rp['intercept'] ?? 0),
-          'b' => (float)($rp['slope'] ?? 0),
-        ],
       ],
       'meta' => [
         'generated_at_utc' => $release['generated_at_utc'] ?? null,
         'canonical_contract' => true,
+        'presentation_only' => true,
       ],
       '_release' => [
         'release_id' => $release['release_id'],
@@ -402,8 +364,8 @@ trait Sanida_Fiscais_Fiscal_Network_Trait {
     ];
   }
 
-  private function get_data(){
-    return $this->build_legacy_adapter($this->get_release_package());
+  private function get_shortcode_display_data(){
+    return $this->build_shortcode_display_adapter($this->get_release_package());
   }
 
 }
