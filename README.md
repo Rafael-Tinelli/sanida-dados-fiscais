@@ -468,7 +468,7 @@ Objetivos restantes:
 
 ## 19. Questões em aberto
 
-As **Fases 0–6 estão formalmente concluídas** e C7.1–C7.4 estão concluídos. Restam para a Fase 7:
+Como marco histórico de C7.3, **C7.1–C7.3 estão concluídos** antes da autorização/implantação de C7.4. No estado atual, as **Fases 0–6 estão formalmente concluídas** e C7.1–C7.4 estão concluídos. Restam para a Fase 7:
 
 - validar estabilidade pós-deploy em janela separada, sem nova implantação;
 - consolidar evidência final de operação evergreen;
