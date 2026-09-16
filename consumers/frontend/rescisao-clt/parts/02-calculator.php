@@ -31,15 +31,16 @@
 
       <label for="salario-base">Salário-base mensal</label>
       <input id="salario-base" name="salario_base_mensal" inputmode="decimal" autocomplete="off" placeholder="Ex.: 3100,00" required>
+      <p><small>Este valor é indispensável para o saldo salarial e deve ser maior que zero.</small></p>
 
       <label for="dias-computados">Dias computados no mês do desligamento</label>
       <input id="dias-computados" name="dias_computados" type="number" min="0" step="1" required>
-      <p><small>O denominador é o número real de dias civis do mês; a ferramenta não usa divisor 30 universal.</small></p>
+      <p><small>O denominador é o número real de dias civis do mês. Se admissão e desligamento ocorrerem no mesmo mês, a ferramenta conta os dias inclusivos entre as duas datas. Ajuste o campo se houve férias, afastamentos ou outro fato que reduza os dias efetivamente computados.</small></p>
 
       <div data-conditional="thirteenth">
         <label for="remuneracao-desligamento">Remuneração do mês da extinção para referência do 13º</label>
         <input id="remuneracao-desligamento" name="remuneracao_mes_desligamento" inputmode="decimal" autocomplete="off" placeholder="Ex.: 3600,00" required>
-        <p><small>Informe a remuneração fixa de referência já apurada. Médias e verbas variáveis rescisórias não são inventadas neste escopo.</small></p>
+        <p><small>Quando o motivo inclui 13º proporcional, informe uma remuneração fixa de referência maior que zero e já apurada. Médias e verbas variáveis rescisórias não são inventadas neste escopo.</small></p>
       </div>
 
       <button type="submit">Calcular estimativa parcial</button>
