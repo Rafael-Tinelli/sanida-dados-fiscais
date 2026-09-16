@@ -643,4 +643,6 @@ Como marco histórico de C7.1, o README registrava:
 
 **Status: EM ANDAMENTO**
 
+Como marco histórico de C7.3, **C7.1–C7.3 estão concluídos** antes da autorização/implantação de C7.4.
+
 Esse estado histórico foi posteriormente superado por C7.2–C7.5. O estado corrente autoritativo está na seção 17 acima: **Fase 7 CONCLUÍDA** e remake formalmente concluído.
