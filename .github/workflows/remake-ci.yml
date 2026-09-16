@@ -60,6 +60,10 @@ jobs:
         run: |
           python -m pytest -q tests
 
+      - name: Run real-browser calculator smoke
+        run: |
+          python scripts/run_calculators_browser_smoke.py
+
       - name: Validate Phase 3 closure gate
         run: |
           python scripts/validate_phase3_gate.py
