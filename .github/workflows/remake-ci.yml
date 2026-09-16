@@ -155,6 +155,23 @@ jobs:
         run: |
           PYTHONPATH=. python scripts/validate_phase7_c74_gate.py
 
+      - name: Simulate Phase 7 C7.5 post-deploy validation
+        run: |
+          set -o pipefail
+          PYTHONPATH=. python scripts/simulate_phase7_c75_postdeploy_validation.py | tee /tmp/c75-postdeploy-simulation.json
+
+      - name: Validate Phase 7 C7.5 readiness gate
+        run: |
+          PYTHONPATH=. python scripts/validate_phase7_c75_gate.py
+
+      - name: Upload Phase 7 C7.5 post-deploy simulation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: c75-postdeploy-simulation-${{ github.sha }}
+          path: /tmp/c75-postdeploy-simulation.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload Phase 7 C7.4 controlled deployment simulation evidence
         uses: actions/upload-artifact@v4
         with:

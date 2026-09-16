@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint": "C7.5",
+  "status": "AWAITING_REMOTE_POSTDEPLOY_VALIDATION",
+  "phase7_status": "EM ANDAMENTO",
+  "production_deployed": true,
+  "production_mutation_allowed": false,
+  "c74_status_required": "CONCLUÍDO",
+  "c74_authorization_id": "c74-20260916-a741aa78-843dca3e",
+  "c74_deployment_state_sha256": "9fc57e626dd8ab3a7666da18c7f1397f35729987a3be62ac83ed6ed7ca0bcc4c",
+  "minimum_postdeploy_window_seconds": 600,
+  "required_validation": {
+    "c74_journal_sha256_unchanged": true,
+    "managed_files_match_c74_bundle": 32,
+    "preexisting_dependencies_match_c73_baseline": 11,
+    "planned_directories_still_safe": 4,
+    "c74_temp_files_absent": true,
+    "canonical_current_and_artifact_valid": true,
+    "fiscal_health_healthy": true,
+    "fiscal_release_matches_current": true,
+    "legacy_folha_http_status": 410,
+    "calculator_pages_http_200": ["H26", "H27", "H28", "H29"],
+    "public_js_matches_bundle": 8,
+    "independent_http_probes_minimum": 2,
+    "production_mutated_by_c75": false
+  },
+  "closure_condition": "Promote C7.5 and Phase 7 to CONCLUÍDO only after a HostGator read-only evidence JSON passes scripts/validate_phase7_c75_remote_evidence.py and its SHA-256 is recorded in the repository.",
+  "next_action": "Execute the merged C7.5 read-only validator on HostGator; do not rerun C7.4 deployment."
+}
