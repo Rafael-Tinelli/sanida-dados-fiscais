@@ -1,7 +1,7 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "checkpoint": "C7.5",
-  "status": "AWAITING_REMOTE_POSTDEPLOY_VALIDATION",
+  "status": "AWAITING_EXTERNAL_CLIENT_DELIVERY_VALIDATION",
   "phase7_status": "EM ANDAMENTO",
   "production_deployed": true,
   "production_mutation_allowed": false,
@@ -9,6 +9,27 @@
   "c74_authorization_id": "c74-20260916-a741aa78-843dca3e",
   "c74_deployment_state_sha256": "9fc57e626dd8ab3a7666da18c7f1397f35729987a3be62ac83ed6ed7ca0bcc4c",
   "minimum_postdeploy_window_seconds": 600,
+  "host_origin_observation": {
+    "record": "docs/phase7-c75-initial-host-observation.json",
+    "raw_evidence_path": "~/c75-evidence/c75-hostgator-postdeploy-20260916T175405Z.json",
+    "raw_evidence_sha256": "996561d9acaee9473d4bbd2035ce32c8d1bff85c8e9e6eb38b10e2f26a8ff447",
+    "initial_status": "BLOCKED",
+    "non_delivery_blocks": 0,
+    "managed_files_matching": 32,
+    "preexisting_dependencies_matching": 11,
+    "created_directories": 4,
+    "http_probes": 2,
+    "production_mutated": false,
+    "formal_revalidation_required": "scripts/validate_phase7_c75_remote_evidence.py"
+  },
+  "delivery_boundary": {
+    "finding": "HostGator egress to the public hostname may be rejected by Cloudflare and is not an external-client vantage point.",
+    "host_public_delivery_observation_is_diagnostic_only": true,
+    "external_client_evidence_required": true,
+    "external_probe": "scripts/run_phase7_c75_external_delivery_probe.ps1",
+    "external_validator": "scripts/validate_phase7_c75_external_delivery_evidence.py",
+    "authorized_commit": "ccc5a31c3da7c1c93570df0337e553e5a06404ac"
+  },
   "required_validation": {
     "c74_journal_sha256_unchanged": true,
     "managed_files_match_c74_bundle": 32,
@@ -20,10 +41,10 @@
     "fiscal_release_matches_current": true,
     "legacy_folha_http_status": 410,
     "calculator_pages_http_200": ["H26", "H27", "H28", "H29"],
-    "public_js_matches_bundle": 8,
+    "external_client_public_js_matches_authorized_commit": 8,
     "independent_http_probes_minimum": 2,
     "production_mutated_by_c75": false
   },
-  "closure_condition": "Promote C7.5 and Phase 7 to CONCLUÍDO only after a HostGator read-only evidence JSON passes scripts/validate_phase7_c75_remote_evidence.py and its SHA-256 is recorded in the repository.",
-  "next_action": "Execute the merged C7.5 read-only validator on HostGator; do not rerun C7.4 deployment."
+  "closure_condition": "Promote C7.5 and Phase 7 to CONCLUÍDO only after the preserved HostGator evidence passes the host-origin validator, a separate external-client evidence JSON proves 8/8 public JavaScript assets match the exact C7.4 authorized commit, both evidence SHA-256 values are recorded, and the formal closure gate is green.",
+  "next_action": "Revalidate the existing HostGator JSON with the split-boundary validator and collect external-client public-delivery evidence; do not rerun C7.4 deployment and do not mutate production."
 }
