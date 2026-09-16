@@ -83,7 +83,7 @@ require $argv[1];
 require $argv[2];
 
 final class C72_Fiscal_Runtime {
-  const VERSION = '2.7.0';
+  const VERSION = '2.8.0';
   const CURRENT_JSON_URL_DEFAULT = 'https://fixture.invalid/fiscal-v1/current.json';
   const RELEASE_BASE_URL_DEFAULT = 'https://fixture.invalid/fiscal-v1/';
   const CONTRACT_ID = 'br.sanida.fiscal';
@@ -93,6 +93,7 @@ final class C72_Fiscal_Runtime {
   const T_CACHE = 'sfa_fiscal_v12_cache';
   const OPT_LAST_GOOD = 'sfa_fiscal_v12_last_good';
   const OPT_CURRENT_ETAG = 'sfa_fiscal_v12_current_etag';
+  const OPT_KNOWN_SUCCESSOR = 'sfa_fiscal_v12_known_successor';
   const TTL_SUCCESS = 12 * HOUR_IN_SECONDS;
   const TTL_FAIL = 15 * MINUTE_IN_SECONDS;
 
@@ -102,6 +103,7 @@ final class C72_Fiscal_Runtime {
   public function package(){ return $this->get_release_package(); }
   public function rest(){ return $this->rest_get_fiscal_release(new WP_REST_Request()); }
   public function valid($package){ return $this->validate_release_package($package); }
+  public function knownSuccessor(){ return $this->known_successor_state(); }
 }
 
 function c72_json_file($path){
@@ -159,16 +161,18 @@ $out['scenarios']['cold_predecessor'] = [
   'network_calls' => $GLOBALS['c72_calls'],
   'etag' => get_option(C72_Fiscal_Runtime::OPT_CURRENT_ETAG),
   'last_good_release_id' => c72_release_id(get_option(C72_Fiscal_Runtime::OPT_LAST_GOOD)),
+  'known_successor' => $runtime->knownSuccessor(),
   'transient_ttl' => c72_ttl(),
 ];
 
-// 2. Shared transient must suppress network I/O until expiry.
+// 2. Shared transient must suppress network I/O until expiry and identify itself as cache.
 c72_clear_calls();
 $cached = $runtime->package();
 $out['scenarios']['transient_cache'] = [
   'valid' => $runtime->valid($cached),
   'release_id' => c72_release_id($cached),
   'origin' => c72_origin($cached),
+  'cached_from_origin' => $cached['_runtime']['cached_from_origin'] ?? null,
   'network_call_count' => count($GLOBALS['c72_calls']),
   'transient_ttl' => c72_ttl(),
 ];
@@ -188,7 +192,7 @@ $out['scenarios']['source_outage_last_good'] = [
   'transient_ttl' => c72_ttl(),
 ];
 
-// 4. A 304 with valid last-good is a safe no-change path.
+// 4. A 304 with valid last-good is a safe no-change path and sends the prior ETag.
 c72_expire_transient();
 c72_plan($currentUrl, [[ 'code' => 304, 'body' => '', 'headers' => ['etag' => '"etag-prev"'] ]]);
 c72_clear_calls();
@@ -201,7 +205,7 @@ $out['scenarios']['etag_304'] = [
   'request_headers' => $GLOBALS['c72_calls'][0]['headers'] ?? [],
 ];
 
-// 5. Once current.json announces a successor, failure to fetch/verify it must block predecessor fallback.
+// 5. Once current.json announces a successor, failure to fetch/verify it must persist a safety latch and block predecessor fallback.
 c72_expire_transient();
 c72_plan($currentUrl, [[
   'code' => 200,
@@ -211,21 +215,23 @@ c72_plan($currentUrl, [[
 c72_plan($currentArtifactUrl, [[ 'code' => 503, 'body' => 'artifact unavailable' ]]);
 c72_clear_calls();
 $blocked = $runtime->package();
+$knownAfterFailure = $runtime->knownSuccessor();
+$blockedRest = $runtime->rest();
 $out['scenarios']['known_successor_artifact_failure'] = [
   'valid' => $runtime->valid($blocked),
   'release_id' => c72_release_id($blocked),
   'origin' => c72_origin($blocked),
   'known_successor' => $blocked['_runtime']['known_successor'] ?? null,
+  'known_successor_release_id' => $blocked['_runtime']['known_successor_release_id'] ?? null,
+  'persistent_known_successor' => $knownAfterFailure,
   'last_fetch_error' => $blocked['_runtime']['last_fetch_error'] ?? null,
   'last_good_still_predecessor' => c72_release_id(get_option(C72_Fiscal_Runtime::OPT_LAST_GOOD)),
   'network_calls' => $GLOBALS['c72_calls'],
-  'rest' => c72_rest_summary($runtime->rest()),
+  'rest_after_second_request' => c72_rest_summary($blockedRest),
 ];
 
-// The REST call above may perform another fetch; isolate recovery from any unplanned network side effect.
+// 6. Recovery: same successor pointer + valid immutable artifact promotes the successor and clears the latch.
 c72_expire_transient();
-
-// 6. Recovery: same successor pointer + valid immutable artifact promotes the successor and refreshes ETag/last-good.
 c72_plan($currentUrl, [[
   'code' => 200,
   'body' => $currentManifestRaw,
@@ -241,6 +247,7 @@ $out['scenarios']['recovery_to_successor'] = [
   'origin' => c72_origin($recovered),
   'etag' => get_option(C72_Fiscal_Runtime::OPT_CURRENT_ETAG),
   'last_good_release_id' => c72_release_id(get_option(C72_Fiscal_Runtime::OPT_LAST_GOOD)),
+  'known_successor_after_recovery' => $runtime->knownSuccessor(),
   'transient_ttl' => c72_ttl(),
   'rest' => c72_rest_summary($restRecovered),
   'network_calls' => $GLOBALS['c72_calls'],
@@ -266,12 +273,13 @@ $GLOBALS['c72_options'] = [];
 c72_plan($currentUrl, [[ 'code' => 304, 'body' => '' ]]);
 c72_clear_calls();
 $empty304 = $runtime->package();
+$empty304Rest = $runtime->rest();
 $out['scenarios']['etag_304_without_last_good'] = [
   'valid' => $runtime->valid($empty304),
   'release_id' => c72_release_id($empty304),
   'origin' => c72_origin($empty304),
   'last_fetch_error' => $empty304['_runtime']['last_fetch_error'] ?? null,
-  'rest' => c72_rest_summary($runtime->rest()),
+  'rest_after_second_request' => c72_rest_summary($empty304Rest),
 ];
 
 // 9. Corrupted last-good must not survive validation when the source is unavailable.
