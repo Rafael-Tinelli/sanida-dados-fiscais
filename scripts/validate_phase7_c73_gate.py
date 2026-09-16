@@ -4,6 +4,7 @@ from __future__ import annotations
 from hashlib import sha256
 import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -20,6 +21,7 @@ STORE = ROOT / "releases/fiscal-v1"
 SPEC = ROOT / "docs/phase7-c73-preflight-contract-v1.json"
 RUNBOOK = ROOT / "docs/phase7-c73-production-runbook.md"
 READINESS = ROOT / "state/phase7-c73-readiness.json"
+REMOTE_EVIDENCE_RECORD = ROOT / "docs/phase7-c73-remote-preflight-validation-record.json"
 REMOTE_VALIDATOR = ROOT / "scripts/validate_phase7_c73_remote_evidence.py"
 README = ROOT / "README.md"
 CI = ROOT / ".github/workflows/remake-ci.yml"
@@ -33,6 +35,10 @@ HOST_PREFLIGHT = ROOT / "scripts/run_phase7_c73_host_preflight.py"
 SIMULATION = ROOT / "scripts/simulate_phase7_c73_preflight.py"
 DIRECTORY_ROLLBACK_SIMULATION = ROOT / "scripts/simulate_phase7_c73_directory_rollback.py"
 
+EXPECTED_REMOTE_EVIDENCE_SHA256 = "e4f69319ad2cb1e712c8807138a7aea86a8a2c08c5ecc9bebcd81399b045fec7"
+EXPECTED_REMOTE_BUNDLE_MANIFEST_SHA256 = "843dca3e843bfe066cee5f1a39754741a9adb47d49fee9749876d4e17f4dedf1"
+EXPECTED_REMOTE_SOURCE_COMMIT = "8cdbba12da8205381fe942a53e1be45a82596917"
+
 
 def require(condition: bool, message: str) -> None:
     if not condition:
@@ -44,6 +50,7 @@ def main() -> int:
         SPEC,
         RUNBOOK,
         READINESS,
+        REMOTE_EVIDENCE_RECORD,
         REMOTE_VALIDATOR,
         README,
         CI,
@@ -100,14 +107,53 @@ def main() -> int:
     require(rollback.get("nonempty_created_directory_must_be_preserved_and_escalated") is True, "nonempty directory preservation boundary missing")
 
     readiness = json.loads(READINESS.read_text(encoding="utf-8"))
+    require(readiness.get("schema_version") == "1.1.0", "readiness schema drift")
     require(readiness.get("checkpoint") == "C7.3", "readiness checkpoint drift")
-    require(readiness.get("status") == "EM_REVISÃO", "C7.3 must remain EM_REVISÃO before real remote PASS evidence")
-    require(readiness.get("repository_readiness") == "READY", "repository-side C7.3 readiness not marked READY")
-    require(readiness.get("remote_preflight") == "REQUIRED_NOT_EXECUTED", "remote preflight state drift")
-    require(readiness.get("technical_go_no_go") == "NO_GO_REMOTE_EVIDENCE_REQUIRED", "go/no-go must remain blocked without remote PASS evidence")
-    require(readiness.get("deployment_authorized") is False, "readiness incorrectly authorizes deployment")
-    require(readiness.get("production_deployed") is False, "readiness incorrectly claims deployment")
+    require(readiness.get("status") == "CONCLUÍDO", "C7.3 is not formally closed")
+    require(readiness.get("repository_readiness") == "READY", "repository-side C7.3 readiness not READY")
+    require(readiness.get("remote_preflight") == "PASS_VALIDATED", "remote preflight not recorded as validated PASS")
+    require(readiness.get("technical_go_no_go") == "GO", "C7.3 technical go/no-go is not GO")
+    require(readiness.get("deployment_authorized") is False, "C7.3 incorrectly authorizes deployment")
+    require(readiness.get("production_deployed") is False, "C7.3 incorrectly claims deployment")
     require(readiness.get("production_mutated_by_c73") is False, "C7.3 readiness claims production mutation")
+    require(readiness.get("remote_evidence_record") == REMOTE_EVIDENCE_RECORD.relative_to(ROOT).as_posix(), "remote evidence record path drift")
+    require(readiness.get("next_checkpoint") == "C7.4_CONTROLLED_DEPLOYMENT_AUTHORIZATION", "next checkpoint drift")
+
+    evidence_record = json.loads(REMOTE_EVIDENCE_RECORD.read_text(encoding="utf-8"))
+    require(evidence_record.get("schema_version") == "1.0.0", "remote validation record schema drift")
+    require(evidence_record.get("checkpoint") == "C7.3", "remote validation record checkpoint drift")
+    require(evidence_record.get("record_type") == "remote_preflight_validation_record", "remote validation record type drift")
+    require(evidence_record.get("source_commit") == EXPECTED_REMOTE_SOURCE_COMMIT, "remote source commit drift")
+    host_evidence = evidence_record.get("host_evidence") or {}
+    bundle_record = evidence_record.get("bundle_manifest") or {}
+    require(host_evidence.get("sha256") == EXPECTED_REMOTE_EVIDENCE_SHA256, "remote evidence SHA drift")
+    require(bundle_record.get("sha256") == EXPECTED_REMOTE_BUNDLE_MANIFEST_SHA256, "remote bundle manifest SHA drift")
+    require(bool(re.fullmatch(r"[0-9a-f]{64}", str(host_evidence.get("sha256") or ""))), "remote evidence SHA malformed")
+    require(bool(re.fullmatch(r"[0-9a-f]{64}", str(bundle_record.get("sha256") or ""))), "remote bundle SHA malformed")
+    require(evidence_record.get("release_id") == release.release_id, "remote preflight release binding drift")
+    preflight_record = evidence_record.get("preflight") or {}
+    require(preflight_record.get("status") == "PASS", "recorded remote preflight not PASS")
+    require(preflight_record.get("technical_go_no_go") == "GO", "recorded remote preflight not GO")
+    require(preflight_record.get("production_deployed") is False, "recorded preflight claims deployment")
+    require(preflight_record.get("production_mutated") is False, "recorded preflight claims mutation")
+    require(preflight_record.get("deployment_authorized") is False, "recorded preflight claims authorization")
+    require(preflight_record.get("managed_targets") == 32, "recorded managed target count drift")
+    require(preflight_record.get("preexisting_dependencies") == 11, "recorded dependency count drift")
+    require(preflight_record.get("existing_managed_targets") == 10, "recorded existing target count drift")
+    require(preflight_record.get("absent_managed_targets") == 22, "recorded absent target count drift")
+    require(preflight_record.get("all_managed_parent_directories_ready") is True, "recorded parent readiness failed")
+    require(preflight_record.get("planned_directory_creations") == 4, "recorded planned directory count drift")
+    require(preflight_record.get("block_reasons") == [], "recorded remote preflight has block reasons")
+    formal_validator = evidence_record.get("formal_validator") or {}
+    require(formal_validator.get("schema_version") == "1.1.0", "formal validator schema drift")
+    require(formal_validator.get("status") == "PASS", "formal remote validation not PASS")
+    require(formal_validator.get("technical_go_no_go") == "GO", "formal remote validation not GO")
+    require(formal_validator.get("managed_targets") == 32, "formal validator managed count drift")
+    require(formal_validator.get("preexisting_dependencies") == 11, "formal validator dependency count drift")
+    require(formal_validator.get("planned_directory_creations") == 4, "formal validator directory plan drift")
+    require(formal_validator.get("production_mutated") is False, "formal validator claims mutation")
+    require(formal_validator.get("deployment_authorized") is False, "formal validator claims authorization")
+    require(formal_validator.get("bundle_manifest_sha256") == EXPECTED_REMOTE_BUNDLE_MANIFEST_SHA256, "formal validator bundle SHA drift")
 
     host_preflight_text = HOST_PREFLIGHT.read_text(encoding="utf-8")
     for marker in (
@@ -219,40 +265,41 @@ def main() -> int:
 
     runbook = RUNBOOK.read_text(encoding="utf-8")
     for marker in (
-        "**Status:** EM REVISÃO",
+        "**Status:** CONCLUÍDO",
         "production_deployed=false",
-        "11 dependências",
-        "32 destinos",
-        "technical_go_no_go",
-        "NO_GO",
-        "backup exato",
-        "planned_directory_creations",
-        "diretórios criados",
+        "deployment_authorized=false",
+        "11/11 dependências",
+        "32/32 destinos",
+        "planned_directory_creations=4",
+        EXPECTED_REMOTE_EVIDENCE_SHA256,
+        EXPECTED_REMOTE_BUNDLE_MANIFEST_SHA256,
         "`rmdir`",
         "deleção recursiva",
         "/wp-json/sfa/v1/fiscal-health",
         "blocked_known_successor",
-        "C7.3 só muda para `CONCLUÍDO`",
+        "C7.4 — autorização e implantação controlada",
     ):
-        require(marker in runbook, f"runbook missing C7.3 marker: {marker}")
+        require(marker in runbook, f"runbook missing C7.3 closure marker: {marker}")
 
     readme = README.read_text(encoding="utf-8")
     for marker in (
-        "Executar **C7.3 — runbook, observabilidade e pré-flight de produção**",
+        "C7.3 — runbook, observabilidade e pré-flight de produção",
+        "C7.1–C7.3 estão concluídos",
+        "C7.4 — autorização e implantação controlada",
         "production_deployed=false",
         "### Fase 7 — Fechamento e operação evergreen",
         "**Status: EM ANDAMENTO**",
     ):
-        require(marker in readme, f"README lost active C7.3 boundary: {marker}")
+        require(marker in readme, f"README lost C7.3 closure boundary: {marker}")
 
     ci = CI.read_text(encoding="utf-8")
     require("python scripts/simulate_phase7_c73_preflight.py" in ci, "Remake CI does not run C7.3 preflight simulation")
-    require("python scripts/validate_phase7_c73_gate.py" in ci, "Remake CI does not execute C7.3 readiness gate")
+    require("python scripts/validate_phase7_c73_gate.py" in ci, "Remake CI does not execute C7.3 closure gate")
     require("c73-preflight-simulation-${{ github.sha }}" in ci, "Remake CI does not preserve C7.3 simulation evidence")
 
     print(
-        "Phase 7 C7.3 readiness gate: PASS "
-        f"(release={release.release_id}, managed=32, dependencies=11, health=verified, preflight=read-only, directory_rollback=verified, remote_preflight=REQUIRED, technical_go_no_go=NO_GO_REMOTE_EVIDENCE_REQUIRED, deployment_authorized=false, production_deployed=false)"
+        "Phase 7 C7.3 closure gate: PASS "
+        f"(release={release.release_id}, managed=32, dependencies=11, remote_preflight=PASS_VALIDATED, planned_directories=4, health=verified, directory_rollback=verified, technical_go_no_go=GO, deployment_authorized=false, production_deployed=false)"
     )
     return 0
 
