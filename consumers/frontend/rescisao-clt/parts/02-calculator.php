@@ -34,7 +34,7 @@
 
       <label for="dias-computados">Dias computados no mês do desligamento</label>
       <input id="dias-computados" name="dias_computados" type="number" min="0" step="1" required>
-      <p><small>O denominador é o número real de dias civis do mês; a ferramenta não usa divisor 30 universal.</small></p>
+      <p><small>Preenchimento sugerido: se a admissão ocorreu no mesmo mês, a contagem vai da admissão ao desligamento, inclusive; nos demais casos, parte do início do mês. Ajuste manualmente se férias, afastamentos ou outro fato reduzirem os dias efetivamente computados. O denominador é o número real de dias civis do mês; a ferramenta não usa divisor 30 universal.</small></p>
 
       <div data-conditional="thirteenth">
         <label for="remuneracao-desligamento">Remuneração do mês da extinção para referência do 13º</label>

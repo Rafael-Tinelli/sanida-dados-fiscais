@@ -5,6 +5,42 @@
   if (!SFA || !SFA.TERMINATION) return;
 
   const CONSUMER = 'H29';
+
+  function parseCivilDate(value) {
+    const raw = String(value === undefined || value === null ? '' : value).trim();
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const probe = new Date(Date.UTC(year, month - 1, day));
+    if (probe.getUTCFullYear() !== year || probe.getUTCMonth() + 1 !== month || probe.getUTCDate() !== day) {
+      return null;
+    }
+    return Object.freeze({ iso: raw, year, month, day });
+  }
+
+  function suggestedDaysCounted(employmentStart, terminationDate) {
+    const rawStart = String(employmentStart === undefined || employmentStart === null ? '' : employmentStart).trim();
+    const start = parseCivilDate(rawStart);
+    const end = parseCivilDate(terminationDate);
+    if (!end || (rawStart && !start)) return null;
+    if (start && start.iso > end.iso) return null;
+    if (start && start.year === end.year && start.month === end.month) {
+      return end.day - start.day + 1;
+    }
+    return end.day;
+  }
+
+  function calculateH29(release, input) {
+    return SFA.TERMINATION.calculate(release, input || {});
+  }
+
+  SFA.H29 = Object.freeze({
+    calculate: calculateH29,
+    suggestedDaysCounted
+  });
+
   const page = root.document && root.document.getElementById('calc-rescisao-clt');
   if (!page) return;
 
@@ -12,6 +48,7 @@
   const alertBox = page.querySelector('[data-alert]');
   const result = page.querySelector('[data-result]');
   const reasonField = form && form.querySelector('[name="motivo_esocial"]');
+  const employmentStartField = form && form.querySelector('[name="data_admissao"]');
   const terminationDateField = form && form.querySelector('[name="data_desligamento"]');
   const terminationRemunerationField = form && form.querySelector('[name="remuneracao_mes_desligamento"]');
 
@@ -94,12 +131,25 @@
     terminationRemunerationField.closest('[data-conditional="thirteenth"]')?.classList.toggle('is-muted', !needsProportional);
   }
 
-  function syncDaysWithTerminationDate() {
+  function syncDaysWithDates() {
     if (!terminationDateField || !form) return;
     const days = form.querySelector('[name="dias_computados"]');
     if (!days || days.dataset.userEdited === 'true') return;
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(terminationDateField.value || '');
-    if (match) days.value = String(Number(match[3]));
+    const suggested = suggestedDaysCounted(
+      employmentStartField ? employmentStartField.value : '',
+      terminationDateField.value
+    );
+    days.value = suggested === null ? '' : String(suggested);
+  }
+
+  function messageForError(error) {
+    if (error && error.code === 'termination_required_input') {
+      return 'Informe o salário-base mensal e, quando houver 13º proporcional, a remuneração de referência do mês da extinção.';
+    }
+    if (error && error.code === 'termination_positive_input') {
+      return 'As bases monetárias usadas pelo H29 devem ser maiores que zero. Revise o salário-base e a remuneração de referência do 13º.';
+    }
+    return 'Não foi possível calcular este caso dentro do escopo H29. Confira motivo eSocial, datas, regime, prazo contratual e bases informadas. Casos fora do modelo suportado são bloqueados em vez de estimados por aproximação.';
   }
 
   async function run() {
@@ -107,7 +157,7 @@
     setBusy(true);
     try {
       const release = await SFA.fetchRelease({ consumer: CONSUMER });
-      const calculation = SFA.TERMINATION.calculate(release, {
+      const calculation = SFA.H29.calculate(release, {
         esocialReason: inputValue('motivo_esocial'),
         employmentRegime: inputValue('regime_emprego'),
         contractTerm: inputValue('prazo_contrato'),
@@ -115,7 +165,7 @@
         terminationDate: inputValue('data_desligamento'),
         monthlyBaseSalary: inputValue('salario_base_mensal'),
         daysCountedThroughTermination: inputValue('dias_computados'),
-        terminationMonthRemuneration: inputValue('remuneracao_mes_desligamento') || '0'
+        terminationMonthRemuneration: inputValue('remuneracao_mes_desligamento')
       });
 
       const salary = calculation.salary_balance;
@@ -148,7 +198,7 @@
       }
     } catch (error) {
       if (root.console && typeof root.console.error === 'function') root.console.error('[H29]', error);
-      showError('Não foi possível calcular este caso dentro do escopo H29. Confira motivo eSocial, datas, regime, prazo contratual e bases informadas. Casos fora do modelo suportado são bloqueados em vez de estimados por aproximação.');
+      showError(messageForError(error));
       if (result) result.style.display = 'none';
     } finally {
       setBusy(false);
@@ -161,9 +211,12 @@
   }
   if (terminationDateField) {
     terminationDateField.value = terminationDateField.value || localTodayIso();
-    terminationDateField.addEventListener('change', syncDaysWithTerminationDate);
-    syncDaysWithTerminationDate();
+    terminationDateField.addEventListener('change', syncDaysWithDates);
   }
+  if (employmentStartField) {
+    employmentStartField.addEventListener('change', syncDaysWithDates);
+  }
+  syncDaysWithDates();
   if (form) {
     const days = form.querySelector('[name="dias_computados"]');
     if (days) days.addEventListener('input', function () { days.dataset.userEdited = 'true'; });

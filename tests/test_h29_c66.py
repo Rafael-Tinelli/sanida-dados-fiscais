@@ -9,6 +9,7 @@ import subprocess
 
 import pytest
 
+from sanida_fiscal.engine_v1 import FiscalEngineError
 from sanida_fiscal.publication_v1 import FiscalReleaseStore
 from sanida_fiscal.termination_v1 import calculate_h29_limited_estimate
 from sanida_fiscal.types_v1 import AssessmentContext, TerminationScopeItem
@@ -41,26 +42,31 @@ def _node_result() -> dict:
     return json.loads(completed.stdout)
 
 
-def _python_standard(reason: str = "02"):
+def _python_case(reason: str = "02", **overrides):
     release = FiscalReleaseStore(STORE).load_current()
     assert release is not None
     rounding_rule = release.select_rule(
         "technical.money_decimal_and_rounding", TARGET_DATE, AssessmentContext.TECHNICAL
     )
     assert rounding_rule.rounding_policy is not None
-    result = calculate_h29_limited_estimate(
-        contract=release,
-        esocial_reason=reason,
-        employment_regime="monthly",
-        contract_term="indefinite",
-        employment_start=date(2025, 9, 1),
-        termination_date=date(2026, 3, 31),
-        monthly_base_salary="3100.00",
-        days_counted_through_termination=10,
-        termination_month_remuneration="3600.00",
-        thirteenth_rounding=rounding_rule.rounding_policy,
-    )
-    return release, result
+    params = {
+        "contract": release,
+        "esocial_reason": reason,
+        "employment_regime": "monthly",
+        "contract_term": "indefinite",
+        "employment_start": date(2025, 9, 1),
+        "termination_date": date(2026, 3, 31),
+        "monthly_base_salary": "3100.00",
+        "days_counted_through_termination": 10,
+        "termination_month_remuneration": "3600.00",
+        "thirteenth_rounding": rounding_rule.rounding_policy,
+    }
+    params.update(overrides)
+    return release, calculate_h29_limited_estimate(**params)
+
+
+def _python_standard(reason: str = "02"):
+    return _python_case(reason)
 
 
 def test_c66_h29_standard_case_matches_python_engine() -> None:
@@ -159,6 +165,34 @@ def test_c66_h29_fails_closed_outside_supported_scope() -> None:
     assert result["required_rules_present"] is True
 
 
+def test_c66_h29_rejects_missing_or_zero_required_monetary_bases() -> None:
+    result = _node_result()
+    assert result["empty_salary_rejected"] is True
+    assert result["whitespace_salary_rejected"] is True
+    assert result["zero_salary_rejected"] is True
+    assert result["empty_thirteenth_reference_rejected"] is True
+    assert result["zero_thirteenth_reference_rejected"] is True
+    assert result["reason01_allows_empty_thirteenth_reference"] is True
+
+    with pytest.raises(FiscalEngineError, match="monthly_base_salary must be greater than zero"):
+        _python_case(monthly_base_salary="0")
+    with pytest.raises(FiscalEngineError, match="termination_month_remuneration must be greater than zero"):
+        _python_case(termination_month_remuneration="0")
+
+    _, reason01 = _python_case(reason="01", termination_month_remuneration="0")
+    assert reason01.thirteenth_proportional is None
+
+
+def test_c66_h29_same_month_days_suggestion_uses_inclusive_employment_period() -> None:
+    suggestions = _node_result()["suggested_days"]
+    assert suggestions["same_month_midmonth"] == 11
+    assert suggestions["same_month_from_first"] == 20
+    assert suggestions["leap_february"] == 2
+    assert suggestions["prior_month_admission"] == 20
+    assert suggestions["no_admission_yet"] == 20
+    assert suggestions["admission_after_termination"] is None
+
+
 def test_c66_source_has_no_legacy_rescission_shortcuts_or_complete_total_promise() -> None:
     shared = TERMINATION.read_text(encoding="utf-8")
     h29 = H29.read_text(encoding="utf-8")
@@ -170,6 +204,7 @@ def test_c66_source_has_no_legacy_rescission_shortcuts_or_complete_total_promise
         "salario/30",
         "Math.round",
         "total da rescisão =",
+        "terminationMonthRemuneration: inputValue('remuneracao_mes_desligamento') || '0'",
     ):
         assert forbidden not in shared
         assert forbidden not in h29
@@ -186,10 +221,18 @@ def test_c66_source_has_no_legacy_rescission_shortcuts_or_complete_total_promise
         "technical.money_decimal_and_rounding",
         "universal_fixed_denominator !== false",
         "partial_estimate",
+        "positiveMoney(req.monthlyBaseSalary",
+        "positiveMoney(req.terminationMonthRemuneration",
     ):
         assert required in shared
-    assert "SFA.fetchRelease({ consumer: CONSUMER })" in h29
-    assert "SFA.TERMINATION.calculate(" in h29
+    for required in (
+        "SFA.fetchRelease({ consumer: CONSUMER })",
+        "SFA.H29.calculate(",
+        "suggestedDaysCounted",
+        "employmentStartField.addEventListener('change', syncDaysWithDates)",
+        "terminationMonthRemuneration: inputValue('remuneracao_mes_desligamento')",
+    ):
+        assert required in h29
 
 
 def test_c66_page_requires_reason_and_exposes_partial_scope_and_audit_memory() -> None:
@@ -220,5 +263,7 @@ def test_c66_page_requires_reason_and_exposes_partial_scope_and_audit_memory() -
         'data-row="release-id"',
         "Esta não é uma calculadora de “total da rescisão”",
         "Fora do cálculo automático",
+        "se a admissão ocorreu no mesmo mês",
+        "Ajuste manualmente se férias, afastamentos",
     ):
         assert marker in source

@@ -70,6 +70,14 @@
     return amount;
   }
 
+  function positiveMoney(value, name) {
+    const raw = String(value === undefined || value === null ? '' : value).trim();
+    if (raw === '') fail('termination_required_input', name + ' deve ser informado e maior que zero.');
+    const amount = nonNegativeMoney(raw, name);
+    if (amount.compare(ZERO) <= 0) fail('termination_positive_input', name + ' deve ser maior que zero.');
+    return amount;
+  }
+
   function integer(value, name) {
     const raw = String(value === undefined || value === null ? '' : value).trim();
     if (!/^\d+$/.test(raw)) fail('termination_integer', name + ' deve ser inteiro não negativo.');
@@ -276,7 +284,7 @@
     if (days > termination.day || days > calendarDays) {
       fail('termination_salary_days', 'Dias computados não podem superar o dia do desligamento.');
     }
-    const base = nonNegativeMoney(req.monthlyBaseSalary, 'monthlyBaseSalary');
+    const base = positiveMoney(req.monthlyBaseSalary, 'monthlyBaseSalary');
     const amount = roundRatio(base, days, calendarDays, policy);
     if (amount.compare(base) > 0) fail('termination_salary_bounds', 'Saldo salarial ultrapassou a base mensal.');
     return Object.freeze({
@@ -337,7 +345,7 @@
       }
     }
 
-    const reference = nonNegativeMoney(req.terminationMonthRemuneration, 'terminationMonthRemuneration');
+    const reference = positiveMoney(req.terminationMonthRemuneration, 'terminationMonthRemuneration');
     const numerator = twelfths * accrualPayload.fraction_numerator;
     const gross = roundRatio(reference, numerator, accrualPayload.fraction_denominator, rounding);
     return Object.freeze({
