@@ -4,7 +4,6 @@ from __future__ import annotations
 from hashlib import sha256
 import json
 from pathlib import Path
-import shutil
 import tempfile
 
 from scripts.build_phase7_c71_bundle import build_bundle
@@ -94,26 +93,24 @@ def run_simulation() -> dict:
 
         missing_parent_host = tmp / "host-missing-parent"
         roots_parent = seed_host(bundle, missing_parent_host)
-        # Use an absent managed target, then remove its parent only after clearing
-        # other seeded managed files under that same directory.
-        candidate = None
-        for index, record in enumerate(bundle["files"]):
-            if index % 4 == 0:
-                candidate = record
-                break
+        candidate = next(
+            (
+                record
+                for record in bundle["files"]
+                if record["target_path"] == "financas/calculadoras/salario-liquido-clt/index.php"
+            ),
+            None,
+        )
         if candidate is None:
-            fail("could not select absent managed target")
-        parent = target_for(candidate, roots_parent).parent
-        for path in sorted(parent.glob("*")):
-            if path.is_file():
-                path.unlink()
-        try:
-            parent.rmdir()
-        except OSError:
-            # If the directory is shared with nested managed targets, remove the
-            # candidate's nearest empty subdirectory instead by moving to a fresh
-            # synthetic parent path is not allowed. Fail rather than weaken proof.
-            fail(f"selected managed parent is not isolated enough for simulation: {parent}")
+            fail("isolated H26 managed target missing from bundle")
+        candidate_path = target_for(candidate, roots_parent)
+        if candidate_path.exists():
+            candidate_path.unlink()
+        parent = candidate_path.parent
+        if any(parent.iterdir()):
+            fail(f"H26 parent unexpectedly contains seeded files: {parent}")
+        parent.rmdir()
+
         before_parent = tree_snapshot(missing_parent_host)
         blocked_parent = run_preflight(bundle_manifest, roots_parent["site_root"], roots_parent["wordpress_plugin_dir"])
         after_parent = tree_snapshot(missing_parent_host)
