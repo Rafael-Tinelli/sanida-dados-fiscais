@@ -1,7 +1,7 @@
 # Fase 7 — C7.3 — Runbook, observabilidade e pré-flight de produção
 
-**Status:** EM REVISÃO  
-**Fronteira:** nenhum deploy é executado neste checkpoint; `production_deployed=false` permanece obrigatório.
+**Status:** CONCLUÍDO  
+**Fronteira:** nenhum deploy foi executado neste checkpoint; `production_deployed=false` e `deployment_authorized=false` permanecem obrigatórios.
 
 ## 1. Objetivo
 
@@ -16,11 +16,52 @@ C7.3 transforma as provas de C7.1 e C7.2 em procedimento operacional reproduzív
 - health check operacional do WordPress;
 - sinais de observabilidade e sequência pós-deploy.
 
-C7.3 **não implanta** o bundle e **não autoriza automaticamente** implantação. Um `GO` técnico é condição necessária, mas a autorização de deploy continua explícita e pertence a checkpoint posterior.
+C7.3 **não implanta** o bundle e **não autoriza automaticamente** implantação. O `GO` técnico obtido no HostGator é condição necessária para checkpoint posterior, não autorização de deploy.
 
-## 2. Evidência real já necessária
+## 2. Evidência remota real e fechamento
 
-O pré-flight deve consumir o `bundle-manifest.json` produzido pelo mesmo bundle C7.1 que será candidato a deploy. Requisitos invariantes:
+Em 16/09/2026 foi executado o pré-flight read-only no filesystem real do HostGator contra o commit:
+
+```text
+8cdbba12da8205381fe942a53e1be45a82596917
+```
+
+Resultado observado e formalmente validado:
+
+- `status=PASS`;
+- `technical_go_no_go=GO`;
+- `production_deployed=false`;
+- `production_mutated=false`;
+- `deployment_authorized=false`;
+- release `fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e`;
+- PHP CLI `8.3.33`;
+- 32/32 destinos gerenciados examinados;
+- 11/11 dependências pré-existentes verificadas;
+- 10 destinos gerenciados já existentes;
+- 22 destinos gerenciados ausentes;
+- todos os parents existentes ou seguramente criáveis;
+- `planned_directory_creations=4`;
+- `block_reasons=[]`.
+
+O JSON bruto permanece preservado fora dos roots de produção em `~/c73-evidence/c73-hostgator-preflight-20260916T164831Z.json`, com SHA-256:
+
+```text
+e4f69319ad2cb1e712c8807138a7aea86a8a2c08c5ecc9bebcd81399b045fec7
+```
+
+O `bundle-manifest.json` usado no mesmo pré-flight permanece preservado em `~/c73-evidence/c73-bundle-manifest-20260916T164831Z.json`, SHA-256:
+
+```text
+843dca3e843bfe066cee5f1a39754741a9adb47d49fee9749876d4e17f4dedf1
+```
+
+A saída do `scripts/validate_phase7_c73_remote_evidence.py` confirmou schema `1.1.0`, `PASS/GO`, 32 destinos, 11 dependências, quatro diretórios planejados, `production_mutated=false` e `deployment_authorized=false`.
+
+O registro auditável desses identificadores está em `docs/phase7-c73-remote-preflight-validation-record.json`. O repositório não reconstrói nem inventa campos omitidos do JSON remoto: preserva o SHA-256 do arquivo real, seu vínculo ao bundle e o resultado do validador formal.
+
+## 3. Contrato do pré-flight read-only
+
+O pré-flight consome o `bundle-manifest.json` produzido pelo mesmo bundle C7.1 candidato a deploy. Requisitos invariantes:
 
 - `checkpoint=C7.1`;
 - `production_deployed=false`;
@@ -29,9 +70,7 @@ O pré-flight deve consumir o `bundle-manifest.json` produzido pelo mesmo bundle
 - release fiscal `PUBLISHED`, schema/API 1.2.0 e inventário 32/32;
 - SHA-256 de todos os bytes gerenciados.
 
-## 3. Pré-flight read-only no HostGator
-
-Executar:
+Execução de referência:
 
 ```bash
 python3 scripts/run_phase7_c73_host_preflight.py \
@@ -59,7 +98,7 @@ O arquivo de evidência deve ficar fora dos roots examinados. O script não cria
 
 ## 4. Diretórios gerenciados ausentes
 
-A inspeção real de 16/09/2026 mostrou um caso legítimo que o contrato C7.3 original tratava de forma conservadora demais: `parts/` de calculadoras e `includes/` do plugin ainda não existiam porque os respectivos arquivos ainda não haviam sido implantados.
+A primeira inspeção real de 16/09/2026 mostrou um caso legítimo que o contrato C7.3 original tratava de forma conservadora demais: `parts/` de calculadoras e `includes/` do plugin ainda não existiam porque os respectivos arquivos ainda não haviam sido implantados.
 
 A política corrigida não manda criar diretórios manualmente antes do deploy. Em vez disso:
 
@@ -93,11 +132,11 @@ O JSON usa:
 - espaço livre suficiente;
 - nenhuma mutação dos roots pelo pré-flight.
 
-**`GO` não executa deploy e não equivale a autorização humana.**
+C7.3 satisfez esses requisitos no ambiente real. **`GO` não executa deploy e não equivale a autorização humana.**
 
 ## 6. Backup exato antes da primeira escrita
 
-Depois de `GO` e somente no checkpoint que autorizar implantação:
+Somente em checkpoint que autorizar implantação:
 
 1. congelar o SHA do `main` e digest do bundle;
 2. registrar os 32 destinos antes da escrita;
@@ -172,27 +211,28 @@ Sequência:
 
 A prova automatizada exige tanto restauração exata quando os diretórios estão vazios quanto preservação de conteúdo não gerenciado em diretório criado pelo deploy.
 
-## 11. Evidência necessária para fechar C7.3
+## 11. Critérios de fechamento de C7.3
 
-C7.3 só muda para `CONCLUÍDO` quando forem preservados:
+Os critérios foram atendidos:
 
-1. JSON do pré-flight remoto real;
+1. JSON do pré-flight remoto real preservado fora dos roots de produção;
 2. `status=PASS` e `technical_go_no_go=GO`;
-3. identificação dos dois roots sem credenciais;
+3. dois roots reais inspecionados sem mutação;
 4. 11 dependências verificadas;
 5. 32 destinos examinados;
 6. todos os parents existentes ou seguramente criáveis;
-7. journal `planned_directory_creations` íntegro;
+7. journal `planned_directory_creations` íntegro, com quatro diretórios planejados;
 8. `production_mutated=false`;
-9. SHA do `bundle-manifest.json` usado;
-10. release vinculada ao bundle;
-11. validação do JSON pelo validador C7.3.
+9. SHA do `bundle-manifest.json` preservado;
+10. release vinculada ao bundle preservada;
+11. JSON aprovado pelo validador C7.3.
 
-Sem essa evidência, o estado correto permanece **EM REVISÃO / NO_GO**.
+Portanto C7.3 está **CONCLUÍDO**.
 
 ## 12. Artefatos C7.3
 
 - `docs/phase7-c73-preflight-contract-v1.json`;
+- `docs/phase7-c73-remote-preflight-validation-record.json`;
 - `scripts/run_phase7_c73_host_preflight.py`;
 - `scripts/simulate_phase7_c73_preflight.py`;
 - `scripts/simulate_phase7_c73_directory_rollback.py`;
@@ -203,6 +243,8 @@ Sem essa evidência, o estado correto permanece **EM REVISÃO / NO_GO**.
 - este runbook;
 - etapas permanentes no `Remake CI`.
 
-## 13. Próxima ação
+## 13. Próxima fronteira
 
-Executar novamente o pré-flight read-only no HostGator real com esta política. Se o JSON resultar em `PASS/GO`, validar e preservar a evidência. Somente então C7.3 pode ser encerrado. Nenhum deploy é realizado por essa ação.
+**C7.4 — autorização e implantação controlada.**
+
+C7.4 deve partir do `GO` técnico já comprovado, reconfirmar que o `main`, o bundle e o estado remoto não sofreram drift, executar backup exato e somente então permitir qualquer primeira escrita mediante autorização explícita. Até esse checkpoint ser autorizado e executado, `deployment_authorized=false` e `production_deployed=false` continuam verdadeiros.
