@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Sanida - Fiscais (Git Source + Calculadoras)
  * Description: Release fiscal canônica v1.2, cache/REST auditável, tabelas informativas e pontes para as calculadoras atuais.
- * Version:     2.7.0
+ * Version:     2.8.0
  * Author:      Sanida
  */
 
@@ -18,7 +18,7 @@ require_once plugin_dir_path(__FILE__) . 'includes/trait-sanida-admin-debug.php'
 
 final class Sanida_Fiscais_Git {
 
-  const VERSION = '2.7.0';
+  const VERSION = '2.8.0';
 
   const CURRENT_JSON_URL_DEFAULT = 'https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/main/releases/fiscal-v1/current.json';
   const RELEASE_BASE_URL_DEFAULT = 'https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/main/releases/fiscal-v1/';
@@ -29,9 +29,10 @@ final class Sanida_Fiscais_Git {
   const SUPPORTED_CONTRACT_API_VERSION = '1.2.0';
   const SUPPORTED_MANIFEST_VERSION     = '1.0.0';
 
-  const T_CACHE          = 'sfa_fiscal_v12_cache';
-  const OPT_LAST_GOOD    = 'sfa_fiscal_v12_last_good';
-  const OPT_CURRENT_ETAG = 'sfa_fiscal_v12_current_etag';
+  const T_CACHE              = 'sfa_fiscal_v12_cache';
+  const OPT_LAST_GOOD        = 'sfa_fiscal_v12_last_good';
+  const OPT_CURRENT_ETAG     = 'sfa_fiscal_v12_current_etag';
+  const OPT_KNOWN_SUCCESSOR  = 'sfa_fiscal_v12_known_successor';
 
   const T_TAXAS_CACHE       = 'sfa_git_v2_taxas_cache';
   const OPT_TAXAS_LAST_GOOD = 'sfa_git_v2_taxas_last_good';
