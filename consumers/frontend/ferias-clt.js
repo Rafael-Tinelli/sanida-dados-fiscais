@@ -7,21 +7,37 @@
   const CONSUMER = 'H28';
   const ZERO = SFA.Decimal.parse('0');
 
-  function localTodayIso() {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    return y + '-' + m + '-' + d;
+  function h28Error(code, message, details) {
+    throw new SFA.FiscalContractError(code, message, details || null);
+  }
+
+  function requirePaymentDate(value) {
+    const raw = value === null || value === undefined ? '' : String(value).trim();
+    if (!raw) {
+      h28Error('h28_payment_date_required', 'Informe a data de pagamento das férias para definir a vigência fiscal usada no cálculo.');
+    }
+    const iso = SFA.normalizeDate(raw, 'data_pagamento');
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+    if (!match) h28Error('h28_payment_date_invalid', 'Informe uma data de pagamento válida.');
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const probe = new Date(Date.UTC(year, month - 1, day));
+    if (probe.getUTCFullYear() !== year || probe.getUTCMonth() + 1 !== month || probe.getUTCDate() !== day) {
+      h28Error('h28_payment_date_invalid', 'Informe uma data de pagamento válida.');
+    }
+    return iso;
   }
 
   function calculateH28(release, input) {
-    return SFA.VACATION.calculate(release, input || {});
+    const params = Object.assign({}, input || {});
+    params.targetDate = requirePaymentDate(params.targetDate);
+    return SFA.VACATION.calculate(release, params);
   }
 
   SFA.H28 = Object.freeze({
     calculate: calculateH28,
-    currentReferenceDate: localTodayIso
+    requirePaymentDate
   });
 
   const page = root.document && root.document.getElementById('calc-ferias-clt');
@@ -69,9 +85,10 @@
     clearError();
     setBusy(true);
     try {
+      const targetDate = requirePaymentDate(inputValue('data_pagamento'));
       const release = await SFA.fetchRelease({ consumer: CONSUMER });
       const calculation = calculateH28(release, {
-        targetDate: inputValue('data_pagamento') || localTodayIso(),
+        targetDate,
         vacationPayBase: inputValue('base_ferias'),
         unjustifiedAbsences: inputValue('faltas_injustificadas'),
         sellOneThird: inputValue('vender_um_terco') === true,
@@ -109,7 +126,11 @@
       }
     } catch (error) {
       if (root.console && typeof root.console.error === 'function') root.console.error('[H28]', error);
-      showError('Não foi possível calcular com uma release fiscal válida para os dados informados. Confira a base de férias, as faltas e a data de pagamento.');
+      if (error && (error.code === 'h28_payment_date_required' || error.code === 'h28_payment_date_invalid')) {
+        showError(error.message);
+      } else {
+        showError('Não foi possível calcular com uma release fiscal válida para os dados informados. Confira a base de férias, as faltas e a data de pagamento.');
+      }
       if (result) result.style.display = 'none';
     } finally {
       setBusy(false);
