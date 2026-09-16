@@ -144,6 +144,22 @@ jobs:
         run: |
           python scripts/validate_phase7_c73_gate.py
 
+      - name: Simulate Phase 7 C7.4 controlled deployment
+        run: |
+          python scripts/simulate_phase7_c74_controlled_deployment.py | tee /tmp/c74-controlled-deployment-simulation.json
+
+      - name: Validate Phase 7 C7.4 authorization gate
+        run: |
+          python scripts/validate_phase7_c74_gate.py
+
+      - name: Upload Phase 7 C7.4 controlled deployment simulation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: c74-controlled-deployment-simulation-${{ github.sha }}
+          path: /tmp/c74-controlled-deployment-simulation.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload Phase 7 C7.3 preflight simulation evidence
         uses: actions/upload-artifact@v4
         with:
