@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint": "C7.4",
+  "status": "AUTHORIZED_READY_TO_DEPLOY",
+  "authorization_id": "c74-20260916-a741aa78-843dca3e",
+  "authorization_received_on": "2026-09-16",
+  "authorization_basis": "explicit_operator_instruction_to_start_C7.4_authorization_and_controlled_deployment",
+  "single_use_authorization": true,
+  "deployment_authorized": true,
+  "production_deployed": false,
+  "post_deploy_validated": false,
+  "candidate": {
+    "bundle_manifest_sha256": "843dca3e843bfe066cee5f1a39754741a9adb47d49fee9749876d4e17f4dedf1",
+    "c73_remote_evidence_sha256": "e4f69319ad2cb1e712c8807138a7aea86a8a2c08c5ecc9bebcd81399b045fec7",
+    "release_id": "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e",
+    "managed_files": 32,
+    "preexisting_dependencies": 11,
+    "planned_directory_creations": 4
+  },
+  "required_preconditions": {
+    "c73_status": "CONCLUÍDO",
+    "c73_remote_preflight": "PASS_VALIDATED",
+    "fresh_read_only_preflight_before_snapshot": true,
+    "fresh_state_must_match_c73_managed_and_dependency_hashes": true,
+    "exact_backup_before_first_production_write": true,
+    "journal_outside_production_roots": true,
+    "bundle_hash_verification_before_and_after_each_write": true,
+    "automatic_rollback_on_apply_or_health_failure": true,
+    "single_use_journal_named_by_authorization_id": true
+  },
+  "required_post_deploy_checks": {
+    "fiscal_health": "healthy",
+    "fiscal_release_matches_candidate": true,
+    "legacy_folha_endpoint_http_status": 410,
+    "calculator_pages_http_200": ["H26", "H27", "H28", "H29"],
+    "managed_files_match_bundle": 32,
+    "preexisting_dependencies_unchanged": 11
+  },
+  "rollback_boundary": {
+    "restore_preexisting_managed_files_from_exact_backup": true,
+    "remove_only_managed_files_absent_before_deploy": true,
+    "remove_only_directories_created_by_this_deploy_when_empty": true,
+    "recursive_directory_delete_forbidden": true,
+    "preserve_and_escalate_nonempty_created_directory": true
+  },
+  "closure_condition": "C7.4 becomes CONCLUÍDO only after the single authorized production deployment completes with post-deploy validation and its journal/evidence is preserved and recorded."
+}
