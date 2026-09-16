@@ -136,6 +136,22 @@ jobs:
         run: |
           python scripts/validate_phase7_c72_gate.py
 
+      - name: Simulate Phase 7 C7.3 production preflight
+        run: |
+          python scripts/simulate_phase7_c73_preflight.py | tee /tmp/c73-preflight-simulation.json
+
+      - name: Validate Phase 7 C7.3 readiness gate
+        run: |
+          python scripts/validate_phase7_c73_gate.py
+
+      - name: Upload Phase 7 C7.3 preflight simulation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: c73-preflight-simulation-${{ github.sha }}
+          path: /tmp/c73-preflight-simulation.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload Phase 7 C7.2 operational evidence
         uses: actions/upload-artifact@v4
         with:
