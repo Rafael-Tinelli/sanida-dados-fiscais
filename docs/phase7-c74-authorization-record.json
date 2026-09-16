@@ -1,16 +1,15 @@
 {
-  "schema_version": "1.1.0",
+  "schema_version": "1.0.0",
   "checkpoint": "C7.4",
-  "status": "CONCLUÍDO",
+  "record_type": "single_use_deployment_authorization",
+  "status": "AUTHORIZED_READY_TO_DEPLOY",
   "authorization_id": "c74-20260916-a741aa78-843dca3e",
   "authorization_received_on": "2026-09-16",
   "authorization_basis": "explicit_operator_instruction_to_start_C7.4_authorization_and_controlled_deployment",
   "single_use_authorization": true,
-  "authorization_consumed": true,
   "deployment_authorized": true,
-  "production_deployed": true,
-  "post_deploy_validated": true,
-  "rollback_performed": false,
+  "production_deployed": false,
+  "post_deploy_validated": false,
   "candidate": {
     "bundle_manifest_sha256": "843dca3e843bfe066cee5f1a39754741a9adb47d49fee9749876d4e17f4dedf1",
     "c73_remote_evidence_sha256": "e4f69319ad2cb1e712c8807138a7aea86a8a2c08c5ecc9bebcd81399b045fec7",
@@ -18,30 +17,6 @@
     "managed_files": 32,
     "preexisting_dependencies": 11,
     "planned_directory_creations": 4
-  },
-  "deployment_result": {
-    "status": "APPLIED_HEALTHY",
-    "authorized_commit": "ccc5a31c3da7c1c93570df0337e553e5a06404ac",
-    "started_at_utc": "2026-09-16T17:21:48.818311+00:00",
-    "completed_at_utc": "2026-09-16T17:21:52.270428+00:00",
-    "managed_files_applied": 32,
-    "created_directories": 4,
-    "deployment_state_sha256": "9fc57e626dd8ab3a7666da18c7f1397f35729987a3be62ac83ed6ed7ca0bcc4c",
-    "deployment_state_path": "~/c74-deployments/c74-20260916-a741aa78-843dca3e/deployment-state.json",
-    "production_record": "docs/phase7-c74-production-deployment-record.json"
-  },
-  "health": {
-    "fiscal_health": "healthy",
-    "fiscal_health_http_status": 200,
-    "fiscal_release_http_status": 200,
-    "fiscal_release_matches_candidate": true,
-    "legacy_folha_endpoint_http_status": 410,
-    "calculator_http_status": {
-      "H26": 200,
-      "H27": 200,
-      "H28": 200,
-      "H29": 200
-    }
   },
   "required_preconditions": {
     "c73_status": "CONCLUÍDO",
@@ -54,6 +29,14 @@
     "automatic_rollback_on_apply_or_health_failure": true,
     "single_use_journal_named_by_authorization_id": true
   },
+  "required_post_deploy_checks": {
+    "fiscal_health": "healthy",
+    "fiscal_release_matches_candidate": true,
+    "legacy_folha_endpoint_http_status": 410,
+    "calculator_pages_http_200": ["H26", "H27", "H28", "H29"],
+    "managed_files_match_bundle": 32,
+    "preexisting_dependencies_unchanged": 11
+  },
   "rollback_boundary": {
     "restore_preexisting_managed_files_from_exact_backup": true,
     "remove_only_managed_files_absent_before_deploy": true,
@@ -61,6 +44,5 @@
     "recursive_directory_delete_forbidden": true,
     "preserve_and_escalate_nonempty_created_directory": true
   },
-  "closure_condition_met": true,
-  "authorization_history": "docs/phase7-c74-authorization-record.json"
+  "closure_condition": "C7.4 becomes CONCLUÍDO only after the single authorized production deployment completes with post-deploy validation and its journal/evidence is preserved and recorded."
 }
