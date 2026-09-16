@@ -38,10 +38,26 @@ trait Sanida_Fiscais_Shortcodes_Core_Trait {
     ];
   }
 
+  /*
+   * C7.1: os shortcodes informativos leem diretamente a release canônica já
+   * validada pelo plugin. Não há shape intermediário/adaptador de compatibilidade.
+   */
+  private function canonical_rules_for_shortcodes(){
+    $package = $this->get_release_package();
+    if (!$this->validate_release_package($package)) return null;
+    $release = $package['release'] ?? null;
+    if (!is_array($release)) return null;
+    return $this->index_rules($release);
+  }
+
   public function sc_ano(){
-    $d = $this->get_shortcode_display_data();
-    if ($this->shortcode_display_blocked($d)) return $this->fiscais_unavailable_text('ano');
-    return esc_html((string)($d['ano'] ?? ''));
+    $rules = $this->canonical_rules_for_shortcodes();
+    if (!is_array($rules)) return $this->fiscais_unavailable_text('ano');
+
+    $rule = $rules['irrf.monthly.progressive_table'] ?? null;
+    $effective_from = is_array($rule) ? (string)($rule['vigency']['effective_from'] ?? '') : '';
+    if (!preg_match('/^(\d{4})-/', $effective_from, $m)) return $this->fiscais_unavailable_text('ano');
+    return esc_html($m[1]);
   }
 
   public function sc_selic(){
@@ -71,17 +87,27 @@ trait Sanida_Fiscais_Shortcodes_Core_Trait {
   }
 
   public function sc_inss(){
-    $d = $this->get_shortcode_display_data();
-    if ($this->shortcode_display_blocked($d)) return $this->fiscais_unavailable_text('inss');
-    $inss = is_array($d['inss'] ?? null) ? $d['inss'] : [];
+    $rules = $this->canonical_rules_for_shortcodes();
+    if (!is_array($rules)) return $this->fiscais_unavailable_text('inss');
+
+    $rule = $rules['inss.employee.progressive_table'] ?? null;
+    $brackets = is_array($rule) ? ($rule['payload']['brackets'] ?? null) : null;
+    if (!is_array($brackets) || !$brackets) return $this->fiscais_unavailable_text('inss');
+
+    foreach($brackets as $b){
+      if (!is_array($b) || !array_key_exists('upper_bound', $b) || !isset($b['rate'])) {
+        return $this->fiscais_unavailable_text('inss');
+      }
+    }
+
     ob_start(); ?>
       <div class="sfa-tablewrap" style="overflow-x:auto">
         <table class="sfa-table sfa-table--inss" role="table">
           <thead><tr><th>Salário (R$)</th><th>Alíquota</th></tr></thead>
           <tbody>
-            <?php foreach($inss as $f):
-              $lim = array_key_exists('limite', $f) ? $f['limite'] : null;
-              $ali = (float)($f['aliquota'] ?? 0);
+            <?php foreach($brackets as $b):
+              $lim = $b['upper_bound'];
+              $ali = (float)$b['rate'];
               $label = ($lim === null) ? 'Sem limite superior' : ('Até ' . number_format((float)$lim,2,',','.'));
             ?>
               <tr><td><?php echo esc_html($label); ?></td><td><?php echo esc_html(number_format($ali*100,1,',','.')) . '%'; ?></td></tr>
@@ -93,20 +119,34 @@ trait Sanida_Fiscais_Shortcodes_Core_Trait {
   }
 
   public function sc_irrf(){
-    $d = $this->get_shortcode_display_data();
-    if ($this->shortcode_display_blocked($d)) return $this->fiscais_unavailable_text('irrf');
-    $tab  = is_array($d['irrf']['tabela'] ?? null) ? $d['irrf']['tabela'] : [];
-    $simp = (float)($d['irrf']['simplificado'] ?? 0);
+    $rules = $this->canonical_rules_for_shortcodes();
+    if (!is_array($rules)) return $this->fiscais_unavailable_text('irrf');
+
+    $table_rule = $rules['irrf.monthly.progressive_table'] ?? null;
+    $simplified_rule = $rules['irrf.simplified_monthly_discount'] ?? null;
+    $brackets = is_array($table_rule) ? ($table_rule['payload']['brackets'] ?? null) : null;
+    $simplified_payload = is_array($simplified_rule) ? ($simplified_rule['payload'] ?? null) : null;
+    if (!is_array($brackets) || !$brackets || !is_array($simplified_payload) || !array_key_exists('value', $simplified_payload)) {
+      return $this->fiscais_unavailable_text('irrf');
+    }
+
+    foreach($brackets as $b){
+      if (!is_array($b) || !array_key_exists('upper_bound', $b) || !isset($b['rate'], $b['deduction'])) {
+        return $this->fiscais_unavailable_text('irrf');
+      }
+    }
+
+    $simp = (float)$simplified_payload['value'];
     ob_start(); ?>
       <p class="sfa-tablemeta" style="margin:.35rem 0 .6rem 0;opacity:.9"><strong>Desconto simplificado:</strong> R$ <?php echo esc_html(number_format($simp,2,',','.')); ?></p>
       <div class="sfa-tablewrap" style="overflow-x:auto">
         <table class="sfa-table sfa-table--irrf" role="table">
           <thead><tr><th>Base (R$)</th><th>Alíquota</th><th>Dedução</th></tr></thead>
           <tbody>
-            <?php foreach($tab as $f):
-              $lim = array_key_exists('limite', $f) ? $f['limite'] : null;
-              $ali = (float)($f['aliquota'] ?? 0);
-              $ded = (float)($f['deducao'] ?? 0);
+            <?php foreach($brackets as $b):
+              $lim = $b['upper_bound'];
+              $ali = (float)$b['rate'];
+              $ded = (float)$b['deduction'];
               $label = ($lim === null) ? 'Acima da faixa anterior' : ('Até ' . number_format((float)$lim,2,',','.'));
             ?>
               <tr><td><?php echo esc_html($label); ?></td><td><?php echo esc_html(number_format($ali*100,1,',','.')) . '%'; ?></td><td><?php echo esc_html(number_format($ded,2,',','.')); ?></td></tr>
