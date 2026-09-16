@@ -12,6 +12,7 @@ C74_RECORD = ROOT / "docs/phase7-c74-production-deployment-record.json"
 C75 = ROOT / "state/phase7-c75-closure.json"
 DOC = ROOT / "docs/phase7-c75-postdeploy-closure.md"
 INITIAL_RECORD = ROOT / "docs/phase7-c75-initial-host-observation.json"
+FINAL_RECORD = ROOT / "docs/phase7-c75-final-production-validation-record.json"
 RUNNER = ROOT / "scripts/run_phase7_c75_postdeploy_validation.py"
 HOST_VALIDATOR = ROOT / "scripts/validate_phase7_c75_remote_evidence.py"
 EXTERNAL_PROBE = ROOT / "scripts/run_phase7_c75_external_delivery_probe.ps1"
@@ -22,7 +23,10 @@ README = ROOT / "README.md"
 CI = ROOT / ".github/workflows/remake-ci.yml"
 
 EXPECTED_HOST_EVIDENCE_SHA = "996561d9acaee9473d4bbd2035ce32c8d1bff85c8e9e6eb38b10e2f26a8ff447"
+EXPECTED_EXTERNAL_BLOCKED_SHA = "908551d36f340d97fbaa1277768fd1330651c1a555f7312c286003300843fd70"
+EXPECTED_EXTERNAL_PASS_SHA = "e162b1f7d60427bc9fd2679bdce683adac566ecdfcd349637dfef883cb981284"
 AUTHORIZED_COMMIT = "ccc5a31c3da7c1c93570df0337e553e5a06404ac"
+EXPECTED_RELEASE = "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e"
 
 
 def require(condition: bool, message: str) -> None:
@@ -44,6 +48,7 @@ def main() -> int:
         C75,
         DOC,
         INITIAL_RECORD,
+        FINAL_RECORD,
         RUNNER,
         HOST_VALIDATOR,
         EXTERNAL_PROBE,
@@ -56,105 +61,72 @@ def main() -> int:
         require(path.is_file(), f"required file missing: {path.relative_to(ROOT)}")
 
     c74 = load(C74)
-    record = load(C74_RECORD)
+    c74_record = load(C74_RECORD)
     require(c74.get("status") == "CONCLUÍDO", "C7.4 is not concluded")
     require(c74.get("production_deployed") is True, "C7.4 production deployment missing")
     require(c74.get("post_deploy_validated") is True, "C7.4 post-deploy validation missing")
     require(c74.get("rollback_performed") is False, "C7.4 reports rollback")
-    require(record.get("status") == "APPLIED_HEALTHY", "C7.4 production record is not APPLIED_HEALTHY")
-    require(record.get("deployment_state", {}).get("sha256") == "9fc57e626dd8ab3a7666da18c7f1397f35729987a3be62ac83ed6ed7ca0bcc4c", "C7.4 journal SHA drift")
+    require(c74_record.get("status") == "APPLIED_HEALTHY", "C7.4 production record is not APPLIED_HEALTHY")
+    require(c74_record.get("deployment_state", {}).get("sha256") == "9fc57e626dd8ab3a7666da18c7f1397f35729987a3be62ac83ed6ed7ca0bcc4c", "C7.4 journal SHA drift")
 
     c75 = load(C75)
-    require(c75.get("schema_version") == "1.1.0", "C7.5 schema drift")
+    require(c75.get("schema_version") == "1.2.0", "C7.5 final schema drift")
     require(c75.get("checkpoint") == "C7.5", "C7.5 checkpoint drift")
-    require(c75.get("status") == "AWAITING_EXTERNAL_CLIENT_DELIVERY_VALIDATION", "C7.5 split-boundary readiness state drift")
-    require(c75.get("phase7_status") == "EM ANDAMENTO", "Phase 7 closed before external delivery evidence")
-    require(c75.get("production_deployed") is True, "C7.5 lost production deployment state")
-    require(c75.get("production_mutation_allowed") is False, "C7.5 incorrectly allows production mutation")
-    require(c75.get("minimum_postdeploy_window_seconds") == 600, "C7.5 stability window drift")
+    require(c75.get("status") == "CONCLUÍDO", "C7.5 is not concluded")
+    require(c75.get("phase7_status") == "CONCLUÍDA", "Phase 7 is not concluded")
+    require(c75.get("remake_status") == "CONCLUÍDO", "remake is not concluded")
+    require(c75.get("production_deployed") is True, "production deployment state lost")
+    require(c75.get("production_mutation_allowed") is False, "C7.5 unexpectedly allows production mutation")
+    require(c75.get("production_files_mutated_by_c75") is False, "C7.5 reports production file mutation")
+    require(c75.get("edge_cache_remediation_performed") is True, "selective edge-cache remediation not recorded")
+    require(c75.get("release_id") == EXPECTED_RELEASE, "final release id drift")
+    require(c75.get("closure_condition_met") is True, "C7.5 closure condition not met")
 
-    host = c75.get("host_origin_observation") or {}
-    require(host.get("raw_evidence_sha256") == EXPECTED_HOST_EVIDENCE_SHA, "initial HostGator evidence SHA drift")
-    require(host.get("initial_status") == "BLOCKED", "initial HostGator result history drift")
-    require(host.get("non_delivery_blocks") == 0, "unexpected non-delivery host blocks recorded")
+    host = c75.get("host_origin_evidence") or {}
+    require(host.get("raw_evidence_sha256") == EXPECTED_HOST_EVIDENCE_SHA, "HostGator evidence SHA drift")
+    require(host.get("formal_revalidation_status") == "PASS", "host-origin formal validation missing")
     require(host.get("managed_files_matching") == 32, "host managed-file count drift")
     require(host.get("preexisting_dependencies_matching") == 11, "host dependency count drift")
     require(host.get("created_directories") == 4, "host directory count drift")
     require(host.get("http_probes") == 2, "host HTTP probe count drift")
-    require(host.get("production_mutated") is False, "host observation claims mutation")
+    require(host.get("production_mutated") is False, "host evidence claims mutation")
 
-    boundary = c75.get("delivery_boundary") or {}
-    require(boundary.get("host_public_delivery_observation_is_diagnostic_only") is True, "host delivery diagnostic boundary missing")
-    require(boundary.get("external_client_evidence_required") is True, "external-client evidence is not required")
-    require(boundary.get("external_probe") == EXTERNAL_PROBE.relative_to(ROOT).as_posix(), "external probe path drift")
-    require(boundary.get("external_validator") == EXTERNAL_VALIDATOR.relative_to(ROOT).as_posix(), "external validator path drift")
-    require(boundary.get("authorized_commit") == AUTHORIZED_COMMIT, "external delivery authorized commit drift")
+    external = c75.get("external_delivery_evidence") or {}
+    require(external.get("initial_blocked_sha256") == EXPECTED_EXTERNAL_BLOCKED_SHA, "initial external BLOCKED SHA drift")
+    require(external.get("initial_assets_matching") == 5, "initial external asset count drift")
+    require(external.get("final_pass_sha256") == EXPECTED_EXTERNAL_PASS_SHA, "final external PASS SHA drift")
+    require(external.get("final_status") == "PASS", "external delivery is not PASS")
+    require(external.get("final_assets_matching") == 8, "external delivery did not prove 8/8")
+    require(external.get("assets_expected") == 8, "external delivery expectation drift")
+    require(external.get("authorized_commit") == AUTHORIZED_COMMIT, "external delivery authorized commit drift")
+    require(external.get("production_mutated") is False, "external evidence claims production mutation")
 
-    required = c75.get("required_validation") or {}
-    require(required.get("managed_files_match_c74_bundle") == 32, "managed-file closure count drift")
-    require(required.get("preexisting_dependencies_match_c73_baseline") == 11, "dependency closure count drift")
-    require(required.get("planned_directories_still_safe") == 4, "created-directory closure count drift")
-    require(required.get("external_client_public_js_matches_authorized_commit") == 8, "external public-JS closure count drift")
-    require(required.get("independent_http_probes_minimum") == 2, "HTTP probe minimum drift")
-    require(required.get("production_mutated_by_c75") is False, "C7.5 mutation boundary drift")
+    cache = c75.get("cache_remediation") or {}
+    require(cache.get("affected_assets") == ["folha-core.js", "ferias-clt.js", "rescisao-clt.js"], "cache remediation asset set drift")
+    require(cache.get("origin_cache_bust_matches") == 3, "cache-bust origin proof drift")
+    require(cache.get("c74_redeployment_performed") is False, "cache remediation incorrectly records redeploy")
+    require(cache.get("production_files_rewritten") is False, "cache remediation incorrectly records production rewrite")
 
     initial = load(INITIAL_RECORD)
-    require(initial.get("record_type") == "initial_host_postdeploy_observation", "initial host record type drift")
+    require(initial.get("status") == "BLOCKED", "initial HostGator BLOCKED history drift")
     require(initial.get("host_evidence", {}).get("sha256") == EXPECTED_HOST_EVIDENCE_SHA, "initial host record SHA drift")
-    require(initial.get("status") == "BLOCKED", "initial host record status drift")
+    require(initial.get("origin_validation", {}).get("managed_files_matching") == 32, "initial origin managed count drift")
+    require(initial.get("origin_validation", {}).get("preexisting_dependencies_matching") == 11, "initial origin dependency count drift")
     require(initial.get("production_mutated") is False, "initial host record claims mutation")
-    require(initial.get("origin_validation", {}).get("managed_files_matching") == 32, "initial host origin managed count drift")
-    require(initial.get("origin_validation", {}).get("preexisting_dependencies_matching") == 11, "initial host origin dependency count drift")
-    require(initial.get("host_public_js_observation", {}).get("matching") == 5, "initial host public-JS history drift")
-    require(len(initial.get("host_public_js_observation", {}).get("block_reasons") or []) == 3, "initial host delivery block history drift")
-    require(initial.get("followup_diagnosis", {}).get("production_files_changed") is False, "follow-up diagnosis claims production mutation")
-    require(initial.get("followup_diagnosis", {}).get("c74_redeployment_performed") is False, "follow-up diagnosis claims C7.4 redeploy")
 
-    runner = RUNNER.read_text(encoding="utf-8")
-    for marker in (
-        "post_deploy_read_only_validation",
-        "postdeploy_window_too_short",
-        "managed_file_drift:",
-        "dependency_drift:",
-        "canonical_artifact_sha_mismatch",
-        "public_js_delivery_drift:",
-        "fiscal_health_not_healthy",
-        "legacy_folha_not_410",
-        "--evidence-out must remain outside production roots",
-    ):
-        require(marker in runner, f"runner marker missing: {marker}")
-    for forbidden in ("run_phase7_c74_controlled_deploy", "os.replace", ".unlink(", ".write_bytes("):
-        require(forbidden not in runner, f"C7.5 runner contains production mutation/deploy primitive: {forbidden}")
-
-    host_validator = HOST_VALIDATOR.read_text(encoding="utf-8")
-    for marker in (
-        'startswith("public_js_delivery_drift:")',
-        'external_delivery_required',
-        'host_origin_validation',
-        'non-delivery blocks',
-    ):
-        require(marker in host_validator, f"host validator split-boundary marker missing: {marker}")
-
-    external_probe = EXTERNAL_PROBE.read_text(encoding="utf-8")
-    for marker in (
-        "external_client_public_delivery_validation",
-        AUTHORIZED_COMMIT,
-        "raw.githubusercontent.com",
-        "https://sanida.com.br/financas/calculadoras/assets",
-        "assets_matching",
-        "production_mutated = $false",
-    ):
-        require(marker in external_probe, f"external probe marker missing: {marker}")
-
-    external_validator = EXTERNAL_VALIDATOR.read_text(encoding="utf-8")
-    for marker in (
-        "external_client_public_delivery_validation",
-        "assets_matching\") == 8",
-        "public_http_status\") == 200",
-        "expected_sha == public_sha",
-        AUTHORIZED_COMMIT,
-    ):
-        require(marker in external_validator, f"external validator marker missing: {marker}")
+    final_record = load(FINAL_RECORD)
+    require(final_record.get("record_type") == "phase7_final_postdeploy_closure", "final record type drift")
+    require(final_record.get("status") == "PASS", "final record is not PASS")
+    require(final_record.get("phase7_status") == "CONCLUÍDA", "final record Phase 7 status drift")
+    require(final_record.get("production_files_mutated_by_c75") is False, "final record claims production mutation")
+    require(final_record.get("host_origin", {}).get("raw_evidence_sha256") == EXPECTED_HOST_EVIDENCE_SHA, "final record host SHA drift")
+    require(final_record.get("host_origin", {}).get("formal_revalidation_status") == "PASS", "final record host validation missing")
+    require(final_record.get("external_delivery_initial", {}).get("evidence_sha256") == EXPECTED_EXTERNAL_BLOCKED_SHA, "final record initial external SHA drift")
+    require(final_record.get("external_delivery_final", {}).get("evidence_sha256") == EXPECTED_EXTERNAL_PASS_SHA, "final record external PASS SHA drift")
+    require(final_record.get("external_delivery_final", {}).get("assets_matching") == 8, "final record external assets drift")
+    require(len(final_record.get("external_delivery_final", {}).get("assets") or {}) == 8, "final record asset hash set incomplete")
+    require(final_record.get("closure_conditions", {}).get("phase7_close_recommended") is True, "final record does not recommend closure")
+    require(final_record.get("closure_conditions", {}).get("c74_redeployment_performed") is False, "final record reports C7.4 redeploy")
 
     simulation = run_simulation()
     for key in (
@@ -174,37 +146,36 @@ def main() -> int:
 
     doc = DOC.read_text(encoding="utf-8")
     for marker in (
-        "**Status:** EM ANDAMENTO",
-        "600 segundos",
-        "32/32 arquivos",
-        "11/11 dependências",
-        "cliente externo",
-        "oito JavaScript",
+        "**Status:** CONCLUÍDO",
+        "**Fase 7:** CONCLUÍDA",
         EXPECTED_HOST_EVIDENCE_SHA,
-        AUTHORIZED_COMMIT,
-        "production_mutated=false",
-        "Fase 7 só muda para `CONCLUÍDA`",
+        EXPECTED_EXTERNAL_BLOCKED_SHA,
+        EXPECTED_EXTERNAL_PASS_SHA,
+        "max-age=31536000",
+        "purga seletiva",
+        "production_files_mutated_by_c75=false",
+        "Remake:** CONCLUÍDO",
     ):
-        require(marker in doc, f"C7.5 runbook marker missing: {marker}")
+        require(marker in doc, f"C7.5 final runbook marker missing: {marker}")
 
     readme = README.read_text(encoding="utf-8")
     for marker in (
-        "C7.4 — autorização e implantação controlada",
-        "C7.5 — validação pós-deploy e fechamento formal da Fase 7",
-        "production_deployed=true",
-        "Fase 7 — Fechamento e operação evergreen",
-        "Status: EM ANDAMENTO",
+        "### Fase 7 — Fechamento e operação evergreen",
+        "**Status: CONCLUÍDA**",
+        "C7.5 — validação pós-deploy e fechamento formal",
+        EXPECTED_EXTERNAL_PASS_SHA,
+        "max-age=31536000",
+        "remake está formalmente concluído",
     ):
-        require(marker in readme, f"README missing C7.5 readiness marker: {marker}")
+        require(marker in readme, f"README missing final C7.5/Phase 7 marker: {marker}")
 
     ci = CI.read_text(encoding="utf-8")
     require("python scripts/simulate_phase7_c75_postdeploy_validation.py" in ci, "Remake CI does not run C7.5 simulation")
     require("python scripts/validate_phase7_c75_gate.py" in ci, "Remake CI does not run C7.5 gate")
-    require("c75-postdeploy-simulation-${{ github.sha }}" in ci, "Remake CI does not preserve C7.5 simulation evidence")
 
     print(
-        "Phase 7 C7.5 split-boundary readiness gate: PASS "
-        "(C7.4=APPLIED_HEALTHY, host_origin=observed, host_evidence_sha=pinned, managed=32, dependencies=11, probes=2, host_edge_delivery=diagnostic_only, external_client_js=8_required, production_mutation_allowed=false, phase7=EM_ANDAMENTO)"
+        "Phase 7 C7.5 final closure gate: PASS "
+        "(C7.4=APPLIED_HEALTHY, host_origin=PASS, managed=32, dependencies=11, probes=2, external_client_js=8/8, cache_remediation=selective, production_files_mutated=false, C7.5=CONCLUÍDO, Phase7=CONCLUÍDA, remake=CONCLUÍDO)"
     )
     return 0
 

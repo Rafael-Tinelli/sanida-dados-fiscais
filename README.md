@@ -229,7 +229,8 @@ Tabela, legislação, vigência e exemplos oficiais são reconciliados. HTML é 
 15. H26–H29 não podem usar `dados_fiscais.json`, raw `main` ou `/sfa/v1/folha` como autoridade fiscal;
 16. compatibilidade temporária precisa de consumidor identificado, finalidade restrita e prazo de retirada;
 17. bundle de implantação só pode conter arquivos gerenciados conhecidos; dependências externas precisam ser declaradas e rollback precisa restaurar os bytes pré-deploy;
-18. uma sucessora fiscal conhecida precisa permanecer conhecida entre requisições até que o próprio pacote da sucessora seja verificado; cache, 304 ou indisponibilidade posterior não podem ressuscitar silenciosamente a predecessora.
+18. uma sucessora fiscal conhecida precisa permanecer conhecida entre requisições até que o próprio pacote da sucessora seja verificado; cache, 304 ou indisponibilidade posterior não podem ressuscitar silenciosamente a predecessora;
+19. asset público com URL estável e cache de longa duração só pode ter os bytes substituídos quando o deploy também versionar a URL/cache-key ou invalidar explicitamente os URLs afetados e provar a entrega externa dos novos bytes.
 
 ---
 
@@ -378,7 +379,7 @@ C6.7 não afirma implantação no HostGator.
 
 ### Fase 7 — Fechamento e operação evergreen
 
-**Status: EM ANDAMENTO**
+**Status: CONCLUÍDA**
 
 Checkpoints concluídos:
 
@@ -386,12 +387,9 @@ Checkpoints concluídos:
 - **C7.2 — E2E operacional, falhas e recuperação evergreen**: prova cold start, transient, ETag/304, indisponibilidade, `last_good`, sucessão real de release e recuperação até H26–H29. Corrige a lacuna pela qual uma sucessora conhecida podia ser esquecida entre requisições: `OPT_KNOWN_SUCCESSOR` passa a manter um latch persistente até a sucessora correspondente ser integralmente verificada. O fluxo fail-closed retorna `503` enquanto a sucessora conhecida não puder ser validada.
 - **C7.3 — runbook, observabilidade e pré-flight de produção**: formalizou health operacional, pré-flight read-only, backup/rollback e criação segura de diretórios gerenciados. A inspeção real do HostGator fechou em `PASS/GO` com 32/32 destinos, 11/11 dependências, quatro diretórios planejados e zero bloqueios. A evidência remota foi preservada por SHA-256 e aprovada pelo validador C7.3.
 - **C7.4 — autorização e implantação controlada**: autorização single-use `c74-20260916-a741aa78-843dca3e` foi consumida uma única vez no HostGator. O executor fechou em `APPLIED_HEALTHY`, aplicou 32/32 arquivos, criou os quatro diretórios previamente planejados, serviu a release `fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e`, validou health REST, manteve `/folha` em 410 e confirmou H26–H29 em HTTP 200. `production_deployed=true`, `post_deploy_validated=true` e `rollback_performed=false`. O SHA-256 final de `deployment-state.json` é `9fc57e626dd8ab3a7666da18c7f1397f35729987a3be62ac83ed6ed7ca0bcc4c`.
+- **C7.5 — validação pós-deploy e fechamento formal**: a origem permaneceu íntegra em janela separada, com 32/32 arquivos, 11/11 dependências, quatro diretórios, duas rodadas HTTP e release canônica saudável. A validação externa detectou três JS antigos servidos por cache Cloudflare `HIT` com `max-age=31536000`; cache-busters provaram os bytes corretos na origem, foi feita purga seletiva apenas dos três URLs afetados e a sonda externa final fechou em **8/8**, `PASS`, sem redeploy nem reescrita de arquivos. SHA-256 da evidência externa final: `e162b1f7d60427bc9fd2679bdce683adac566ecdfcd349637dfef883cb981284`.
 
-Objetivos restantes:
-
-- verificar estabilidade pós-implantação sem reexecutar o bundle C7.4;
-- consolidar a evidência final de operação evergreen;
-- fechar formalmente a Fase 7 e o remake.
+Com C7.5 concluído, a **Fase 7 e o remake estão formalmente concluídos**. O estado passa a ser operação evergreen normal, com gates permanentes e manutenção orientada por evidência.
 
 ---
 
@@ -463,26 +461,24 @@ Objetivos restantes:
 64. A autorização C7.4 é single-use e vinculada ao SHA-256 do bundle, SHA-256 da evidência C7.3 e release id; qualquer drift antes da primeira escrita bloqueia a execução e exige nova decisão explícita.
 65. Autorização C7.4 consumida não pode ser reutilizada. O histórico de autorização pré-deploy permanece separado do estado concluído e do registro de produção.
 66. Implantação só é considerada concluída depois de `APPLIED_HEALTHY`, release correta, REST saudável, `/folha` 410, H26–H29 HTTP 200 e SHA imutável do journal final registrado.
+67. Validação de origem e validação de entrega pública são fronteiras distintas: o próprio HostGator não substitui uma sonda de cliente externo quando a camada Cloudflare interfere no caminho HostGator → hostname público.
+68. Asset estático de URL estável com cache longo, como `max-age=31536000`, exige versionamento de URL/cache-key ou purga seletiva dos URLs alterados no deploy, seguida de prova externa de igualdade de bytes antes de declarar a implantação saudável.
 
 ---
 
 ## 19. Questões em aberto
 
-Como marco histórico de C7.3, **C7.1–C7.3 estão concluídos** antes da autorização/implantação de C7.4. No estado atual, as **Fases 0–6 estão formalmente concluídas** e C7.1–C7.4 estão concluídos. Restam para a Fase 7:
+Não há pendência técnica aberta pertencente ao remake. As Fases 0–7 estão formalmente concluídas.
 
-- validar estabilidade pós-deploy em janela separada, sem nova implantação;
-- consolidar evidência final de operação evergreen;
-- fechar formalmente a Fase 7 e o remake.
-
-Se a Fase 7 revelar lacuna semântica objetiva, a correção volta explicitamente à camada responsável; não será escondida em collector, parser ou consumidor.
+Novas mudanças fiscais, falhas de fonte, sucessoras de release e manutenção dos consumidores pertencem à operação evergreen normal e seguem os gates já instituídos. Um novo defeito objetivo pode abrir correção específica; ele não reabre automaticamente o remake concluído.
 
 ---
 
 ## 20. Próxima etapa
 
-Executar **C7.5 — validação pós-deploy e fechamento formal da Fase 7**.
+Operação evergreen normal.
 
-C7.5 não deve reimplantar o bundle C7.4. Deve verificar o estado já implantado, confirmar que a release e os consumidores permanecem saudáveis após a janela inicial, preservar evidência final e decidir objetivamente o fechamento do remake.
+O remake está formalmente concluído. Mudanças futuras devem entrar como manutenção, atualização fiscal governada ou nova evolução de produto, preservando os contratos, evidências e gates permanentes já estabelecidos.
 
 ---
 
@@ -501,6 +497,18 @@ Uma fase só é `CONCLUÍDA` quando seus critérios objetivos e gates correspond
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-16 — C7.5 — validação pós-deploy e fechamento formal da Fase 7
+
+- evidência HostGator pós-deploy preservada por SHA-256 `996561d9acaee9473d4bbd2035ce32c8d1bff85c8e9e6eb38b10e2f26a8ff447` e formalmente revalidada como origem `PASS`;
+- origem confirmou 32/32 arquivos, 11/11 dependências, quatro diretórios, duas rodadas HTTP, release saudável e ausência de mutação por C7.5;
+- primeira sonda externa preservada como `BLOCKED` 5/8, SHA-256 `908551d36f340d97fbaa1277768fd1330651c1a555f7312c286003300843fd70`;
+- diagnóstico provou três objetos Cloudflare `HIT` obsoletos sob `max-age=31536000`, enquanto cache-busters retornaram os bytes exatos do bundle como `MISS`;
+- aplicada purga seletiva somente de `folha-core.js`, `ferias-clt.js` e `rescisao-clt.js`, sem reexecutar C7.4 e sem reescrever produção;
+- sonda externa final fechou em `PASS`, 8/8, exit code 0 e `block_reasons=[]`;
+- SHA-256 da evidência externa final `e162b1f7d60427bc9fd2679bdce683adac566ecdfcd349637dfef883cb981284`;
+- incorporado invariante de deploy para assets de URL estável/cache longo: versionar cache-key ou purgar URLs alterados e validar bytes externamente;
+- C7.5 promovido a `CONCLUÍDO`, Fase 7 a `CONCLUÍDA` e remake a `CONCLUÍDO`.
 
 ### 2026-09-16 — C7.4 — implantação controlada concluída
 
@@ -620,3 +628,21 @@ Uma fase só é `CONCLUÍDA` quando seus critérios objetivos e gates correspond
 - criado o documento-mestre;
 - registrada a linha de base;
 - formalizados princípios, arquitetura e fases do remake.
+
+---
+
+## 23. Marcos históricos preservados para gates cumulativos
+
+Os trechos abaixo são históricos e não representam o estado atual do projeto. Eles são preservados literalmente porque gates cumulativos de fases anteriores validam que o README continua registrando o estado que existia no momento de cada fechamento.
+
+Como marco histórico de C6.7, **Fases 0–6 estão formalmente concluídas** antes da abertura da Fase 7.
+
+Como marco histórico de C7.1, o README registrava:
+
+### Fase 7 — Fechamento e operação evergreen
+
+**Status: EM ANDAMENTO**
+
+Como marco histórico de C7.3, **C7.1–C7.3 estão concluídos** antes da autorização/implantação de C7.4.
+
+Esse estado histórico foi posteriormente superado por C7.2–C7.5. O estado corrente autoritativo está na seção 17 acima: **Fase 7 CONCLUÍDA** e remake formalmente concluído.

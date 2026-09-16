@@ -1,0 +1,88 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint": "C7.5",
+  "record_type": "phase7_final_postdeploy_closure",
+  "recorded_from": "operator_terminal_outputs",
+  "status": "PASS",
+  "phase7_status": "CONCLUÍDA",
+  "production_deployed": true,
+  "production_files_mutated_by_c75": false,
+  "edge_cache_remediation_performed": true,
+  "release_id": "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e",
+  "authorized_deployment_commit": "ccc5a31c3da7c1c93570df0337e553e5a06404ac",
+  "host_origin": {
+    "raw_evidence_path": "~/c75-evidence/c75-hostgator-postdeploy-20260916T175405Z.json",
+    "raw_evidence_sha256": "996561d9acaee9473d4bbd2035ce32c8d1bff85c8e9e6eb38b10e2f26a8ff447",
+    "initial_status": "BLOCKED",
+    "formal_revalidation_source_commit": "60d196271d6992bb391a485bea755eb541aec3e1",
+    "formal_revalidation_status": "PASS",
+    "external_delivery_required": true,
+    "postdeploy_window_seconds": 1934.422414,
+    "managed_files_matching": 32,
+    "preexisting_dependencies_matching": 11,
+    "created_directories": 4,
+    "http_probes": 2,
+    "production_mutated": false
+  },
+  "external_delivery_initial": {
+    "observed_at_utc": "2026-09-16T18:15:50.4037161Z",
+    "status": "BLOCKED",
+    "assets_matching": 5,
+    "assets_expected": 8,
+    "evidence_sha256": "908551d36f340d97fbaa1277768fd1330651c1a555f7312c286003300843fd70",
+    "block_reasons": [
+      "public_asset_mismatch:folha-core.js",
+      "public_asset_mismatch:ferias-clt.js",
+      "public_asset_mismatch:rescisao-clt.js"
+    ],
+    "production_mutated": false
+  },
+  "cache_diagnosis": {
+    "finding": "The three mismatching canonical JavaScript URLs were served as Cloudflare HIT objects with one-year cache-control while cache-busted URLs fetched the exact C7.4 bytes as MISS responses.",
+    "cache_control": "max-age=31536000",
+    "affected_assets": [
+      "folha-core.js",
+      "ferias-clt.js",
+      "rescisao-clt.js"
+    ],
+    "cache_busted_origin_matches": 3,
+    "cache_busted_cf_cache_status": "MISS",
+    "cache_busted_last_modified": "Wed, 16 Sep 2026 17:21:48 GMT",
+    "remediation": "Selective purge of the three canonical public URLs; no C7.4 redeploy and no production file rewrite."
+  },
+  "external_delivery_final": {
+    "observed_at_utc": "2026-09-16T18:27:35.0648819Z",
+    "status": "PASS",
+    "assets_matching": 8,
+    "assets_expected": 8,
+    "authorized_commit": "ccc5a31c3da7c1c93570df0337e553e5a06404ac",
+    "evidence_sha256": "e162b1f7d60427bc9fd2679bdce683adac566ecdfcd349637dfef883cb981284",
+    "production_mutated": false,
+    "block_reasons": [],
+    "assets": {
+      "folha-core.js": "5244f73c7ace2abf0640428bc8582405fe50018b9f0fd957b4bc1a9b4ddd084e",
+      "salario-liquido.js": "d63eecb737f9f3171151d6d202ab09af8c876ba5606b4f7e18e0cde8baf3b71d",
+      "folha-thirteenth.js": "8550c0636116d7d78c172dc4b976584a7aabe258a6ccda4e7286a69e64506410",
+      "decimo-terceiro.js": "ce21290389b4c69aefee87c2d49997916ed0b20bec1a436265f37e307dfc5a24",
+      "folha-vacation.js": "eaa949963ebda90bfa7b22b95c3cf075d175a087f5acb545433d159b00a124d0",
+      "ferias-clt.js": "e89f11a1a0109732e12093e9c6742bdb9b9c328aa8b4f44ed50fdd0fa383002f",
+      "folha-termination.js": "b9469b9c521751c614585c5aa3e79ea220b5f901c810df8f76f030a836aed2f4",
+      "rescisao-clt.js": "95dd72b1dc7b81cb36c43381bc661c8052b10002e375f791100b744527d4a4a2"
+    }
+  },
+  "operational_cache_invariant": {
+    "rule": "A public static asset whose URL is stable and whose edge/browser cache lifetime is long must not be replaced in place without an explicit cache invalidation or a versioned URL/cache key.",
+    "deployment_requirement": "Any future deployment that changes bytes of managed public static assets must either version the public URL/cache key or purge the exact affected URLs, then prove external-client byte equality against the deployed artifact before declaring the deployment healthy.",
+    "reason": "C7.5 observed correct origin bytes coexisting with stale public edge bytes under max-age=31536000."
+  },
+  "closure_conditions": {
+    "c74_remains_concluded": true,
+    "host_origin_formally_validated": true,
+    "external_client_public_js_8_of_8": true,
+    "initial_blocked_evidence_preserved": true,
+    "cache_remediation_scoped": true,
+    "production_files_mutated_by_c75": false,
+    "c74_redeployment_performed": false,
+    "phase7_close_recommended": true
+  }
+}
