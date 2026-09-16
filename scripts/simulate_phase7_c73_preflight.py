@@ -4,12 +4,16 @@ from __future__ import annotations
 from hashlib import sha256
 import json
 from pathlib import Path
+import sys
 import tempfile
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from scripts.build_phase7_c71_bundle import build_bundle
 from scripts.run_phase7_c73_host_preflight import run_preflight, safe_relative
 
-ROOT = Path(__file__).resolve().parents[1]
 SOURCE_MANIFEST = ROOT / "docs/phase7-c71-deployment-manifest-v1.json"
 
 
