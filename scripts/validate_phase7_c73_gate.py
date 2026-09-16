@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from sanida_fiscal.publication_v1 import FiscalReleaseStore
+from scripts.simulate_phase7_c73_directory_rollback import run_simulation as run_directory_rollback_simulation
 from scripts.simulate_phase7_c73_preflight import run_simulation
 
 STORE = ROOT / "releases/fiscal-v1"
@@ -30,6 +31,7 @@ CONTRACT = ROOT / "consumers/wordpress/includes/trait-sanida-fiscal-contract.php
 HEALTH_HARNESS = ROOT / "tests/php/phase7_c73_health.php"
 HOST_PREFLIGHT = ROOT / "scripts/run_phase7_c73_host_preflight.py"
 SIMULATION = ROOT / "scripts/simulate_phase7_c73_preflight.py"
+DIRECTORY_ROLLBACK_SIMULATION = ROOT / "scripts/simulate_phase7_c73_directory_rollback.py"
 
 
 def require(condition: bool, message: str) -> None:
@@ -53,6 +55,7 @@ def main() -> int:
         HEALTH_HARNESS,
         HOST_PREFLIGHT,
         SIMULATION,
+        DIRECTORY_ROLLBACK_SIMULATION,
     ):
         require(path.is_file(), f"required C7.3 file missing: {path.relative_to(ROOT)}")
 
@@ -80,7 +83,7 @@ def main() -> int:
     require(len(deployment.get("preexisting_dependencies") or []) == 11, "preexisting dependency count drift")
 
     spec = json.loads(SPEC.read_text(encoding="utf-8"))
-    require(spec.get("schema_version") == "1.0.0", "preflight spec schema drift")
+    require(spec.get("schema_version") == "1.1.0", "preflight spec schema drift")
     require(spec.get("checkpoint") == "C7.3", "preflight spec checkpoint drift")
     require(spec.get("status") == "READY_FOR_REMOTE_READ_ONLY_PREFLIGHT", "preflight spec readiness drift")
     require(spec.get("production_deployed") is False, "preflight spec claims deployment")
@@ -88,14 +91,20 @@ def main() -> int:
     require(spec.get("technical_go_no_go", {}).get("NO_GO_on_any_failed_requirement") is True, "preflight is not fail closed")
     require(spec.get("technical_go_no_go", {}).get("GO_does_not_execute_deploy") is True, "technical GO crosses deployment boundary")
     require(spec.get("technical_go_no_go", {}).get("GO_does_not_replace_explicit_deployment_authorization") is True, "technical GO replaces explicit authorization")
-    require(spec.get("rollback_preconditions", {}).get("new_directories_may_not_be_created_by_deploy") is True, "new directory rollback boundary missing")
+    rollback = spec.get("rollback_preconditions", {})
+    require(rollback.get("new_directories_may_be_created_by_deploy") is True, "managed directory creation not explicitly permitted")
+    require(rollback.get("new_directory_creation_requires_read_only_preflight_plan") is True, "directory creation lacks preflight plan requirement")
+    require(rollback.get("created_directory_journal_required") is True, "created-directory journal not required")
+    require(rollback.get("rollback_removes_only_directories_created_by_this_deploy_when_empty") is True, "empty-only directory rollback boundary missing")
+    require(rollback.get("recursive_directory_delete_forbidden") is True, "recursive directory delete is not forbidden")
+    require(rollback.get("nonempty_created_directory_must_be_preserved_and_escalated") is True, "nonempty directory preservation boundary missing")
 
     readiness = json.loads(READINESS.read_text(encoding="utf-8"))
     require(readiness.get("checkpoint") == "C7.3", "readiness checkpoint drift")
-    require(readiness.get("status") == "EM_REVISÃO", "C7.3 must remain EM_REVISÃO before real remote evidence")
+    require(readiness.get("status") == "EM_REVISÃO", "C7.3 must remain EM_REVISÃO before real remote PASS evidence")
     require(readiness.get("repository_readiness") == "READY", "repository-side C7.3 readiness not marked READY")
     require(readiness.get("remote_preflight") == "REQUIRED_NOT_EXECUTED", "remote preflight state drift")
-    require(readiness.get("technical_go_no_go") == "NO_GO_REMOTE_EVIDENCE_REQUIRED", "go/no-go must remain blocked without remote evidence")
+    require(readiness.get("technical_go_no_go") == "NO_GO_REMOTE_EVIDENCE_REQUIRED", "go/no-go must remain blocked without remote PASS evidence")
     require(readiness.get("deployment_authorized") is False, "readiness incorrectly authorizes deployment")
     require(readiness.get("production_deployed") is False, "readiness incorrectly claims deployment")
     require(readiness.get("production_mutated_by_c73") is False, "C7.3 readiness claims production mutation")
@@ -106,7 +115,9 @@ def main() -> int:
         '"technical_go_no_go": "GO" if status == "PASS" else "NO_GO"',
         '"production_mutated": False',
         '"deployment_authorized": False',
-        'managed_parent_missing:',
+        'managed_parent_uncreatable',
+        'managed_parent_not_directory',
+        'planned_directory_creations',
         'dependency_missing:',
         'managed_target_symlink_not_allowed:',
         'insufficient_or_unknown_free_space:',
@@ -123,6 +134,8 @@ def main() -> int:
         'evidence.get("production_mutated") is False',
         'len(dependencies) == 11',
         'len(managed) == 32',
+        'planned directory creation journal drift',
+        'all_managed_parent_directories_ready',
         'bundle manifest SHA mismatch',
     ):
         require(marker in remote_validator_text, f"remote evidence validator missing marker: {marker}")
@@ -132,11 +145,25 @@ def main() -> int:
     require(simulation.get("production_mutated") is False, "simulation claims production mutation")
     require(simulation.get("non_mutation_verified") is True, "preflight non-mutation not proven")
     require(simulation.get("missing_dependency_blocked") is True, "missing dependency did not block")
-    require(simulation.get("missing_parent_blocked") is True, "missing managed parent did not block")
+    require(simulation.get("creatable_missing_parent_allowed") is True, "safe missing parent was not allowed")
+    require(simulation.get("uncreatable_parent_blocked") is True, "unsafe missing parent did not block")
     require(simulation.get("pass_case", {}).get("status") == "PASS", "positive preflight case failed")
     require(simulation.get("pass_case", {}).get("technical_go_no_go") == "GO", "positive preflight case is not GO")
     require(simulation.get("pass_case", {}).get("dependencies") == 11, "positive preflight dependency count drift")
     require(simulation.get("pass_case", {}).get("managed_targets") == 32, "positive preflight managed count drift")
+    require(simulation.get("pass_case", {}).get("planned_directory_creations", 0) > 0, "positive preflight did not exercise directory planning")
+
+    directory_rollback = run_directory_rollback_simulation()
+    for key in (
+        "exact_tree_rollback_verified",
+        "created_empty_directories_removed",
+        "recursive_directory_delete_forbidden_by_implementation",
+        "nonempty_created_directory_preserved",
+        "unmanaged_content_preserved",
+    ):
+        require(directory_rollback.get(key) is True, f"directory rollback simulation did not prove {key}")
+    require(directory_rollback.get("created_directories_exercised", 0) > 0, "directory rollback did not exercise new directories")
+    require(directory_rollback.get("production_mutated") is False, "directory rollback simulation claims production mutation")
 
     plugin = PLUGIN.read_text(encoding="utf-8")
     admin = ADMIN.read_text(encoding="utf-8")
@@ -199,15 +226,16 @@ def main() -> int:
         "technical_go_no_go",
         "NO_GO",
         "backup exato",
+        "planned_directory_creations",
+        "diretórios criados",
+        "`rmdir`",
+        "deleção recursiva",
         "/wp-json/sfa/v1/fiscal-health",
         "blocked_known_successor",
         "C7.3 só muda para `CONCLUÍDO`",
-        "evidência remota read-only",
     ):
         require(marker in runbook, f"runbook missing C7.3 marker: {marker}")
 
-    # README remains truthful while C7.3 is in review: it still identifies C7.3
-    # as the next production-preflight checkpoint and keeps deployment false.
     readme = README.read_text(encoding="utf-8")
     for marker in (
         "Executar **C7.3 — runbook, observabilidade e pré-flight de produção**",
@@ -224,7 +252,7 @@ def main() -> int:
 
     print(
         "Phase 7 C7.3 readiness gate: PASS "
-        f"(release={release.release_id}, managed=32, dependencies=11, health=verified, preflight=read-only, remote_preflight=REQUIRED, technical_go_no_go=NO_GO_REMOTE_EVIDENCE_REQUIRED, deployment_authorized=false, production_deployed=false)"
+        f"(release={release.release_id}, managed=32, dependencies=11, health=verified, preflight=read-only, directory_rollback=verified, remote_preflight=REQUIRED, technical_go_no_go=NO_GO_REMOTE_EVIDENCE_REQUIRED, deployment_authorized=false, production_deployed=false)"
     )
     return 0
 
