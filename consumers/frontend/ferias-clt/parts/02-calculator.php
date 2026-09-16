@@ -11,6 +11,7 @@
 
       <label for="data-pagamento">Data de pagamento das férias</label>
       <input id="data-pagamento" name="data_pagamento" type="date" required>
+      <p><small>Obrigatória para definir a vigência fiscal. A calculadora não presume a data de hoje quando este campo fica vazio.</small></p>
 
       <label class="check" for="vender-terco">
         <input id="vender-terco" name="vender_um_terco" type="checkbox">
