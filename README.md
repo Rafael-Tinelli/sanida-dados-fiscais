@@ -227,7 +227,8 @@ Tabela, legislação, vigência e exemplos oficiais são reconciliados. HTML é 
 13. `PARSER_INCOMPATIBLE` preserva evidência, mas não autoriza novo consumo;
 14. `generated_at` não pode mascarar observação antiga;
 15. H26–H29 não podem usar `dados_fiscais.json`, raw `main` ou `/sfa/v1/folha` como autoridade fiscal;
-16. compatibilidade temporária precisa de consumidor identificado, finalidade restrita e prazo de retirada.
+16. compatibilidade temporária precisa de consumidor identificado, finalidade restrita e prazo de retirada;
+17. bundle de implantação só pode conter arquivos gerenciados conhecidos; dependências externas precisam ser declaradas e rollback precisa restaurar os bytes pré-deploy.
 
 ---
 
@@ -368,7 +369,7 @@ A Fase 6 fechou os checkpoints:
 - **C6.6** — H29 rescisão CLT;
 - **C6.7 — remoção controlada do legado** e fechamento formal.
 
-C6.7 retirou as fórmulas fiscais duplicadas dos shortcodes antigos, aposentou o bootstrap fiscal legado e transformou `/sfa/v1/folha` em tombstone `410 Gone`. O único adaptador temporário preservado é `wordpress_table_shortcodes_v1`, exclusivamente para `ano_ref`, `inss_tabela` e `irrf_tabela`, com prazo `C7.1-before-production-deployment`.
+C6.7 retirou as fórmulas fiscais duplicadas dos shortcodes antigos, aposentou o bootstrap fiscal legado e transformou `/sfa/v1/folha` em tombstone `410 Gone`. Naquele checkpoint, o único adaptador temporário preservado era `wordpress_table_shortcodes_v1`, exclusivamente para `ano_ref`, `inss_tabela` e `irrf_tabela`, com prazo `C7.1-before-production-deployment`. C7.1 posteriormente cumpriu esse prazo e retirou o adaptador do código executável.
 
 H26–H29 consomem a mesma release canônica e não usam `dados_fiscais.json`, raw `main` ou `/sfa/v1/folha` como autoridade fiscal. Os gates C6.1–C6.7 permanecem no `Remake CI`.
 
@@ -376,17 +377,19 @@ C6.7 não afirma implantação no HostGator.
 
 ### Fase 7 — Fechamento e operação evergreen
 
-**Status: PENDENTE**
+**Status: EM ANDAMENTO**
 
-Objetivos:
+Checkpoint concluído:
 
-- fechamento ponta a ponta em ambiente de implantação;
-- simulação operacional de falhas, troca de release e recuperação;
-- validação da atualização automática/evergreen;
-- retirada do adaptador `wordpress_table_shortcodes_v1` em C7.1 antes do deploy;
-- documentação operacional e runbook;
+- **C7.1 — bundle pré-deploy e rollback**: retirou `wordpress_table_shortcodes_v1`; promoveu o **plugin 2.7.0** com shortcodes informativos lendo diretamente a release; definiu 32 arquivos gerenciados e 11 dependências pré-existentes; constrói bundle determinístico; executa H26–H29 sobre os bytes empacotados; e prova apply/rollback exato em ambiente temporário sem mutar o HostGator.
+
+Objetivos restantes:
+
+- simulação operacional de indisponibilidade, troca de release e recuperação;
+- validação da atualização automática/evergreen no caminho operacional completo;
+- documentação operacional, runbook e observabilidade;
 - implantação controlada no HostGator;
-- critérios objetivos de encerramento do remake.
+- validação pós-deploy e critérios objetivos de encerramento do remake.
 
 ---
 
@@ -446,21 +449,21 @@ Objetivos:
 52. Sem delta, o resultado é `NO_PUBLISH_REQUIRED`, sem churn de release/timestamp.
 53. A única API fiscal de dados para consumidores após C6.7 é `/wp-json/sfa/v1/fiscal-release`; `/wp-json/sfa/v1/folha` responde 410.
 54. Shortcodes legados de cálculo não executam mais fórmulas; são pontes para H26/H27.
-55. Adaptador temporário só pode permanecer com consumidor nomeado e prazo; `wordpress_table_shortcodes_v1` expira em `C7.1-before-production-deployment`.
+55. Adaptador temporário só pode permanecer com consumidor nomeado e prazo; `wordpress_table_shortcodes_v1` expirou e foi retirado em C7.1 antes de qualquer deploy.
 56. A Fase 6 fecha migração de consumidores; deployment e operação evergreen pertencem à Fase 7.
+57. O bundle de implantação distingue arquivos gerenciados de dependências pré-existentes; nenhum arquivo externo é inventado, e rollback restaura os bytes capturados antes da aplicação sem tocar em arquivos não gerenciados.
 
 ---
 
 ## 19. Questões em aberto
 
-As **Fases 0–6 estão formalmente concluídas**. Restam para a Fase 7:
+As **Fases 0–6 estão formalmente concluídas** e C7.1 está concluído. Restam para a Fase 7:
 
-- retirar `wordpress_table_shortcodes_v1` em C7.1 antes do deployment;
-- executar testes E2E do bundle real de implantação;
-- simular indisponibilidade, sucessão de release, cache/last-good e recuperação;
+- simular indisponibilidade, sucessão de release, cache/last-good e recuperação no caminho operacional completo;
 - validar operação evergreen das automações no caminho real até o consumidor;
-- preparar runbook/rollback e observabilidade operacional;
-- realizar implantação controlada no HostGator e validação pós-deploy.
+- consolidar runbook, rollback de produção e observabilidade operacional;
+- realizar implantação controlada no HostGator;
+- validar o pós-deploy e fechar os critérios objetivos do remake.
 
 Se a Fase 7 revelar lacuna semântica objetiva, a correção volta explicitamente à camada responsável; não será escondida em collector, parser ou consumidor.
 
@@ -468,9 +471,9 @@ Se a Fase 7 revelar lacuna semântica objetiva, a correção volta explicitament
 
 ## 20. Próxima etapa
 
-Iniciar a **Fase 7 — Fechamento e operação evergreen**.
+Executar **C7.2 — E2E operacional, falhas e recuperação evergreen**.
 
-A primeira fronteira é **C7.1**: retirar o adaptador de apresentação `wordpress_table_shortcodes_v1`, montar o bundle de implantação somente com caminhos canônicos e provar E2E/rollback antes de qualquer alteração no HostGator.
+C7.2 deve provar indisponibilidade, cache/last-good, sucessão de release e recuperação no caminho operacional antes de qualquer autorização para implantação controlada no HostGator. O bundle C7.1 permanece pré-deploy e `production_deployed=false`.
 
 ---
 
@@ -489,6 +492,19 @@ Uma fase só é `CONCLUÍDA` quando seus critérios objetivos e gates correspond
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-16 — C7.1 — bundle pré-deploy e rollback
+
+- `wordpress_table_shortcodes_v1` retirado antes do deployment;
+- plugin promovido para **2.7.0** e shortcodes `ano_ref`, `inss_tabela` e `irrf_tabela` passaram a ler a release canônica diretamente;
+- criado `docs/phase7-c71-deployment-manifest-v1.json` com 32 arquivos gerenciados e 11 dependências pré-existentes;
+- criado builder determinístico `scripts/build_phase7_c71_bundle.py`;
+- criado simulador de apply/rollback `scripts/simulate_phase7_c71_deployment.py`;
+- criado gate `scripts/validate_phase7_c71_gate.py` com E2E H26–H29 sobre os bytes empacotados;
+- rollback exato, preservação de dependências e arquivos não gerenciados tornam-se requisitos automatizados;
+- bundle passa a ser produzido no `Remake CI` como artefato temporário;
+- nenhum arquivo foi implantado no HostGator neste checkpoint;
+- Fase 7 promovida a `EM ANDAMENTO`; próxima fronteira: **C7.2**.
 
 ### 2026-09-16 — fechamento formal da Fase 6 / C6.7
 
