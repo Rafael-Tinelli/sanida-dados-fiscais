@@ -36,7 +36,10 @@ CONSUMERS = {
     "H28": ROOT / "consumers/frontend/ferias-clt.js",
     "H29": ROOT / "consumers/frontend/rescisao-clt.js",
 }
-PHASE6_GATES = tuple(ROOT / f"scripts/validate_phase6_c6{i}_gate.py" for i in range(1, 8))
+PHASE6_GATES = (
+    ROOT / "scripts/validate_phase6_c60a_gate.py",
+    *(ROOT / f"scripts/validate_phase6_c6{i}_gate.py" for i in range(1, 8)),
+)
 
 
 def require(condition: bool, message: str) -> None:
@@ -134,7 +137,7 @@ def main() -> int:
         "register_rest_route('sfa/v1', '/fiscal-release'",
         "register_rest_route('sfa/v1', '/folha'",
         "sfa_legacy_folha_retired",
-        "['status' => 410",
+        "'status' => 410",
         "'/wp-json/sfa/v1/fiscal-release'",
         "SHORTCODE_DISPLAY_ADAPTER_RETIRE_BY",
         "C7.1-before-production-deployment",
@@ -166,6 +169,10 @@ def main() -> int:
             require(completed.returncode == 0, f"PHP lint failed for {path.name}: {completed.stderr or completed.stdout}")
 
     ci = CI.read_text(encoding="utf-8")
+    require(
+        "python scripts/validate_phase6_c60a_gate.py" in ci,
+        "Remake CI missing permanent Phase 6 C6.0a gate",
+    )
     for index in range(1, 8):
         marker = f"python scripts/validate_phase6_c6{index}_gate.py"
         require(marker in ci, f"Remake CI missing permanent Phase 6 gate C6.{index}")
