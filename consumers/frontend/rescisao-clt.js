@@ -5,6 +5,52 @@
   if (!SFA || !SFA.TERMINATION) return;
 
   const CONSUMER = 'H29';
+  const ZERO = SFA.Decimal.parse('0');
+
+  function fail(code, message, details) {
+    throw new SFA.FiscalContractError(code, message, details || null);
+  }
+
+  function civilDateParts(value, name) {
+    const raw = String(value || '');
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+    if (!match) fail('h29_date_required', (name || 'data') + ' deve ser uma data civil válida.');
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const probe = new Date(Date.UTC(year, month - 1, day));
+    if (probe.getUTCFullYear() !== year || probe.getUTCMonth() + 1 !== month || probe.getUTCDate() !== day) {
+      fail('h29_date_required', (name || 'data') + ' deve ser uma data civil válida.');
+    }
+    return Object.freeze({ iso: raw, year, month, day });
+  }
+
+  function defaultDaysCounted(employmentStart, terminationDate) {
+    const start = civilDateParts(employmentStart, 'data de admissão');
+    const end = civilDateParts(terminationDate, 'data de desligamento');
+    if (start.iso > end.iso) fail('h29_date_order', 'A admissão não pode ser posterior ao desligamento.');
+    if (start.year === end.year && start.month === end.month) {
+      return end.day - start.day + 1;
+    }
+    return end.day;
+  }
+
+  function requirePositiveMoneyInput(value, fieldName, label) {
+    const raw = String(value === undefined || value === null ? '' : value).trim();
+    if (!raw) fail('h29_required_money', (label || fieldName) + ' deve ser informado e ser maior que zero.');
+    const normalized = SFA.normalizeMoneyInput(raw);
+    const amount = SFA.Decimal.parse(normalized, fieldName || 'money');
+    if (amount.compare(ZERO) <= 0) {
+      fail('h29_required_money', (label || fieldName) + ' deve ser maior que zero.');
+    }
+    return amount.toString();
+  }
+
+  SFA.H29_UI = Object.freeze({
+    defaultDaysCounted,
+    requirePositiveMoneyInput
+  });
+
   const page = root.document && root.document.getElementById('calc-rescisao-clt');
   if (!page) return;
 
@@ -12,6 +58,7 @@
   const alertBox = page.querySelector('[data-alert]');
   const result = page.querySelector('[data-result]');
   const reasonField = form && form.querySelector('[name="motivo_esocial"]');
+  const employmentStartField = form && form.querySelector('[name="data_admissao"]');
   const terminationDateField = form && form.querySelector('[name="data_desligamento"]');
   const terminationRemunerationField = form && form.querySelector('[name="remuneracao_mes_desligamento"]');
 
@@ -82,11 +129,6 @@
     }
   }
 
-  function moneyOrDash(value) {
-    if (value === null || value === undefined) return '—';
-    return SFA.brl(value);
-  }
-
   function updateReasonInputs() {
     if (!reasonField || !terminationRemunerationField) return;
     const needsProportional = reasonField.value !== '01';
@@ -94,28 +136,50 @@
     terminationRemunerationField.closest('[data-conditional="thirteenth"]')?.classList.toggle('is-muted', !needsProportional);
   }
 
-  function syncDaysWithTerminationDate() {
-    if (!terminationDateField || !form) return;
+  function syncDaysFromDates(force) {
+    if (!terminationDateField || !employmentStartField || !form) return;
     const days = form.querySelector('[name="dias_computados"]');
-    if (!days || days.dataset.userEdited === 'true') return;
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(terminationDateField.value || '');
-    if (match) days.value = String(Number(match[3]));
+    if (!days || (!force && days.dataset.userEdited === 'true')) return;
+    if (!employmentStartField.value || !terminationDateField.value) {
+      days.value = '';
+      return;
+    }
+    try {
+      days.value = String(defaultDaysCounted(employmentStartField.value, terminationDateField.value));
+      days.dataset.userEdited = 'false';
+    } catch (error) {
+      days.value = '';
+    }
   }
 
   async function run() {
     clearError();
     setBusy(true);
     try {
+      const reason = inputValue('motivo_esocial');
+      const monthlyBaseSalary = requirePositiveMoneyInput(
+        inputValue('salario_base_mensal'),
+        'monthlyBaseSalary',
+        'Salário-base mensal'
+      );
+      const terminationMonthRemuneration = reason === '01'
+        ? '0'
+        : requirePositiveMoneyInput(
+          inputValue('remuneracao_mes_desligamento'),
+          'terminationMonthRemuneration',
+          'Remuneração do mês da extinção para referência do 13º'
+        );
+
       const release = await SFA.fetchRelease({ consumer: CONSUMER });
       const calculation = SFA.TERMINATION.calculate(release, {
-        esocialReason: inputValue('motivo_esocial'),
+        esocialReason: reason,
         employmentRegime: inputValue('regime_emprego'),
         contractTerm: inputValue('prazo_contrato'),
         employmentStart: inputValue('data_admissao'),
         terminationDate: inputValue('data_desligamento'),
-        monthlyBaseSalary: inputValue('salario_base_mensal'),
+        monthlyBaseSalary,
         daysCountedThroughTermination: inputValue('dias_computados'),
-        terminationMonthRemuneration: inputValue('remuneracao_mes_desligamento') || '0'
+        terminationMonthRemuneration
       });
 
       const salary = calculation.salary_balance;
@@ -148,7 +212,11 @@
       }
     } catch (error) {
       if (root.console && typeof root.console.error === 'function') root.console.error('[H29]', error);
-      showError('Não foi possível calcular este caso dentro do escopo H29. Confira motivo eSocial, datas, regime, prazo contratual e bases informadas. Casos fora do modelo suportado são bloqueados em vez de estimados por aproximação.');
+      if (error && error.code === 'h29_required_money') {
+        showError(error.message);
+      } else {
+        showError('Não foi possível calcular este caso dentro do escopo H29. Confira motivo eSocial, datas, regime, prazo contratual e bases informadas. Casos fora do modelo suportado são bloqueados em vez de estimados por aproximação.');
+      }
       if (result) result.style.display = 'none';
     } finally {
       setBusy(false);
@@ -161,12 +229,19 @@
   }
   if (terminationDateField) {
     terminationDateField.value = terminationDateField.value || localTodayIso();
-    terminationDateField.addEventListener('change', syncDaysWithTerminationDate);
-    syncDaysWithTerminationDate();
+    terminationDateField.addEventListener('change', function () {
+      syncDaysFromDates(true);
+    });
+  }
+  if (employmentStartField) {
+    employmentStartField.addEventListener('change', function () {
+      syncDaysFromDates(true);
+    });
   }
   if (form) {
     const days = form.querySelector('[name="dias_computados"]');
     if (days) days.addEventListener('input', function () { days.dataset.userEdited = 'true'; });
+    syncDaysFromDates(false);
     form.addEventListener('submit', function (event) {
       event.preventDefault();
       run();
