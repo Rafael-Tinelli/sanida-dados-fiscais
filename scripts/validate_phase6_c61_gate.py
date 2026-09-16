@@ -80,6 +80,13 @@ def main() -> int:
         "calcIRRF13(",
         "aplicarReducao(",
         "total13 / 2",
+        "SHORTCODE_DISPLAY_ADAPTER_RETIRE_BY",
+        "C7.1-before-production-deployment",
+        "build_shortcode_display_adapter",
+        "wordpress_table_shortcodes_v1",
+        "compatibility_adapter",
+        "adapter_consumers",
+        "shortcode-display-v1",
         "607.20",
         "189.59",
         "1621.00",
@@ -88,10 +95,10 @@ def main() -> int:
         "8475.55",
     )
     for token in forbidden:
-        require(token not in text, f"legacy fiscal authority/formula remains in plugin: {token}")
+        require(token not in text, f"legacy fiscal authority/adapter/formula remains in plugin: {token}")
 
     required_markers = (
-        "Version:     2.6.0",
+        "Version:     2.7.0",
         "/releases/fiscal-v1/current.json",
         "RELEASE_BASE_URL_DEFAULT",
         "hash('sha256', $artifact['body'])",
@@ -114,17 +121,17 @@ def main() -> int:
         "'/wp-json/sfa/v1/fiscal-release'",
         "X-Sanida-Fiscal-Release",
         "['status' => 503]",
-        "SHORTCODE_DISPLAY_ADAPTER_RETIRE_BY",
-        "C7.1-before-production-deployment",
-        "build_shortcode_display_adapter",
-        "wordpress_table_shortcodes_v1",
-        "'adapter_consumers' => ['ano_ref','inss_tabela','irrf_tabela']",
+        "canonical_rules_for_shortcodes",
+        "inss.employee.progressive_table",
+        "irrf.monthly.progressive_table",
+        "irrf.simplified_monthly_discount",
+        "presentation_shortcodes_mode' => 'direct_canonical_release'",
         "data-sfa-retired=\"folha\"",
         "/financas/calculadoras/salario-liquido-clt/",
         "/financas/calculadoras/decimo-terceiro/",
     )
     for marker in required_markers:
-        require(marker in text, f"plugin missing required C6.1/C6.7 marker: {marker}")
+        require(marker in text, f"plugin missing required C6.1/C7.1 marker: {marker}")
 
     coverage = json.loads(COVERAGE.read_text(encoding="utf-8"))
     required_ids = required_inventory_rule_ids(coverage)
@@ -166,7 +173,7 @@ def main() -> int:
 
     print(
         "Phase 6 C6.1 WordPress consumer gate: PASS "
-        f"(release={release.release_id}, rules={len(release.rules)}, legacy_fiscal_runtime=retired)"
+        f"(release={release.release_id}, rules={len(release.rules)}, legacy_fiscal_runtime=retired, presentation=direct_release)"
     )
     return 0
 
