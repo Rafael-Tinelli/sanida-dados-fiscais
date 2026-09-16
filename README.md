@@ -383,18 +383,15 @@ C6.7 não afirma implantação no HostGator.
 Checkpoints concluídos:
 
 - **C7.1 — bundle pré-deploy e rollback**: retirou `wordpress_table_shortcodes_v1`; promoveu o **plugin 2.7.0** com shortcodes informativos lendo diretamente a release; definiu 32 arquivos gerenciados e 11 dependências pré-existentes; constrói bundle determinístico; executa H26–H29 sobre os bytes empacotados; e prova apply/rollback exato em ambiente temporário sem mutar o HostGator.
-- **C7.2 — E2E operacional, falhas e recuperação evergreen**: prova cold start, transient, ETag/304, indisponibilidade, `last_good`, sucessão real de release e recuperação até H26–H29. Corrige a lacuna pela qual uma sucessora conhecida podia ser esquecida entre requisições: `OPT_KNOWN_SUCCESSOR` passa a manter um latch persistente até a sucessora correspondente ser integralmente verificada. O fluxo fail-closed retorna `503` enquanto a sucessora conhecida não puder ser validada. `production_deployed=false` permanece obrigatório.
-- **C7.3 — runbook, observabilidade e pré-flight de produção**: formalizou health operacional, pré-flight read-only, backup/rollback e criação segura de diretórios gerenciados. A inspeção real do HostGator fechou em `PASS/GO` com 32/32 destinos, 11/11 dependências, quatro diretórios planejados e zero bloqueios. A evidência remota foi preservada por SHA-256 e aprovada pelo validador C7.3. Nenhuma mutação ou implantação foi executada.
-
-Checkpoint em andamento:
-
-- **C7.4 — autorização e implantação controlada**: autorização single-use `c74-20260916-a741aa78-843dca3e` registrada como `AUTHORIZED_READY_TO_DEPLOY`, vinculada ao SHA do bundle, à evidência remota C7.3 e à release `a741aa…`. O executor exige pré-flight fresco sem drift, snapshot exato antes da primeira escrita, journal fora dos roots, aplicação atômica, health pós-write e rollback automático/manual. Neste estado de repositório, `deployment_authorized=true` e `production_deployed=false`.
+- **C7.2 — E2E operacional, falhas e recuperação evergreen**: prova cold start, transient, ETag/304, indisponibilidade, `last_good`, sucessão real de release e recuperação até H26–H29. Corrige a lacuna pela qual uma sucessora conhecida podia ser esquecida entre requisições: `OPT_KNOWN_SUCCESSOR` passa a manter um latch persistente até a sucessora correspondente ser integralmente verificada. O fluxo fail-closed retorna `503` enquanto a sucessora conhecida não puder ser validada.
+- **C7.3 — runbook, observabilidade e pré-flight de produção**: formalizou health operacional, pré-flight read-only, backup/rollback e criação segura de diretórios gerenciados. A inspeção real do HostGator fechou em `PASS/GO` com 32/32 destinos, 11/11 dependências, quatro diretórios planejados e zero bloqueios. A evidência remota foi preservada por SHA-256 e aprovada pelo validador C7.3.
+- **C7.4 — autorização e implantação controlada**: autorização single-use `c74-20260916-a741aa78-843dca3e` foi consumida uma única vez no HostGator. O executor fechou em `APPLIED_HEALTHY`, aplicou 32/32 arquivos, criou os quatro diretórios previamente planejados, serviu a release `fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e`, validou health REST, manteve `/folha` em 410 e confirmou H26–H29 em HTTP 200. `production_deployed=true`, `post_deploy_validated=true` e `rollback_performed=false`. O SHA-256 final de `deployment-state.json` é `9fc57e626dd8ab3a7666da18c7f1397f35729987a3be62ac83ed6ed7ca0bcc4c`.
 
 Objetivos restantes:
 
-- executar a única implantação autorizada no HostGator;
-- preservar e registrar a evidência `APPLIED_HEALTHY` do journal;
-- fechar formalmente C7.4 e os critérios objetivos do remake.
+- verificar estabilidade pós-implantação sem reexecutar o bundle C7.4;
+- consolidar a evidência final de operação evergreen;
+- fechar formalmente a Fase 7 e o remake.
 
 ---
 
@@ -464,16 +461,18 @@ Objetivos restantes:
 62. Rollback de diretório criado pelo deploy usa apenas `rmdir` quando vazio; deleção recursiva é proibida e conteúdo não gerenciado sempre prevalece sobre a limpeza automática.
 63. `technical_go_no_go=GO` em C7.3 comprova prontidão técnica do ambiente, mas não autoriza nem executa implantação; autorização de deploy pertence a checkpoint explícito posterior.
 64. A autorização C7.4 é single-use e vinculada ao SHA-256 do bundle, SHA-256 da evidência C7.3 e release id; qualquer drift antes da primeira escrita bloqueia a execução e exige nova decisão explícita.
+65. Autorização C7.4 consumida não pode ser reutilizada. O histórico de autorização pré-deploy permanece separado do estado concluído e do registro de produção.
+66. Implantação só é considerada concluída depois de `APPLIED_HEALTHY`, release correta, REST saudável, `/folha` 410, H26–H29 HTTP 200 e SHA imutável do journal final registrado.
 
 ---
 
 ## 19. Questões em aberto
 
-As **Fases 0–6 estão formalmente concluídas**, C7.1–C7.3 estão concluídos e C7.4 está autorizado/em andamento. Restam para a Fase 7:
+As **Fases 0–6 estão formalmente concluídas** e C7.1–C7.4 estão concluídos. Restam para a Fase 7:
 
-- executar a implantação controlada autorizada no HostGator;
-- registrar o journal de produção e os health checks pós-write;
-- fechar formalmente C7.4 e o remake após evidência de produção.
+- validar estabilidade pós-deploy em janela separada, sem nova implantação;
+- consolidar evidência final de operação evergreen;
+- fechar formalmente a Fase 7 e o remake.
 
 Se a Fase 7 revelar lacuna semântica objetiva, a correção volta explicitamente à camada responsável; não será escondida em collector, parser ou consumidor.
 
@@ -481,9 +480,9 @@ Se a Fase 7 revelar lacuna semântica objetiva, a correção volta explicitament
 
 ## 20. Próxima etapa
 
-Executar a implantação single-use de **C7.4 — autorização e implantação controlada** usando `scripts/run_phase7_c74_controlled_deploy.py` e authorization id `c74-20260916-a741aa78-843dca3e`.
+Executar **C7.5 — validação pós-deploy e fechamento formal da Fase 7**.
 
-A execução deve reconstruir exatamente o bundle autorizado, revalidar a evidência C7.3, fazer pré-flight fresco sem drift, capturar snapshot/backup fora dos roots, aplicar somente os 32 destinos declarados e validar imediatamente `/fiscal-health`, `/fiscal-release`, `/folha` e H26–H29. Neste ponto `deployment_authorized=true` e `production_deployed=false`; somente uma execução `APPLIED_HEALTHY` pode promover produção a implantada.
+C7.5 não deve reimplantar o bundle C7.4. Deve verificar o estado já implantado, confirmar que a release e os consumidores permanecem saudáveis após a janela inicial, preservar evidência final e decidir objetivamente o fechamento do remake.
 
 ---
 
@@ -502,6 +501,21 @@ Uma fase só é `CONCLUÍDA` quando seus critérios objetivos e gates correspond
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-16 — C7.4 — implantação controlada concluída
+
+- autorização single-use `c74-20260916-a741aa78-843dca3e` consumida uma única vez;
+- commit autorizado `ccc5a31c3da7c1c93570df0337e553e5a06404ac` executado no HostGator;
+- executor terminou em `APPLIED_HEALTHY`, exit code 0 e `error=null`;
+- 32/32 arquivos gerenciados aplicados e quatro diretórios planejados criados;
+- `fiscal-health` e `fiscal-release` responderam HTTP 200 com a release `a741aa…`;
+- `/sfa/v1/folha` permaneceu HTTP 410;
+- H26, H27, H28 e H29 responderam HTTP 200;
+- nenhum rollback foi necessário (`rollback_performed=false`);
+- `production_deployed=true` e `post_deploy_validated=true`;
+- SHA-256 do estado final do journal: `9fc57e626dd8ab3a7666da18c7f1397f35729987a3be62ac83ed6ed7ca0bcc4c`;
+- autorização histórica preservada em `docs/phase7-c74-authorization-record.json` e resultado de produção em `docs/phase7-c74-production-deployment-record.json`;
+- C7.4 promovido a `CONCLUÍDO`; próxima fronteira: **C7.5 — validação pós-deploy e fechamento formal da Fase 7**.
 
 ### 2026-09-16 — C7.4 — autorização e implantação controlada iniciada
 
