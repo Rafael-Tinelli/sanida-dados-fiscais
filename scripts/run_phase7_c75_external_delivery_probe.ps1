@@ -1,10 +1,15 @@
 param(
-    [string]$OutputPath = "$PWD\c75-external-delivery-evidence.json"
+    [string]$OutputPath = "$PWD\c75-external-delivery-evidence.json",
+    [string]$AuthorizedCommit = 'ccc5a31c3da7c1c93570df0337e553e5a06404ac'
 )
 
 $ErrorActionPreference = 'Stop'
 
-$AuthorizedCommit = 'ccc5a31c3da7c1c93570df0337e553e5a06404ac'
+if ($AuthorizedCommit -notmatch '^[0-9a-fA-F]{40}$') {
+    throw 'AuthorizedCommit must be a 40-character hexadecimal Git commit SHA.'
+}
+$AuthorizedCommit = $AuthorizedCommit.ToLowerInvariant()
+
 $BasePublic = 'https://sanida.com.br/financas/calculadoras/assets'
 $BaseRaw = "https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/$AuthorizedCommit/consumers/frontend"
 
@@ -30,7 +35,7 @@ function Get-Sha256Hex([byte[]]$Bytes) {
 }
 
 $client = [System.Net.Http.HttpClient]::new()
-$client.DefaultRequestHeaders.UserAgent.ParseAdd('Sanida-C7.5-ExternalClient/1.0')
+$client.DefaultRequestHeaders.UserAgent.ParseAdd('Sanida-C7.5-ExternalClient/1.1')
 $client.DefaultRequestHeaders.CacheControl = [System.Net.Http.Headers.CacheControlHeaderValue]::new()
 $client.DefaultRequestHeaders.CacheControl.NoCache = $true
 
@@ -82,7 +87,7 @@ $payload = [ordered]@{
     production_mutated = $false
     authorized_commit = $AuthorizedCommit
     observed_at_utc = [DateTime]::UtcNow.ToString('o')
-    assets_expected = 8
+    assets_expected = $Assets.Count
     assets_matching = @($results | Where-Object { $_.match }).Count
     assets = $results
     block_reasons = $blocks
@@ -95,8 +100,9 @@ $bytes = [IO.File]::ReadAllBytes($OutputPath)
 $evidenceSha = Get-Sha256Hex $bytes
 
 Write-Host "========== C7.5 EXTERNAL DELIVERY =========="
+Write-Host "authorized_commit=$AuthorizedCommit"
 Write-Host "status=$status"
-Write-Host "assets=$($payload.assets_matching)/8"
+Write-Host "assets=$($payload.assets_matching)/$($payload.assets_expected)"
 foreach ($item in $results) {
     Write-Host ("{0}=public:{1} expected:{2} match:{3}" -f $item.asset, $item.public_http_status, $item.expected_http_status, $item.match)
 }
