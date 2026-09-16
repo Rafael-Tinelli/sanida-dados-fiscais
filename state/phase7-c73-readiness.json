@@ -1,20 +1,27 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "checkpoint": "C7.3",
-  "status": "EM_REVISÃO",
+  "status": "CONCLUÍDO",
   "repository_readiness": "READY",
-  "remote_preflight": "REQUIRED_NOT_EXECUTED",
-  "technical_go_no_go": "NO_GO_REMOTE_EVIDENCE_REQUIRED",
+  "remote_preflight": "PASS_VALIDATED",
+  "technical_go_no_go": "GO",
   "deployment_authorized": false,
   "production_deployed": false,
   "production_mutated_by_c73": false,
-  "required_remote_evidence": {
-    "producer": "scripts/run_phase7_c73_host_preflight.py",
-    "status": "PASS",
-    "technical_go_no_go": "GO",
-    "preexisting_dependencies": 11,
+  "remote_evidence_record": "docs/phase7-c73-remote-preflight-validation-record.json",
+  "remote_evidence": {
+    "observed_at_utc": "2026-09-16T16:48:31Z",
+    "source_commit": "8cdbba12da8205381fe942a53e1be45a82596917",
+    "evidence_sha256": "e4f69319ad2cb1e712c8807138a7aea86a8a2c08c5ecc9bebcd81399b045fec7",
+    "bundle_manifest_sha256": "843dca3e843bfe066cee5f1a39754741a9adb47d49fee9749876d4e17f4dedf1",
+    "release_id": "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e",
     "managed_targets": 32,
-    "production_mutated": false
+    "preexisting_dependencies": 11,
+    "planned_directory_creations": 4,
+    "status": "PASS",
+    "formal_validation": "PASS"
   },
-  "closure_condition": "C7.3 may become CONCLUÍDO only after real HostGator read-only preflight evidence is preserved and validated."
+  "closure_condition": "SATISFIED: real HostGator read-only preflight evidence is preserved outside production roots, bound by SHA-256, and passed the formal C7.3 remote-evidence validator.",
+  "next_checkpoint": "C7.4_CONTROLLED_DEPLOYMENT_AUTHORIZATION",
+  "next_checkpoint_boundary": "C7.3 technical GO does not authorize or execute production deployment."
 }

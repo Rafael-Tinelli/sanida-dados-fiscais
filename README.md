@@ -384,13 +384,11 @@ Checkpoints concluídos:
 
 - **C7.1 — bundle pré-deploy e rollback**: retirou `wordpress_table_shortcodes_v1`; promoveu o **plugin 2.7.0** com shortcodes informativos lendo diretamente a release; definiu 32 arquivos gerenciados e 11 dependências pré-existentes; constrói bundle determinístico; executa H26–H29 sobre os bytes empacotados; e prova apply/rollback exato em ambiente temporário sem mutar o HostGator.
 - **C7.2 — E2E operacional, falhas e recuperação evergreen**: prova cold start, transient, ETag/304, indisponibilidade, `last_good`, sucessão real de release e recuperação até H26–H29. Corrige a lacuna pela qual uma sucessora conhecida podia ser esquecida entre requisições: `OPT_KNOWN_SUCCESSOR` passa a manter um latch persistente até a sucessora correspondente ser integralmente verificada. O fluxo fail-closed retorna `503` enquanto a sucessora conhecida não puder ser validada. `production_deployed=false` permanece obrigatório.
+- **C7.3 — runbook, observabilidade e pré-flight de produção**: formalizou health operacional, pré-flight read-only, backup/rollback e criação segura de diretórios gerenciados. A inspeção real do HostGator fechou em `PASS/GO` com 32/32 destinos, 11/11 dependências, quatro diretórios planejados e zero bloqueios. A evidência remota foi preservada por SHA-256 e aprovada pelo validador C7.3. Nenhuma mutação ou implantação foi executada; `deployment_authorized=false` e `production_deployed=false` permanecem verdadeiros.
 
 Objetivos restantes:
 
-- consolidar runbook, rollback de produção e observabilidade operacional;
-- verificar no ambiente real as 11 dependências pré-existentes declaradas pelo bundle;
-- realizar pré-flight e definir critérios objetivos de autorização do deploy;
-- realizar implantação controlada no HostGator em checkpoint posterior;
+- realizar autorização e implantação controlada no HostGator em checkpoint posterior;
 - validar o pós-deploy e fechar os critérios objetivos do remake.
 
 ---
@@ -457,18 +455,19 @@ Objetivos restantes:
 58. Conhecimento de sucessora fiscal é estado de segurança durável, não cache: depois que `current.json` anuncia uma sucessora, a predecessora fica bloqueada entre requisições até que o pacote da sucessora seja verificado ou o estado seja resolvido de forma explícita.
 59. O refresh administrativo pode limpar transient e ETag, mas não pode apagar `OPT_KNOWN_SUCCESSOR`.
 60. A cadeia evergreen é deliberadamente cacheada: transient válido evita rede; após expiração/refresh, `current.json` é revalidado por ETag e uma release nova só substitui `last_good` após validação integral.
+61. Diretório gerenciado ausente não precisa ser criado manualmente antes do deploy: o pré-flight pode aprová-lo somente quando a cadeia for seguramente criável e registrar o plano em `planned_directory_creations`.
+62. Rollback de diretório criado pelo deploy usa apenas `rmdir` quando vazio; deleção recursiva é proibida e conteúdo não gerenciado sempre prevalece sobre a limpeza automática.
+63. `technical_go_no_go=GO` em C7.3 comprova prontidão técnica do ambiente, mas não autoriza nem executa implantação; autorização de deploy pertence a checkpoint explícito posterior.
 
 ---
 
 ## 19. Questões em aberto
 
-As **Fases 0–6 estão formalmente concluídas**, e C7.1–C7.2 estão concluídos. Restam para a Fase 7:
+As **Fases 0–6 estão formalmente concluídas**, e C7.1–C7.3 estão concluídos. Restam para a Fase 7:
 
-- consolidar runbook, rollback de produção e observabilidade operacional;
-- verificar as 11 dependências pré-existentes no ambiente real antes do deploy;
-- executar pré-flight de produção e definir critérios objetivos de go/no-go;
-- realizar implantação controlada no HostGator em checkpoint posterior;
-- validar o pós-deploy e fechar os critérios objetivos do remake.
+- autorizar e realizar implantação controlada no HostGator;
+- validar health, release, H26–H29 e rollback boundary no pós-deploy;
+- fechar formalmente o remake após evidência de produção.
 
 Se a Fase 7 revelar lacuna semântica objetiva, a correção volta explicitamente à camada responsável; não será escondida em collector, parser ou consumidor.
 
@@ -476,9 +475,9 @@ Se a Fase 7 revelar lacuna semântica objetiva, a correção volta explicitament
 
 ## 20. Próxima etapa
 
-Executar **C7.3 — runbook, observabilidade e pré-flight de produção**.
+Executar **C7.4 — autorização e implantação controlada**.
 
-C7.3 deve transformar as provas C7.1/C7.2 em procedimento operacional: verificar dependências do HostGator sem mutá-las, definir backup/rollback, health checks, sinais de observabilidade e critérios objetivos de autorização. A implantação continua fora de escopo neste checkpoint e `production_deployed=false` permanece obrigatório.
+C7.4 deve reconfirmar ausência de drift entre `main`, bundle e estado remoto, preservar backup exato antes da primeira escrita, executar somente os 32 destinos declarados e os quatro diretórios gerenciados quando necessários, manter journal de aplicação e validar imediatamente os health checks. O `GO` técnico de C7.3 **não** constitui autorização automática; `deployment_authorized=false` e `production_deployed=false` permanecem verdadeiros até ação explícita no checkpoint C7.4.
 
 ---
 
@@ -497,6 +496,19 @@ Uma fase só é `CONCLUÍDA` quando seus critérios objetivos e gates correspond
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-16 — C7.3 — runbook, observabilidade e pré-flight de produção
+
+- criado pré-flight read-only fail-closed para os roots reais do HostGator;
+- criados critérios objetivos de `GO/NO_GO`, health endpoint, runbook, backup e rollback;
+- primeira inspeção real revelou parents ainda ausentes em `parts/` e `includes/`, sem falta de dependências;
+- política foi corrigida para planejar diretórios seguramente criáveis em vez de exigir criação manual anterior;
+- criado journal `planned_directory_creations` e simulação de rollback por `rmdir` somente quando vazio, com deleção recursiva proibida;
+- novo pré-flight real fechou em `PASS/GO`: 32/32 destinos, 11/11 dependências, quatro diretórios planejados, zero `block_reasons`;
+- evidência remota preservada por SHA-256 `e4f69319ad2cb1e712c8807138a7aea86a8a2c08c5ecc9bebcd81399b045fec7`;
+- manifesto vinculado preservado por SHA-256 `843dca3e843bfe066cee5f1a39754741a9adb47d49fee9749876d4e17f4dedf1`;
+- validador formal C7.3 schema 1.1.0 confirmou `PASS/GO`, `production_mutated=false` e `deployment_authorized=false`;
+- C7.3 promovido a `CONCLUÍDO` sem qualquer deploy; próxima fronteira: **C7.4 — autorização e implantação controlada**.
 
 ### 2026-09-16 — C7.2 — E2E operacional, falhas e recuperação evergreen
 
