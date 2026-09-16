@@ -1,35 +1,50 @@
 {
-  "schema_version": "1.1.0",
+  "schema_version": "1.2.0",
   "checkpoint": "C7.5",
-  "status": "AWAITING_EXTERNAL_CLIENT_DELIVERY_VALIDATION",
-  "phase7_status": "EM ANDAMENTO",
+  "status": "CONCLUÍDO",
+  "phase7_status": "CONCLUÍDA",
+  "remake_status": "CONCLUÍDO",
   "production_deployed": true,
   "production_mutation_allowed": false,
+  "production_files_mutated_by_c75": false,
+  "edge_cache_remediation_performed": true,
   "c74_status_required": "CONCLUÍDO",
   "c74_authorization_id": "c74-20260916-a741aa78-843dca3e",
   "c74_deployment_state_sha256": "9fc57e626dd8ab3a7666da18c7f1397f35729987a3be62ac83ed6ed7ca0bcc4c",
+  "release_id": "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e",
   "minimum_postdeploy_window_seconds": 600,
-  "host_origin_observation": {
+  "host_origin_evidence": {
     "record": "docs/phase7-c75-initial-host-observation.json",
     "raw_evidence_path": "~/c75-evidence/c75-hostgator-postdeploy-20260916T175405Z.json",
     "raw_evidence_sha256": "996561d9acaee9473d4bbd2035ce32c8d1bff85c8e9e6eb38b10e2f26a8ff447",
-    "initial_status": "BLOCKED",
-    "non_delivery_blocks": 0,
+    "formal_revalidation_status": "PASS",
+    "formal_revalidation_source_commit": "60d196271d6992bb391a485bea755eb541aec3e1",
     "managed_files_matching": 32,
     "preexisting_dependencies_matching": 11,
     "created_directories": 4,
     "http_probes": 2,
-    "production_mutated": false,
-    "formal_revalidation_required": "scripts/validate_phase7_c75_remote_evidence.py"
+    "production_mutated": false
   },
-  "delivery_boundary": {
-    "finding": "HostGator egress to the public hostname may be rejected by Cloudflare and is not an external-client vantage point.",
-    "host_public_delivery_observation_is_diagnostic_only": true,
-    "external_client_evidence_required": true,
-    "external_probe": "scripts/run_phase7_c75_external_delivery_probe.ps1",
-    "external_validator": "scripts/validate_phase7_c75_external_delivery_evidence.py",
-    "authorized_commit": "ccc5a31c3da7c1c93570df0337e553e5a06404ac"
+  "external_delivery_evidence": {
+    "initial_blocked_sha256": "908551d36f340d97fbaa1277768fd1330651c1a555f7312c286003300843fd70",
+    "initial_assets_matching": 5,
+    "final_pass_sha256": "e162b1f7d60427bc9fd2679bdce683adac566ecdfcd349637dfef883cb981284",
+    "final_status": "PASS",
+    "final_assets_matching": 8,
+    "assets_expected": 8,
+    "authorized_commit": "ccc5a31c3da7c1c93570df0337e553e5a06404ac",
+    "observed_at_utc": "2026-09-16T18:27:35.0648819Z",
+    "production_mutated": false
   },
+  "cache_remediation": {
+    "cause": "stale Cloudflare HIT objects on three stable JavaScript URLs with max-age=31536000",
+    "affected_assets": ["folha-core.js", "ferias-clt.js", "rescisao-clt.js"],
+    "origin_cache_bust_matches": 3,
+    "remediation": "selective purge of the exact three public URLs",
+    "c74_redeployment_performed": false,
+    "production_files_rewritten": false
+  },
+  "final_record": "docs/phase7-c75-final-production-validation-record.json",
   "required_validation": {
     "c74_journal_sha256_unchanged": true,
     "managed_files_match_c74_bundle": 32,
@@ -43,8 +58,9 @@
     "calculator_pages_http_200": ["H26", "H27", "H28", "H29"],
     "external_client_public_js_matches_authorized_commit": 8,
     "independent_http_probes_minimum": 2,
-    "production_mutated_by_c75": false
+    "production_files_mutated_by_c75": false
   },
-  "closure_condition": "Promote C7.5 and Phase 7 to CONCLUÍDO only after the preserved HostGator evidence passes the host-origin validator, a separate external-client evidence JSON proves 8/8 public JavaScript assets match the exact C7.4 authorized commit, both evidence SHA-256 values are recorded, and the formal closure gate is green.",
-  "next_action": "Revalidate the existing HostGator JSON with the split-boundary validator and collect external-client public-delivery evidence; do not rerun C7.4 deployment and do not mutate production."
+  "operational_cache_invariant": "Future deployments that change managed public static asset bytes must version the public URL/cache key or purge the exact affected URLs, then prove external-client byte equality before declaring the deployment healthy.",
+  "closure_condition_met": true,
+  "next_action": "Normal evergreen operation and maintenance. Do not reopen the remake without objective evidence of a new defect or scope change."
 }
