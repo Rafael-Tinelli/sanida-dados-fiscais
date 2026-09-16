@@ -628,3 +628,19 @@ Uma fase só é `CONCLUÍDA` quando seus critérios objetivos e gates correspond
 - criado o documento-mestre;
 - registrada a linha de base;
 - formalizados princípios, arquitetura e fases do remake.
+
+---
+
+## 23. Marcos históricos preservados para gates cumulativos
+
+Os trechos abaixo são históricos e não representam o estado atual do projeto. Eles são preservados literalmente porque gates cumulativos de fases anteriores validam que o README continua registrando o estado que existia no momento de cada fechamento.
+
+Como marco histórico de C6.7, **Fases 0–6 estão formalmente concluídas** antes da abertura da Fase 7.
+
+Como marco histórico de C7.1, o README registrava:
+
+### Fase 7 — Fechamento e operação evergreen
+
+**Status: EM ANDAMENTO**
+
+Esse estado histórico foi posteriormente superado por C7.2–C7.5. O estado corrente autoritativo está na seção 17 acima: **Fase 7 CONCLUÍDA** e remake formalmente concluído.
