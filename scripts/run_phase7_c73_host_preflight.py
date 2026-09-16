@@ -23,6 +23,14 @@ def safe_relative(value: str) -> Path:
     return path
 
 
+def path_is_within(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except ValueError:
+        return False
+
+
 def sha256_file(path: Path) -> str:
     h = sha256()
     with path.open("rb") as handle:
@@ -294,14 +302,23 @@ def main() -> int:
     parser.add_argument("--evidence-out", type=Path)
     args = parser.parse_args()
 
+    site_root = args.site_root.resolve()
+    wordpress_plugin_dir = args.wordpress_plugin_dir.resolve()
+    evidence_out = args.evidence_out.resolve() if args.evidence_out else None
+    if evidence_out and (
+        path_is_within(evidence_out, site_root)
+        or path_is_within(evidence_out, wordpress_plugin_dir)
+    ):
+        fail("--evidence-out must be outside production target roots")
+
     result = run_preflight(
         args.bundle_manifest,
-        args.site_root,
-        args.wordpress_plugin_dir,
+        site_root,
+        wordpress_plugin_dir,
     )
     payload = json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-    if args.evidence_out:
-        args.evidence_out.write_text(payload, encoding="utf-8")
+    if evidence_out:
+        evidence_out.write_text(payload, encoding="utf-8")
     print(payload, end="")
     return 0 if result["status"] == "PASS" else 3
 
