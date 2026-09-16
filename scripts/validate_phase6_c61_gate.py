@@ -110,7 +110,7 @@ def main() -> int:
         "register_rest_route('sfa/v1', '/fiscal-release'",
         "register_rest_route('sfa/v1', '/folha'",
         "sfa_legacy_folha_retired",
-        "['status' => 410",
+        "'status' => 410",
         "'/wp-json/sfa/v1/fiscal-release'",
         "X-Sanida-Fiscal-Release",
         "['status' => 503]",
