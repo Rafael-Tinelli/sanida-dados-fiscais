@@ -12,7 +12,7 @@ C74_RECORD = ROOT / "docs/phase7-c74-production-deployment-record.json"
 
 def require(condition: bool, message: str) -> None:
     if not condition:
-        raise SystemExit(f"C7.5 remote evidence validation failed: {message}")
+        raise SystemExit(f"C7.5 host evidence validation failed: {message}")
 
 
 def load(path: Path) -> dict:
@@ -26,12 +26,24 @@ def validate(evidence: dict, c74: dict, record: dict) -> dict:
     require(evidence.get("schema_version") == "1.0.0", "schema version drift")
     require(evidence.get("checkpoint") == "C7.5", "checkpoint drift")
     require(evidence.get("mode") == "post_deploy_read_only_validation", "mode drift")
-    require(evidence.get("status") == "PASS", "post-deploy evidence is not PASS")
-    require(evidence.get("phase7_close_recommended") is True, "Phase 7 close recommendation missing")
     require(evidence.get("production_deployed") is True, "production deployment not observed")
-    require(evidence.get("production_mutated") is False, "C7.5 must be read-only")
-    require((evidence.get("block_reasons") or []) == [], "post-deploy evidence contains block reasons")
+    require(evidence.get("production_mutated") is False, "C7.5 host validation must be read-only")
     require(float(evidence.get("postdeploy_window_seconds", 0)) >= float(evidence.get("minimum_postdeploy_window_seconds", 600)), "post-deploy stability window too short")
+
+    # HostGator is not a valid external-client vantage point when Cloudflare blocks
+    # origin egress back to the public hostname. Host evidence may therefore be PASS,
+    # or BLOCKED exclusively by public_js_delivery_drift:* diagnostics. Every other
+    # block remains fatal and the 8/8 public delivery requirement moves to a separate
+    # external-client evidence validator.
+    block_reasons = evidence.get("block_reasons") or []
+    require(evidence.get("status") in {"PASS", "BLOCKED"}, "unexpected host evidence status")
+    non_delivery_blocks = [item for item in block_reasons if not str(item).startswith("public_js_delivery_drift:")]
+    require(non_delivery_blocks == [], f"host evidence contains non-delivery blocks: {non_delivery_blocks}")
+    if evidence.get("status") == "PASS":
+        require(block_reasons == [], "PASS host evidence contains block reasons")
+    else:
+        require(len(block_reasons) > 0, "BLOCKED host evidence has no diagnostic block")
+        require(evidence.get("phase7_close_recommended") is False, "blocked host evidence incorrectly recommends closure")
 
     require(c74.get("status") == "CONCLUÍDO", "C7.4 repository state not concluded")
     require(c74.get("production_deployed") is True, "C7.4 repository state not deployed")
@@ -105,14 +117,17 @@ def validate(evidence: dict, c74: dict, record: dict) -> dict:
             require(item.get("expected_assets_referenced") is True, f"{key} no longer references expected assets")
 
     public_js = evidence.get("public_js") or []
-    require(len(public_js) == 8, "public JS delivery count drift")
-    require(all(item.get("http_status") == 200 and item.get("match") is True for item in public_js), "one or more public JS assets differ from deployed bundle")
+    require(len(public_js) == 8, "host public-JS observation count drift")
+    delivery_diagnostics = [item for item in public_js if not (item.get("http_status") == 200 and item.get("match") is True)]
+    require(len(delivery_diagnostics) == len(block_reasons), "host public-JS diagnostics do not align with delivery block reasons")
 
     return {
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "checkpoint": "C7.5",
         "status": "PASS",
-        "phase7_close_recommended": True,
+        "host_origin_validation": "PASS",
+        "external_delivery_required": True,
+        "phase7_close_recommended": False,
         "production_deployed": True,
         "production_mutated": False,
         "authorization_id": evidence.get("authorization_id"),
@@ -120,13 +135,14 @@ def validate(evidence: dict, c74: dict, record: dict) -> dict:
         "postdeploy_window_seconds": evidence.get("postdeploy_window_seconds"),
         "managed_files": 32,
         "preexisting_dependencies": 11,
-        "public_js_assets": 8,
+        "host_public_js_matching": 8 - len(delivery_diagnostics),
+        "host_public_js_unverified": len(delivery_diagnostics),
         "http_probes": len(probes),
     }
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate C7.5 HostGator post-deploy evidence")
+    parser = argparse.ArgumentParser(description="Validate C7.5 HostGator origin post-deploy evidence")
     parser.add_argument("--evidence", type=Path, required=True)
     parser.add_argument("--c74-state", type=Path, default=C74_STATE)
     parser.add_argument("--c74-record", type=Path, default=C74_RECORD)
