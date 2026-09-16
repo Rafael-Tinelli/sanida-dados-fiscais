@@ -6,7 +6,7 @@
         <p>
           Preencha os campos para calcular décimo terceiro salário de forma rápida. A ferramenta estima o valor do 13º salário,
           a primeira parcela, a segunda parcela bruta e, quando a opção estiver ativa, uma projeção da segunda parcela líquida.
-          Se o adiantamento e os descontos consumirem todo o saldo, a calculadora mostra valor a pagar igual a zero e separa a insuficiência para conferência, sem exibir uma “parcela negativa”.
+          Se o adiantamento e os descontos consumirem todo o saldo, a calculadora mostra valor a pagar igual a zero e separa a insuficiência para conferência, para não exibir uma “parcela negativa”.
         </p>
       </div>
 
