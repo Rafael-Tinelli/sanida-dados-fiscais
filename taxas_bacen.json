@@ -1,7 +1,7 @@
 {
   "schema_version": "1.4.0",
   "meta": {
-    "generated_at_utc": "2026-09-16T14:54:05Z",
+    "generated_at_utc": "2026-09-16T18:50:47Z",
     "sources": {
       "selic": {
         "source_id": "BCB_SELIC_META_SGS_432",
@@ -12,7 +12,7 @@
         "candidate_sha256": "2468e0d83ab4e5caac17c8a6815eb12cd714a111ea4d1c8cd01890f05ebd54c3",
         "parser_id": "bcb_selic_meta_sgs432_v1",
         "parser_version": "1.1.0",
-        "observed_at_utc": "2026-09-16T14:54:05Z",
+        "observed_at_utc": "2026-09-16T18:50:47Z",
         "source_observation_date": "2026-09-16",
         "series_code": 432,
         "source_value_pct": "14.00",
@@ -28,7 +28,7 @@
         "candidate_sha256": "8cde0d31232edb5ea541d4556a4a1027ab6e62546eca0bb8263947917ea48e88",
         "parser_id": "bcb_cdi_daily_sgs12_v1",
         "parser_version": "1.0.0",
-        "observed_at_utc": "2026-09-16T14:54:05Z",
+        "observed_at_utc": "2026-09-16T18:50:47Z",
         "source_observation_date": "2026-09-15",
         "series_code": 12,
         "source_value_pct": "0.051660",
