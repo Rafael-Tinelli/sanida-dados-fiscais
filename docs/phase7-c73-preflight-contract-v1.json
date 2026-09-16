@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint": "C7.3",
+  "status": "READY_FOR_REMOTE_READ_ONLY_PREFLIGHT",
+  "production_deployed": false,
+  "purpose": "Define the fail-closed production preflight required before any HostGator deployment of the C7.1 bundle.",
+  "source_bundle_manifest": "docs/phase7-c71-deployment-manifest-v1.json",
+  "required_counts": {
+    "managed_files": 32,
+    "preexisting_dependencies": 11
+  },
+  "target_roots": [
+    "site_root",
+    "wordpress_plugin_dir"
+  ],
+  "read_only_checks": [
+    "target_roots_exist_and_are_directories",
+    "all_preexisting_dependencies_exist_are_regular_readable_files",
+    "all_managed_target_parent_directories_already_exist",
+    "all_managed_target_parent_directories_are_readable_traversable_and_writable",
+    "existing_managed_targets_are_regular_readable_non_symlink_files",
+    "existing_managed_targets_are_writable",
+    "bundle_and_existing_target_sha256_are_recorded",
+    "free_space_covers_bundle_staging_plus_exact_backup_bytes",
+    "php_cli_is_available",
+    "preflight_does_not_mutate_target_roots"
+  ],
+  "rollback_preconditions": {
+    "exact_backup_required_before_first_write": true,
+    "backup_scope": "all_existing_managed_targets",
+    "backup_sha256_required": true,
+    "new_managed_files_may_be_removed_on_rollback": true,
+    "new_directories_may_not_be_created_by_deploy": true,
+    "preexisting_dependencies_must_never_be_modified": true,
+    "unmanaged_files_must_never_be_modified": true
+  },
+  "observability": {
+    "health_endpoint": "/wp-json/sfa/v1/fiscal-health",
+    "release_endpoint": "/wp-json/sfa/v1/fiscal-release",
+    "legacy_endpoint": "/wp-json/sfa/v1/folha",
+    "healthy_status": "healthy",
+    "degraded_status": "degraded_last_good",
+    "blocked_status": "blocked_known_successor",
+    "unavailable_status": "unavailable",
+    "admin_debug_shortcode": "fiscais_debug"
+  },
+  "technical_go_no_go": {
+    "GO_requires": [
+      "remote_preflight_status_PASS",
+      "zero_block_reasons",
+      "all_11_dependencies_verified",
+      "all_32_managed_targets_preflighted",
+      "all_target_parent_directories_preexisting",
+      "php_cli_available",
+      "sufficient_free_space",
+      "production_target_unchanged_by_preflight"
+    ],
+    "NO_GO_on_any_failed_requirement": true,
+    "GO_does_not_execute_deploy": true,
+    "GO_does_not_replace_explicit_deployment_authorization": true
+  }
+}

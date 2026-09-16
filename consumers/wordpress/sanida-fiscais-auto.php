@@ -62,6 +62,7 @@ final class Sanida_Fiscais_Git {
     add_action('admin_bar_menu', [$this, 'admin_bar_clear'], 100);
     add_action('admin_init',     [$this, 'clear_cache']);
     add_action('rest_api_init',  [$this, 'register_rest_routes']);
+    add_action('rest_api_init',  [$this, 'register_fiscal_health_route']);
   }
 
 }
