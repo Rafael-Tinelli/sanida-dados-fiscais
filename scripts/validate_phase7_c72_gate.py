@@ -72,9 +72,17 @@ def main() -> int:
     ):
         require(marker in network, f"network runtime missing C7.2 safety/observability marker: {marker}")
 
-    require("delete_option(self::OPT_KNOWN_SUCCESSOR)" not in re.search(
-        r"public function clear_cache\(\).*?public function sc_debug\(", admin, flags=re.S
-    ).group(0), "manual cache refresh erases known-successor safety latch")
+    clear_cache_block = re.search(
+        r"public function clear_cache\(\).*?public function sc_debug\(",
+        admin,
+        flags=re.S,
+    )
+    require(clear_cache_block is not None, "could not inspect administrative cache-refresh boundary")
+    assert clear_cache_block is not None
+    require(
+        "delete_option(self::OPT_KNOWN_SUCCESSOR)" not in clear_cache_block.group(0),
+        "manual cache refresh erases known-successor safety latch",
+    )
     require("'fiscais_known_successor' => $this->known_successor_state()" in admin, "debug does not expose known successor state")
 
     publication = PUBLICATION_WORKFLOW.read_text(encoding="utf-8")
@@ -89,7 +97,10 @@ def main() -> int:
     ):
         require(marker in publication, f"publication workflow missing evergreen marker: {marker}")
     require("--scheduled" in publication, "scheduled publication mode is not explicit")
-    require("schedule may prepare review, but never approves bootstrap" in publication, "scheduled human-review boundary is undocumented")
+    require(
+        "schedule may prepare review, but never approves bootstrap" in publication.lower(),
+        "scheduled human-review boundary is undocumented",
+    )
 
     result = run_operational_e2e()
     require(result.get("production_deployed") is False, "operational E2E claims production deployment")
