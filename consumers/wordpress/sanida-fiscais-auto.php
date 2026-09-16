@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Sanida - Fiscais (Git Source + Calculadoras)
  * Description: Release fiscal canônica v1.2, cache/REST auditável, tabelas informativas e pontes para as calculadoras atuais.
- * Version:     2.6.0
+ * Version:     2.7.0
  * Author:      Sanida
  */
 
@@ -18,7 +18,7 @@ require_once plugin_dir_path(__FILE__) . 'includes/trait-sanida-admin-debug.php'
 
 final class Sanida_Fiscais_Git {
 
-  const VERSION = '2.6.0';
+  const VERSION = '2.7.0';
 
   const CURRENT_JSON_URL_DEFAULT = 'https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/main/releases/fiscal-v1/current.json';
   const RELEASE_BASE_URL_DEFAULT = 'https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/main/releases/fiscal-v1/';
@@ -28,13 +28,6 @@ final class Sanida_Fiscais_Git {
   const SUPPORTED_SCHEMA_VERSION       = '1.2.0';
   const SUPPORTED_CONTRACT_API_VERSION = '1.2.0';
   const SUPPORTED_MANIFEST_VERSION     = '1.0.0';
-
-  /*
-   * C6.7 keeps only a presentation adapter for the informational table shortcodes.
-   * It is not a calculator/data authority and must be removed at C7.1 before the
-   * production deployment of the Phase 7 bundle.
-   */
-  const SHORTCODE_DISPLAY_ADAPTER_RETIRE_BY = 'C7.1-before-production-deployment';
 
   const T_CACHE          = 'sfa_fiscal_v12_cache';
   const OPT_LAST_GOOD    = 'sfa_fiscal_v12_last_good';

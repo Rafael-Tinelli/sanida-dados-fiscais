@@ -45,7 +45,7 @@ trait Sanida_Fiscais_Admin_Debug_Trait {
       'fiscais_contract_api_version' => $cc['contract_api_version'] ?? null,
       'fiscais_approval_mode' => $lifecycle['approval_mode'] ?? null,
       'fiscais_runtime' => $package['_runtime'] ?? null,
-      'shortcode_display_adapter_retire_by' => self::SHORTCODE_DISPLAY_ADAPTER_RETIRE_BY,
+      'presentation_shortcodes_mode' => 'direct_canonical_release',
 
       'taxas_json_url' => $this->taxas_json_url(),
       'taxas_cached_transient' => (bool) get_transient(self::T_TAXAS_CACHE),
