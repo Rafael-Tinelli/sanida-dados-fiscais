@@ -113,36 +113,8 @@ trait Sanida_Fiscais_Fiscal_Network_Trait {
     return array_merge([
       'origin' => (string)$origin,
       'checked_at_utc' => gmdate('c'),
-      'shortcodes_blocked' => false,
       'canonical_source' => 'fiscal_contract_v1_2_release',
     ], is_array($extra) ? $extra : []);
-  }
-
-  private function unavailable_shortcode_display_payload($reason, $extra = []){
-    return [
-      'schema_version' => 'shortcode-display-v1',
-      'ano' => null,
-      'inss' => [],
-      'irrf' => [
-        'tabela' => [],
-        'simplificado' => null,
-      ],
-      'meta' => [
-        'errors' => [(string)$reason],
-        'presentation_only' => true,
-      ],
-      '_release' => null,
-      '_runtime' => array_merge($this->release_runtime('unavailable', [
-        'shortcodes_blocked' => true,
-        'compatibility_adapter' => 'wordpress_table_shortcodes_v1',
-        'adapter_consumers' => ['ano_ref','inss_tabela','irrf_tabela'],
-        'retire_by' => self::SHORTCODE_DISPLAY_ADAPTER_RETIRE_BY,
-      ]), is_array($extra) ? $extra : []),
-    ];
-  }
-
-  private function shortcode_display_blocked($payload){
-    return !empty($payload['_runtime']['shortcodes_blocked']);
   }
 
   private function fiscais_unavailable_text($kind){
@@ -271,7 +243,6 @@ trait Sanida_Fiscais_Fiscal_Network_Trait {
       'manifest' => null,
       'release' => null,
       '_runtime' => $this->release_runtime('unavailable', [
-        'shortcodes_blocked' => true,
         'current_url' => $current_url,
         'http_code' => $current['code'] ?? null,
         'last_fetch_error' => $error,
@@ -287,85 +258,6 @@ trait Sanida_Fiscais_Fiscal_Network_Trait {
       if (is_array($rule) && isset($rule['rule_id'])) $out[(string)$rule['rule_id']] = $rule;
     }
     return $out;
-  }
-
-  private function build_shortcode_display_adapter($package){
-    if (!$this->validate_release_package($package)) {
-      $runtime = is_array($package['_runtime'] ?? null) ? $package['_runtime'] : [];
-      return $this->unavailable_shortcode_display_payload('release_fiscal_indisponivel', $runtime);
-    }
-
-    $release = $package['release'];
-    $rules = $this->index_rules($release);
-    $inss_rule = $rules['inss.employee.progressive_table'] ?? null;
-    $irrf_rule = $rules['irrf.monthly.progressive_table'] ?? null;
-    $simp_rule = $rules['irrf.simplified_monthly_discount'] ?? null;
-    if (!is_array($inss_rule) || !is_array($irrf_rule) || !is_array($simp_rule)) {
-      return $this->unavailable_shortcode_display_payload('adapter_regras_incompletas');
-    }
-
-    $inss = [];
-    foreach (($inss_rule['payload']['brackets'] ?? []) as $b) {
-      if (!array_key_exists('upper_bound', $b) || !isset($b['rate'])) {
-        return $this->unavailable_shortcode_display_payload('adapter_inss_incompativel');
-      }
-      $inss[] = [
-        'limite' => $b['upper_bound'] === null ? null : (float)$b['upper_bound'],
-        'aliquota' => (float)$b['rate'],
-      ];
-    }
-
-    $irrf = [];
-    foreach (($irrf_rule['payload']['brackets'] ?? []) as $b) {
-      if (!array_key_exists('upper_bound', $b) || !isset($b['rate'], $b['deduction'])) {
-        return $this->unavailable_shortcode_display_payload('adapter_irrf_incompativel');
-      }
-      $irrf[] = [
-        'limite' => $b['upper_bound'] === null ? null : (float)$b['upper_bound'],
-        'aliquota' => (float)$b['rate'],
-        'deducao' => (float)$b['deduction'],
-      ];
-    }
-
-    $effective_from = (string)($irrf_rule['vigency']['effective_from'] ?? '');
-    $year = preg_match('/^(\\d{4})-/', $effective_from, $m) ? (int)$m[1] : null;
-    if (!$year) return $this->unavailable_shortcode_display_payload('adapter_vigencia_incompativel');
-
-    $runtime = is_array($package['_runtime'] ?? null) ? $package['_runtime'] : [];
-    $runtime['shortcodes_blocked'] = false;
-    $runtime['release_id'] = $release['release_id'];
-    $runtime['compatibility_adapter'] = 'wordpress_table_shortcodes_v1';
-    $runtime['adapter_consumers'] = ['ano_ref','inss_tabela','irrf_tabela'];
-    $runtime['retire_by'] = self::SHORTCODE_DISPLAY_ADAPTER_RETIRE_BY;
-
-    return [
-      'schema_version' => 'shortcode-display-v1',
-      'ano' => $year,
-      'inss' => $inss,
-      'irrf' => [
-        'tabela' => $irrf,
-        'simplificado' => (float)($simp_rule['payload']['value'] ?? 0),
-      ],
-      'meta' => [
-        'generated_at_utc' => $release['generated_at_utc'] ?? null,
-        'canonical_contract' => true,
-        'presentation_only' => true,
-      ],
-      '_release' => [
-        'release_id' => $release['release_id'],
-        'contract_id' => $release['contract_id'],
-        'contract_schema_version' => $release['schema_version'],
-        'contract_api_version' => $release['consumer_compatibility']['contract_api_version'],
-        'published_at_utc' => $release['lifecycle']['published_at_utc'],
-        'approval_mode' => $release['lifecycle']['approval_mode'],
-        'manifest_artifact_sha256' => $package['manifest']['artifact_sha256'],
-      ],
-      '_runtime' => $runtime,
-    ];
-  }
-
-  private function get_shortcode_display_data(){
-    return $this->build_shortcode_display_adapter($this->get_release_package());
   }
 
 }
