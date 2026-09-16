@@ -133,3 +133,59 @@ def test_c62_progressive_and_irrf_runtime_match_python_engine() -> None:
     assert Decimal(result["irrf"]["reduction_amount"]) == irrf.reduction_amount
     assert Decimal(result["irrf"]["final_irrf"]) == irrf.final_irrf
     assert result["irrf"]["audit"]["release_id"] == release.release_id
+
+
+def test_c62_vacation_irrf_identity_and_runtime_match_python_engine() -> None:
+    release = FiscalReleaseStore(STORE).load_current()
+    assert release is not None
+    result = _node_result()
+
+    assessment = IrrfAssessmentIdentity(
+        income_type=IrrfIncomeType.VACATION,
+        origin_context=AssessmentContext.VACATION_ENJOYED,
+    )
+    bundle = select_irrf_rule_bundle(release, TARGET_DATE, assessment)
+    dependent_rule = release.select_rule(
+        "irrf.dependent_deduction",
+        TARGET_DATE,
+        AssessmentContext.VACATION_ENJOYED,
+    )
+    simplified_rule = release.select_rule(
+        "irrf.simplified_monthly_discount",
+        TARGET_DATE,
+        AssessmentContext.VACATION_ENJOYED,
+    )
+    assert isinstance(dependent_rule.payload, ScalarPayload)
+    assert isinstance(simplified_rule.payload, ScalarPayload)
+
+    deductions = build_irrf_legal_deductions(
+        assessment=assessment,
+        social_security="315.27",
+        dependent_count=0,
+        dependent_deduction=dependent_rule.payload,
+        pension="0.00",
+    )
+    irrf = assess_irrf_2026(
+        assessment=assessment,
+        gross_taxable_income="4000.00",
+        legal_deductions=deductions,
+        simplified_discount=simplified_rule.payload,
+        rules=bundle,
+    )
+
+    identity = result["vacation_identity"]
+    js_irrf = result["vacation_irrf"]
+    assert identity["income_type"] == "vacation"
+    assert identity["origin_context"] == "vacation_enjoyed"
+    assert identity["rule_context"] == "vacation_enjoyed"
+    assert identity["reduction_rule_id"] == "vacation.irrf.reduction.2026"
+    assert identity["reduction_input_semantic"] == (
+        "taxable_vacation_income_subject_to_separate_monthly_irrf_assessment_before_deductions"
+    )
+    assert Decimal(js_irrf["irrf_tax_base"]) == irrf.irrf_tax_base
+    assert Decimal(js_irrf["pre_reduction_irrf"]) == irrf.pre_reduction_irrf
+    assert Decimal(js_irrf["reduction_amount"]) == irrf.reduction_amount
+    assert Decimal(js_irrf["final_irrf"]) == irrf.final_irrf
+    audit_ids = {item["rule_id"] for item in js_irrf["audit"]["rules"]}
+    assert "vacation.irrf.reduction.2026" in audit_ids
+    assert "irrf.reduction.2026" not in audit_ids
