@@ -317,13 +317,19 @@ README mestre, arquitetura inicial, princípios e invariantes congelados.
 
 **Status: CONCLUÍDA**
 
-Inventário, registro canônico de fontes e casos de referência formalizados em `docs/` e `tests/reference_cases/`.
+Inventário, registro canônico de fontes e casos de referência formalizados. Artefatos históricos obrigatórios incluem:
 
-### Fase 2 — Contrato Fiscal Canônico
+- `docs/inventario-juridico-fiscal-v1.md`;
+- `docs/rule-inventory-v1.json`;
+- `docs/source-registry-v1.json`;
+- `docs/phase1-closure.md`;
+- `tests/reference_cases/phase1_reference_cases.json`.
+
+### Fase 2 — Contrato Fiscal Canônico v1
 
 **Status: CONCLUÍDA**
 
-Cobertura 32/32, 18 famílias de payload, lifecycle, proveniência, SemVer, compatibilidade exata e gates negativos.
+Cobertura 32/32, 18 famílias de payload, lifecycle, proveniência, SemVer, compatibilidade exata e gates negativos. O histórico v1.1 permanece preservado e a linha de publicação atual é v1.2.
 
 ### Fase 3 — Biblioteca fiscal e testes
 
@@ -414,7 +420,7 @@ Objetivos:
 26. H29 cruza matriz geral com regras específicas e falha fechado em divergência.
 27. Saldo salarial usa dias civis reais do mês no escopo padrão.
 28. Memória comum é envelope auditável, não fusão de regras.
-29. Fases só fecham com código, testes, gate e documentação no mesmo head.
+29. Fases só fecham com código, testes, gate e documentação verdes no mesmo head.
 30. Fases encerradas não reabrem por redesign oportunista.
 31. Coleta e interpretação são etapas distintas; snapshot nasce antes do parser.
 32. Estado operacional preserva last-good sem torná-lo automaticamente consumível.
