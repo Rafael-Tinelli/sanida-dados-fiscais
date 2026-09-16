@@ -25,6 +25,7 @@ CORE = ROOT / "consumers/frontend/folha-core.js"
 THIRTEENTH = ROOT / "consumers/frontend/folha-thirteenth.js"
 H27 = ROOT / "consumers/frontend/decimo-terceiro.js"
 H27_PAGE = ROOT / "consumers/frontend/decimo-terceiro-clt/index.php"
+H27_CALCULATOR = ROOT / "consumers/frontend/decimo-terceiro-clt/parts/02-calculator.php"
 NODE_RUNTIME = ROOT / "tests/js/phase6_c64_h27_runtime.cjs"
 STORE = ROOT / "releases/fiscal-v1"
 TARGET_DATE = date(2026, 12, 20)
@@ -130,6 +131,10 @@ def test_c64_h27_standard_case_matches_python_engine_and_release() -> None:
     assert Decimal(h27["fiscal"]["irrf"]["final_irrf"]) == fiscal.irrf.final_irrf == Decimal("0.00")
     assert Decimal(h27["second_installment_gross"]) == Decimal("2000.00")
     assert Decimal(h27["second_installment_net"]) == Decimal("1631.40")
+    assert h27["settlement"]["status"] == "PAYABLE"
+    assert h27["settlement"]["balance_basis"] == "net"
+    assert Decimal(h27["settlement"]["balance_before_floor"]) == Decimal("1631.40")
+    assert Decimal(h27["settlement"]["insufficiency_amount"]) == Decimal("0")
 
 
 def test_c64_h27_preserves_14_15_day_accrual_boundary() -> None:
@@ -171,6 +176,7 @@ def test_c64_special_advance_cases_fail_explicitly_until_actual_advance_is_repor
     assert variable["advance"]["reason"] == "thirteenth_advance_variable_unsupported"
     assert variable["second_installment_gross"] is None
     assert variable["second_installment_net"] is None
+    assert variable["settlement"]["status"] == "PENDING_ADVANCE"
 
     reported = result["variable_reported"]
     assert reported["advance"]["status"] == "REPORTED"
@@ -181,6 +187,60 @@ def test_c64_special_advance_cases_fail_explicitly_until_actual_advance_is_repor
     admission = result["admission_unsupported"]
     assert admission["advance"]["status"] == "UNSUPPORTED"
     assert admission["advance"]["reason"] == "thirteenth_advance_admission_unsupported"
+    assert admission["settlement"]["status"] == "PENDING_ADVANCE"
+
+
+def test_c64_h27_insufficient_balance_never_becomes_negative_second_installment() -> None:
+    result = _node_result()
+    matrix = result["settlement_matrix"]
+
+    expected = {
+        "avos1": ("INSUFFICIENT", "333.33", "0", "0", "-1691.67", "1691.67"),
+        "avos5": ("INSUFFICIENT", "1666.67", "0", "0", "-459.02", "459.02"),
+        "avos6": ("INSUFFICIENT", "2000.00", "0", "0", "-155.69", "155.69"),
+        "avos7": ("PAYABLE", "2333.33", "333.33", "147.65", "147.65", "0"),
+    }
+    for key, (status, gross, second_gross, second_net, balance, insufficiency) in expected.items():
+        case = matrix[key]
+        assert Decimal(case["gross_thirteenth"]) == Decimal(gross)
+        assert case["settlement"]["status"] == status
+        assert Decimal(case["second_installment_gross"]) == Decimal(second_gross)
+        assert Decimal(case["second_installment_net"]) == Decimal(second_net)
+        assert Decimal(case["settlement"]["balance_before_floor"]) == Decimal(balance)
+        assert Decimal(case["settlement"]["insufficiency_amount"]) == Decimal(insufficiency)
+        assert Decimal(case["second_installment_gross"]) >= 0
+        assert Decimal(case["second_installment_net"]) >= 0
+
+    assert matrix["avos11"]["settlement"]["status"] == "PAYABLE"
+    assert matrix["avos12"]["settlement"]["status"] == "PAYABLE"
+    assert Decimal(matrix["avos11"]["second_installment_net"]) > 0
+    assert Decimal(matrix["avos12"]["second_installment_net"]) > 0
+
+
+def test_c64_h27_reported_advance_below_equal_or_above_final_gross_is_modeled_not_rejected() -> None:
+    matrix = _node_result()["reported_advance_matrix"]
+
+    below = matrix["below"]
+    assert below["advance"]["status"] == "REPORTED"
+    assert below["settlement"]["status"] == "PAYABLE"
+    assert Decimal(below["second_installment_net"]) > 0
+
+    equal = matrix["equalGross"]
+    assert equal["advance"]["status"] == "REPORTED"
+    assert Decimal(equal["settlement"]["gross_balance_before_deductions"]) == Decimal("0")
+    assert equal["settlement"]["status"] == "INSUFFICIENT"
+    assert Decimal(equal["second_installment_gross"]) == Decimal("0")
+    assert Decimal(equal["second_installment_net"]) == Decimal("0")
+    assert Decimal(equal["settlement"]["insufficiency_amount"]) == Decimal("155.69")
+
+    above = matrix["aboveGross"]
+    assert above["advance"]["status"] == "REPORTED"
+    assert Decimal(above["advance"]["amount"]) > Decimal(above["gross_thirteenth"])
+    assert above["settlement"]["status"] == "INSUFFICIENT"
+    assert Decimal(above["second_installment_gross"]) == Decimal("0")
+    assert Decimal(above["second_installment_net"]) == Decimal("0")
+    assert Decimal(above["settlement"]["balance_before_floor"]) == Decimal("-459.02")
+    assert Decimal(above["settlement"]["insufficiency_amount"]) == Decimal("459.02")
 
 
 def test_c64_h27_is_fail_closed_for_missing_advance_reference_negative_money_and_rounding() -> None:
@@ -233,6 +293,7 @@ def test_c64_h27_source_has_no_legacy_or_parallel_fiscal_formula() -> None:
         "2902.84",
         "4354.27",
         "8475.55",
+        "h27_advance_exceeds_gross",
     ):
         assert forbidden not in h27
         assert forbidden not in shared
@@ -241,6 +302,9 @@ def test_c64_h27_source_has_no_legacy_or_parallel_fiscal_formula() -> None:
         "SFA.THIRTEENTH.calculateAccrual(",
         "SFA.THIRTEENTH.calculateAdvance(",
         "SFA.THIRTEENTH.assessFiscal(",
+        "buildSettlement(",
+        "payable_second_installment_gross",
+        "insufficiency_amount",
         "release_id: release.release_id",
     ):
         assert required in h27
@@ -252,8 +316,9 @@ def test_c64_h27_source_has_no_legacy_or_parallel_fiscal_formula() -> None:
     assert "assessment.reduction_rule_id" in shared
 
 
-def test_c64_h27_page_exposes_advance_inputs_and_auditable_fiscal_memory() -> None:
+def test_c64_h27_page_exposes_advance_inputs_liquidation_state_and_auditable_fiscal_memory() -> None:
     page = H27_PAGE.read_text(encoding="utf-8")
+    calculator = H27_CALCULATOR.read_text(encoding="utf-8")
     assert page.index("/financas/calculadoras/assets/folha-core.js") < page.index(
         "/financas/calculadoras/assets/folha-thirteenth.js"
     ) < page.index("/financas/calculadoras/assets/decimo-terceiro.js")
@@ -272,3 +337,13 @@ def test_c64_h27_page_exposes_advance_inputs_and_auditable_fiscal_memory() -> No
         "Release fiscal usada",
     ):
         assert marker in page
+    for marker in (
+        'data-row="status-liquidacao"',
+        'data-row="saldo-antes-piso"',
+        'data-row="insuficiencia"',
+        "2ª parcela bruta a pagar",
+        "2ª parcela líquida a pagar",
+        "não exibir uma “parcela negativa”",
+        "não determina por si só como eventual diferença será compensada",
+    ):
+        assert marker in calculator

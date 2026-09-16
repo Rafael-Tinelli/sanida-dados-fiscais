@@ -42,6 +42,64 @@
     return Number(String(iso).slice(0, 4));
   }
 
+  function balanceStatus(balance) {
+    const comparison = balance.compare(ZERO);
+    if (comparison > 0) return 'PAYABLE';
+    if (comparison < 0) return 'INSUFFICIENT';
+    return 'ZERO_BALANCE';
+  }
+
+  function insufficiencyOf(balance) {
+    return balance.compare(ZERO) < 0 ? ZERO.sub(balance) : ZERO;
+  }
+
+  function buildSettlement(grossAmount, advance, fiscal, pension) {
+    if (!advance || advance.amount === null) {
+      return Object.freeze({
+        status: 'PENDING_ADVANCE',
+        balance_basis: fiscal ? 'net' : 'gross',
+        gross_balance_before_deductions: null,
+        deductions_total: fiscal ? null : '0',
+        net_balance_before_floor: null,
+        balance_before_floor: null,
+        payable_second_installment_gross: null,
+        payable_second_installment_net: null,
+        insufficiency_amount: null
+      });
+    }
+
+    const advanceAmount = SFA.Decimal.parse(advance.amount, 'advance_amount');
+    const grossBalance = grossAmount.sub(advanceAmount);
+    const payableGross = grossBalance.max(ZERO);
+    let deductionsTotal = ZERO;
+    let netBalance = null;
+    let payableNet = null;
+    let balanceBasis = 'gross';
+    let effectiveBalance = grossBalance;
+
+    if (fiscal) {
+      const inss = SFA.Decimal.parse(fiscal.social_security, 'thirteenth_inss');
+      const irrf = SFA.Decimal.parse(fiscal.irrf.final_irrf, 'thirteenth_irrf');
+      deductionsTotal = inss.add(irrf).add(pension);
+      netBalance = grossBalance.sub(deductionsTotal);
+      payableNet = netBalance.max(ZERO);
+      balanceBasis = 'net';
+      effectiveBalance = netBalance;
+    }
+
+    return Object.freeze({
+      status: balanceStatus(effectiveBalance),
+      balance_basis: balanceBasis,
+      gross_balance_before_deductions: grossBalance.toString(),
+      deductions_total: deductionsTotal.toString(),
+      net_balance_before_floor: netBalance ? netBalance.toString() : null,
+      balance_before_floor: effectiveBalance.toString(),
+      payable_second_installment_gross: payableGross.toString(),
+      payable_second_installment_net: payableNet ? payableNet.toString() : null,
+      insufficiency_amount: insufficiencyOf(effectiveBalance).toString()
+    });
+  }
+
   function calculateH27(release, input) {
     const params = input || {};
     const targetDate = SFA.normalizeDate(params.targetDate, 'targetDate');
@@ -95,9 +153,6 @@
     let advanceAudit = [];
     if (reportedAdvanceRaw !== '') {
       const reported = money(reportedAdvanceRaw, 'reported_advance');
-      if (reported.compare(grossAmount) > 0) {
-        h27Error('h27_advance_exceeds_gross', 'Adiantamento informado supera o 13º total calculado; este cenário exige conferência manual.');
-      }
       advance = Object.freeze({ status: 'REPORTED', amount: reported.toString(), source: 'reported_by_user', reason: null });
     } else {
       const admissionInYear = accrualMode === 'dates'
@@ -135,17 +190,7 @@
       });
     }
 
-    let secondGross = null;
-    let secondNet = null;
-    if (advance.amount !== null) {
-      const advanceAmount = SFA.Decimal.parse(advance.amount, 'advance_amount');
-      secondGross = grossAmount.sub(advanceAmount).toString();
-      if (fiscal) {
-        const inss = SFA.Decimal.parse(fiscal.social_security, 'thirteenth_inss');
-        const irrf = SFA.Decimal.parse(fiscal.irrf.final_irrf, 'thirteenth_irrf');
-        secondNet = grossAmount.sub(advanceAmount).sub(inss).sub(irrf).sub(pension).toString();
-      }
-    }
+    const settlement = buildSettlement(grossAmount, advance, fiscal, pension);
 
     const audits = uniqueAudits([
       accrual.audit,
@@ -164,15 +209,16 @@
       reference_remuneration: reference,
       gross_thirteenth: gross.gross_thirteenth,
       advance,
-      second_installment_gross: secondGross,
-      second_installment_net: secondNet,
+      settlement,
+      second_installment_gross: settlement.payable_second_installment_gross,
+      second_installment_net: settlement.payable_second_installment_net,
       pension: pension.toString(),
       fiscal: fiscal ? Object.freeze({ inss: fiscal.social_security, irrf: fiscal.irrf }) : null,
       fiscal_metadata: Object.freeze({ release_id: release.release_id, rules: audits })
     });
   }
 
-  SFA.H27 = Object.freeze({ calculate: calculateH27 });
+  SFA.H27 = Object.freeze({ calculate: calculateH27, buildSettlement });
 
   const page = root.document && root.document.getElementById('calc-decimo-terceiro');
   if (!page) return;
@@ -241,6 +287,14 @@
     return 'Não suportado automaticamente';
   }
 
+  function settlementStatusLabel(settlement) {
+    if (!settlement || settlement.status === 'PENDING_ADVANCE') return 'Depende do adiantamento efetivamente pago';
+    if (settlement.status === 'PAYABLE') return 'Há valor positivo de 2ª parcela a pagar';
+    if (settlement.status === 'ZERO_BALANCE') return 'Saldo zerado: não há 2ª parcela a pagar';
+    if (settlement.status === 'INSUFFICIENT') return 'Saldo insuficiente: não há parcela negativa a pagar';
+    return settlement.status || '—';
+  }
+
   async function run() {
     clearError();
     setBusy(true);
@@ -272,6 +326,11 @@
       setText('[data-row="status-adiantamento"]', advanceStatusLabel(calculation.advance));
       setText('[data-row="segunda-bruta"]', calculation.second_installment_gross !== null ? SFA.brl(calculation.second_installment_gross) : 'Depende do adiantamento pago');
       setText('[data-row="segunda-liquida"]', calculation.second_installment_net !== null ? SFA.brl(calculation.second_installment_net) : 'Depende do adiantamento pago');
+      setText('[data-row="status-liquidacao"]', settlementStatusLabel(calculation.settlement));
+      setText('[data-row="saldo-antes-piso"]', calculation.settlement.balance_before_floor !== null ? SFA.brl(calculation.settlement.balance_before_floor) : 'Depende do adiantamento pago');
+      setText('[data-row="insuficiencia"]', calculation.settlement.insufficiency_amount !== null && SFA.Decimal.parse(calculation.settlement.insufficiency_amount).compare(ZERO) > 0
+        ? SFA.brl(calculation.settlement.insufficiency_amount)
+        : '—');
 
       if (calculation.fiscal) {
         setText('[data-row="inss13"]', '- ' + SFA.brl(calculation.fiscal.inss));
@@ -294,6 +353,7 @@
       if (result) {
         result.dataset.releaseId = calculation.fiscal_metadata.release_id;
         result.dataset.referenceDate = calculation.reference_date;
+        result.dataset.settlementStatus = calculation.settlement.status;
         result.style.display = 'block';
       }
     } catch (error) {
