@@ -50,8 +50,7 @@ def _python_standard(reason: str = "02"):
     assert rounding_rule.rounding_policy is not None
     result = calculate_h29_limited_estimate(
         contract=release,
-        target_date=TARGET_DATE,
-        reason_code=reason,
+        esocial_reason=reason,
         employment_regime="monthly",
         contract_term="indefinite",
         employment_start=date(2025, 9, 1),
