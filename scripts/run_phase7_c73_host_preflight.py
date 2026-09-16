@@ -63,7 +63,7 @@ def file_record(path: Path, *, relative_path: str, kind: str) -> dict:
         "sha256": None,
         "mode": None,
     }
-    if exists:
+    if exists or is_symlink:
         try:
             st = path.lstat()
             record["mode"] = format(stat.S_IMODE(st.st_mode), "04o")
@@ -78,17 +78,87 @@ def file_record(path: Path, *, relative_path: str, kind: str) -> dict:
     return record
 
 
-def parent_record(path: Path) -> dict:
-    parent = path.parent
-    exists = parent.exists()
-    is_dir = parent.is_dir() if exists else False
+def directory_state(path: Path) -> dict:
+    exists = path.exists()
+    is_symlink = path.is_symlink()
+    is_dir = path.is_dir() if exists else False
     return {
-        "absolute_path": str(parent),
+        "absolute_path": str(path),
         "exists": exists,
         "is_dir": is_dir,
-        "readable": bool_access(parent, os.R_OK) if exists else False,
-        "traversable": bool_access(parent, os.X_OK) if exists else False,
-        "writable": bool_access(parent, os.W_OK) if exists else False,
+        "is_symlink": is_symlink,
+        "readable": bool_access(path, os.R_OK) if exists else False,
+        "traversable": bool_access(path, os.X_OK) if exists else False,
+        "writable": bool_access(path, os.W_OK) if exists else False,
+    }
+
+
+def parent_plan(parent: Path, root: Path) -> dict:
+    try:
+        parent.relative_to(root)
+    except ValueError:
+        fail(f"managed parent escapes target root: {parent}")
+
+    if parent.exists() or parent.is_symlink():
+        state = directory_state(parent)
+        ready = (
+            state["exists"]
+            and state["is_dir"]
+            and not state["is_symlink"]
+            and state["readable"]
+            and state["traversable"]
+            and state["writable"]
+        )
+        if state["is_symlink"]:
+            block_code = "managed_parent_symlink_not_allowed"
+        elif not state["exists"] or not state["is_dir"]:
+            block_code = "managed_parent_not_directory"
+        elif not state["readable"] or not state["traversable"]:
+            block_code = "managed_parent_not_accessible"
+        elif not state["writable"]:
+            block_code = "managed_parent_not_writable"
+        else:
+            block_code = None
+        return {
+            **state,
+            "creation_required": False,
+            "creatable": ready,
+            "ready": ready,
+            "block_code": block_code,
+            "missing_directories": [],
+            "nearest_existing_ancestor": state,
+        }
+
+    missing: list[Path] = []
+    cursor = parent
+    while cursor != root and not cursor.exists() and not cursor.is_symlink():
+        missing.append(cursor)
+        cursor = cursor.parent
+
+    ancestor = directory_state(cursor)
+    creatable = (
+        ancestor["exists"]
+        and ancestor["is_dir"]
+        and not ancestor["is_symlink"]
+        and ancestor["readable"]
+        and ancestor["traversable"]
+        and ancestor["writable"]
+    )
+    missing_rel = [path.relative_to(root).as_posix() for path in reversed(missing)]
+    return {
+        "absolute_path": str(parent),
+        "exists": False,
+        "is_dir": False,
+        "is_symlink": False,
+        "readable": False,
+        "traversable": False,
+        "writable": False,
+        "creation_required": True,
+        "creatable": creatable,
+        "ready": creatable,
+        "block_code": None if creatable else "managed_parent_uncreatable",
+        "missing_directories": missing_rel,
+        "nearest_existing_ancestor": ancestor,
     }
 
 
@@ -138,6 +208,7 @@ def target_for(record: dict, roots: dict[str, Path]) -> Path:
 def root_record(path: Path) -> dict:
     exists = path.exists()
     is_dir = path.is_dir() if exists else False
+    is_symlink = path.is_symlink()
     free = None
     if exists and is_dir:
         try:
@@ -148,6 +219,7 @@ def root_record(path: Path) -> dict:
         "absolute_path": str(path),
         "exists": exists,
         "is_dir": is_dir,
+        "is_symlink": is_symlink,
         "readable": bool_access(path, os.R_OK) if exists else False,
         "traversable": bool_access(path, os.X_OK) if exists else False,
         "writable": bool_access(path, os.W_OK) if exists else False,
@@ -166,8 +238,8 @@ def run_preflight(bundle_manifest_path: Path, site_root: Path, wordpress_plugin_
     block_reasons: list[str] = []
     root_state = {name: root_record(path) for name, path in roots.items()}
     for name, state in root_state.items():
-        if not state["exists"] or not state["is_dir"]:
-            block_reasons.append(f"root_missing_or_not_directory:{name}")
+        if not state["exists"] or not state["is_dir"] or state["is_symlink"]:
+            block_reasons.append(f"root_missing_not_directory_or_symlink:{name}")
         if not state["readable"] or not state["traversable"]:
             block_reasons.append(f"root_not_readable_or_traversable:{name}")
 
@@ -191,6 +263,7 @@ def run_preflight(bundle_manifest_path: Path, site_root: Path, wordpress_plugin_
             block_reasons.append(f"dependency_not_readable:{item['target_root']}:{item['target_path']}")
 
     managed_targets: list[dict] = []
+    planned_directories: set[tuple[str, str]] = set()
     bundle_bytes_by_root = {name: 0 for name in roots}
     existing_backup_bytes_by_root = {name: 0 for name in roots}
     existing_count = 0
@@ -198,51 +271,51 @@ def run_preflight(bundle_manifest_path: Path, site_root: Path, wordpress_plugin_
 
     for item in manifest.get("files") or []:
         target = target_for(item, roots)
+        root_name = item["target_root"]
         file_state = file_record(
             target,
             relative_path=str(item["target_path"]),
             kind="managed_target",
         )
-        parent = parent_record(target)
+        plan = parent_plan(target.parent, roots[root_name])
         file_state.update(
             {
-                "target_root": item["target_root"],
+                "target_root": root_name,
                 "bundle_path": item["bundle_path"],
                 "bundle_sha256": item["sha256"],
                 "bundle_bytes": int(item["bytes"]),
-                "parent": parent,
+                "parent": plan,
             }
         )
         managed_targets.append(file_state)
-        bundle_bytes_by_root[item["target_root"]] += int(item["bytes"])
+        bundle_bytes_by_root[root_name] += int(item["bytes"])
 
-        if not parent["exists"] or not parent["is_dir"]:
-            block_reasons.append(f"managed_parent_missing:{item['target_root']}:{item['target_path']}")
-        else:
-            if not parent["readable"] or not parent["traversable"]:
-                block_reasons.append(f"managed_parent_not_accessible:{item['target_root']}:{item['target_path']}")
-            if not parent["writable"]:
-                block_reasons.append(f"managed_parent_not_writable:{item['target_root']}:{item['target_path']}")
+        if not plan["ready"]:
+            block_reasons.append(
+                f"{plan['block_code'] or 'managed_parent_uncreatable'}:{root_name}:{item['target_path']}"
+            )
+        elif plan["creation_required"]:
+            for rel in plan["missing_directories"]:
+                planned_directories.add((root_name, rel))
 
         if file_state["exists"]:
             existing_count += 1
             if file_state["is_symlink"]:
-                block_reasons.append(f"managed_target_symlink_not_allowed:{item['target_root']}:{item['target_path']}")
+                block_reasons.append(f"managed_target_symlink_not_allowed:{root_name}:{item['target_path']}")
             elif not file_state["is_file"]:
-                block_reasons.append(f"managed_target_not_regular_file:{item['target_root']}:{item['target_path']}")
+                block_reasons.append(f"managed_target_not_regular_file:{root_name}:{item['target_path']}")
             else:
                 if not file_state["readable"]:
-                    block_reasons.append(f"managed_target_not_readable:{item['target_root']}:{item['target_path']}")
+                    block_reasons.append(f"managed_target_not_readable:{root_name}:{item['target_path']}")
                 if not file_state["writable"]:
-                    block_reasons.append(f"managed_target_not_writable:{item['target_root']}:{item['target_path']}")
+                    block_reasons.append(f"managed_target_not_writable:{root_name}:{item['target_path']}")
                 if isinstance(file_state["bytes"], int):
-                    existing_backup_bytes_by_root[item["target_root"]] += int(file_state["bytes"])
+                    existing_backup_bytes_by_root[root_name] += int(file_state["bytes"])
         else:
             absent_count += 1
 
     disk_requirements = {}
-    for root_name, root in roots.items():
-        # One complete copy for staging + exact backup of existing managed files.
+    for root_name in roots:
         minimum = bundle_bytes_by_root[root_name] + existing_backup_bytes_by_root[root_name]
         free = root_state[root_name]["free_bytes"]
         sufficient = isinstance(free, int) and free >= minimum
@@ -260,10 +333,14 @@ def run_preflight(bundle_manifest_path: Path, site_root: Path, wordpress_plugin_
     if not php["available"]:
         block_reasons.append("php_cli_unavailable")
 
+    planned_directory_creations = [
+        {"target_root": root_name, "relative_path": rel}
+        for root_name, rel in sorted(planned_directories)
+    ]
     block_reasons = sorted(set(block_reasons))
     status = "PASS" if not block_reasons else "BLOCKED"
     return {
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "checkpoint": "C7.3",
         "mode": "read_only_host_preflight",
         "status": status,
@@ -283,11 +360,14 @@ def run_preflight(bundle_manifest_path: Path, site_root: Path, wordpress_plugin_
             "absent_managed_targets": absent_count,
             "preexisting_dependencies_expected": 11,
             "preexisting_dependencies_observed": len(dependencies),
-            "all_managed_parent_directories_preexisting": not any(reason.startswith("managed_parent_missing:") for reason in block_reasons),
+            "all_managed_parent_directories_preexisting": len(planned_directory_creations) == 0,
+            "all_managed_parent_directories_ready": not any(reason.startswith("managed_parent_") for reason in block_reasons),
+            "planned_directory_creations": len(planned_directory_creations),
             "php_cli_available": bool(php["available"]),
         },
         "php_cli": php,
         "disk_requirements": disk_requirements,
+        "planned_directory_creations": planned_directory_creations,
         "dependencies": dependencies,
         "managed_targets": managed_targets,
         "block_reasons": block_reasons,

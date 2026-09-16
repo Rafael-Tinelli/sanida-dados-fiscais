@@ -36,7 +36,7 @@ def validate_remote_evidence(evidence_path: Path, bundle_manifest_path: Path) ->
     require(len(bundle.get("files") or []) == 32, "bundle managed-file count drift")
     require(len(bundle.get("preexisting_dependencies") or []) == 11, "bundle dependency count drift")
 
-    require(evidence.get("schema_version") == "1.0.0", "unsupported evidence schema")
+    require(evidence.get("schema_version") in {"1.0.0", "1.1.0"}, "unsupported evidence schema")
     require(evidence.get("checkpoint") == "C7.3", "evidence checkpoint drift")
     require(evidence.get("mode") == "read_only_host_preflight", "evidence mode drift")
     require(evidence.get("status") == "PASS", "remote preflight is not PASS")
@@ -59,6 +59,7 @@ def validate_remote_evidence(evidence_path: Path, bundle_manifest_path: Path) ->
     for name, state in roots.items():
         require(state.get("exists") is True, f"root missing: {name}")
         require(state.get("is_dir") is True, f"root is not directory: {name}")
+        require(state.get("is_symlink") is False, f"root symlink not allowed: {name}")
         require(state.get("readable") is True, f"root not readable: {name}")
         require(state.get("traversable") is True, f"root not traversable: {name}")
         require(isinstance(state.get("absolute_path"), str) and state["absolute_path"].startswith("/"), f"root path is not absolute: {name}")
@@ -93,18 +94,44 @@ def validate_remote_evidence(evidence_path: Path, bundle_manifest_path: Path) ->
         for item in managed
     }
     require(observed_managed == expected_managed, "remote managed-target identities/hash binding drift")
+
+    required_planned_directories: set[tuple[str, str]] = set()
     for item in managed:
         key = f"{item.get('target_root')}:{item.get('relative_path')}"
         parent = item.get("parent") or {}
-        require(parent.get("exists") is True and parent.get("is_dir") is True, f"managed parent missing: {key}")
-        require(parent.get("readable") is True and parent.get("traversable") is True, f"managed parent inaccessible: {key}")
-        require(parent.get("writable") is True, f"managed parent not writable: {key}")
+        if parent.get("exists"):
+            require(parent.get("is_dir") is True, f"managed parent not directory: {key}")
+            require(parent.get("is_symlink") is False, f"managed parent symlink not allowed: {key}")
+            require(parent.get("readable") is True and parent.get("traversable") is True, f"managed parent inaccessible: {key}")
+            require(parent.get("writable") is True, f"managed parent not writable: {key}")
+            require(parent.get("creation_required") is False, f"existing parent incorrectly marked for creation: {key}")
+        else:
+            require(parent.get("creation_required") is True, f"missing parent lacks creation plan: {key}")
+            require(parent.get("creatable") is True and parent.get("ready") is True, f"missing parent not safely creatable: {key}")
+            missing = parent.get("missing_directories") or []
+            require(isinstance(missing, list) and len(missing) > 0, f"missing parent creation list empty: {key}")
+            ancestor = parent.get("nearest_existing_ancestor") or {}
+            require(ancestor.get("exists") is True and ancestor.get("is_dir") is True, f"creation ancestor invalid: {key}")
+            require(ancestor.get("is_symlink") is False, f"creation ancestor symlink not allowed: {key}")
+            require(ancestor.get("readable") is True and ancestor.get("traversable") is True, f"creation ancestor inaccessible: {key}")
+            require(ancestor.get("writable") is True, f"creation ancestor not writable: {key}")
+            for rel in missing:
+                require(isinstance(rel, str) and rel and not rel.startswith("/"), f"unsafe planned directory: {key}")
+                required_planned_directories.add((str(item.get("target_root")), rel))
+
         if item.get("exists"):
             require(item.get("is_file") is True, f"managed target not regular file: {key}")
             require(item.get("is_symlink") is False, f"managed target symlink not allowed: {key}")
             require(item.get("readable") is True, f"managed target not readable: {key}")
             require(item.get("writable") is True, f"managed target not writable: {key}")
             require(bool(re.fullmatch(r"[0-9a-f]{64}", str(item.get("sha256") or ""))), f"managed target SHA missing: {key}")
+
+    planned = evidence.get("planned_directory_creations") or []
+    observed_planned = {
+        (str(item.get("target_root")), str(item.get("relative_path")))
+        for item in planned
+    }
+    require(observed_planned == required_planned_directories, "planned directory creation journal drift")
 
     disk = evidence.get("disk_requirements") or {}
     require(set(disk) == {"site_root", "wordpress_plugin_dir"}, "disk requirement root set drift")
@@ -123,17 +150,19 @@ def validate_remote_evidence(evidence_path: Path, bundle_manifest_path: Path) ->
     require(summary.get("managed_files_observed") == 32, "summary managed observed drift")
     require(summary.get("preexisting_dependencies_expected") == 11, "summary dependency expected drift")
     require(summary.get("preexisting_dependencies_observed") == 11, "summary dependency observed drift")
-    require(summary.get("all_managed_parent_directories_preexisting") is True, "summary parent precondition failed")
+    require(summary.get("all_managed_parent_directories_ready") is True, "summary parent readiness failed")
+    require(summary.get("planned_directory_creations") == len(observed_planned), "summary planned-directory count drift")
     require(summary.get("php_cli_available") is True, "summary PHP precondition failed")
 
     return {
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "checkpoint": "C7.3",
         "status": "PASS",
         "technical_go_no_go": "GO",
         "release_id": evidence_release.get("release_id"),
         "managed_targets": len(managed),
         "preexisting_dependencies": len(dependencies),
+        "planned_directory_creations": len(observed_planned),
         "production_mutated": False,
         "deployment_authorized": False,
         "bundle_manifest_sha256": expected_manifest_sha,

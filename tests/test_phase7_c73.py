@@ -10,6 +10,7 @@ import pytest
 
 from scripts.build_phase7_c71_bundle import build_bundle
 from scripts.run_phase7_c73_host_preflight import run_preflight
+from scripts.simulate_phase7_c73_directory_rollback import run_simulation as run_directory_rollback_simulation
 from scripts.simulate_phase7_c73_preflight import run_simulation, seed_host
 from scripts.validate_phase7_c73_remote_evidence import validate_remote_evidence
 
@@ -32,7 +33,7 @@ def current_release_fixture() -> tuple[dict, Path]:
 
 def test_c73_preflight_contract_is_fail_closed_and_predeploy() -> None:
     spec = json.loads(SPEC.read_text(encoding="utf-8"))
-    assert spec["schema_version"] == "1.0.0"
+    assert spec["schema_version"] == "1.1.0"
     assert spec["checkpoint"] == "C7.3"
     assert spec["status"] == "READY_FOR_REMOTE_READ_ONLY_PREFLIGHT"
     assert spec["production_deployed"] is False
@@ -41,10 +42,16 @@ def test_c73_preflight_contract_is_fail_closed_and_predeploy() -> None:
     assert spec["technical_go_no_go"]["NO_GO_on_any_failed_requirement"] is True
     assert spec["technical_go_no_go"]["GO_does_not_execute_deploy"] is True
     assert spec["technical_go_no_go"]["GO_does_not_replace_explicit_deployment_authorization"] is True
-    assert spec["rollback_preconditions"]["new_directories_may_not_be_created_by_deploy"] is True
+    rollback = spec["rollback_preconditions"]
+    assert rollback["new_directories_may_be_created_by_deploy"] is True
+    assert rollback["new_directory_creation_requires_read_only_preflight_plan"] is True
+    assert rollback["created_directory_journal_required"] is True
+    assert rollback["rollback_removes_only_directories_created_by_this_deploy_when_empty"] is True
+    assert rollback["recursive_directory_delete_forbidden"] is True
+    assert rollback["nonempty_created_directory_must_be_preserved_and_escalated"] is True
 
 
-def test_c73_simulated_preflight_proves_positive_negative_and_non_mutation() -> None:
+def test_c73_simulated_preflight_allows_safe_missing_parents_but_blocks_unsafe_parent() -> None:
     result = run_simulation()
     assert result["checkpoint"] == "C7.3"
     assert result["production_deployed"] is False
@@ -53,17 +60,32 @@ def test_c73_simulated_preflight_proves_positive_negative_and_non_mutation() -> 
     assert result["pass_case"]["technical_go_no_go"] == "GO"
     assert result["pass_case"]["dependencies"] == 11
     assert result["pass_case"]["managed_targets"] == 32
+    assert result["pass_case"]["planned_directory_creations"] > 0
     assert result["missing_dependency_blocked"] is True
-    assert result["missing_parent_blocked"] is True
+    assert result["creatable_missing_parent_allowed"] is True
+    assert result["uncreatable_parent_blocked"] is True
     assert result["non_mutation_verified"] is True
 
 
-def test_c73_remote_evidence_validator_accepts_only_real_pass_shape() -> None:
+def test_c73_directory_rollback_is_exact_and_never_recursively_deletes_unmanaged_content() -> None:
+    result = run_directory_rollback_simulation()
+    assert result["checkpoint"] == "C7.3"
+    assert result["production_deployed"] is False
+    assert result["production_mutated"] is False
+    assert result["created_directories_exercised"] > 0
+    assert result["exact_tree_rollback_verified"] is True
+    assert result["created_empty_directories_removed"] is True
+    assert result["recursive_directory_delete_forbidden_by_implementation"] is True
+    assert result["nonempty_created_directory_preserved"] is True
+    assert result["unmanaged_content_preserved"] is True
+
+
+def test_c73_remote_evidence_validator_accepts_safe_directory_creation_plan() -> None:
     with tempfile.TemporaryDirectory(prefix="c73-remote-validator-") as raw:
         tmp = Path(raw)
         bundle_dir = tmp / "bundle"
         bundle = build_bundle(DEPLOYMENT_MANIFEST, bundle_dir)
-        roots = seed_host(bundle, tmp / "host")
+        roots = seed_host(bundle, tmp / "host", leave_creatable_parents_missing=True)
         evidence = run_preflight(bundle_dir / "bundle-manifest.json", roots["site_root"], roots["wordpress_plugin_dir"])
         evidence_path = tmp / "remote-evidence.json"
         evidence_path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -73,6 +95,7 @@ def test_c73_remote_evidence_validator_accepts_only_real_pass_shape() -> None:
         assert validated["technical_go_no_go"] == "GO"
         assert validated["managed_targets"] == 32
         assert validated["preexisting_dependencies"] == 11
+        assert validated["planned_directory_creations"] > 0
         assert validated["production_mutated"] is False
         assert validated["deployment_authorized"] is False
 

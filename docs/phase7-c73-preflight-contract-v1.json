@@ -1,9 +1,9 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "checkpoint": "C7.3",
   "status": "READY_FOR_REMOTE_READ_ONLY_PREFLIGHT",
   "production_deployed": false,
-  "purpose": "Define the fail-closed production preflight required before any HostGator deployment of the C7.1 bundle.",
+  "purpose": "Define the fail-closed production preflight required before any HostGator deployment of the C7.1 bundle, including safe planning for managed directories that do not yet exist.",
   "source_bundle_manifest": "docs/phase7-c71-deployment-manifest-v1.json",
   "required_counts": {
     "managed_files": 32,
@@ -14,10 +14,10 @@
     "wordpress_plugin_dir"
   ],
   "read_only_checks": [
-    "target_roots_exist_and_are_directories",
+    "target_roots_exist_are_directories_and_are_not_symlinks",
     "all_preexisting_dependencies_exist_are_regular_readable_files",
-    "all_managed_target_parent_directories_already_exist",
-    "all_managed_target_parent_directories_are_readable_traversable_and_writable",
+    "all_managed_target_parent_directories_are_either_existing_and_writable_or_safely_creatable_from_a_writable_existing_ancestor",
+    "all_planned_directory_creations_are_recorded_without_mutating_target_roots",
     "existing_managed_targets_are_regular_readable_non_symlink_files",
     "existing_managed_targets_are_writable",
     "bundle_and_existing_target_sha256_are_recorded",
@@ -30,7 +30,12 @@
     "backup_scope": "all_existing_managed_targets",
     "backup_sha256_required": true,
     "new_managed_files_may_be_removed_on_rollback": true,
-    "new_directories_may_not_be_created_by_deploy": true,
+    "new_directories_may_be_created_by_deploy": true,
+    "new_directory_creation_requires_read_only_preflight_plan": true,
+    "created_directory_journal_required": true,
+    "rollback_removes_only_directories_created_by_this_deploy_when_empty": true,
+    "recursive_directory_delete_forbidden": true,
+    "nonempty_created_directory_must_be_preserved_and_escalated": true,
     "preexisting_dependencies_must_never_be_modified": true,
     "unmanaged_files_must_never_be_modified": true
   },
@@ -50,7 +55,8 @@
       "zero_block_reasons",
       "all_11_dependencies_verified",
       "all_32_managed_targets_preflighted",
-      "all_target_parent_directories_preexisting",
+      "all_target_parent_directories_existing_or_safely_creatable",
+      "all_planned_directory_creations_journaled",
       "php_cli_available",
       "sufficient_free_space",
       "production_target_unchanged_by_preflight"
