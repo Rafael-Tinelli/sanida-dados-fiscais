@@ -119,3 +119,19 @@ jobs:
       - name: Validate Phase 6 C6.7 formal closure gate
         run: |
           python scripts/validate_phase6_c67_gate.py
+
+      - name: Build Phase 7 C7.1 deployment bundle
+        run: |
+          python scripts/build_phase7_c71_bundle.py --output-dir /tmp/c71-deployment-bundle
+
+      - name: Validate Phase 7 C7.1 bundle and rollback gate
+        run: |
+          python scripts/validate_phase7_c71_gate.py
+
+      - name: Upload Phase 7 C7.1 pre-deploy bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: c71-deployment-bundle-${{ github.sha }}
+          path: /tmp/c71-deployment-bundle
+          if-no-files-found: error
+          retention-days: 14
