@@ -35,6 +35,10 @@ function standardInput() {
   };
 }
 
+function manualCase(twelfths, overrides) {
+  return SFA.H27.calculate(release, Object.assign(standardInput(), { twelfths }, overrides || {}));
+}
+
 const standard = SFA.H27.calculate(release, standardInput());
 
 const boundary14 = SFA.THIRTEENTH.calculateAccrual(release, {
@@ -94,6 +98,21 @@ const admissionUnsupported = SFA.H27.calculate(release, {
   estimateNet: true
 });
 
+const settlementMatrix = {
+  avos1: manualCase(1),
+  avos5: manualCase(5),
+  avos6: manualCase(6),
+  avos7: manualCase(7),
+  avos11: manualCase(11),
+  avos12: manualCase(12)
+};
+
+const reportedAdvanceMatrix = {
+  below: manualCase(12, { reportedAdvance: '1000.00', previousMonthSalary: '' }),
+  equalGross: manualCase(6, { reportedAdvance: '2000.00', previousMonthSalary: '' }),
+  aboveGross: manualCase(5, { reportedAdvance: '2000.00', previousMonthSalary: '' })
+};
+
 let missingAdvanceReferenceRejected = false;
 try {
   SFA.H27.calculate(release, {
@@ -136,6 +155,8 @@ process.stdout.write(JSON.stringify({
   variable_unsupported: variableUnsupported,
   variable_reported: variableReported,
   admission_unsupported: admissionUnsupported,
+  settlement_matrix: settlementMatrix,
+  reported_advance_matrix: reportedAdvanceMatrix,
   missing_advance_reference_rejected: missingAdvanceReferenceRejected,
   negative_input_rejected: negativeInputRejected,
   technical_rounding_rejected: technicalRoundingRejected
