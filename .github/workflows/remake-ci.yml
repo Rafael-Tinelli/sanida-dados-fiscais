@@ -130,6 +130,7 @@ jobs:
 
       - name: Run Phase 7 C7.2 operational evergreen E2E
         run: |
+          set -o pipefail
           python scripts/run_phase7_c72_operational_e2e.py | tee /tmp/c72-operational-e2e.json
 
       - name: Validate Phase 7 C7.2 evergreen recovery gate
@@ -138,7 +139,8 @@ jobs:
 
       - name: Simulate Phase 7 C7.3 production preflight
         run: |
-          python scripts/simulate_phase7_c73_preflight.py | tee /tmp/c73-preflight-simulation.json
+          set -o pipefail
+          PYTHONPATH=. python scripts/simulate_phase7_c73_preflight.py | tee /tmp/c73-preflight-simulation.json
 
       - name: Validate Phase 7 C7.3 readiness gate
         run: |
@@ -146,11 +148,12 @@ jobs:
 
       - name: Simulate Phase 7 C7.4 controlled deployment
         run: |
-          python scripts/simulate_phase7_c74_controlled_deployment.py | tee /tmp/c74-controlled-deployment-simulation.json
+          set -o pipefail
+          PYTHONPATH=. python scripts/simulate_phase7_c74_controlled_deployment.py | tee /tmp/c74-controlled-deployment-simulation.json
 
       - name: Validate Phase 7 C7.4 authorization gate
         run: |
-          python scripts/validate_phase7_c74_gate.py
+          PYTHONPATH=. python scripts/validate_phase7_c74_gate.py
 
       - name: Upload Phase 7 C7.4 controlled deployment simulation evidence
         uses: actions/upload-artifact@v4
