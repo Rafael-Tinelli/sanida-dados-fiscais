@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint": "C7.4",
+  "record_type": "production_deployment_validation_record",
+  "recorded_from": "operator_terminal_output",
+  "authorization_id": "c74-20260916-a741aa78-843dca3e",
+  "authorized_commit": "ccc5a31c3da7c1c93570df0337e553e5a06404ac",
+  "status": "APPLIED_HEALTHY",
+  "deployment_authorized": true,
+  "production_deployed": true,
+  "post_deploy_validated": true,
+  "rollback_performed": false,
+  "started_at_utc": "2026-09-16T17:21:48.818311+00:00",
+  "completed_at_utc": "2026-09-16T17:21:52.270428+00:00",
+  "release_id": "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e",
+  "bundle_manifest_sha256": "843dca3e843bfe066cee5f1a39754741a9adb47d49fee9749876d4e17f4dedf1",
+  "c73_remote_evidence_sha256": "e4f69319ad2cb1e712c8807138a7aea86a8a2c08c5ecc9bebcd81399b045fec7",
+  "deployment_state": {
+    "path": "~/c74-deployments/c74-20260916-a741aa78-843dca3e/deployment-state.json",
+    "sha256": "9fc57e626dd8ab3a7666da18c7f1397f35729987a3be62ac83ed6ed7ca0bcc4c"
+  },
+  "apply": {
+    "managed_files_applied": 32,
+    "planned_directories_created": 4,
+    "error": null
+  },
+  "health": {
+    "fiscal_health": {
+      "http_status": 200,
+      "status": "healthy",
+      "release_id": "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e"
+    },
+    "fiscal_release": {
+      "http_status": 200,
+      "release_id": "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e"
+    },
+    "legacy_folha": {
+      "http_status": 410
+    },
+    "calculators": {
+      "H26": {"http_status": 200, "bytes": 74789},
+      "H27": {"http_status": 200, "bytes": 95137},
+      "H28": {"http_status": 200, "bytes": 13668},
+      "H29": {"http_status": 200, "bytes": 14448}
+    }
+  },
+  "closure_evidence": {
+    "candidate_release_matched": true,
+    "bundle_manifest_matched": true,
+    "c73_evidence_matched": true,
+    "php_lint_passed_on_host": true,
+    "authorization_record_passed_on_host": true,
+    "all_managed_files_applied": true,
+    "post_deploy_health_passed": true,
+    "legacy_endpoint_retired": true,
+    "all_four_calculator_pages_http_200": true,
+    "rollback_required": false
+  },
+  "preservation_note": "The full deployment journal, exact pre-write snapshot and backups remain preserved outside production roots on the HostGator account. This repository record preserves the operator-reported final state and immutable SHA-256 of deployment-state.json; it does not reconstruct omitted raw journal fields."
+}
