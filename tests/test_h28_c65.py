@@ -195,13 +195,17 @@ def test_c65_h28_no_sale_keeps_entitlement_and_zeroes_abono() -> None:
     assert Decimal(no_sale["components"]["cash_allowance_constitutional_third"]) == 0
 
 
-def test_c65_h28_fails_closed_for_negative_money_and_omitted_pension() -> None:
+def test_c65_h28_fails_closed_for_negative_money_omitted_pension_and_missing_payment_date() -> None:
     result = _node_result()
     assert result["negative_input_rejected"] is True
     assert result["pension_omission_rejected"] is True
+    assert result["missing_payment_date_rejected"] is True
+    assert result["whitespace_payment_date_rejected"] is True
+    assert result["impossible_payment_date_rejected"] is True
+    assert result["explicit_payment_date_preserved"] is True
 
 
-def test_c65_h28_source_has_no_legacy_abono_rounding_or_tax_constants() -> None:
+def test_c65_h28_source_has_no_legacy_abono_rounding_tax_constants_or_hidden_date_fallback() -> None:
     shared = VACATION.read_text(encoding="utf-8")
     h28 = H28.read_text(encoding="utf-8")
     for forbidden in (
@@ -221,9 +225,14 @@ def test_c65_h28_source_has_no_legacy_abono_rounding_or_tax_constants() -> None:
     assert "vacation.irrf.reduction.2026" in shared
     assert "vacation_entitled_days_and_corresponding_remuneration_components" in shared
     assert "SFA.fetchRelease({ consumer: CONSUMER })" in h28
+    assert "requirePaymentDate(inputValue('data_pagamento'))" in h28
+    assert "h28_payment_date_required" in h28
+    assert "localTodayIso" not in h28
+    assert "currentReferenceDate" not in h28
+    assert "|| localTodayIso()" not in h28
 
 
-def test_c65_h28_page_exposes_right_gozo_abono_and_audit_memory() -> None:
+def test_c65_h28_page_exposes_right_gozo_abono_payment_date_and_audit_memory() -> None:
     page = H28_PAGE.read_text(encoding="utf-8")
     parts = ROOT / "consumers/frontend/ferias-clt/parts"
     source = page + "\n" + "\n".join(p.read_text(encoding="utf-8") for p in sorted(parts.glob("*.php")))
@@ -233,6 +242,9 @@ def test_c65_h28_page_exposes_right_gozo_abono_and_audit_memory() -> None:
     for marker in (
         'name="base_ferias"',
         'name="faltas_injustificadas"',
+        'name="data_pagamento"',
+        'type="date" required',
+        "não presume a data de hoje",
         'name="vender_um_terco"',
         'data-row="direito"',
         'data-row="gozo"',
