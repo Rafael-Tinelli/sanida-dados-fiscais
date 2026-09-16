@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from scripts.deployment_health_v2 import (
+    DeliveryHealthError,
     ORIGIN_PENDING_STATUS,
     atomic_json,
     mark_origin_healthy_pending_external,
@@ -49,7 +50,7 @@ def main() -> int:
             journal_dir=args.journal_dir,
             health_base_url=args.health_base_url,
         )
-    except (DeploymentError, SystemExit, ValueError) as exc:
+    except (DeploymentError, DeliveryHealthError, SystemExit, ValueError) as exc:
         print(json.dumps({"checkpoint": "C7.4", "status": "BLOCKED_BEFORE_WRITE", "error": str(exc)}, ensure_ascii=False, sort_keys=True))
         return 3
 
