@@ -54,7 +54,7 @@ def test_c61_current_manifest_points_to_exact_immutable_artifact() -> None:
 
 def test_c61_plugin_uses_manifest_and_immutable_release_not_legacy_json() -> None:
     text = _plugin_text()
-    assert "Version:     2.6.0" in text
+    assert "Version:     2.7.0" in text
     assert "/releases/fiscal-v1/current.json" in text
     assert "RELEASE_BASE_URL_DEFAULT" in text
     assert "dados_fiscais.json" not in text
@@ -124,17 +124,26 @@ def test_c61_rest_exposes_canonical_release_and_retires_legacy_folha_endpoint() 
     assert "['status' => 503]" in text
 
 
-def test_c61_only_named_presentation_adapter_survives_with_retirement_deadline() -> None:
+def test_c71_presentation_shortcodes_read_canonical_release_without_adapter() -> None:
     text = _plugin_text()
     for marker in (
+        "canonical_rules_for_shortcodes",
+        "inss.employee.progressive_table",
+        "irrf.monthly.progressive_table",
+        "irrf.simplified_monthly_discount",
+        "presentation_shortcodes_mode' => 'direct_canonical_release'",
+    ):
+        assert marker in text
+    for forbidden in (
         "SHORTCODE_DISPLAY_ADAPTER_RETIRE_BY",
         "C7.1-before-production-deployment",
         "build_shortcode_display_adapter",
         "wordpress_table_shortcodes_v1",
         "'adapter_consumers' => ['ano_ref','inss_tabela','irrf_tabela']",
+        "compatibility_adapter",
+        "shortcode-display-v1",
     ):
-        assert marker in text
-    assert "legacy-folha-adapter-v1" not in text
+        assert forbidden not in text
     assert "data-sfa=\"folha\"" not in text
 
 
