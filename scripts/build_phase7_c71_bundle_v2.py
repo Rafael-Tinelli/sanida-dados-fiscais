@@ -6,10 +6,14 @@ from hashlib import sha256
 import json
 from pathlib import Path
 import shutil
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from scripts.build_phase7_c71_bundle import build_bundle, safe_relative
 
-ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_EXTENSION = ROOT / "docs/phase7-c71-deployment-manifest-v2.json"
 
 
