@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint": "C7.4",
+  "record_type": "single_use_deployment_authorization_v2",
+  "status": "AUTHORIZED_READY_TO_DEPLOY",
+  "authorization_id": "c74-v2-h25-production-20260917-505144",
+  "single_use_authorization": true,
+  "deployment_authorized": true,
+  "production_deployed": false,
+  "authorization_basis": "explicit_operator_instruction_in_current_session",
+  "candidate": {
+    "source_commit": "505144918d05fb4932064f6f9da9b9358c448ac0",
+    "inventory_version": 2,
+    "bundle_manifest_sha256": "4ca95de84822fc3bc70ee59c86e73e540e38bec9e6ce5951266ce62a7f8e6627",
+    "c73_remote_evidence_sha256": "2fc6f01a6f68d3402ea7476cc12d6925ea4daca852e8eef917e3e179f8016e8f",
+    "release_id": "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e",
+    "managed_files": 33,
+    "preexisting_dependencies": 11,
+    "planned_directory_creations": 0
+  },
+  "preflight_provenance": {
+    "workflow_run_id": 35218580789,
+    "workflow_run_attempt": 2,
+    "job_id": 105193161102,
+    "artifact_id": 10494959549,
+    "artifact_zip_sha256": "b0199fe7907e4533c72895e120bbd1fdd564430c99b4a6a5b7e32e684b80b150",
+    "evidence_sha256": "2fc6f01a6f68d3402ea7476cc12d6925ea4daca852e8eef917e3e179f8016e8f",
+    "remote_preflight_status": "PASS",
+    "technical_go_no_go": "GO",
+    "production_mutated": false
+  },
+  "target_roots": {
+    "site_root": "/home1/sanid210/public_html",
+    "wordpress_plugin_dir": "/home1/sanid210/public_html/blog/wp-content/plugins/sanida-fiscais-auto"
+  },
+  "constraints": {
+    "manual_upload_forbidden": true,
+    "historical_v1_evidence_immutable": true,
+    "exact_bundle_binding_required": true,
+    "exact_remote_preflight_binding_required": true,
+    "rollback_required": true,
+    "post_deploy_origin_health_required": true,
+    "external_delivery_validation_required": true
+  }
+}
