@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint": "C7.1-H25-extension",
+  "status": "ready_not_deployed",
+  "production_deployed": false,
+  "purpose": "Extend the immutable C7.1 deployment baseline with the canonical H25 calculators hub without rewriting historical C7 evidence.",
+  "base_manifest": "docs/phase7-c71-deployment-manifest-v1.json",
+  "base_managed_file_count": 32,
+  "managed_files_add": [
+    {
+      "source": "consumers/frontend/calculadoras/index.php",
+      "target_root": "site_root",
+      "target_path": "financas/calculadoras/index.php"
+    }
+  ],
+  "resulting_managed_file_count": 33,
+  "inherit_preexisting_dependencies": true,
+  "inherit_rollback_policy": true
+}
