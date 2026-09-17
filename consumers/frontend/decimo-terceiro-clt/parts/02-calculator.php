@@ -174,7 +174,7 @@
           <p class="cp-disclaimer">
             Estimativa educativa para conferência. Quando o saldo matemático ficar negativo,
             a ferramenta mostra a 2ª parcela a pagar como R$ 0,00 e apresenta a insuficiência separadamente.
-            Isso não determina por si só como eventual diferença será compensada ou tratada na folha.
+            A separação existe para não exibir uma “parcela negativa” como valor a pagar e não determina por si só como eventual diferença será compensada ou tratada na folha.
           </p>
         </aside>
       </div>
