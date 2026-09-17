@@ -44,11 +44,11 @@
       </div>
 
       <button type="submit">Calcular estimativa parcial</button>
-      <div class="alert" data-alert role="alert"></div>
+      <div class="alert" data-alert role="alert" aria-live="assertive" aria-atomic="true"></div>
     </form>
   </div>
 
-  <div class="panel" data-result style="display:none">
+  <div class="panel" data-result role="status" aria-live="polite" aria-atomic="true" style="display:none">
     <h2>Resultado coberto pelo H29</h2>
     <div class="kpis">
       <div class="kpi"><small>Saldo salarial</small><strong data-kpi="saldo">—</strong></div>
