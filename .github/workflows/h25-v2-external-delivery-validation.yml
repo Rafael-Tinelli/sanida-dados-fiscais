@@ -1,13 +1,17 @@
 name: H25 V2 External Delivery Validation
 
-# WORKFLOW OPERACIONAL TEMPORÁRIO — somente C7.5 read-only na entrega pública.
-# A única escrita permitida é a promoção do journal de evidência fora de public_html.
+# WORKFLOW OPERACIONAL TEMPORÁRIO — C7.5.
+# O GitHub-hosted runner é bloqueado pela política geográfica do Cloudflare (HTTP 403),
+# portanto ele NÃO tenta se passar por um cliente público brasileiro.
+# A prova pública é coletada pelo operador externo com o probe canônico; este workflow
+# valida essa evidência e apenas promove o journal fora de public_html.
 
 on:
   push:
     branches:
       - deploy/h25-v2-production
-  workflow_dispatch:
+    paths:
+      - docs/phase7-v2-c75-external-evidence-505144918d05fb4932064f6f9da9b9358c448ac0.json
 
 permissions:
   contents: read
@@ -26,6 +30,7 @@ jobs:
       EXPECTED_BUNDLE_SHA256: 4ca95de84822fc3bc70ee59c86e73e540e38bec9e6ce5951266ce62a7f8e6627
       EXPECTED_PREFLIGHT_SHA256: 2fc6f01a6f68d3402ea7476cc12d6925ea4daca852e8eef917e3e179f8016e8f
       EXPECTED_CACHE_KEY: 20260916-f06f10
+      EVIDENCE_PATH: docs/phase7-v2-c75-external-evidence-505144918d05fb4932064f6f9da9b9358c448ac0.json
       SSH_PORT: "2222"
       REPO_URL: https://github.com/Rafael-Tinelli/sanida-dados-fiscais.git
 
@@ -33,109 +38,18 @@ jobs:
       - name: Checkout operational head
         uses: actions/checkout@v5
 
-      - name: Compare public JavaScript bytes to authorized commit
-        shell: pwsh
+      - name: Validate operator-collected public delivery evidence
+        shell: bash
         run: |
-          ./scripts/run_phase7_c75_external_delivery_probe.ps1 `
-            -OutputPath /tmp/h25-v2-c75-external-delivery.json `
-            -AuthorizedCommit $env:AUTHORIZED_SOURCE_COMMIT
-
-      - name: Validate public pages, script order, cache key and fiscal endpoints
-        shell: python
-        run: |
-          import json
-          import os
-          from datetime import datetime, timezone
-          from pathlib import Path
-          from urllib.error import HTTPError, URLError
-          from urllib.request import Request, urlopen
-
-          BASE = "https://sanida.com.br"
-          RELEASE = os.environ["EXPECTED_RELEASE_ID"]
-          CACHE = os.environ["EXPECTED_CACHE_KEY"]
-          UA = "Sanida-C7.5-External-Public-Validation/2.0"
-
-          def get(path):
-              req = Request(BASE + path, headers={"User-Agent": UA, "Cache-Control": "no-cache", "Pragma": "no-cache"})
-              try:
-                  with urlopen(req, timeout=30) as r:
-                      return int(r.status), r.read(), {k.lower(): v for k, v in r.headers.items()}
-              except HTTPError as exc:
-                  return int(exc.code), exc.read(), {k.lower(): v for k, v in exc.headers.items()}
-              except URLError as exc:
-                  raise RuntimeError(f"external request failed for {path}: {exc}") from exc
-
-          pages = {
-              "H25": ("/financas/calculadoras/", []),
-              "H26": ("/financas/calculadoras/salario-liquido-clt/", ["folha-core.js", "salario-liquido.js"]),
-              "H27": ("/financas/calculadoras/decimo-terceiro/", ["folha-core.js", "folha-thirteenth.js", "decimo-terceiro.js"]),
-              "H28": ("/financas/calculadoras/ferias-clt/", ["folha-core.js", "folha-vacation.js", "ferias-clt.js"]),
-              "H29": ("/financas/calculadoras/rescisao-clt/", ["folha-core.js", "folha-termination.js", "rescisao-clt.js"]),
-          }
-          result = {"observed_at_utc": datetime.now(timezone.utc).isoformat(), "pages": {}, "fiscal": {}, "block_reasons": []}
-
-          for name, (path, scripts) in pages.items():
-              status, body, headers = get(path)
-              text = body.decode("utf-8", errors="replace")
-              blocks = []
-              if status != 200:
-                  blocks.append(f"http:{status}")
-              if "Fatal error" in text or "Parse error" in text:
-                  blocks.append("php_error")
-              positions = [text.find(script) for script in scripts]
-              if scripts and (any(pos < 0 for pos in positions) or positions != sorted(positions) or len(set(positions)) != len(positions)):
-                  blocks.append("script_order")
-              if CACHE not in text:
-                  blocks.append("cache_key_missing")
-              if name == "H26" and text.count(CACHE) != 2:
-                  blocks.append(f"h26_cache_key_count:{text.count(CACHE)}")
-              if name == "H25":
-                  required = [
-                      "/financas/calculadoras/salario-liquido-clt/",
-                      "/financas/calculadoras/decimo-terceiro/",
-                      "/financas/calculadoras/ferias-clt/",
-                      "/financas/calculadoras/rescisao-clt/",
-                  ]
-                  if any(link not in text for link in required):
-                      blocks.append("required_links")
-                  if "Não calcula FGTS" not in text or "aviso prévio" not in text:
-                      blocks.append("rescisao_boundary_copy")
-              result["pages"][name] = {
-                  "path": path,
-                  "http_status": status,
-                  "bytes": len(body),
-                  "script_order": scripts,
-                  "script_positions": positions,
-                  "cache_key_occurrences": text.count(CACHE),
-                  "block_reasons": blocks,
-              }
-              result["block_reasons"].extend(f"{name}:{block}" for block in blocks)
-
-          status, body, headers = get("/blog/wp-json/sfa/v1/fiscal-health")
-          health = json.loads(body.decode("utf-8")) if status == 200 else {}
-          health_ok = status == 200 and health.get("status") == "healthy" and health.get("release_id") == RELEASE
-          result["fiscal"]["health"] = {"http_status": status, "status": health.get("status"), "release_id": health.get("release_id"), "pass": health_ok}
-          if not health_ok:
-              result["block_reasons"].append("fiscal_health")
-
-          status, body, headers = get("/blog/wp-json/sfa/v1/fiscal-release")
-          release = json.loads(body.decode("utf-8")) if status == 200 else {}
-          release_ok = status == 200 and release.get("release_id") == RELEASE
-          result["fiscal"]["release"] = {"http_status": status, "release_id": release.get("release_id"), "pass": release_ok}
-          if not release_ok:
-              result["block_reasons"].append("fiscal_release")
-
-          status, body, headers = get("/blog/wp-json/sfa/v1/folha")
-          legacy_ok = status == 410
-          result["fiscal"]["legacy_folha"] = {"http_status": status, "pass": legacy_ok}
-          if not legacy_ok:
-              result["block_reasons"].append("legacy_folha")
-
-          result["status"] = "PASS" if not result["block_reasons"] else "BLOCKED"
-          Path("/tmp/h25-v2-c75-public-health.json").write_text(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-          print(json.dumps(result, ensure_ascii=False, sort_keys=True))
-          if result["status"] != "PASS":
-              raise SystemExit(3)
+          set -euo pipefail
+          test -f "$EVIDENCE_PATH"
+          python3 scripts/validate_phase7_c75_external_evidence_v2.py \
+            --evidence "$EVIDENCE_PATH" \
+            --authorized-commit "$AUTHORIZED_SOURCE_COMMIT" \
+            --release-id "$EXPECTED_RELEASE_ID" \
+            --cache-key "$EXPECTED_CACHE_KEY"
+          cp "$EVIDENCE_PATH" /tmp/h25-v2-c75-external-delivery.json
+          echo "C75_OPERATOR_EVIDENCE_LOCAL_GATE=PASS"
 
       - name: Verify HostGator credential contract for journal finalization
         shell: bash
@@ -164,8 +78,8 @@ jobs:
           USER: ${{ secrets.V2_HOSTGATOR_USER }}
         run: |
           set -euo pipefail
-          EVIDENCE_SHA="$(sha256sum /tmp/h25-v2-c75-external-delivery.json | awk '{print $1}')"
-          EVIDENCE_B64="$(base64 -w0 /tmp/h25-v2-c75-external-delivery.json)"
+          EVIDENCE_SHA="$(sha256sum "$EVIDENCE_PATH" | awk '{print $1}')"
+          EVIDENCE_B64="$(base64 -w0 "$EVIDENCE_PATH")"
           SSH_OPTS=(
             -p "$SSH_PORT"
             -i "$HOME/.ssh/id_ed25519"
@@ -223,16 +137,23 @@ jobs:
           assert d.get('production_deployed') is True
           assert d.get('origin_health_verified') is True
           assert d.get('external_delivery_verified') is False
+          assert d.get('rollback_performed') is False
           print('REMOTE_PENDING_STATE_GATE=PASS')
           PY
 
           printf '%s' "$EVIDENCE_B64" | base64 --decode > "$RUNTIME/c75-external-evidence.json"
           test "$(sha256sum "$RUNTIME/c75-external-evidence.json" | awk '{print $1}')" = "$EXPECTED_EVIDENCE_SHA"
-          cp "$RUNTIME/c75-external-evidence.json" "$EVIDENCE.tmp"
-          mv "$EVIDENCE.tmp" "$EVIDENCE"
-
+          "$PYTHON" 2>/dev/null || true
           PY="$(command -v python3.9 || command -v python3)"
           export PYTHONPATH="$REPO"
+          "$PY" scripts/validate_phase7_c75_external_evidence_v2.py \
+            --evidence "$RUNTIME/c75-external-evidence.json" \
+            --authorized-commit "$AUTHORIZED_SOURCE_COMMIT" \
+            --release-id 'fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e' \
+            --cache-key '20260916-f06f10'
+
+          cp "$RUNTIME/c75-external-evidence.json" "$EVIDENCE.tmp"
+          mv "$EVIDENCE.tmp" "$EVIDENCE"
           "$PY" scripts/finalize_phase7_c75_external_health_v2.py \
             --deployment-state "$STATE" \
             --external-evidence "$EVIDENCE" \
@@ -250,7 +171,7 @@ jobs:
           awk '/__SANIDA_FINAL_STATE_BEGIN__/{flag=1;next}/__SANIDA_FINAL_STATE_END__/{flag=0}flag' /tmp/h25-v2-c75-finalize-remote.log \
             | tr -d '\n' | base64 --decode > /tmp/h25-v2-final-deployment-state.json
           test -s /tmp/h25-v2-final-deployment-state.json
-          python - <<'PY'
+          python3 - <<'PY'
           import json
           from pathlib import Path
           d = json.loads(Path('/tmp/h25-v2-final-deployment-state.json').read_text(encoding='utf-8'))
@@ -275,7 +196,6 @@ jobs:
           name: h25-v2-c75-external-${{ github.sha }}-${{ github.run_attempt }}
           path: |
             /tmp/h25-v2-c75-external-delivery.json
-            /tmp/h25-v2-c75-public-health.json
             /tmp/h25-v2-c75-finalize-remote.log
             /tmp/h25-v2-final-deployment-state.json
           if-no-files-found: warn
