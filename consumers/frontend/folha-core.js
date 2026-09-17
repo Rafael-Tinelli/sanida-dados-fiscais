@@ -202,9 +202,19 @@
     return DecimalValue.parse(value).quantize(policy.decimal_places, policy.mode);
   }
 
+  function isValidIsoCivilDate(value) {
+    if (typeof value !== 'string' || !ISO_DATE_RE.test(value)) return false;
+    const probe = new Date(value + 'T00:00:00.000Z');
+    return !Number.isNaN(probe.getTime()) && probe.toISOString().slice(0, 10) === value;
+  }
+
   function normalizeDate(value, name) {
     const label = name || 'date';
-    if (typeof value === 'string' && ISO_DATE_RE.test(value)) return value;
+    if (typeof value === 'string') {
+      if (!ISO_DATE_RE.test(value)) fail('date_required', label + ' deve ser YYYY-MM-DD ou Date válida.');
+      if (!isValidIsoCivilDate(value)) fail('date_invalid', label + ' não representa uma data civil válida.');
+      return value;
+    }
     if (value instanceof Date && !Number.isNaN(value.getTime())) {
       const y = value.getUTCFullYear();
       const m = String(value.getUTCMonth() + 1).padStart(2, '0');
