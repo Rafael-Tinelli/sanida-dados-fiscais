@@ -1,6 +1,8 @@
 param(
     [string]$OutputPath = "$PWD\c75-external-delivery-evidence.json",
-    [string]$AuthorizedCommit = 'ccc5a31c3da7c1c93570df0337e553e5a06404ac'
+    [string]$AuthorizedCommit = '505144918d05fb4932064f6f9da9b9358c448ac0',
+    [string]$ExpectedReleaseId = 'fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e',
+    [string]$ExpectedCacheKey = '20260916-f06f10'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -10,9 +12,9 @@ if ($AuthorizedCommit -notmatch '^[0-9a-fA-F]{40}$') {
 }
 $AuthorizedCommit = $AuthorizedCommit.ToLowerInvariant()
 
-$BasePublic = 'https://sanida.com.br/financas/calculadoras/assets'
+$Base = 'https://sanida.com.br'
+$BasePublic = "$Base/financas/calculadoras/assets"
 $BaseRaw = "https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/$AuthorizedCommit/consumers/frontend"
-
 $Assets = @(
     'folha-core.js',
     'salario-liquido.js',
@@ -23,56 +25,116 @@ $Assets = @(
     'folha-termination.js',
     'rescisao-clt.js'
 )
+$Pages = [ordered]@{
+    H25 = @{ path = '/financas/calculadoras/'; scripts = @() }
+    H26 = @{ path = '/financas/calculadoras/salario-liquido-clt/'; scripts = @('folha-core.js', 'salario-liquido.js') }
+    H27 = @{ path = '/financas/calculadoras/decimo-terceiro/'; scripts = @('folha-core.js', 'folha-thirteenth.js', 'decimo-terceiro.js') }
+    H28 = @{ path = '/financas/calculadoras/ferias-clt/'; scripts = @('folha-core.js', 'folha-vacation.js', 'ferias-clt.js') }
+    H29 = @{ path = '/financas/calculadoras/rescisao-clt/'; scripts = @('folha-core.js', 'folha-termination.js', 'rescisao-clt.js') }
+}
 
 function Get-Sha256Hex([byte[]]$Bytes) {
     $sha = [System.Security.Cryptography.SHA256]::Create()
-    try {
-        return ([BitConverter]::ToString($sha.ComputeHash($Bytes))).Replace('-', '').ToLowerInvariant()
-    }
-    finally {
-        $sha.Dispose()
-    }
+    try { return ([BitConverter]::ToString($sha.ComputeHash($Bytes))).Replace('-', '').ToLowerInvariant() }
+    finally { $sha.Dispose() }
+}
+
+function Get-Http([System.Net.Http.HttpClient]$Client, [string]$Url) {
+    $response = $Client.GetAsync($Url).GetAwaiter().GetResult()
+    $body = $response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult()
+    return @{ status = [int]$response.StatusCode; body = $body }
+}
+
+function Bytes-ToText([byte[]]$Bytes) {
+    return [Text.Encoding]::UTF8.GetString($Bytes)
 }
 
 $client = [System.Net.Http.HttpClient]::new()
-$client.DefaultRequestHeaders.UserAgent.ParseAdd('Sanida-C7.5-ExternalClient/1.1')
+$client.Timeout = [TimeSpan]::FromSeconds(30)
+$client.DefaultRequestHeaders.UserAgent.ParseAdd('Sanida-C7.5-Operator-External-Client/2.0')
 $client.DefaultRequestHeaders.CacheControl = [System.Net.Http.Headers.CacheControlHeaderValue]::new()
 $client.DefaultRequestHeaders.CacheControl.NoCache = $true
 
-$results = @()
+$assetResults = @()
+$pageResults = [ordered]@{}
+$fiscal = [ordered]@{}
 $blocks = @()
 
 try {
     foreach ($asset in $Assets) {
-        $expectedUrl = "$BaseRaw/$asset"
-        $publicUrl = "$BasePublic/$asset"
-
-        $expectedResponse = $client.GetAsync($expectedUrl).GetAwaiter().GetResult()
-        $expectedBody = $expectedResponse.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult()
-        $expectedStatus = [int]$expectedResponse.StatusCode
-        $expectedSha = if ($expectedStatus -eq 200) { Get-Sha256Hex $expectedBody } else { $null }
-
-        $publicResponse = $client.GetAsync($publicUrl).GetAwaiter().GetResult()
-        $publicBody = $publicResponse.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult()
-        $publicStatus = [int]$publicResponse.StatusCode
-        $publicSha = if ($publicStatus -eq 200) { Get-Sha256Hex $publicBody } else { $null }
-
-        $match = ($expectedStatus -eq 200 -and $publicStatus -eq 200 -and $expectedSha -eq $publicSha)
-        if (-not $match) {
-            $blocks += "public_asset_mismatch:$asset"
-        }
-
-        $results += [ordered]@{
+        $expected = Get-Http $client "$BaseRaw/$asset"
+        $public = Get-Http $client "$BasePublic/$asset?v=$ExpectedCacheKey"
+        $expectedSha = if ($expected.status -eq 200) { Get-Sha256Hex $expected.body } else { $null }
+        $publicSha = if ($public.status -eq 200) { Get-Sha256Hex $public.body } else { $null }
+        $match = ($expected.status -eq 200 -and $public.status -eq 200 -and $expectedSha -eq $publicSha)
+        if (-not $match) { $blocks += "public_asset_mismatch:$asset" }
+        $assetResults += [ordered]@{
             asset = $asset
-            expected_source_url = $expectedUrl
-            expected_http_status = $expectedStatus
+            expected_source_url = "$BaseRaw/$asset"
+            expected_http_status = $expected.status
             expected_sha256 = $expectedSha
-            public_url = $publicUrl
-            public_http_status = $publicStatus
+            public_url = "$BasePublic/$asset?v=$ExpectedCacheKey"
+            public_http_status = $public.status
             public_sha256 = $publicSha
             match = $match
         }
     }
+
+    foreach ($name in $Pages.Keys) {
+        $spec = $Pages[$name]
+        $r = Get-Http $client ($Base + $spec.path)
+        $text = Bytes-ToText $r.body
+        $pageBlocks = @()
+        if ($r.status -ne 200) { $pageBlocks += "http:$($r.status)" }
+        if ($text.Contains('Fatal error') -or $text.Contains('Parse error')) { $pageBlocks += 'php_error' }
+        $positions = @()
+        foreach ($script in $spec.scripts) { $positions += $text.IndexOf($script, [StringComparison]::Ordinal) }
+        if ($positions.Count -gt 0) {
+            $sorted = @($positions | Sort-Object)
+            $badOrder = ($positions -contains -1) -or ((($positions -join ',') -ne ($sorted -join ','))) -or ((@($positions | Select-Object -Unique).Count) -ne $positions.Count)
+            if ($badOrder) { $pageBlocks += 'script_order' }
+        }
+        $cacheCount = ([regex]::Matches($text, [regex]::Escape($ExpectedCacheKey))).Count
+        if ($cacheCount -lt 1) { $pageBlocks += 'cache_key_missing' }
+        if ($name -eq 'H26' -and $cacheCount -ne 2) { $pageBlocks += "h26_cache_key_count:$cacheCount" }
+        if ($name -eq 'H25') {
+            $required = @(
+                '/financas/calculadoras/salario-liquido-clt/',
+                '/financas/calculadoras/decimo-terceiro/',
+                '/financas/calculadoras/ferias-clt/',
+                '/financas/calculadoras/rescisao-clt/'
+            )
+            foreach ($link in $required) { if (-not $text.Contains($link)) { $pageBlocks += "required_link:$link" } }
+            if (-not $text.Contains('Não calcula FGTS') -or -not $text.Contains('aviso prévio')) { $pageBlocks += 'rescisao_boundary_copy' }
+        }
+        foreach ($b in $pageBlocks) { $blocks += "$name`:$b" }
+        $pageResults[$name] = [ordered]@{
+            path = $spec.path
+            http_status = $r.status
+            bytes = $r.body.Length
+            script_order = @($spec.scripts)
+            script_positions = @($positions)
+            cache_key_occurrences = $cacheCount
+            block_reasons = @($pageBlocks)
+        }
+    }
+
+    $healthR = Get-Http $client "$Base/blog/wp-json/sfa/v1/fiscal-health"
+    $health = if ($healthR.status -eq 200) { (Bytes-ToText $healthR.body | ConvertFrom-Json) } else { $null }
+    $healthPass = ($healthR.status -eq 200 -and $null -ne $health -and $health.status -eq 'healthy' -and $health.release_id -eq $ExpectedReleaseId)
+    $fiscal.health = [ordered]@{ http_status = $healthR.status; status = $health.status; release_id = $health.release_id; pass = $healthPass }
+    if (-not $healthPass) { $blocks += 'fiscal_health' }
+
+    $releaseR = Get-Http $client "$Base/blog/wp-json/sfa/v1/fiscal-release"
+    $release = if ($releaseR.status -eq 200) { (Bytes-ToText $releaseR.body | ConvertFrom-Json) } else { $null }
+    $releasePass = ($releaseR.status -eq 200 -and $null -ne $release -and $release.release_id -eq $ExpectedReleaseId)
+    $fiscal.release = [ordered]@{ http_status = $releaseR.status; release_id = $release.release_id; pass = $releasePass }
+    if (-not $releasePass) { $blocks += 'fiscal_release' }
+
+    $legacyR = Get-Http $client "$Base/blog/wp-json/sfa/v1/folha"
+    $legacyPass = ($legacyR.status -eq 410)
+    $fiscal.legacy_folha = [ordered]@{ http_status = $legacyR.status; pass = $legacyPass }
+    if (-not $legacyPass) { $blocks += 'legacy_folha' }
 }
 finally {
     $client.Dispose()
@@ -80,39 +142,41 @@ finally {
 
 $status = if ($blocks.Count -eq 0) { 'PASS' } else { 'BLOCKED' }
 $payload = [ordered]@{
-    schema_version = '1.0.0'
+    schema_version = '1.1.0'
     checkpoint = 'C7.5'
     mode = 'external_client_public_delivery_validation'
+    collector = 'operator_external_client'
     status = $status
     production_mutated = $false
     authorized_commit = $AuthorizedCommit
+    expected_release_id = $ExpectedReleaseId
+    expected_cache_key = $ExpectedCacheKey
     observed_at_utc = [DateTime]::UtcNow.ToString('o')
     assets_expected = $Assets.Count
-    assets_matching = @($results | Where-Object { $_.match }).Count
-    assets = $results
-    block_reasons = $blocks
+    assets_matching = @($assetResults | Where-Object { $_.match }).Count
+    assets = $assetResults
+    pages = $pageResults
+    fiscal = $fiscal
+    block_reasons = @($blocks)
 }
 
-$json = $payload | ConvertTo-Json -Depth 8
+$json = $payload | ConvertTo-Json -Depth 12
 [IO.File]::WriteAllText($OutputPath, $json + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
+$evidenceSha = Get-Sha256Hex ([IO.File]::ReadAllBytes($OutputPath))
 
-$bytes = [IO.File]::ReadAllBytes($OutputPath)
-$evidenceSha = Get-Sha256Hex $bytes
-
-Write-Host "========== C7.5 EXTERNAL DELIVERY =========="
+Write-Host '========== C7.5 EXTERNAL DELIVERY =========='
 Write-Host "authorized_commit=$AuthorizedCommit"
 Write-Host "status=$status"
 Write-Host "assets=$($payload.assets_matching)/$($payload.assets_expected)"
-foreach ($item in $results) {
-    Write-Host ("{0}=public:{1} expected:{2} match:{3}" -f $item.asset, $item.public_http_status, $item.expected_http_status, $item.match)
-}
+foreach ($item in $assetResults) { Write-Host ("{0}=public:{1} expected:{2} match:{3}" -f $item.asset, $item.public_http_status, $item.expected_http_status, $item.match) }
+foreach ($name in $pageResults.Keys) { Write-Host ("{0}=http:{1} blocks:{2}" -f $name, $pageResults[$name].http_status, (@($pageResults[$name].block_reasons) -join ',')) }
+Write-Host "fiscal_health=$($fiscal.health.pass)"
+Write-Host "fiscal_release=$($fiscal.release.pass)"
+Write-Host "legacy_folha=$($fiscal.legacy_folha.pass)"
 Write-Host "block_reasons=$($blocks | ConvertTo-Json -Compress)"
 Write-Host "evidence=$OutputPath"
 Write-Host "evidence_sha256=$evidenceSha"
-Write-Host "production_mutated=False"
-if ($status -eq 'PASS') {
-    Write-Host 'C7.5_EXTERNAL_DELIVERY=PASS'
-    exit 0
-}
+Write-Host 'production_mutated=False'
+if ($status -eq 'PASS') { Write-Host 'C7.5_EXTERNAL_DELIVERY=PASS'; exit 0 }
 Write-Host 'C7.5_EXTERNAL_DELIVERY=BLOCKED'
 exit 3
