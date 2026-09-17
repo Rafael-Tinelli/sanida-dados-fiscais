@@ -8,6 +8,13 @@ from pathlib import Path
 from scripts.deployment_health_v2 import DeliveryHealthError, validate_external_evidence
 
 EXPECTED_PAGES = {"H25", "H26", "H27", "H28", "H29"}
+EXPECTED_CACHE_MARKERS = {
+    "H25": "20260916-f06f10",
+    "H26": "20260916-f06f10",
+    "H27": "2.1.0",
+    "H28": "20260917-h28-r1",
+    "H29": "20260917-h29-r1",
+}
 
 
 class ExternalEvidenceError(RuntimeError):
@@ -34,7 +41,7 @@ def validate(*, evidence: dict, authorized_commit: str, release_id: str, cache_k
     if evidence.get("expected_release_id") != release_id:
         raise ExternalEvidenceError("external evidence release binding mismatch")
     if evidence.get("expected_cache_key") != cache_key:
-        raise ExternalEvidenceError("external evidence cache-key binding mismatch")
+        raise ExternalEvidenceError("external evidence stable cache-key binding mismatch")
 
     # Reuse the canonical C7.5 asset-integrity contract: 8/8 assets, HTTP 200,
     # exact SHA equality, PASS and no block reasons.
@@ -61,9 +68,13 @@ def validate(*, evidence: dict, authorized_commit: str, release_id: str, cache_k
             raise ExternalEvidenceError(f"{name} public HTTP status is not 200")
         if page.get("block_reasons") not in ([], None):
             raise ExternalEvidenceError(f"{name} contains public-delivery block reasons")
-        count = page.get("cache_key_occurrences")
+
+        expected_marker = EXPECTED_CACHE_MARKERS[name]
+        if page.get("cache_marker") != expected_marker:
+            raise ExternalEvidenceError(f"{name} cache marker is not the authorized source marker")
+        count = page.get("cache_marker_occurrences")
         if not isinstance(count, int) or count < 1:
-            raise ExternalEvidenceError(f"{name} cache key was not observed")
+            raise ExternalEvidenceError(f"{name} cache marker was not observed")
         if name == "H26" and count != 2:
             raise ExternalEvidenceError("H26 must expose the stable cache key exactly twice")
 
@@ -84,7 +95,8 @@ def validate(*, evidence: dict, authorized_commit: str, release_id: str, cache_k
         "status": "PASS",
         "authorized_commit": authorized_commit.lower(),
         "release_id": release_id,
-        "cache_key": cache_key,
+        "stable_cache_key": cache_key,
+        "page_cache_markers": EXPECTED_CACHE_MARKERS,
         "assets_expected": asset_summary["assets_expected"],
         "assets_matching": asset_summary["assets_matching"],
         "pages_verified": len(EXPECTED_PAGES),
