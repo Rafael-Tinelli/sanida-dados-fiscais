@@ -1,5 +1,5 @@
 {
-  "attempted_at_utc": "2026-09-16T14:21:33.982872Z",
+  "attempted_at_utc": "2026-09-17T14:26:52.416026Z",
   "candidate_release_id": "candidate-v1-2",
   "changed_rules": [
     {
@@ -15,6 +15,62 @@
       "occurrence": 0,
       "previous_rule_version": "1.0.0",
       "rule_id": "inss.employee.progressive_table"
+    },
+    {
+      "candidate_rule_version": "1.0.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.1",
+      "rule_id": "irrf.dependent_deduction"
+    },
+    {
+      "candidate_rule_version": "1.0.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.1",
+      "rule_id": "irrf.monthly.progressive_table"
+    },
+    {
+      "candidate_rule_version": "1.0.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.1",
+      "rule_id": "irrf.reduction.2026"
+    },
+    {
+      "candidate_rule_version": "1.0.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.1",
+      "rule_id": "irrf.simplified_monthly_discount"
     },
     {
       "candidate_rule_version": "1.0.3",
@@ -43,6 +99,20 @@
       "occurrence": 0,
       "previous_rule_version": "1.0.1",
       "rule_id": "termination.partial_output_scope"
+    },
+    {
+      "candidate_rule_version": "1.0.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.0",
+      "rule_id": "termination.salary_balance"
     },
     {
       "candidate_rule_version": "1.0.3",
@@ -265,6 +335,7 @@
   "reasons": [
     "termination.acquired_and_overdue_vacation: source refresh on structural rule requires human review",
     "termination.partial_output_scope: source refresh on structural rule requires human review",
+    "termination.salary_balance: source refresh on structural rule requires human review",
     "termination.thirteenth_proportional: source refresh on structural rule requires human review",
     "termination.vacation_indemnity_tax_treatment: source refresh on structural rule requires human review",
     "termination.vacation_proportional: source refresh on structural rule requires human review",
@@ -282,6 +353,6 @@
     "vacation.remuneration_and_constitutional_third: source refresh on structural rule requires human review"
   ],
   "review_issue_action": "UPSERT_REQUIRED",
-  "review_key": "51d3cb0b05626a4d558d6bb035a7e7fdda3028fb243f67861516227d4e1045b7",
+  "review_key": "4984ef322641f15fb369febadd481d6896f5c24f005f5f4a97712f55e864ef7b",
   "schema_version": "1.0.0"
 }

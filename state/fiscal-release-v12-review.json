@@ -6,7 +6,7 @@
     "H29"
   ],
   "approval": {
-    "required_command": "/approve 51d3cb0b05626a4d558d6bb035a7e7fdda3028fb243f67861516227d4e1045b7",
+    "required_command": "/approve 4984ef322641f15fb369febadd481d6896f5c24f005f5f4a97712f55e864ef7b",
     "stale_review_must_block_publication": true
   },
   "bootstrap_baseline": null,
@@ -14,12 +14,13 @@
   "candidate_rule_count": 32,
   "candidate_schema_version": "1.2.0",
   "contract_changed_paths": [],
-  "created_at_utc": "2026-09-16T14:21:33.982872Z",
+  "created_at_utc": "2026-09-17T14:26:52.416026Z",
   "previous_release_id": "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e",
   "promotion_outcome": "REVIEW_REQUIRED",
   "reasons": [
     "termination.acquired_and_overdue_vacation: source refresh on structural rule requires human review",
     "termination.partial_output_scope: source refresh on structural rule requires human review",
+    "termination.salary_balance: source refresh on structural rule requires human review",
     "termination.thirteenth_proportional: source refresh on structural rule requires human review",
     "termination.vacation_indemnity_tax_treatment: source refresh on structural rule requires human review",
     "termination.vacation_proportional: source refresh on structural rule requires human review",
@@ -44,38 +45,38 @@
     },
     "ESOCIAL_WEB_MEI_2026": {
       "mode": "html-visible-text-links-v1",
-      "raw_snapshot_sha256": "14534c328924e7b4b9638fcfd0357740d09a98ac1ab8d5bfbf0175a21126656c",
+      "raw_snapshot_sha256": "bff5a00cf0501f20f575adb1b4b684c8c6be314e0ac834357442daf5c618e710",
       "review_fingerprint_sha256": "e309bce4f8075ad8a06182eab51406dfcd111af097ea38069b6d6b0c72d35109"
     },
     "INSS_TABLE_2026": {
       "mode": "parsed-normalized-payload-v1",
-      "raw_snapshot_sha256": "91969cbc6810c93d45c50ff387efe5eb6fdd920148e17974cacd45b3d38b7bd9",
+      "raw_snapshot_sha256": "23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0",
       "review_fingerprint_sha256": "d5ef2111b58bc976d0309bf36eb239ded7b39b24ab6263ce7bedd84870601940"
     },
     "MTE_TERMINATION_FAQ": {
       "mode": "html-visible-text-links-v1",
-      "raw_snapshot_sha256": "6284abb3f4a7b4447843e26965a82a5d3b760688d96efd2fb1ff1a90b017950f",
-      "review_fingerprint_sha256": "7e31dc518c34fb290fa3387cc912936432afcd1b3914fa60dc81c153120c6c13"
+      "raw_snapshot_sha256": "2ff5f9f8168dff746af9d9ad6dee7ea3934e693af74c9102d0e85d3b2dd8b45c",
+      "review_fingerprint_sha256": "721f0f5d2720523622b9302f24c1e4bb74f8618d5705fc26193d8a668975e6a8"
     },
     "PLANALTO_CLT": {
       "mode": "html-visible-text-links-v1",
-      "raw_snapshot_sha256": "199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae",
+      "raw_snapshot_sha256": "b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611",
       "review_fingerprint_sha256": "0601a66cabfca5fcf866c9a0f2c42432ecf6635e3907d68ec42217593a175bcf"
     },
     "PLANALTO_DECRETO_10854_2021": {
       "mode": "html-visible-text-links-v1",
-      "raw_snapshot_sha256": "d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8",
+      "raw_snapshot_sha256": "666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f",
       "review_fingerprint_sha256": "0f2bf55bd3cb7ee20619f4a5015ab8541762ce0959bb71da9727d3473a92ef00"
     },
     "PLANALTO_LEI_15270_2025": {
       "mode": "html-visible-text-links-v1",
-      "raw_snapshot_sha256": "9c22289069d6632bba2f0c9af1acd3e6c0ae294eea1e6745f6f5c5479f5a3bc8",
+      "raw_snapshot_sha256": "453407aa87f58f1a5a47a224610c58debd551d223f11cba70c93ebdeb2d58cb1",
       "review_fingerprint_sha256": "88721f308e7f46dcbf659e507c619800aab3865c1a75145e9eb93d323f7b342b"
     },
     "RFB_CP_INCIDENCE_TABLE": {
       "mode": "html-visible-text-links-v1",
-      "raw_snapshot_sha256": "936512a80b623d079bc6f4fa6f6750699504182576386451befa81530243cab9",
-      "review_fingerprint_sha256": "75600ae2075b7321523482aebf17bf21b42414e6d3487bd87fae4ccb2e9bfd7f"
+      "raw_snapshot_sha256": "0e056127ea92628e2b7c55dceb2c85a9226c6bda4b3cd3ff0ade33e210adaee5",
+      "review_fingerprint_sha256": "fe2acf8c2f375a13700b2c2ce4cf7b2c914229dd0fb88797691ff10f032455ab"
     },
     "RFB_IN_1500_2014": {
       "mode": "html-visible-text-links-v1",
@@ -84,7 +85,7 @@
     },
     "RFB_IRRF_TABLE_2026": {
       "mode": "parsed-normalized-payload-v1",
-      "raw_snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+      "raw_snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
       "review_fingerprint_sha256": "fbcf3c8e1e3f41f456ae73df44f4f9b70264d617a2062140724c494607556124"
     },
     "RFB_SC_209_2021": {
@@ -103,7 +104,7 @@
       "review_fingerprint_sha256": "5ba891a0b028728a55417da44ac8896f61dc8019ae3814e96f5abc5f8c39fc4a"
     }
   },
-  "review_key": "51d3cb0b05626a4d558d6bb035a7e7fdda3028fb243f67861516227d4e1045b7",
+  "review_key": "4984ef322641f15fb369febadd481d6896f5c24f005f5f4a97712f55e864ef7b",
   "review_kind": "SUCCESSOR",
   "rules": [
     {
@@ -255,13 +256,13 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "parser_id": "inss_employee_table_v1",
           "parser_version": "1.0.1",
           "retrieval_method": "http_html",
           "role": "official_operational",
-          "snapshot_path": "INSS_TABLE_2026/91/91969cbc6810c93d45c50ff387efe5eb6fdd920148e17974cacd45b3d38b7bd9.html",
-          "snapshot_sha256": "91969cbc6810c93d45c50ff387efe5eb6fdd920148e17974cacd45b3d38b7bd9",
+          "snapshot_path": "INSS_TABLE_2026/23/23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0.html",
+          "snapshot_sha256": "23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0",
           "source_id": "INSS_TABLE_2026",
           "status": "AVAILABLE"
         }
@@ -282,13 +283,13 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "parser_id": "inss_employee_table_v1",
             "parser_version": "1.0.1",
             "retrieval_method": "http_html",
             "role": "official_operational",
-            "snapshot_path": "INSS_TABLE_2026/91/91969cbc6810c93d45c50ff387efe5eb6fdd920148e17974cacd45b3d38b7bd9.html",
-            "snapshot_sha256": "91969cbc6810c93d45c50ff387efe5eb6fdd920148e17974cacd45b3d38b7bd9",
+            "snapshot_path": "INSS_TABLE_2026/23/23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0.html",
+            "snapshot_sha256": "23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0",
             "source_id": "INSS_TABLE_2026",
             "status": "AVAILABLE"
           },
@@ -310,6 +311,708 @@
       "previous_rule_version": "1.0.0",
       "reference_case_ids": [],
       "rule_id": "inss.employee.progressive_table",
+      "semantic_changes": []
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "legal_deductions_for_matching_income_type",
+        "calculation_order": 15,
+        "calculators": [
+          "H26",
+          "H27",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "monthly",
+          "thirteenth",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Dedução unitária por dependente para a apuração correspondente.",
+        "domain": "income_tax",
+        "payload": {
+          "type": "scalar",
+          "unit": "BRL_per_dependent",
+          "value": "189.59"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameter",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "current_published_release",
+      "before": {
+        "applicability": [],
+        "applies_to": "legal_deductions_for_matching_income_type",
+        "calculation_order": 15,
+        "calculators": [
+          "H26",
+          "H27",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "monthly",
+          "thirteenth",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Dedução unitária por dependente para a apuração correspondente.",
+        "domain": "income_tax",
+        "payload": {
+          "type": "scalar",
+          "unit": "BRL_per_dependent",
+          "value": "189.59"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameter",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "calculators": [
+        "H26",
+        "H27",
+        "H28",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
+          "parser_id": "rfb_irrf_table_v1",
+          "parser_version": "1.0.0",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_IRRF_TABLE_2026/48/489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce.html",
+          "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+          "source_id": "RFB_IRRF_TABLE_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-15T19:11:57.285668Z",
+          "parser_id": "rfb_irrf_table_v1",
+          "parser_version": "1.0.0",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+          "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+          "source_id": "RFB_IRRF_TABLE_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
+            "parser_id": "rfb_irrf_table_v1",
+            "parser_version": "1.0.0",
+            "retrieval_method": "http_html",
+            "role": "official_operational",
+            "snapshot_path": "RFB_IRRF_TABLE_2026/48/489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce.html",
+            "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+            "source_id": "RFB_IRRF_TABLE_2026",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-15T19:11:57.285668Z",
+            "parser_id": "rfb_irrf_table_v1",
+            "parser_version": "1.0.0",
+            "retrieval_method": "http_html",
+            "role": "official_operational",
+            "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+            "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+            "source_id": "RFB_IRRF_TABLE_2026",
+            "status": "AVAILABLE"
+          }
+        }
+      ],
+      "historical_semantic_status": "NOT_APPLICABLE",
+      "occurrence": 0,
+      "previous_rule_version": "1.0.1",
+      "reference_case_ids": [],
+      "rule_id": "irrf.dependent_deduction",
+      "semantic_changes": []
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "irrf_tax_base_after_allowed_deductions",
+        "calculation_order": 30,
+        "calculators": [
+          "H26",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "monthly",
+          "thirteenth",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Tabela progressiva mensal do IRRF vigente em 2026.",
+        "domain": "income_tax",
+        "payload": {
+          "brackets": [
+            {
+              "deduction": "0.00",
+              "rate": "0",
+              "upper_bound": "2428.80"
+            },
+            {
+              "deduction": "182.16",
+              "rate": "0.075",
+              "upper_bound": "2826.65"
+            },
+            {
+              "deduction": "394.16",
+              "rate": "0.15",
+              "upper_bound": "3751.05"
+            },
+            {
+              "deduction": "675.49",
+              "rate": "0.225",
+              "upper_bound": "4664.68"
+            },
+            {
+              "deduction": "908.73",
+              "rate": "0.275"
+            }
+          ],
+          "calculation_method": "rate_times_base_minus_deduction",
+          "type": "progressive_table"
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "per_assessment_result"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameterizable_rule",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "current_published_release",
+      "before": {
+        "applicability": [],
+        "applies_to": "irrf_tax_base_after_allowed_deductions",
+        "calculation_order": 30,
+        "calculators": [
+          "H26",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "monthly",
+          "thirteenth",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Tabela progressiva mensal do IRRF vigente em 2026.",
+        "domain": "income_tax",
+        "payload": {
+          "brackets": [
+            {
+              "deduction": "0.00",
+              "rate": "0",
+              "upper_bound": "2428.80"
+            },
+            {
+              "deduction": "182.16",
+              "rate": "0.075",
+              "upper_bound": "2826.65"
+            },
+            {
+              "deduction": "394.16",
+              "rate": "0.15",
+              "upper_bound": "3751.05"
+            },
+            {
+              "deduction": "675.49",
+              "rate": "0.225",
+              "upper_bound": "4664.68"
+            },
+            {
+              "deduction": "908.73",
+              "rate": "0.275"
+            }
+          ],
+          "calculation_method": "rate_times_base_minus_deduction",
+          "type": "progressive_table"
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "per_assessment_result"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameterizable_rule",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "calculators": [
+        "H26",
+        "H28",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
+          "parser_id": "rfb_irrf_table_v1",
+          "parser_version": "1.0.0",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_IRRF_TABLE_2026/48/489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce.html",
+          "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+          "source_id": "RFB_IRRF_TABLE_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-15T19:11:57.285668Z",
+          "parser_id": "rfb_irrf_table_v1",
+          "parser_version": "1.0.0",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+          "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+          "source_id": "RFB_IRRF_TABLE_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
+            "parser_id": "rfb_irrf_table_v1",
+            "parser_version": "1.0.0",
+            "retrieval_method": "http_html",
+            "role": "official_operational",
+            "snapshot_path": "RFB_IRRF_TABLE_2026/48/489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce.html",
+            "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+            "source_id": "RFB_IRRF_TABLE_2026",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-15T19:11:57.285668Z",
+            "parser_id": "rfb_irrf_table_v1",
+            "parser_version": "1.0.0",
+            "retrieval_method": "http_html",
+            "role": "official_operational",
+            "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+            "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+            "source_id": "RFB_IRRF_TABLE_2026",
+            "status": "AVAILABLE"
+          }
+        }
+      ],
+      "historical_semantic_status": "NOT_APPLICABLE",
+      "occurrence": 0,
+      "previous_rule_version": "1.0.1",
+      "reference_case_ids": [
+        "rfd_irrf_2026_salary_3036",
+        "rfd_irrf_2026_salary_4000",
+        "rfd_irrf_2026_salary_5000",
+        "rfd_irrf_2026_salary_6000_A01_regression"
+      ],
+      "rule_id": "irrf.monthly.progressive_table",
+      "semantic_changes": []
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "taxable_income_subject_to_monthly_incidence_before_irrf_deductions",
+        "calculation_order": 40,
+        "calculators": [
+          "H26",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "monthly",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [
+          "irrf.monthly.progressive_table"
+        ],
+        "description": "Redução de IR de 2026 aplicada ao rendimento tributável sujeito à incidência mensal antes das deduções do IRRF.",
+        "domain": "income_tax",
+        "payload": {
+          "above_phaseout_behavior": "zero",
+          "floor_at_zero": true,
+          "full_relief_behavior": "max_reduction",
+          "full_relief_income_limit": "5000.00",
+          "input_semantic": "taxable_income_subject_to_monthly_incidence_before_irrf_deductions",
+          "intercept": "978.62",
+          "max_reduction": "312.89",
+          "phaseout_formula": "intercept_minus_slope_times_input",
+          "phaseout_income_limit": "7350.00",
+          "slope": "0.133145",
+          "type": "affine_reduction"
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "after_pre_reduction_irrf"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameterizable_rule",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01",
+          "effective_until": "2026-12-31"
+        }
+      },
+      "baseline": "current_published_release",
+      "before": {
+        "applicability": [],
+        "applies_to": "taxable_income_subject_to_monthly_incidence_before_irrf_deductions",
+        "calculation_order": 40,
+        "calculators": [
+          "H26",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "monthly",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [
+          "irrf.monthly.progressive_table"
+        ],
+        "description": "Redução de IR de 2026 aplicada ao rendimento tributável sujeito à incidência mensal antes das deduções do IRRF.",
+        "domain": "income_tax",
+        "payload": {
+          "above_phaseout_behavior": "zero",
+          "floor_at_zero": true,
+          "full_relief_behavior": "max_reduction",
+          "full_relief_income_limit": "5000.00",
+          "input_semantic": "taxable_income_subject_to_monthly_incidence_before_irrf_deductions",
+          "intercept": "978.62",
+          "max_reduction": "312.89",
+          "phaseout_formula": "intercept_minus_slope_times_input",
+          "phaseout_income_limit": "7350.00",
+          "slope": "0.133145",
+          "type": "affine_reduction"
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "after_pre_reduction_irrf"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameterizable_rule",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01",
+          "effective_until": "2026-12-31"
+        }
+      },
+      "calculators": [
+        "H26",
+        "H28",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
+          "parser_id": "rfb_irrf_table_v1",
+          "parser_version": "1.0.0",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_IRRF_TABLE_2026/48/489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce.html",
+          "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+          "source_id": "RFB_IRRF_TABLE_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-15T19:11:57.285668Z",
+          "parser_id": "rfb_irrf_table_v1",
+          "parser_version": "1.0.0",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+          "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+          "source_id": "RFB_IRRF_TABLE_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
+            "parser_id": "rfb_irrf_table_v1",
+            "parser_version": "1.0.0",
+            "retrieval_method": "http_html",
+            "role": "official_operational",
+            "snapshot_path": "RFB_IRRF_TABLE_2026/48/489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce.html",
+            "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+            "source_id": "RFB_IRRF_TABLE_2026",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-15T19:11:57.285668Z",
+            "parser_id": "rfb_irrf_table_v1",
+            "parser_version": "1.0.0",
+            "retrieval_method": "http_html",
+            "role": "official_operational",
+            "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+            "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+            "source_id": "RFB_IRRF_TABLE_2026",
+            "status": "AVAILABLE"
+          }
+        }
+      ],
+      "historical_semantic_status": "NOT_APPLICABLE",
+      "occurrence": 0,
+      "previous_rule_version": "1.0.1",
+      "reference_case_ids": [
+        "rfd_irrf_2026_salary_4000",
+        "rfd_irrf_2026_salary_5000",
+        "rfd_irrf_2026_salary_6000_A01_regression",
+        "rfd_irrf_2026_salary_7607_20_boundary_semantics"
+      ],
+      "rule_id": "irrf.reduction.2026",
+      "semantic_changes": []
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "deduction_choice_within_each_irrf_assessment",
+        "calculation_order": 14,
+        "calculators": [
+          "H26",
+          "H27",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "monthly",
+          "thirteenth",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Limite do desconto simplificado comparado separadamente dentro de cada apuração de IRRF suportada.",
+        "domain": "income_tax",
+        "payload": {
+          "type": "scalar",
+          "unit": "BRL",
+          "value": "607.20"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameterizable_rule",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "current_published_release",
+      "before": {
+        "applicability": [],
+        "applies_to": "deduction_choice_within_each_irrf_assessment",
+        "calculation_order": 14,
+        "calculators": [
+          "H26",
+          "H27",
+          "H28",
+          "H29"
+        ],
+        "competence": {
+          "basis": "payment_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "monthly",
+          "thirteenth",
+          "vacation_enjoyed",
+          "termination"
+        ],
+        "dependencies": [],
+        "description": "Limite do desconto simplificado comparado separadamente dentro de cada apuração de IRRF suportada.",
+        "domain": "income_tax",
+        "payload": {
+          "type": "scalar",
+          "unit": "BRL",
+          "value": "607.20"
+        },
+        "update_policy": {
+          "auto_publish": true,
+          "rule_class": "parameterizable_rule",
+          "structural_review_required": false
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "calculators": [
+        "H26",
+        "H27",
+        "H28",
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
+          "parser_id": "rfb_irrf_table_v1",
+          "parser_version": "1.0.0",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_IRRF_TABLE_2026/48/489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce.html",
+          "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+          "source_id": "RFB_IRRF_TABLE_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-15T19:11:57.285668Z",
+          "parser_id": "rfb_irrf_table_v1",
+          "parser_version": "1.0.0",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+          "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+          "source_id": "RFB_IRRF_TABLE_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
+            "parser_id": "rfb_irrf_table_v1",
+            "parser_version": "1.0.0",
+            "retrieval_method": "http_html",
+            "role": "official_operational",
+            "snapshot_path": "RFB_IRRF_TABLE_2026/48/489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce.html",
+            "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+            "source_id": "RFB_IRRF_TABLE_2026",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-15T19:11:57.285668Z",
+            "parser_id": "rfb_irrf_table_v1",
+            "parser_version": "1.0.0",
+            "retrieval_method": "http_html",
+            "role": "official_operational",
+            "snapshot_path": "RFB_IRRF_TABLE_2026/03/030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86.html",
+            "snapshot_sha256": "030273a89d1d23f80c1e33fcbee25c5d1f984e9d7ef23f54f3cb2f05b6f00e86",
+            "source_id": "RFB_IRRF_TABLE_2026",
+            "status": "AVAILABLE"
+          }
+        }
+      ],
+      "historical_semantic_status": "NOT_APPLICABLE",
+      "occurrence": 0,
+      "previous_rule_version": "1.0.1",
+      "reference_case_ids": [],
+      "rule_id": "irrf.simplified_monthly_discount",
       "semantic_changes": []
     },
     {
@@ -404,11 +1107,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_CLT/19/199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae.html",
-          "snapshot_sha256": "199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae",
+          "snapshot_path": "PLANALTO_CLT/b6/b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611.html",
+          "snapshot_sha256": "b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611",
           "source_id": "PLANALTO_CLT",
           "status": "AVAILABLE"
         }
@@ -427,11 +1130,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_CLT/19/199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae.html",
-            "snapshot_sha256": "199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae",
+            "snapshot_path": "PLANALTO_CLT/b6/b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611.html",
+            "snapshot_sha256": "b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611",
             "source_id": "PLANALTO_CLT",
             "status": "AVAILABLE"
           },
@@ -571,11 +1274,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "retrieval_method": "http_html",
           "role": "official_operational",
-          "snapshot_path": "MTE_TERMINATION_FAQ/62/6284abb3f4a7b4447843e26965a82a5d3b760688d96efd2fb1ff1a90b017950f.html",
-          "snapshot_sha256": "6284abb3f4a7b4447843e26965a82a5d3b760688d96efd2fb1ff1a90b017950f",
+          "snapshot_path": "MTE_TERMINATION_FAQ/2f/2ff5f9f8168dff746af9d9ad6dee7ea3934e693af74c9102d0e85d3b2dd8b45c.html",
+          "snapshot_sha256": "2ff5f9f8168dff746af9d9ad6dee7ea3934e693af74c9102d0e85d3b2dd8b45c",
           "source_id": "MTE_TERMINATION_FAQ",
           "status": "AVAILABLE"
         }
@@ -594,11 +1297,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "retrieval_method": "http_html",
             "role": "official_operational",
-            "snapshot_path": "MTE_TERMINATION_FAQ/62/6284abb3f4a7b4447843e26965a82a5d3b760688d96efd2fb1ff1a90b017950f.html",
-            "snapshot_sha256": "6284abb3f4a7b4447843e26965a82a5d3b760688d96efd2fb1ff1a90b017950f",
+            "snapshot_path": "MTE_TERMINATION_FAQ/2f/2ff5f9f8168dff746af9d9ad6dee7ea3934e693af74c9102d0e85d3b2dd8b45c.html",
+            "snapshot_sha256": "2ff5f9f8168dff746af9d9ad6dee7ea3934e693af74c9102d0e85d3b2dd8b45c",
             "source_id": "MTE_TERMINATION_FAQ",
             "status": "AVAILABLE"
           },
@@ -618,6 +1321,157 @@
       "previous_rule_version": "1.0.1",
       "reference_case_ids": [],
       "rule_id": "termination.partial_output_scope",
+      "semantic_changes": []
+    },
+    {
+      "after": {
+        "applicability": [],
+        "applies_to": "monthly_employee_salary_balance",
+        "calculation_order": 20,
+        "calculators": [
+          "H29"
+        ],
+        "competence": {
+          "basis": "termination_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "termination"
+        ],
+        "dependencies": [
+          "termination.reason_scope"
+        ],
+        "description": "Prorrateio de saldo para mensalista/quinzenalista no escopo v1.",
+        "domain": "termination",
+        "payload": {
+          "base_semantic": "monthly_base_salary",
+          "denominator_semantic": "calendar_days_in_month",
+          "formula": "base_times_numerator_over_denominator",
+          "numerator_semantic": "days_counted_through_termination",
+          "type": "proration",
+          "universal_fixed_denominator": false
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "salary_balance_result"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "baseline": "current_published_release",
+      "before": {
+        "applicability": [],
+        "applies_to": "monthly_employee_salary_balance",
+        "calculation_order": 20,
+        "calculators": [
+          "H29"
+        ],
+        "competence": {
+          "basis": "termination_date",
+          "context_overrides": {},
+          "context_rule_specific_keys": {}
+        },
+        "contexts": [
+          "termination"
+        ],
+        "dependencies": [
+          "termination.reason_scope"
+        ],
+        "description": "Prorrateio de saldo para mensalista/quinzenalista no escopo v1.",
+        "domain": "termination",
+        "payload": {
+          "base_semantic": "monthly_base_salary",
+          "denominator_semantic": "calendar_days_in_month",
+          "formula": "base_times_numerator_over_denominator",
+          "numerator_semantic": "days_counted_through_termination",
+          "type": "proration",
+          "universal_fixed_denominator": false
+        },
+        "rounding_policy": {
+          "decimal_places": 2,
+          "mode": "ROUND_HALF_UP",
+          "stage": "salary_balance_result"
+        },
+        "update_policy": {
+          "auto_publish": false,
+          "rule_class": "structural_rule",
+          "structural_review_required": true
+        },
+        "vigency": {
+          "effective_from": "2026-01-01"
+        }
+      },
+      "calculators": [
+        "H29"
+      ],
+      "candidate_rule_version": "1.0.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "ESOCIAL_WEB_MEI_2026/bf/bff5a00cf0501f20f575adb1b4b684c8c6be314e0ac834357442daf5c618e710.html",
+          "snapshot_sha256": "bff5a00cf0501f20f575adb1b4b684c8c6be314e0ac834357442daf5c618e710",
+          "source_id": "ESOCIAL_WEB_MEI_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_before": [
+        {
+          "observed_at_utc": "2026-09-15T00:04:36.564924Z",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "ESOCIAL_WEB_MEI_2026/14/14534c328924e7b4b9638fcfd0357740d09a98ac1ab8d5bfbf0175a21126656c.html",
+          "snapshot_sha256": "14534c328924e7b4b9638fcfd0357740d09a98ac1ab8d5bfbf0175a21126656c",
+          "source_id": "ESOCIAL_WEB_MEI_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "evidence_changed": [
+        {
+          "after": {
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
+            "retrieval_method": "http_html",
+            "role": "official_operational",
+            "snapshot_path": "ESOCIAL_WEB_MEI_2026/bf/bff5a00cf0501f20f575adb1b4b684c8c6be314e0ac834357442daf5c618e710.html",
+            "snapshot_sha256": "bff5a00cf0501f20f575adb1b4b684c8c6be314e0ac834357442daf5c618e710",
+            "source_id": "ESOCIAL_WEB_MEI_2026",
+            "status": "AVAILABLE"
+          },
+          "before": {
+            "observed_at_utc": "2026-09-15T00:04:36.564924Z",
+            "retrieval_method": "http_html",
+            "role": "official_operational",
+            "snapshot_path": "ESOCIAL_WEB_MEI_2026/14/14534c328924e7b4b9638fcfd0357740d09a98ac1ab8d5bfbf0175a21126656c.html",
+            "snapshot_sha256": "14534c328924e7b4b9638fcfd0357740d09a98ac1ab8d5bfbf0175a21126656c",
+            "source_id": "ESOCIAL_WEB_MEI_2026",
+            "status": "AVAILABLE"
+          }
+        }
+      ],
+      "historical_semantic_status": "NOT_APPLICABLE",
+      "occurrence": 0,
+      "previous_rule_version": "1.0.0",
+      "reference_case_ids": [
+        "termination_salary_balance_monthly_31_days"
+      ],
+      "rule_id": "termination.salary_balance",
       "semantic_changes": []
     },
     {
@@ -722,11 +1576,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_DECRETO_10854_2021/d0/d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8.html",
-          "snapshot_sha256": "d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/66/666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f.html",
+          "snapshot_sha256": "666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f",
           "source_id": "PLANALTO_DECRETO_10854_2021",
           "status": "AVAILABLE"
         }
@@ -745,11 +1599,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_DECRETO_10854_2021/d0/d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8.html",
-            "snapshot_sha256": "d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8",
+            "snapshot_path": "PLANALTO_DECRETO_10854_2021/66/666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f.html",
+            "snapshot_sha256": "666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f",
             "source_id": "PLANALTO_DECRETO_10854_2021",
             "status": "AVAILABLE"
           },
@@ -877,11 +1731,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "retrieval_method": "http_html",
           "role": "official_operational",
-          "snapshot_path": "RFB_CP_INCIDENCE_TABLE/93/936512a80b623d079bc6f4fa6f6750699504182576386451befa81530243cab9.html",
-          "snapshot_sha256": "936512a80b623d079bc6f4fa6f6750699504182576386451befa81530243cab9",
+          "snapshot_path": "RFB_CP_INCIDENCE_TABLE/0e/0e056127ea92628e2b7c55dceb2c85a9226c6bda4b3cd3ff0ade33e210adaee5.html",
+          "snapshot_sha256": "0e056127ea92628e2b7c55dceb2c85a9226c6bda4b3cd3ff0ade33e210adaee5",
           "source_id": "RFB_CP_INCIDENCE_TABLE",
           "status": "AVAILABLE"
         }
@@ -900,11 +1754,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "retrieval_method": "http_html",
             "role": "official_operational",
-            "snapshot_path": "RFB_CP_INCIDENCE_TABLE/93/936512a80b623d079bc6f4fa6f6750699504182576386451befa81530243cab9.html",
-            "snapshot_sha256": "936512a80b623d079bc6f4fa6f6750699504182576386451befa81530243cab9",
+            "snapshot_path": "RFB_CP_INCIDENCE_TABLE/0e/0e056127ea92628e2b7c55dceb2c85a9226c6bda4b3cd3ff0ade33e210adaee5.html",
+            "snapshot_sha256": "0e056127ea92628e2b7c55dceb2c85a9226c6bda4b3cd3ff0ade33e210adaee5",
             "source_id": "RFB_CP_INCIDENCE_TABLE",
             "status": "AVAILABLE"
           },
@@ -1028,11 +1882,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_CLT/19/199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae.html",
-          "snapshot_sha256": "199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae",
+          "snapshot_path": "PLANALTO_CLT/b6/b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611.html",
+          "snapshot_sha256": "b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611",
           "source_id": "PLANALTO_CLT",
           "status": "AVAILABLE"
         }
@@ -1051,11 +1905,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_CLT/19/199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae.html",
-            "snapshot_sha256": "199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae",
+            "snapshot_path": "PLANALTO_CLT/b6/b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611.html",
+            "snapshot_sha256": "b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611",
             "source_id": "PLANALTO_CLT",
             "status": "AVAILABLE"
           },
@@ -1178,11 +2032,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_DECRETO_10854_2021/d0/d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8.html",
-          "snapshot_sha256": "d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/66/666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f.html",
+          "snapshot_sha256": "666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f",
           "source_id": "PLANALTO_DECRETO_10854_2021",
           "status": "AVAILABLE"
         }
@@ -1201,11 +2055,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_DECRETO_10854_2021/d0/d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8.html",
-            "snapshot_sha256": "d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8",
+            "snapshot_path": "PLANALTO_DECRETO_10854_2021/66/666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f.html",
+            "snapshot_sha256": "666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f",
             "source_id": "PLANALTO_DECRETO_10854_2021",
             "status": "AVAILABLE"
           },
@@ -1324,11 +2178,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_DECRETO_10854_2021/d0/d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8.html",
-          "snapshot_sha256": "d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/66/666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f.html",
+          "snapshot_sha256": "666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f",
           "source_id": "PLANALTO_DECRETO_10854_2021",
           "status": "AVAILABLE"
         }
@@ -1347,11 +2201,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_DECRETO_10854_2021/d0/d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8.html",
-            "snapshot_sha256": "d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8",
+            "snapshot_path": "PLANALTO_DECRETO_10854_2021/66/666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f.html",
+            "snapshot_sha256": "666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f",
             "source_id": "PLANALTO_DECRETO_10854_2021",
             "status": "AVAILABLE"
           },
@@ -1468,13 +2322,13 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "parser_id": "inss_employee_table_v1",
           "parser_version": "1.0.1",
           "retrieval_method": "http_html",
           "role": "official_operational",
-          "snapshot_path": "INSS_TABLE_2026/91/91969cbc6810c93d45c50ff387efe5eb6fdd920148e17974cacd45b3d38b7bd9.html",
-          "snapshot_sha256": "91969cbc6810c93d45c50ff387efe5eb6fdd920148e17974cacd45b3d38b7bd9",
+          "snapshot_path": "INSS_TABLE_2026/23/23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0.html",
+          "snapshot_sha256": "23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0",
           "source_id": "INSS_TABLE_2026",
           "status": "AVAILABLE"
         }
@@ -1495,13 +2349,13 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "parser_id": "inss_employee_table_v1",
             "parser_version": "1.0.1",
             "retrieval_method": "http_html",
             "role": "official_operational",
-            "snapshot_path": "INSS_TABLE_2026/91/91969cbc6810c93d45c50ff387efe5eb6fdd920148e17974cacd45b3d38b7bd9.html",
-            "snapshot_sha256": "91969cbc6810c93d45c50ff387efe5eb6fdd920148e17974cacd45b3d38b7bd9",
+            "snapshot_path": "INSS_TABLE_2026/23/23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0.html",
+            "snapshot_sha256": "23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0",
             "source_id": "INSS_TABLE_2026",
             "status": "AVAILABLE"
           },
@@ -1640,11 +2494,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_LEI_15270_2025/9c/9c22289069d6632bba2f0c9af1acd3e6c0ae294eea1e6745f6f5c5479f5a3bc8.html",
-          "snapshot_sha256": "9c22289069d6632bba2f0c9af1acd3e6c0ae294eea1e6745f6f5c5479f5a3bc8",
+          "snapshot_path": "PLANALTO_LEI_15270_2025/45/453407aa87f58f1a5a47a224610c58debd551d223f11cba70c93ebdeb2d58cb1.html",
+          "snapshot_sha256": "453407aa87f58f1a5a47a224610c58debd551d223f11cba70c93ebdeb2d58cb1",
           "source_id": "PLANALTO_LEI_15270_2025",
           "status": "AVAILABLE"
         }
@@ -1663,11 +2517,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_LEI_15270_2025/9c/9c22289069d6632bba2f0c9af1acd3e6c0ae294eea1e6745f6f5c5479f5a3bc8.html",
-            "snapshot_sha256": "9c22289069d6632bba2f0c9af1acd3e6c0ae294eea1e6745f6f5c5479f5a3bc8",
+            "snapshot_path": "PLANALTO_LEI_15270_2025/45/453407aa87f58f1a5a47a224610c58debd551d223f11cba70c93ebdeb2d58cb1.html",
+            "snapshot_sha256": "453407aa87f58f1a5a47a224610c58debd551d223f11cba70c93ebdeb2d58cb1",
             "source_id": "PLANALTO_LEI_15270_2025",
             "status": "AVAILABLE"
           },
@@ -1778,11 +2632,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_DECRETO_10854_2021/d0/d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8.html",
-          "snapshot_sha256": "d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/66/666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f.html",
+          "snapshot_sha256": "666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f",
           "source_id": "PLANALTO_DECRETO_10854_2021",
           "status": "AVAILABLE"
         }
@@ -1801,11 +2655,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_DECRETO_10854_2021/d0/d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8.html",
-            "snapshot_sha256": "d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8",
+            "snapshot_path": "PLANALTO_DECRETO_10854_2021/66/666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f.html",
+            "snapshot_sha256": "666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f",
             "source_id": "PLANALTO_DECRETO_10854_2021",
             "status": "AVAILABLE"
           },
@@ -1922,11 +2776,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_DECRETO_10854_2021/d0/d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8.html",
-          "snapshot_sha256": "d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/66/666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f.html",
+          "snapshot_sha256": "666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f",
           "source_id": "PLANALTO_DECRETO_10854_2021",
           "status": "AVAILABLE"
         }
@@ -1945,11 +2799,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_DECRETO_10854_2021/d0/d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8.html",
-            "snapshot_sha256": "d0ead7d6ab0828625c7356e16a0dc5eb8f5c2d1e0e80f9459479acc8e54749e8",
+            "snapshot_path": "PLANALTO_DECRETO_10854_2021/66/666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f.html",
+            "snapshot_sha256": "666ab549730e1ebfe78110667038b0e33915e44d2a17cc8c01b50d0f3394de6f",
             "source_id": "PLANALTO_DECRETO_10854_2021",
             "status": "AVAILABLE"
           },
@@ -2054,11 +2908,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_CLT/19/199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae.html",
-          "snapshot_sha256": "199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae",
+          "snapshot_path": "PLANALTO_CLT/b6/b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611.html",
+          "snapshot_sha256": "b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611",
           "source_id": "PLANALTO_CLT",
           "status": "AVAILABLE"
         }
@@ -2077,11 +2931,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_CLT/19/199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae.html",
-            "snapshot_sha256": "199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae",
+            "snapshot_path": "PLANALTO_CLT/b6/b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611.html",
+            "snapshot_sha256": "b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611",
             "source_id": "PLANALTO_CLT",
             "status": "AVAILABLE"
           },
@@ -2198,11 +3052,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_CLT/19/199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae.html",
-          "snapshot_sha256": "199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae",
+          "snapshot_path": "PLANALTO_CLT/b6/b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611.html",
+          "snapshot_sha256": "b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611",
           "source_id": "PLANALTO_CLT",
           "status": "AVAILABLE"
         }
@@ -2221,11 +3075,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_CLT/19/199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae.html",
-            "snapshot_sha256": "199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae",
+            "snapshot_path": "PLANALTO_CLT/b6/b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611.html",
+            "snapshot_sha256": "b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611",
             "source_id": "PLANALTO_CLT",
             "status": "AVAILABLE"
           },
@@ -2373,11 +3227,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_CLT/19/199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae.html",
-          "snapshot_sha256": "199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae",
+          "snapshot_path": "PLANALTO_CLT/b6/b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611.html",
+          "snapshot_sha256": "b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611",
           "source_id": "PLANALTO_CLT",
           "status": "AVAILABLE"
         }
@@ -2396,11 +3250,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_CLT/19/199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae.html",
-            "snapshot_sha256": "199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae",
+            "snapshot_path": "PLANALTO_CLT/b6/b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611.html",
+            "snapshot_sha256": "b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611",
             "source_id": "PLANALTO_CLT",
             "status": "AVAILABLE"
           },
@@ -2534,11 +3388,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "retrieval_method": "http_html",
           "role": "official_operational",
-          "snapshot_path": "RFB_CP_INCIDENCE_TABLE/93/936512a80b623d079bc6f4fa6f6750699504182576386451befa81530243cab9.html",
-          "snapshot_sha256": "936512a80b623d079bc6f4fa6f6750699504182576386451befa81530243cab9",
+          "snapshot_path": "RFB_CP_INCIDENCE_TABLE/0e/0e056127ea92628e2b7c55dceb2c85a9226c6bda4b3cd3ff0ade33e210adaee5.html",
+          "snapshot_sha256": "0e056127ea92628e2b7c55dceb2c85a9226c6bda4b3cd3ff0ade33e210adaee5",
           "source_id": "RFB_CP_INCIDENCE_TABLE",
           "status": "AVAILABLE"
         }
@@ -2557,11 +3411,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "retrieval_method": "http_html",
             "role": "official_operational",
-            "snapshot_path": "RFB_CP_INCIDENCE_TABLE/93/936512a80b623d079bc6f4fa6f6750699504182576386451befa81530243cab9.html",
-            "snapshot_sha256": "936512a80b623d079bc6f4fa6f6750699504182576386451befa81530243cab9",
+            "snapshot_path": "RFB_CP_INCIDENCE_TABLE/0e/0e056127ea92628e2b7c55dceb2c85a9226c6bda4b3cd3ff0ade33e210adaee5.html",
+            "snapshot_sha256": "0e056127ea92628e2b7c55dceb2c85a9226c6bda4b3cd3ff0ade33e210adaee5",
             "source_id": "RFB_CP_INCIDENCE_TABLE",
             "status": "AVAILABLE"
           },
@@ -2697,11 +3551,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_LEI_15270_2025/9c/9c22289069d6632bba2f0c9af1acd3e6c0ae294eea1e6745f6f5c5479f5a3bc8.html",
-          "snapshot_sha256": "9c22289069d6632bba2f0c9af1acd3e6c0ae294eea1e6745f6f5c5479f5a3bc8",
+          "snapshot_path": "PLANALTO_LEI_15270_2025/45/453407aa87f58f1a5a47a224610c58debd551d223f11cba70c93ebdeb2d58cb1.html",
+          "snapshot_sha256": "453407aa87f58f1a5a47a224610c58debd551d223f11cba70c93ebdeb2d58cb1",
           "source_id": "PLANALTO_LEI_15270_2025",
           "status": "AVAILABLE"
         }
@@ -2720,11 +3574,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_LEI_15270_2025/9c/9c22289069d6632bba2f0c9af1acd3e6c0ae294eea1e6745f6f5c5479f5a3bc8.html",
-            "snapshot_sha256": "9c22289069d6632bba2f0c9af1acd3e6c0ae294eea1e6745f6f5c5479f5a3bc8",
+            "snapshot_path": "PLANALTO_LEI_15270_2025/45/453407aa87f58f1a5a47a224610c58debd551d223f11cba70c93ebdeb2d58cb1.html",
+            "snapshot_sha256": "453407aa87f58f1a5a47a224610c58debd551d223f11cba70c93ebdeb2d58cb1",
             "source_id": "PLANALTO_LEI_15270_2025",
             "status": "AVAILABLE"
           },
@@ -2866,11 +3720,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+          "observed_at_utc": "2026-09-17T14:26:52.416026Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_CLT/19/199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae.html",
-          "snapshot_sha256": "199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae",
+          "snapshot_path": "PLANALTO_CLT/b6/b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611.html",
+          "snapshot_sha256": "b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611",
           "source_id": "PLANALTO_CLT",
           "status": "AVAILABLE"
         }
@@ -2889,11 +3743,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-16T14:21:33.982872Z",
+            "observed_at_utc": "2026-09-17T14:26:52.416026Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_CLT/19/199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae.html",
-            "snapshot_sha256": "199ed001485cf961a745604c7022083f1b3b7fa3d26cfcf929127aa93e7ee8ae",
+            "snapshot_path": "PLANALTO_CLT/b6/b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611.html",
+            "snapshot_sha256": "b6f64344ec6e59507b0146d8dfb247d82129188a183d42bec9dc5de3579b3611",
             "source_id": "PLANALTO_CLT",
             "status": "AVAILABLE"
           },
