@@ -1,0 +1,113 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint": "C7.5",
+  "record_type": "phase7_v2_final_postdeploy_closure",
+  "status": "PASS",
+  "phase7_v2_status": "CONCLUDED",
+  "production_deployed": true,
+  "production_files_mutated_by_c75": false,
+  "rollback_performed": false,
+  "authorization": {
+    "authorization_id": "c74-v2-h25-production-20260917-505144",
+    "authorized_source_commit": "505144918d05fb4932064f6f9da9b9358c448ac0",
+    "bundle_manifest_sha256": "4ca95de84822fc3bc70ee59c86e73e540e38bec9e6ce5951266ce62a7f8e6627",
+    "c73_evidence_sha256": "2fc6f01a6f68d3402ea7476cc12d6925ea4daca852e8eef917e3e179f8016e8f",
+    "release_id": "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e"
+  },
+  "origin_integrity": {
+    "status": "PASS",
+    "workflow_run_id": 35226049750,
+    "workflow_job_id": 105217789826,
+    "audit_commit": "203100ed9b3cf7a250d58d40d31f20a6d88d8aa9",
+    "managed_js_assets_expected": 8,
+    "managed_js_assets_matching": 8,
+    "origin_asset_failures": 0,
+    "production_mutated": false,
+    "assets": {
+      "folha-core.js": "a594c9e9b3a19dcce963667a2146be1388c8577b5c5a19f520aa0c728fd00fdf",
+      "salario-liquido.js": "508b208436ece3331933439c422dec2d405b0b337c77e362f054dac22ece007e",
+      "folha-thirteenth.js": "8550c0636116d7d78c172dc4b976584a7aabe258a6ccda4e7286a69e64506410",
+      "decimo-terceiro.js": "5e0933e4a302638ff15c6d01c7aa0ae0eccab7a8b5cbfddd310d9bbde7acdac7",
+      "folha-vacation.js": "eaa949963ebda90bfa7b22b95c3cf075d175a087f5acb545433d159b00a124d0",
+      "ferias-clt.js": "3325353edb5fa6acd82f7300f1465a851c0b3d2d259e92518dba551c1a2c410a",
+      "folha-termination.js": "b9469b9c521751c614585c5aa3e79ea220b5f901c810df8f76f030a836aed2f4",
+      "rescisao-clt.js": "3d1d3e5ab6244233f76469345a8852b7775a51e26e6cc033fe1326fa94fd5f42"
+    }
+  },
+  "external_delivery": {
+    "status": "PASS",
+    "collector": "operator_external_client",
+    "observed_at_utc": "2026-09-17T13:31:45.6066574Z",
+    "evidence_path": "docs/phase7-v2-c75-external-evidence-505144918d05fb4932064f6f9da9b9358c448ac0.json",
+    "evidence_commit": "38df0103d37629d1125afcb800f76969a941dc33",
+    "evidence_sha256": "b70c0948e95821d85edf30baa05ef38a05e03c49a2db565d9eafd842ebb6c05d",
+    "assets_expected": 8,
+    "assets_matching": 8,
+    "pages_verified": 5,
+    "page_http_status": {
+      "H25": 200,
+      "H26": 200,
+      "H27": 200,
+      "H28": 200,
+      "H29": 200
+    },
+    "cache_markers": {
+      "H25": "20260916-f06f10",
+      "H26": "20260916-f06f10",
+      "H27": "2.1.0",
+      "H28": "20260917-h28-r1",
+      "H29": "20260917-h29-r1"
+    },
+    "fiscal_health": "healthy",
+    "fiscal_release_match": true,
+    "legacy_folha_http_status": 410,
+    "block_reasons": [],
+    "production_mutated": false
+  },
+  "edge_cache_incident": {
+    "initial_public_assets_matching": 3,
+    "initial_public_assets_expected": 8,
+    "origin_assets_matching_during_incident": 8,
+    "affected_assets": [
+      "folha-core.js",
+      "salario-liquido.js",
+      "decimo-terceiro.js",
+      "ferias-clt.js",
+      "rescisao-clt.js"
+    ],
+    "diagnosis": "HostGator origin bytes matched the authorized source commit while the same five public stable URLs returned HTTP 200 with different hashes; after selective cache purge, all eight public assets matched the authorized bytes.",
+    "remediation": "Selective purge of only the five affected public asset URLs; no redeployment and no production file rewrite."
+  },
+  "journal_finalization": {
+    "status": "APPLIED_EXTERNALLY_HEALTHY",
+    "final_health_status": "HEALTHY",
+    "origin_health_verified": true,
+    "external_delivery_verified": true,
+    "final_state_sha256": "aa681075068cdf511030001e12ef9833f2fd0ec969457ab568a4f72282d495f9",
+    "workflow_run_id": 35227855619,
+    "workflow_job_id": 105223922271,
+    "workflow_head_sha": "3d947310384faba9577ba16b2a476167891ff1ce",
+    "local_gate": "PASS",
+    "remote_gate": "PASS"
+  },
+  "workflow_artifact": {
+    "artifact_id": 10499906841,
+    "name": "h25-v2-c75-external-3d947310384faba9577ba16b2a476167891ff1ce-1",
+    "digest": "sha256:c86054133088b008844834d8c28618a8993bbc6ce66ac382bfe24eab2ddd27a1",
+    "created_at_utc": "2026-09-17T13:34:03Z",
+    "expires_at_utc": "2026-12-16T13:33:51Z"
+  },
+  "closure_conditions": {
+    "authorized_deployment_binding_preserved": true,
+    "origin_bytes_exact": true,
+    "external_public_bytes_exact": true,
+    "h25_h29_http_200": true,
+    "fiscal_contract_healthy": true,
+    "legacy_endpoint_410": true,
+    "edge_cache_remediation_scoped": true,
+    "production_files_mutated_by_c75": false,
+    "redeployment_performed_during_c75": false,
+    "temporary_c75_workflows_removed_before_merge": true,
+    "phase7_v2_close_recommended": true
+  }
+}
