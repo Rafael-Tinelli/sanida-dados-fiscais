@@ -7,6 +7,15 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Windows PowerShell 5.1 on some hosts does not auto-load System.Net.Http.
+# Load it explicitly before resolving/instantiating HttpClient types.
+try {
+    Add-Type -AssemblyName System.Net.Http -ErrorAction Stop
+}
+catch {
+    throw "Unable to load System.Net.Http required by the C7.5 probe: $($_.Exception.Message)"
+}
+
 if ($AuthorizedCommit -notmatch '^[0-9a-fA-F]{40}$') {
     throw 'AuthorizedCommit must be a 40-character hexadecimal Git commit SHA.'
 }
