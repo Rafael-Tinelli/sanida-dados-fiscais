@@ -12,6 +12,7 @@ on:
       - deploy/h25-v2-production
     paths:
       - docs/phase7-v2-c75-external-evidence-505144918d05fb4932064f6f9da9b9358c448ac0.json
+      - .github/workflows/h25-v2-external-delivery-validation.yml
 
 permissions:
   contents: read
@@ -43,7 +44,7 @@ jobs:
         run: |
           set -euo pipefail
           test -f "$EVIDENCE_PATH"
-          python3 scripts/validate_phase7_c75_external_evidence_v2.py \
+          python3 -m scripts.validate_phase7_c75_external_evidence_v2 \
             --evidence "$EVIDENCE_PATH" \
             --authorized-commit "$AUTHORIZED_SOURCE_COMMIT" \
             --release-id "$EXPECTED_RELEASE_ID" \
