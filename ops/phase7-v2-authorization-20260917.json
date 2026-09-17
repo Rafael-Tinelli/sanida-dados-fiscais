@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint": "C7.4",
+  "record_type": "single_use_deployment_authorization",
+  "status": "AUTHORIZED_READY_TO_DEPLOY",
+  "authorization_id": "v2-c74-20260917-a741aa78-4ca95de8",
+  "authorization_received_on": "2026-09-17",
+  "authorization_basis": "explicit_operator_instruction_to_execute_the_next_deployment_stage_followed_by_successful_hostgator_secret_provisioning",
+  "single_use_authorization": true,
+  "deployment_authorized": true,
+  "production_deployed": false,
+  "post_deploy_validated": false,
+  "candidate": {
+    "bundle_manifest_sha256": "4ca95de84822fc3bc70ee59c86e73e540e38bec9e6ce5951266ce62a7f8e6627",
+    "c73_remote_evidence_sha256": "3debda4e9c18cc5bde643d1a93b9960a594586bbd5b27f8f42838b862600b248",
+    "release_id": "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e",
+    "managed_files": 33,
+    "preexisting_dependencies": 11,
+    "planned_directory_creations": 0,
+    "preflight_run_id": 35215782976,
+    "preflight_commit": "20734ebbedee2681af2a111381759772500f45ed"
+  },
+  "required_preconditions": {
+    "v2_inventory_version": 2,
+    "remote_preflight": "PASS_VALIDATED",
+    "fresh_read_only_preflight_before_snapshot": true,
+    "fresh_state_must_match_stored_preflight_managed_and_dependency_hashes": true,
+    "exact_backup_before_first_production_write": true,
+    "journal_outside_production_roots": true,
+    "bundle_hash_verification_before_and_after_each_write": true,
+    "automatic_rollback_on_apply_or_health_failure": true,
+    "single_use_journal_named_by_authorization_id": true
+  },
+  "required_post_deploy_checks": {
+    "fiscal_health": "healthy",
+    "fiscal_release_matches_candidate": true,
+    "legacy_folha_endpoint_http_status": 410,
+    "calculator_pages_http_200": ["H25", "H26", "H27", "H28", "H29"],
+    "h25_links_h26_h27_h28_h29": true,
+    "h25_h29_boundary_copy": "PASS",
+    "managed_files_match_bundle": 33,
+    "preexisting_dependencies_unchanged": 11
+  },
+  "rollback_boundary": {
+    "restore_preexisting_managed_files_from_exact_backup": true,
+    "remove_only_managed_files_absent_before_deploy": true,
+    "remove_only_directories_created_by_this_deploy_when_empty": true,
+    "recursive_directory_delete_forbidden": true,
+    "preserve_and_escalate_nonempty_created_directory": true
+  },
+  "closure_condition": "The v2 deployment is concluded only after the single-use authorized production deployment completes healthy, all 33 managed hashes match, dependencies remain unchanged, and post-deploy evidence is preserved."
+}
