@@ -36,6 +36,7 @@
     {"source": "consumers/frontend/folha-termination.js", "target_root": "site_root", "target_path": "financas/calculadoras/assets/folha-termination.js"},
     {"source": "consumers/frontend/rescisao-clt.js", "target_root": "site_root", "target_path": "financas/calculadoras/assets/rescisao-clt.js"},
 
+    {"source": "consumers/frontend/calculadoras/index.php", "target_root": "site_root", "target_path": "financas/calculadoras/index.php"},
     {"source": "consumers/frontend/salario-liquido-clt/index.php", "target_root": "site_root", "target_path": "financas/calculadoras/salario-liquido-clt/index.php"},
 
     {"source": "consumers/frontend/decimo-terceiro-clt/index.php", "target_root": "site_root", "target_path": "financas/calculadoras/decimo-terceiro/index.php"},
@@ -57,15 +58,15 @@
     {"source": "consumers/frontend/rescisao-clt/parts/04-faq-footer.php", "target_root": "site_root", "target_path": "financas/calculadoras/rescisao-clt/parts/04-faq-footer.php"}
   ],
   "preexisting_dependencies": [
-    {"target_root": "site_root", "target_path": "PHP/config-site.php", "kind": "php_include", "required_by": ["H26", "H27", "H28", "H29"]},
-    {"target_root": "site_root", "target_path": "PHP/head-global.php", "kind": "php_include", "required_by": ["H26", "H27", "H28", "H29"]},
-    {"target_root": "site_root", "target_path": "PHP/header-menu.php", "kind": "php_include", "required_by": ["H26", "H27", "H28", "H29"]},
-    {"target_root": "site_root", "target_path": "PHP/section-produtos.php", "kind": "php_include", "required_by": ["H26", "H27", "H28", "H29"]},
-    {"target_root": "site_root", "target_path": "PHP/cta-final.php", "kind": "php_include", "required_by": ["H26", "H27", "H28", "H29"]},
-    {"target_root": "site_root", "target_path": "PHP/section-formulario.php", "kind": "php_include", "required_by": ["H26", "H27", "H28", "H29"]},
-    {"target_root": "site_root", "target_path": "PHP/footer.php", "kind": "php_include", "required_by": ["H26", "H27", "H28", "H29"]},
-    {"target_root": "site_root", "target_path": "PHP/btn-whatsapp.php", "kind": "php_include", "required_by": ["H26", "H27", "H28", "H29"]},
-    {"target_root": "site_root", "target_path": "financas/calculadoras/assets/calculadoras-ui.css", "kind": "stylesheet", "required_by": ["H26", "H28", "H29"]},
+    {"target_root": "site_root", "target_path": "PHP/config-site.php", "kind": "php_include", "required_by": ["H25", "H26", "H27", "H28", "H29"]},
+    {"target_root": "site_root", "target_path": "PHP/head-global.php", "kind": "php_include", "required_by": ["H25", "H26", "H27", "H28", "H29"]},
+    {"target_root": "site_root", "target_path": "PHP/header-menu.php", "kind": "php_include", "required_by": ["H25", "H26", "H27", "H28", "H29"]},
+    {"target_root": "site_root", "target_path": "PHP/section-produtos.php", "kind": "php_include", "required_by": ["H25", "H26", "H27", "H28", "H29"]},
+    {"target_root": "site_root", "target_path": "PHP/cta-final.php", "kind": "php_include", "required_by": ["H25", "H26", "H27", "H28", "H29"]},
+    {"target_root": "site_root", "target_path": "PHP/section-formulario.php", "kind": "php_include", "required_by": ["H25", "H26", "H27", "H28", "H29"]},
+    {"target_root": "site_root", "target_path": "PHP/footer.php", "kind": "php_include", "required_by": ["H25", "H26", "H27", "H28", "H29"]},
+    {"target_root": "site_root", "target_path": "PHP/btn-whatsapp.php", "kind": "php_include", "required_by": ["H25", "H26", "H27", "H28", "H29"]},
+    {"target_root": "site_root", "target_path": "financas/calculadoras/assets/calculadoras-ui.css", "kind": "stylesheet", "required_by": ["H25", "H26", "H28", "H29"]},
     {"target_root": "site_root", "target_path": "financas/calculadoras/assets/salario-liquido-clt.css", "kind": "stylesheet", "required_by": ["H26"]},
     {"target_root": "site_root", "target_path": "financas/calculadoras/assets/calculadora-decimo-terceiro-ui.css", "kind": "stylesheet", "required_by": ["H27"]}
   ],
