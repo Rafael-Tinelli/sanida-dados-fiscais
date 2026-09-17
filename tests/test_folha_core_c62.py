@@ -56,6 +56,25 @@ def test_c62_decimal_boundary_rejects_binary_float_and_is_exact() -> None:
     assert result["float_rejected"] is True
 
 
+def test_c62_normalize_date_rejects_impossible_civil_dates() -> None:
+    result = _node_result()
+    assert result["normalized_dates"] == {
+        "regular": "2026-09-16",
+        "leap_day": "2028-02-29",
+        "date_object": "2028-02-29",
+    }
+    assert result["civil_date_rejections"] == {
+        "2026-02-29": True,
+        "2026-02-31": True,
+        "2026-04-31": True,
+        "2026-00-10": True,
+        "2026-13-01": True,
+        "2026-01-00": True,
+    }
+    assert result["malformed_date_rejected"] is True
+    assert result["impossible_selection_date_rejected"] is True
+
+
 def test_c62_rule_selection_is_fail_closed_and_auditable() -> None:
     release = FiscalReleaseStore(STORE).load_current()
     assert release is not None
