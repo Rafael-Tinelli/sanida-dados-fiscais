@@ -70,6 +70,9 @@ def main() -> int:
         "class DecimalValue",
         "BigInt",
         "binary_float_rejected",
+        "function isValidIsoCivilDate(",
+        "'date_invalid'",
+        "function normalizeDate(",
         "function selectRule(",
         "rule_version",
         "function assessmentIdentity(",
@@ -126,6 +129,29 @@ def main() -> int:
     payload = json.loads(runtime.stdout)
     require(payload.get("release_id") == release.release_id, "Node runtime used a different release_id")
     require(payload.get("float_rejected") is True, "binary float was not rejected")
+    require(
+        payload.get("normalized_dates") == {
+            "regular": "2026-09-16",
+            "leap_day": "2028-02-29",
+            "date_object": "2028-02-29",
+        },
+        "valid civil dates were not normalized deterministically",
+    )
+    civil_rejections = payload.get("civil_date_rejections") or {}
+    for invalid_date in (
+        "2026-02-29",
+        "2026-02-31",
+        "2026-04-31",
+        "2026-00-10",
+        "2026-13-01",
+        "2026-01-00",
+    ):
+        require(civil_rejections.get(invalid_date) is True, f"impossible civil date was accepted: {invalid_date}")
+    require(payload.get("malformed_date_rejected") is True, "malformed ISO date did not fail closed")
+    require(
+        payload.get("impossible_selection_date_rejected") is True,
+        "selectRule accepted an impossible civil targetDate",
+    )
     require(payload.get("missing_rule_rejected") is True, "missing rule did not fail closed")
     require(
         payload.get("incompatible_assessment_rejected") is True,
@@ -149,7 +175,7 @@ def main() -> int:
 
     print(
         "Phase 6 C6.2 folha-core gate: PASS "
-        f"(release={release.release_id}, rules={len(release.rules)}, vacation_irrf=dedicated, dynamic_regions=a11y)"
+        f"(release={release.release_id}, rules={len(release.rules)}, vacation_irrf=dedicated, civil_dates=strict, dynamic_regions=a11y)"
     )
     return 0
 
