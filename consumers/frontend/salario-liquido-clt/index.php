@@ -6,8 +6,8 @@ $canonical  = 'https://sanida.com.br/financas/calculadoras/salario-liquido-clt/'
 $page_image = 'https://sanida.com.br/IMG/sanida-seguros-logomarca-og.png';
 include $_SERVER['DOCUMENT_ROOT'] . '/PHP/head-global.php';
 ?>
-<link rel="stylesheet" href="/financas/calculadoras/assets/calculadoras-ui.css?v=<?php echo time(); ?>">
-<link rel="stylesheet" href="/financas/calculadoras/assets/salario-liquido-clt.css?v=<?php echo time(); ?>">
+<link rel="stylesheet" href="/financas/calculadoras/assets/calculadoras-ui.css?v=20260916-f06f10">
+<link rel="stylesheet" href="/financas/calculadoras/assets/salario-liquido-clt.css?v=20260916-f06f10">
 <script src="/financas/calculadoras/assets/folha-core.js" defer></script>
 <script src="/financas/calculadoras/assets/salario-liquido.js" defer></script>
 <script type="application/ld+json">

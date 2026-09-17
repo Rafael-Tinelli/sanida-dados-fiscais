@@ -321,8 +321,8 @@
     vacation: Object.freeze({
       allowed_origins: Object.freeze(['vacation_enjoyed']),
       rule_context: 'vacation_enjoyed',
-      reduction_rule_id: 'irrf.reduction.2026',
-      reduction_input_semantic: 'taxable_income_subject_to_monthly_incidence_before_irrf_deductions'
+      reduction_rule_id: 'vacation.irrf.reduction.2026',
+      reduction_input_semantic: 'taxable_vacation_income_subject_to_separate_monthly_irrf_assessment_before_deductions'
     })
   });
 
@@ -595,7 +595,24 @@
     return (negative ? '-R$ ' : 'R$ ') + grouped + ',' + parts[1];
   }
 
-  SFA.VERSION = '2.4.0-c62';
+  function enhanceDynamicRegions(documentRef) {
+    if (!documentRef || typeof documentRef.querySelector !== 'function') return Object.freeze({ alert: null, result: null });
+    const alertBox = documentRef.querySelector('[data-alert]');
+    const result = documentRef.querySelector('[data-result]');
+    if (alertBox) {
+      alertBox.setAttribute('role', 'alert');
+      alertBox.setAttribute('aria-live', 'assertive');
+      alertBox.setAttribute('aria-atomic', 'true');
+    }
+    if (result) {
+      result.setAttribute('role', 'status');
+      result.setAttribute('aria-live', 'polite');
+      result.setAttribute('aria-atomic', 'true');
+    }
+    return Object.freeze({ alert: alertBox, result });
+  }
+
+  SFA.VERSION = '2.5.0-hardening';
   SFA.releaseEndpoint = RELEASE_ENDPOINT;
   SFA.FiscalContractError = FiscalContractError;
   SFA.Decimal = DecimalValue;
@@ -615,6 +632,8 @@
   SFA.buildIrrfLegalDeductions = buildIrrfLegalDeductions;
   SFA.assessIrrf = assessIrrf;
   SFA.assessInss = assessInss;
+  SFA.enhanceDynamicRegions = enhanceDynamicRegions;
 
+  if (root.document) enhanceDynamicRegions(root.document);
   Object.freeze(IRRF_ASSESSMENTS);
 })(typeof window !== 'undefined' ? window : globalThis);

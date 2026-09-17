@@ -46,6 +46,18 @@ const irrf = SFA.assessIrrf(release, {
   pension: '0.00'
 });
 
+const vacationIdentity = SFA.assessmentIdentity('vacation', 'vacation_enjoyed');
+const vacationIrrf = SFA.assessIrrf(release, {
+  consumer: 'H28',
+  targetDate,
+  incomeType: 'vacation',
+  originContext: 'vacation_enjoyed',
+  grossTaxableIncome: '4000.00',
+  socialSecurity: '315.27',
+  dependentCount: 0,
+  pension: '0.00'
+});
+
 const selected = SFA.selectRule(release, {
   ruleId: 'irrf.monthly.progressive_table',
   consumer: 'H26',
@@ -81,5 +93,7 @@ process.stdout.write(JSON.stringify({
   selected_rule: selected.audit,
   competence_basis: SFA.competenceBasisFor(selected),
   inss,
-  irrf
+  irrf,
+  vacation_identity: vacationIdentity,
+  vacation_irrf: vacationIrrf
 }));

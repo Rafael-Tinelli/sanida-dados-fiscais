@@ -80,6 +80,13 @@ def main() -> int:
         "function assessIrrf(",
         "release_id",
         "input_semantic",
+        "vacation.irrf.reduction.2026",
+        "taxable_vacation_income_subject_to_separate_monthly_irrf_assessment_before_deductions",
+        "function enhanceDynamicRegions(",
+        "setAttribute('role', 'alert')",
+        "setAttribute('role', 'status')",
+        "setAttribute('aria-live', 'assertive')",
+        "setAttribute('aria-live', 'polite')",
     )
     for marker in required_markers:
         require(marker in text, f"folha-core missing required C6.2 marker: {marker}")
@@ -124,6 +131,15 @@ def main() -> int:
         payload.get("incompatible_assessment_rejected") is True,
         "invalid assessment identity did not fail closed",
     )
+    vacation_identity = payload.get("vacation_identity") or {}
+    require(
+        vacation_identity.get("reduction_rule_id") == "vacation.irrf.reduction.2026",
+        "shared vacation assessment did not select dedicated reduction",
+    )
+    vacation_rules = ((payload.get("vacation_irrf") or {}).get("audit") or {}).get("rules") or []
+    vacation_rule_ids = {item.get("rule_id") for item in vacation_rules if isinstance(item, dict)}
+    require("vacation.irrf.reduction.2026" in vacation_rule_ids, "vacation runtime audit lacks dedicated reduction")
+    require("irrf.reduction.2026" not in vacation_rule_ids, "vacation runtime regressed to generic monthly reduction")
 
     ci = CI.read_text(encoding="utf-8")
     require(
@@ -133,7 +149,7 @@ def main() -> int:
 
     print(
         "Phase 6 C6.2 folha-core gate: PASS "
-        f"(release={release.release_id}, rules={len(release.rules)})"
+        f"(release={release.release_id}, rules={len(release.rules)}, vacation_irrf=dedicated, dynamic_regions=a11y)"
     )
     return 0
 

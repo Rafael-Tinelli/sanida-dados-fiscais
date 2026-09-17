@@ -20,7 +20,7 @@
             </p>
           </div>
 
-          <div data-alert class="cp-alert"></div>
+          <div data-alert class="cp-alert" role="alert" aria-live="assertive" aria-atomic="true"></div>
 
           <form novalidate>
             <div class="cp-fields">
@@ -121,7 +121,7 @@
           </form>
         </div>
 
-        <aside class="cp-card cp-card--result cp-result" data-result>
+        <aside class="cp-card cp-card--result cp-result" data-result role="status" aria-live="polite" aria-atomic="true">
           <div class="cp-card__header">
             <h3>Resultado da calculadora de décimo terceiro salário</h3>
             <p>A memória abaixo separa avos, adiantamento, INSS, IRRF e eventual insuficiência, além de identificar a release fiscal usada.</p>

@@ -70,6 +70,9 @@ def main() -> int:
         "release_id: release.release_id",
         "SFA.Decimal",
         "SFA.H26",
+        "function errorMessageFor(",
+        "Revise os dados informados",
+        "A release fiscal necessária não pôde ser carregada ou validada",
     ):
         require(marker in source, f"H26 missing required C6.3 marker: {marker}")
 
@@ -89,6 +92,8 @@ def main() -> int:
         "Release fiscal usada",
     ):
         require(marker in page, f"H26 page missing auditable result marker: {marker}")
+    require("time()" not in page, "H26 CSS cache key must not change on every request")
+    require(page.count("?v=20260916-f06f10") == 2, "H26 CSS assets must use stable explicit version keys")
 
     node = shutil.which("node")
     require(node is not None, "node is required for C6.3 validation")
@@ -128,6 +133,8 @@ def main() -> int:
     require(Decimal(str(historical.get("final_irrf"))) == Decimal("382.88"), "historical A01 final IRRF regressed")
     require(payload.get("expired_reduction_rejected") is True, "unsupported vigency did not fail closed")
     require(payload.get("negative_input_rejected") is True, "negative monetary input was not rejected")
+    require("release fiscal" not in str(payload.get("input_error_message", "")).lower(), "input error falsely blames fiscal release")
+    require("release fiscal" in str(payload.get("fiscal_error_message", "")).lower(), "fiscal failure lacks causal release message")
 
     audit = (h26.get("fiscal_metadata") or {}).get("rules") or []
     ids = {item.get("rule_id") for item in audit if isinstance(item, dict)}
@@ -178,7 +185,7 @@ def main() -> int:
 
     print(
         "Phase 6 C6.3 H26 gate: PASS "
-        f"(release={release.release_id}, inss={h26['inss']}, irrf={irrf['final_irrf']}, net={h26['net_salary']})"
+        f"(release={release.release_id}, inss={h26['inss']}, irrf={irrf['final_irrf']}, net={h26['net_salary']}, css=stable, errors=causal)"
     )
     return 0
 

@@ -72,11 +72,20 @@ try {
   negativeInputRejected = Boolean(error && error.code === 'h26_negative_input');
 }
 
+const inputErrorMessage = SFA.H26.errorMessageFor(
+  new SFA.FiscalContractError('h26_salary_required', 'probe')
+);
+const fiscalErrorMessage = SFA.H26.errorMessageFor(
+  new SFA.FiscalContractError('release_http', 'probe')
+);
+
 process.stdout.write(JSON.stringify({
   release_id: release.release_id,
   h26,
   h26_with_other_deduction: h26WithOtherDeduction,
   historical_a01: historicalA01,
   expired_reduction_rejected: expiredReductionRejected,
-  negative_input_rejected: negativeInputRejected
+  negative_input_rejected: negativeInputRejected,
+  input_error_message: inputErrorMessage,
+  fiscal_error_message: fiscalErrorMessage
 }));

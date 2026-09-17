@@ -116,9 +116,6 @@ def test_c63_preserves_historical_a01_reducer_vector_without_falsifying_h26_inss
     result = _node_result()
     a01 = result["historical_a01"]
 
-    # This historical vector isolates the IRRF reducer with an explicitly supplied
-    # social-security deduction of 649.60. It is not the end-to-end H26 result from
-    # the current PUBLISHED INSS table, which computes 641.51.
     assert Decimal(a01["irrf_tax_base"]) == Decimal("5350.40")
     assert Decimal(a01["reduction_input_income"]) == Decimal("6000.00")
     assert Decimal(a01["reduction_amount"]) == Decimal("179.75")
@@ -140,6 +137,16 @@ def test_c63_h26_is_fail_closed_for_unsupported_vigency_and_bad_inputs() -> None
     result = _node_result()
     assert result["expired_reduction_rejected"] is True
     assert result["negative_input_rejected"] is True
+
+
+def test_c63_h26_error_messages_distinguish_input_from_fiscal_release_failure() -> None:
+    result = _node_result()
+    input_message = result["input_error_message"]
+    fiscal_message = result["fiscal_error_message"]
+    assert "Revise os dados informados" in input_message
+    assert "release fiscal" not in input_message.lower()
+    assert "release fiscal" in fiscal_message.lower()
+    assert "Tente novamente" in fiscal_message
 
 
 def test_c63_h26_audit_trail_carries_rule_versions() -> None:
@@ -187,11 +194,12 @@ def test_c63_h26_source_no_longer_calls_legacy_fiscal_api() -> None:
         "socialSecurity: inss.amount",
         "release_id: release.release_id",
         "SFA.Decimal",
+        "errorMessageFor",
     ):
         assert required in text
 
 
-def test_c63_h26_page_exposes_calculation_memory_and_release() -> None:
+def test_c63_h26_page_exposes_calculation_memory_release_and_stable_css_versions() -> None:
     page = H26_PAGE.read_text(encoding="utf-8")
     assert page.index("/financas/calculadoras/assets/folha-core.js") < page.index(
         "/financas/calculadoras/assets/salario-liquido.js"
@@ -206,3 +214,5 @@ def test_c63_h26_page_exposes_calculation_memory_and_release() -> None:
         "Release fiscal usada",
     ):
         assert marker in page
+    assert "time()" not in page
+    assert page.count("?v=20260916-f06f10") == 2

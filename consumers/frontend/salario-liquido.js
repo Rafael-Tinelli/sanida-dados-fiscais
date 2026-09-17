@@ -7,6 +7,28 @@
   const CONSUMER = 'H26';
   const CONTEXT = 'monthly';
   const ZERO = SFA.Decimal.parse('0');
+  const INPUT_ERROR_CODES = new Set([
+    'h26_negative_input',
+    'h26_dependents',
+    'h26_salary_required',
+    'decimal_format',
+    'decimal_type',
+    'negative_amount'
+  ]);
+  const FISCAL_ERROR_CODES = new Set([
+    'fetch_unavailable',
+    'schema_mismatch',
+    'contract_mismatch',
+    'consumer_compatibility',
+    'consumer_inventory',
+    'consumer_not_declared',
+    'rule_inventory',
+    'rule_selection',
+    'rule_quality',
+    'payload_type',
+    'rounding_policy_missing',
+    'irrf_reduction_semantic'
+  ]);
 
   function h26Error(code, message, details) {
     throw new SFA.FiscalContractError(code, message, details || null);
@@ -49,6 +71,17 @@
       result.push(audit);
     }
     return Object.freeze(result);
+  }
+
+  function errorMessageFor(error) {
+    const code = error && typeof error.code === 'string' ? error.code : '';
+    if (INPUT_ERROR_CODES.has(code)) {
+      return 'Revise os dados informados. O salário bruto deve ser maior que zero, dependentes devem ser inteiros não negativos e valores monetários não podem ser negativos.';
+    }
+    if (code.startsWith('release_') || FISCAL_ERROR_CODES.has(code)) {
+      return 'A release fiscal necessária não pôde ser carregada ou validada para esta data. Tente novamente em instantes.';
+    }
+    return 'Não foi possível concluir o cálculo com os dados informados. Revise os campos e tente novamente.';
   }
 
   function calculateH26(release, input) {
@@ -125,7 +158,8 @@
 
   SFA.H26 = Object.freeze({
     calculate: calculateH26,
-    currentReferenceDate: localTodayIso
+    currentReferenceDate: localTodayIso,
+    errorMessageFor
   });
 
   const page = root.document && root.document.getElementById('calc-salario-liquido');
@@ -134,6 +168,17 @@
   const form = page.querySelector('form');
   const alertBox = page.querySelector('[data-alert]');
   const result = page.querySelector('[data-result]');
+
+  if (alertBox) {
+    alertBox.setAttribute('role', 'alert');
+    alertBox.setAttribute('aria-live', 'assertive');
+    alertBox.setAttribute('aria-atomic', 'true');
+  }
+  if (result) {
+    result.setAttribute('role', 'status');
+    result.setAttribute('aria-live', 'polite');
+    result.setAttribute('aria-atomic', 'true');
+  }
 
   function showError(message) {
     if (!alertBox) return;
@@ -208,7 +253,7 @@
       }
     } catch (error) {
       if (root.console && typeof root.console.error === 'function') root.console.error('[H26]', error);
-      showError('Não foi possível calcular com uma release fiscal válida para a data informada. Tente novamente em instantes.');
+      showError(errorMessageFor(error));
       if (result) result.style.display = 'none';
     } finally {
       setBusy(false);
