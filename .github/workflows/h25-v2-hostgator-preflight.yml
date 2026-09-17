@@ -31,6 +31,13 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install local validation dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
       - name: Validate v2 locally before remote access
         shell: bash
         run: |
@@ -108,6 +115,7 @@ jobs:
           REPO="$RUNTIME/repo"
           BUNDLE="$RUNTIME/bundle"
           EVIDENCE="$RUNTIME/preflight.json"
+          PYDEPS="$RUNTIME/pydeps"
 
           if [ -e "$RUNTIME" ]; then
             echo "RUNTIME_ALREADY_EXISTS=$RUNTIME"
@@ -124,6 +132,8 @@ jobs:
             echo "PYTHON_CLI_MISSING"
             exit 5
           fi
+          "$PY" -m pip install --disable-pip-version-check --no-input --target "$PYDEPS" -r "$REPO/requirements-contract.txt" >/dev/null
+          export PYTHONPATH="$PYDEPS:$REPO"
 
           "$PY" scripts/build_phase7_c71_bundle_v2.py --output-dir "$BUNDLE"
           "$PY" scripts/run_phase7_v2_host_preflight.py \
