@@ -319,10 +319,21 @@
         estimateNet: checked('liquido')
       });
 
+      const firstInstallmentLabel = calculation.advance.amount !== null
+        ? SFA.brl(calculation.advance.amount)
+        : 'Informe o valor pago';
+      const secondInstallmentLabel = calculation.second_installment_net !== null
+        ? SFA.brl(calculation.second_installment_net)
+        : (calculation.second_installment_gross !== null
+          ? SFA.brl(calculation.second_installment_gross) + ' (bruta)'
+          : 'Depende do adiantamento');
+
       setText('[data-kpi="base"]', SFA.brl(calculation.reference_remuneration.total_reference));
       setText('[data-kpi="total13"]', SFA.brl(calculation.gross_thirteenth));
+      setText('[data-kpi="primeira"]', firstInstallmentLabel);
+      setText('[data-kpi="segunda-liquida"]', secondInstallmentLabel);
       setText('[data-row="avos"]', calculation.accrual.twelfths + '/12 (' + (calculation.accrual.mode === 'dates' ? 'calculados por datas' : 'informados manualmente') + ')');
-      setText('[data-row="primeira"]', calculation.advance.amount !== null ? SFA.brl(calculation.advance.amount) : 'Informe a 1ª parcela paga');
+      setText('[data-row="primeira"]', firstInstallmentLabel);
       setText('[data-row="status-adiantamento"]', advanceStatusLabel(calculation.advance));
       setText('[data-row="segunda-bruta"]', calculation.second_installment_gross !== null ? SFA.brl(calculation.second_installment_gross) : 'Depende do adiantamento pago');
       setText('[data-row="segunda-liquida"]', calculation.second_installment_net !== null ? SFA.brl(calculation.second_installment_net) : 'Depende do adiantamento pago');
