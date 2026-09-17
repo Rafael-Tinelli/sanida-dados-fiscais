@@ -1,9 +1,10 @@
 {
-  "schema_version": "1.0.0",
-  "status": "planning",
-  "purpose": "Define the intended ownership split between sanida-dados-fiscais and a future calculator frontend repository without moving files yet.",
+  "schema_version": "1.1.0",
+  "status": "migration_in_progress",
+  "purpose": "Define the intended ownership split between sanida-dados-fiscais and sanida-financas-frontend while preserving the production baseline until an explicit cutover.",
   "baseline_commit": "427d93e4cfcddb848e59dcad89f207ed66a754b8",
-  "future_frontend_repository_working_name": "sanida-financas-frontend",
+  "frontend_repository": "Rafael-Tinelli/sanida-financas-frontend",
+  "frontend_bootstrap_branch": "bootstrap/frontend-boundary-r1",
   "move_to_frontend": [
     "consumers/frontend/calculadoras/index.php",
     "consumers/frontend/salario-liquido-clt/index.php",
@@ -31,14 +32,20 @@
     "consumers/frontend/folha-thirteenth.js",
     "consumers/frontend/folha-vacation.js",
     "consumers/frontend/folha-termination.js",
+    "consumers/runtime/salario-liquido-runtime.js",
     "releases/fiscal-v1/current.json",
     "schemas/fiscal-contract-v1.2.schema.json"
   ],
-  "split_before_move": [
+  "completed_splits": [
     {
-      "path": "consumers/frontend/salario-liquido.js",
-      "reason": "H26 currently combines DOM/UI adaptation with fiscal assessment orchestration. Before repository extraction, pure fiscal calculation/orchestration must be isolated from presentation so only the UI adapter moves."
-    },
+      "legacy_path": "consumers/frontend/salario-liquido.js",
+      "fiscal_runtime": "consumers/runtime/salario-liquido-runtime.js",
+      "frontend_adapter_target": "src/adapters/salario-liquido-ui.js",
+      "status": "code_split_materialized_not_deployed",
+      "invariant": "legacy production asset remains unchanged until explicit cross-repository cutover"
+    }
+  ],
+  "split_before_move": [
     {
       "path": "scripts/run_calculators_browser_smoke.py",
       "reason": "The current smoke covers both fiscal integration and page behavior. Split into fiscal contract integration tests and frontend browser/visual tests before extraction."
