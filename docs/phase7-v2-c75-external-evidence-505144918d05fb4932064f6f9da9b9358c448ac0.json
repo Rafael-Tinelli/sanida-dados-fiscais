@@ -1,0 +1,212 @@
+{
+    "schema_version":  "1.1.0",
+    "checkpoint":  "C7.5",
+    "mode":  "external_client_public_delivery_validation",
+    "collector":  "operator_external_client",
+    "status":  "PASS",
+    "production_mutated":  false,
+    "authorized_commit":  "505144918d05fb4932064f6f9da9b9358c448ac0",
+    "expected_release_id":  "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e",
+    "expected_cache_key":  "20260916-f06f10",
+    "observed_at_utc":  "2026-09-17T13:31:45.6066574Z",
+    "assets_expected":  8,
+    "assets_matching":  8,
+    "assets":  [
+                   {
+                       "asset":  "folha-core.js",
+                       "expected_source_url":  "https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/505144918d05fb4932064f6f9da9b9358c448ac0/consumers/frontend/folha-core.js",
+                       "expected_http_status":  200,
+                       "expected_sha256":  "a594c9e9b3a19dcce963667a2146be1388c8577b5c5a19f520aa0c728fd00fdf",
+                       "public_url":  "https://sanida.com.br/financas/calculadoras/assets/folha-core.js",
+                       "public_http_status":  200,
+                       "public_sha256":  "a594c9e9b3a19dcce963667a2146be1388c8577b5c5a19f520aa0c728fd00fdf",
+                       "match":  true
+                   },
+                   {
+                       "asset":  "salario-liquido.js",
+                       "expected_source_url":  "https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/505144918d05fb4932064f6f9da9b9358c448ac0/consumers/frontend/salario-liquido.js",
+                       "expected_http_status":  200,
+                       "expected_sha256":  "508b208436ece3331933439c422dec2d405b0b337c77e362f054dac22ece007e",
+                       "public_url":  "https://sanida.com.br/financas/calculadoras/assets/salario-liquido.js",
+                       "public_http_status":  200,
+                       "public_sha256":  "508b208436ece3331933439c422dec2d405b0b337c77e362f054dac22ece007e",
+                       "match":  true
+                   },
+                   {
+                       "asset":  "folha-thirteenth.js",
+                       "expected_source_url":  "https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/505144918d05fb4932064f6f9da9b9358c448ac0/consumers/frontend/folha-thirteenth.js",
+                       "expected_http_status":  200,
+                       "expected_sha256":  "8550c0636116d7d78c172dc4b976584a7aabe258a6ccda4e7286a69e64506410",
+                       "public_url":  "https://sanida.com.br/financas/calculadoras/assets/folha-thirteenth.js",
+                       "public_http_status":  200,
+                       "public_sha256":  "8550c0636116d7d78c172dc4b976584a7aabe258a6ccda4e7286a69e64506410",
+                       "match":  true
+                   },
+                   {
+                       "asset":  "decimo-terceiro.js",
+                       "expected_source_url":  "https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/505144918d05fb4932064f6f9da9b9358c448ac0/consumers/frontend/decimo-terceiro.js",
+                       "expected_http_status":  200,
+                       "expected_sha256":  "5e0933e4a302638ff15c6d01c7aa0ae0eccab7a8b5cbfddd310d9bbde7acdac7",
+                       "public_url":  "https://sanida.com.br/financas/calculadoras/assets/decimo-terceiro.js",
+                       "public_http_status":  200,
+                       "public_sha256":  "5e0933e4a302638ff15c6d01c7aa0ae0eccab7a8b5cbfddd310d9bbde7acdac7",
+                       "match":  true
+                   },
+                   {
+                       "asset":  "folha-vacation.js",
+                       "expected_source_url":  "https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/505144918d05fb4932064f6f9da9b9358c448ac0/consumers/frontend/folha-vacation.js",
+                       "expected_http_status":  200,
+                       "expected_sha256":  "eaa949963ebda90bfa7b22b95c3cf075d175a087f5acb545433d159b00a124d0",
+                       "public_url":  "https://sanida.com.br/financas/calculadoras/assets/folha-vacation.js",
+                       "public_http_status":  200,
+                       "public_sha256":  "eaa949963ebda90bfa7b22b95c3cf075d175a087f5acb545433d159b00a124d0",
+                       "match":  true
+                   },
+                   {
+                       "asset":  "ferias-clt.js",
+                       "expected_source_url":  "https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/505144918d05fb4932064f6f9da9b9358c448ac0/consumers/frontend/ferias-clt.js",
+                       "expected_http_status":  200,
+                       "expected_sha256":  "3325353edb5fa6acd82f7300f1465a851c0b3d2d259e92518dba551c1a2c410a",
+                       "public_url":  "https://sanida.com.br/financas/calculadoras/assets/ferias-clt.js",
+                       "public_http_status":  200,
+                       "public_sha256":  "3325353edb5fa6acd82f7300f1465a851c0b3d2d259e92518dba551c1a2c410a",
+                       "match":  true
+                   },
+                   {
+                       "asset":  "folha-termination.js",
+                       "expected_source_url":  "https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/505144918d05fb4932064f6f9da9b9358c448ac0/consumers/frontend/folha-termination.js",
+                       "expected_http_status":  200,
+                       "expected_sha256":  "b9469b9c521751c614585c5aa3e79ea220b5f901c810df8f76f030a836aed2f4",
+                       "public_url":  "https://sanida.com.br/financas/calculadoras/assets/folha-termination.js",
+                       "public_http_status":  200,
+                       "public_sha256":  "b9469b9c521751c614585c5aa3e79ea220b5f901c810df8f76f030a836aed2f4",
+                       "match":  true
+                   },
+                   {
+                       "asset":  "rescisao-clt.js",
+                       "expected_source_url":  "https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/505144918d05fb4932064f6f9da9b9358c448ac0/consumers/frontend/rescisao-clt.js",
+                       "expected_http_status":  200,
+                       "expected_sha256":  "3d1d3e5ab6244233f76469345a8852b7775a51e26e6cc033fe1326fa94fd5f42",
+                       "public_url":  "https://sanida.com.br/financas/calculadoras/assets/rescisao-clt.js",
+                       "public_http_status":  200,
+                       "public_sha256":  "3d1d3e5ab6244233f76469345a8852b7775a51e26e6cc033fe1326fa94fd5f42",
+                       "match":  true
+                   }
+               ],
+    "pages":  {
+                  "H25":  {
+                              "path":  "/financas/calculadoras/",
+                              "http_status":  200,
+                              "bytes":  67778,
+                              "script_order":  [
+
+                                               ],
+                              "script_positions":  [
+
+                                                   ],
+                              "cache_marker":  "20260916-f06f10",
+                              "cache_marker_occurrences":  1,
+                              "block_reasons":  [
+
+                                                ]
+                          },
+                  "H26":  {
+                              "path":  "/financas/calculadoras/salario-liquido-clt/",
+                              "http_status":  200,
+                              "bytes":  76349,
+                              "script_order":  [
+                                                   "folha-core.js",
+                                                   "salario-liquido.js"
+                                               ],
+                              "script_positions":  [
+                                                       7202,
+                                                       7276
+                                                   ],
+                              "cache_marker":  "20260916-f06f10",
+                              "cache_marker_occurrences":  2,
+                              "block_reasons":  [
+
+                                                ]
+                          },
+                  "H27":  {
+                              "path":  "/financas/calculadoras/decimo-terceiro/",
+                              "http_status":  200,
+                              "bytes":  91039,
+                              "script_order":  [
+                                                   "folha-core.js",
+                                                   "folha-thirteenth.js",
+                                                   "decimo-terceiro.js"
+                                               ],
+                              "script_positions":  [
+                                                       7153,
+                                                       7227,
+                                                       7307
+                                                   ],
+                              "cache_marker":  "2.1.0",
+                              "cache_marker_occurrences":  1,
+                              "block_reasons":  [
+
+                                                ]
+                          },
+                  "H28":  {
+                              "path":  "/financas/calculadoras/ferias-clt/",
+                              "http_status":  200,
+                              "bytes":  82964,
+                              "script_order":  [
+                                                   "folha-core.js",
+                                                   "folha-vacation.js",
+                                                   "ferias-clt.js"
+                                               ],
+                              "script_positions":  [
+                                                       7043,
+                                                       7117,
+                                                       7195
+                                                   ],
+                              "cache_marker":  "20260917-h28-r1",
+                              "cache_marker_occurrences":  1,
+                              "block_reasons":  [
+
+                                                ]
+                          },
+                  "H29":  {
+                              "path":  "/financas/calculadoras/rescisao-clt/",
+                              "http_status":  200,
+                              "bytes":  90088,
+                              "script_order":  [
+                                                   "folha-core.js",
+                                                   "folha-termination.js",
+                                                   "rescisao-clt.js"
+                                               ],
+                              "script_positions":  [
+                                                       7074,
+                                                       7148,
+                                                       7229
+                                                   ],
+                              "cache_marker":  "20260917-h29-r1",
+                              "cache_marker_occurrences":  1,
+                              "block_reasons":  [
+
+                                                ]
+                          }
+              },
+    "fiscal":  {
+                   "health":  {
+                                  "http_status":  200,
+                                  "status":  "healthy",
+                                  "release_id":  "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e",
+                                  "pass":  true
+                              },
+                   "release":  {
+                                   "http_status":  200,
+                                   "release_id":  "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e",
+                                   "pass":  true
+                               },
+                   "legacy_folha":  {
+                                        "http_status":  410,
+                                        "pass":  true
+                                    }
+               },
+    "block_reasons":  [
+
+                      ]
+}
