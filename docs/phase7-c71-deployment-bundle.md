@@ -1,12 +1,15 @@
 # Fase 7 — C7.1 — bundle pré-deploy e rollback
 
 **Data:** 2026-09-16  
+**Atualização de inventário:** 2026-09-17  
 **Status:** CONCLUÍDO  
 **Escopo:** retirar o último adaptador fiscal temporário de apresentação, materializar um bundle determinístico somente com arquivos canônicos do repositório e provar aplicação/rollback em ambiente temporário antes de qualquer alteração de produção.
 
 ## 1. Estado recebido
 
 C7.1 começa depois do fechamento formal da Fase 6. A release fiscal continua sendo resolvida dinamicamente por `releases/fiscal-v1/current.json` e precisa estar `PUBLISHED`, em schema/API `1.2.0`, com 32/32 regras e consumidores H26–H29.
+
+A central H25 não é consumidora fiscal: ela é uma página de roteamento para H26–H29 e, por isso, entra no inventário de frontend/deployment sem alterar o conjunto de consumidores ou regras da release.
 
 C7.1 não altera o contrato fiscal nem publica uma nova release.
 
@@ -36,20 +39,25 @@ A apresentação continua fail-closed: release ou payload incompatível produz i
 
 ### Arquivos gerenciados
 
-O bundle contém exatamente **32 arquivos gerenciados** pelo repositório:
+O bundle contém exatamente **33 arquivos gerenciados** pelo repositório:
 
 - 8 arquivos do plugin WordPress;
 - 8 assets JavaScript das calculadoras;
+- H25 — central `/financas/calculadoras/`;
 - H26;
 - H27 e suas partes;
 - H28 e suas partes;
 - H29 e suas partes.
 
+A inclusão de H25 elimina a exceção em que a página central existia em produção sem fonte canônica neste repositório. A partir deste inventário, o bundle carrega também `consumers/frontend/calculadoras/index.php` para `financas/calculadoras/index.php`.
+
 O builder remapeia o diretório-fonte de H27 para o caminho público canônico `/financas/calculadoras/decimo-terceiro/`.
 
 ### Dependências pré-existentes
 
-Há exatamente **11 dependências pré-existentes** do site que não são versionadas neste repositório, entre includes PHP compartilhados e CSS de H26/H27.
+Há exatamente **11 dependências pré-existentes** do site que não são versionadas neste repositório, entre includes PHP compartilhados e CSS das calculadoras.
+
+H25 reutiliza o mesmo shell global e `calculadoras-ui.css`; portanto não introduz nova dependência física, apenas passa a constar no `required_by` das dependências que consome.
 
 Elas são declaradas nominalmente no manifesto e não são copiadas nem fingidas pelo bundle. Uma implantação real deve verificar a existência dessas dependências no destino antes de aplicar qualquer arquivo.
 
@@ -62,7 +70,7 @@ Elas são declaradas nominalmente no manifesto e não são copiadas nem fingidas
 3. exige release PUBLISHED, schema/API 1.2.0, 32 regras e H26–H29;
 4. verifica o SHA-256 do artefato fiscal imutável;
 5. recusa caminhos inseguros e destinos duplicados;
-6. copia somente os arquivos gerenciados;
+6. copia somente os 33 arquivos gerenciados;
 7. produz `bundle-manifest.json` com origem, destino, SHA-256 e tamanho de cada arquivo;
 8. registra a release fiscal que foi usada no gate do bundle.
 
@@ -79,7 +87,9 @@ Na implantação futura, o operador deverá fornecer os destinos reais correspon
 
 O gate C7.1 executa os runtimes reais de H26, H27, H28 e H29 usando os JavaScript copiados para o bundle, não os caminhos-fonte originais.
 
-Todos precisam consumir a mesma release fiscal canônica e preservar `release_id`.
+H25 não executa cálculo fiscal; seu contrato é validado como central de roteamento e o PHP é incluído no lint do bundle.
+
+Todos os consumidores fiscais precisam consumir a mesma release fiscal canônica e preservar `release_id`.
 
 Os PHP empacotados também passam por lint quando PHP está disponível no runner.
 
@@ -106,6 +116,8 @@ Não há SSH, segredo de hospedagem, caminho de conta ou mutação de produção
 
 `production_deployed` permanece `false` tanto no manifesto-fonte quanto no manifesto produzido pelo builder.
 
+Os registros de C7.3–C7.5 que documentam uma implantação anterior com 32 arquivos permanecem evidência histórica daquele lote; não devem ser reescritos como se H25 tivesse feito parte dele. Qualquer nova implantação do inventário de 33 arquivos precisa de novo bundle, novo preflight e nova autorização vinculados aos hashes atuais.
+
 ## 8. Gate permanente
 
 `scripts/validate_phase7_c71_gate.py` verifica no mesmo head:
@@ -113,12 +125,13 @@ Não há SSH, segredo de hospedagem, caminho de conta ou mutação de produção
 - release fiscal canônica e íntegra;
 - ausência do adaptador expirado;
 - plugin 2.7.0 e shortcodes informativos diretos;
-- manifesto de 32 arquivos e 11 dependências;
+- manifesto de 33 arquivos e 11 dependências;
+- H25 presente como fonte/target canônico da central;
 - completude das dependências locais referenciadas pelas páginas;
 - construção determinística do bundle;
 - ausência de autoridades fiscais legadas no bundle;
 - E2E H26–H29 sobre os bytes empacotados;
-- PHP lint;
+- PHP lint, incluindo H25;
 - simulação de apply/rollback;
 - ausência de afirmação de deploy de produção.
 
@@ -126,6 +139,6 @@ Não há SSH, segredo de hospedagem, caminho de conta ou mutação de produção
 
 ## 9. Resultado e handoff
 
-Com C7.1 verde, a Fase 7 passa a **EM ANDAMENTO**. A migração já possui um bundle pré-deploy reproduzível e rollback comprovado sem alterar produção.
+Com C7.1 verde, a migração possui um bundle pré-deploy reproduzível e rollback comprovado sem alterar produção. A atualização de 2026-09-17 acrescenta a central H25 ao inventário gerenciado sem reabrir o motor fiscal.
 
-Próximo checkpoint: **C7.2 — E2E operacional, falhas e recuperação evergreen**. Ele deve testar indisponibilidade, cache/last-good, sucessão de release e recuperação no caminho operacional antes da autorização de implantação controlada.
+Próximo passo operacional para este novo inventário: gerar um novo preflight C7.3 vinculado ao bundle de 33 arquivos antes de qualquer autorização de implantação.
