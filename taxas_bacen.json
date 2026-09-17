@@ -1,21 +1,21 @@
 {
   "schema_version": "1.4.0",
   "meta": {
-    "generated_at_utc": "2026-09-16T23:54:52Z",
+    "generated_at_utc": "2026-09-17T04:45:39Z",
     "sources": {
       "selic": {
         "source_id": "BCB_SELIC_META_SGS_432",
-        "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?formato=json&dataInicial=16%2F08%2F2026&dataFinal=16%2F09%2F2026",
+        "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?formato=json&dataInicial=17%2F08%2F2026&dataFinal=17%2F09%2F2026",
         "http_code": 200,
         "collection_status": "COLLECTED",
-        "snapshot_sha256": "509b7f54c027f9a38e76aebdc44092fe2844d3febf126f6ea1815cc1a444ac97",
-        "candidate_sha256": "2468e0d83ab4e5caac17c8a6815eb12cd714a111ea4d1c8cd01890f05ebd54c3",
+        "snapshot_sha256": "3e6dca8ee53ae23fada9105e2509b3a038f72cf745840fcbcc39a388b698d28c",
+        "candidate_sha256": "de5e51a2b17bb679e68b824b855f0a82aa80433e3b6b5307fb15a75d79e99941",
         "parser_id": "bcb_selic_meta_sgs432_v1",
         "parser_version": "1.1.0",
-        "observed_at_utc": "2026-09-16T23:54:52Z",
-        "source_observation_date": "2026-09-16",
+        "observed_at_utc": "2026-09-17T04:45:39Z",
+        "source_observation_date": "2026-09-17",
         "series_code": 432,
-        "source_value_pct": "14.00",
+        "source_value_pct": "13.75",
         "source_unit": "percent_per_year",
         "freshness_policy": "persistent_until_changed_no_max_age"
       },
@@ -28,7 +28,7 @@
         "candidate_sha256": "8cde0d31232edb5ea541d4556a4a1027ab6e62546eca0bb8263947917ea48e88",
         "parser_id": "bcb_cdi_daily_sgs12_v1",
         "parser_version": "1.0.0",
-        "observed_at_utc": "2026-09-16T23:54:52Z",
+        "observed_at_utc": "2026-09-17T04:45:39Z",
         "source_observation_date": "2026-09-15",
         "series_code": 12,
         "source_value_pct": "0.051660",
@@ -42,7 +42,7 @@
     "warnings": []
   },
   "taxas": {
-    "selic": 14.0,
+    "selic": 13.75,
     "cdi": 13.9,
     "cdi_basis": "bcb_sgs_12_daily_compounded_252"
   }
