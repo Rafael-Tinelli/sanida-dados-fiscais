@@ -160,6 +160,7 @@ jobs:
             exit 6
           fi
           echo "REMOTE_PYTHON=$($PY -c 'import sys; print(sys.version.split()[0])')"
+          export PYTHONPATH="$REPO"
 
           "$PY" scripts/run_phase7_v2_host_preflight.py \
             --bundle-manifest "$BUNDLE/bundle-manifest.json" \
