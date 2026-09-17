@@ -1,22 +1,85 @@
-<article class="wrap">
-  <h2>O que a calculadora realmente faz</h2>
-  <p>O H29 usa uma matriz fechada de quatro motivos eSocial. O motivo não é apenas um rótulo: ele decide se 13º e férias proporcionais são calculados. O saldo salarial permanece no escopo dos quatro motivos suportados.</p>
+<section class="padding-gerais py-xy" id="como-calculamos-rescisao" style="background-color:var(--color-background4);">
+  <div class="cp-center">
+    <div class="cp-section-head">
+      <p class="cp-section-kicker">Como a ferramenta trabalha</p>
+      <h2>Como funciona o cálculo de rescisão nesta página</h2>
+      <p>
+        A calculadora não tenta reproduzir todo o TRCT. Ela calcula apenas as parcelas que o contrato atual consegue determinar de forma explícita e auditável.
+      </p>
+    </div>
 
-  <h3>Motivos suportados</h3>
-  <p><strong>01 — justa causa pelo empregador:</strong> saldo salarial; sem 13º proporcional e sem férias proporcionais neste modelo. <strong>02 — sem justa causa</strong>, <strong>07 — pedido de demissão</strong> e <strong>33 — acordo do art. 484-A</strong>: saldo salarial, 13º proporcional e férias proporcionais.</p>
+    <div class="rc-guide-grid">
+      <article class="cp-card rc-guide-card" id="rescisao-sem-justa-causa">
+        <h3>Demissão sem justa causa</h3>
+        <p>No cenário suportado, a ferramenta pode calcular saldo de salário, 13º proporcional e férias proporcionais. FGTS, multa rescisória, aviso prévio e outras verbas continuam fora desta versão.</p>
+      </article>
 
-  <h3>Saldo salarial sem divisor 30 universal</h3>
-  <p>O cálculo usa salário-base mensal × dias computados até o desligamento ÷ dias civis do mês. Portanto março, abril e fevereiro podem ter denominadores diferentes. O número de dias computados é uma entrada explícita e não pode ultrapassar o dia do desligamento.</p>
+      <article class="cp-card rc-guide-card" id="pedido-de-demissao">
+        <h3>Pedido de demissão</h3>
+        <p>O pedido de demissão está entre os quatro motivos aceitos. A memória mantém separados o saldo de salário, os avos do 13º e os avos de férias aplicáveis ao modelo atual.</p>
+      </article>
 
-  <h3>13º e férias usam calendários diferentes</h3>
-  <p>O 13º proporcional conta meses do ano civil da extinção e aplica o limiar contratual de 15 dias. As férias proporcionais seguem o período aquisitivo ancorado na data de admissão, sem reiniciar em janeiro.</p>
-  <p>Exemplo de regressão: admissão em <strong>01/09/2025</strong> e desligamento em <strong>31/03/2026</strong> produzem <strong>3/12 de 13º</strong> no ano de 2026 e <strong>7/12 de férias proporcionais</strong> no período aquisitivo iniciado em setembro de 2025.</p>
+      <article class="cp-card rc-guide-card" id="rescisao-por-acordo">
+        <h3>Rescisão por acordo</h3>
+        <p>O acordo do art. 484-A é reconhecido pela matriz do H29. A calculadora, porém, continua parcial: ela não transforma automaticamente todos os efeitos possíveis do acordo em valor monetário.</p>
+      </article>
 
-  <h3>Férias adquiridas ou vencidas</h3>
-  <p>A matriz informa que férias adquiridas/vencidas podem ser devidas nos motivos suportados, mas o H29 v1 não transforma essa sinalização em valor monetário automático. Múltiplos períodos e eventual dobra exigem modelagem própria.</p>
+      <article class="cp-card rc-guide-card" id="justa-causa">
+        <h3>Demissão por justa causa</h3>
+        <p>Neste modelo, o motivo correspondente mantém o saldo de salário no escopo e não calcula 13º proporcional nem férias proporcionais. A página mostra esse resultado sem criar parcelas que o contrato não autorizou.</p>
+      </article>
+    </div>
+  </div>
+</section>
 
-  <h3>Fora do escopo automático</h3>
-  <p>Entre os itens excluídos estão aviso prévio ou desconto de aviso, multa e saque do FGTS, seguro-desemprego, indenizações de estabilidade, verbas específicas de negociação coletiva, regras de contrato por prazo determinado, rescisão indireta sem contexto judicial resolvido e verbas variáveis rescisórias não modeladas.</p>
+<section class="padding-gerais py-xy">
+  <div class="cp-center">
+    <div class="cp-section-head">
+      <p class="cp-section-kicker">Memória de cálculo</p>
+      <h2>Por que 13º e férias podem ter quantidades diferentes de avos?</h2>
+      <p>Porque as duas parcelas usam calendários diferentes. O 13º proporcional olha para o ano civil do desligamento; as férias proporcionais seguem o período aquisitivo iniciado na admissão.</p>
+    </div>
 
-  <p class="warning"><strong>Conferência documental:</strong> use a memória para comparar as parcelas cobertas com TRCT, recibos e folha. Itens não cobertos precisam ser analisados fora desta estimativa parcial.</p>
-</article>
+    <div class="cp-grid cp-grid--cards">
+      <article class="cp-card">
+        <h3>Saldo de salário usa os dias reais do mês</h3>
+        <p>O H29 não aplica um divisor 30 universal. O denominador corresponde à quantidade real de dias civis do mês do desligamento, enquanto o numerador representa os dias computados naquele mês.</p>
+      </article>
+
+      <article class="cp-card">
+        <h3>13º proporcional usa o ano civil</h3>
+        <p>A contagem dos avos do 13º ocorre dentro do ano da extinção e respeita o limiar contratual de dias para considerar o mês.</p>
+      </article>
+
+      <article class="cp-card">
+        <h3>Férias seguem o período aquisitivo</h3>
+        <p>A contagem das férias proporcionais permanece ancorada na data de admissão. Ela não reinicia automaticamente em janeiro.</p>
+      </article>
+
+      <article class="cp-card">
+        <h3>Férias adquiridas ou vencidas não viram valor automaticamente</h3>
+        <p>A ferramenta pode sinalizar a existência potencial dessa situação, mas não monetiza períodos adquiridos, vencidos, múltiplos períodos ou eventual dobra sem uma regra específica.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="padding-gerais py-xy" id="limites-da-calculadora" style="background-color:var(--color-background4);">
+  <div class="cp-center">
+    <div class="cp-link-panel">
+      <h2>O que esta calculadora de rescisão ainda não calcula</h2>
+      <p>
+        Aviso prévio ou desconto de aviso, multa e saque do FGTS, seguro-desemprego, indenizações de estabilidade,
+        regras de contrato por prazo determinado, verbas específicas de negociação coletiva e componentes variáveis
+        não explicitamente modelados permanecem fora da estimativa automática.
+      </p>
+
+      <div class="rc-inline-links">
+        <a href="/financas/calculadoras/decimo-terceiro/">Calculadora de décimo terceiro</a>
+        <a href="/financas/calculadoras/ferias-clt/">Calculadora de férias CLT</a>
+        <a href="/financas/calculadoras/salario-liquido-clt/">Calculadora de salário líquido</a>
+        <a href="/financas/calculadoras/">Ver todas as calculadoras</a>
+      </div>
+    </div>
+  </div>
+</section>
