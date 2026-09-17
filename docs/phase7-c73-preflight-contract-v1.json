@@ -6,7 +6,7 @@
   "purpose": "Define the fail-closed production preflight required before any HostGator deployment of the C7.1 bundle, including safe planning for managed directories that do not yet exist.",
   "source_bundle_manifest": "docs/phase7-c71-deployment-manifest-v1.json",
   "required_counts": {
-    "managed_files": 32,
+    "managed_files": 33,
     "preexisting_dependencies": 11
   },
   "target_roots": [
@@ -54,7 +54,7 @@
       "remote_preflight_status_PASS",
       "zero_block_reasons",
       "all_11_dependencies_verified",
-      "all_32_managed_targets_preflighted",
+      "all_33_managed_targets_preflighted",
       "all_target_parent_directories_existing_or_safely_creatable",
       "all_planned_directory_creations_journaled",
       "php_cli_available",
