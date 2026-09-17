@@ -4,20 +4,17 @@
         <p class="cp-section-kicker">Ferramenta principal</p>
         <h2>Calculadora de décimo terceiro salário com 1ª parcela, 2ª parcela e proporcional</h2>
         <p>
-          Preencha os campos para calcular décimo terceiro salário de forma rápida. A ferramenta estima o valor do 13º salário,
-          a primeira parcela, a segunda parcela bruta e, quando a opção estiver ativa, uma projeção da segunda parcela líquida.
-          Se o adiantamento e os descontos consumirem todo o saldo, a calculadora mostra valor a pagar igual a zero e separa a insuficiência para conferência, para não exibir uma “parcela negativa”.
+          Informe a remuneração e os avos para estimar o 13º total, o adiantamento e a quitação.
+          Se o adiantamento e os descontos consumirem todo o saldo, a ferramenta mostra valor a pagar igual a zero
+          e separa a insuficiência para conferência, para não exibir uma “parcela negativa”.
         </p>
       </div>
 
       <div class="cp-grid cp-grid--main">
         <div class="cp-card cp-card--form">
           <div class="cp-card__header">
-            <h3>Dados da simulação do décimo terceiro salário</h3>
-            <p>
-              Ideal para quem quer calcular décimo terceiro proporcional, calcular a primeira parcela do décimo terceiro
-              e entender melhor o valor da segunda parcela.
-            </p>
+            <h3>Dados da simulação</h3>
+            <p>Você pode informar os avos diretamente ou deixar a ferramenta calculá-los pelas datas do vínculo.</p>
           </div>
 
           <div data-alert class="cp-alert" role="alert" aria-live="assertive" aria-atomic="true"></div>
@@ -123,38 +120,64 @@
 
         <aside class="cp-card cp-card--result cp-result" data-result role="status" aria-live="polite" aria-atomic="true">
           <div class="cp-card__header">
-            <h3>Resultado da calculadora de décimo terceiro salário</h3>
-            <p>A memória abaixo separa avos, adiantamento, INSS, IRRF e eventual insuficiência, além de identificar a release fiscal usada.</p>
+            <h3>Resultado do seu décimo terceiro</h3>
+            <p>O resumo mostra primeiro o valor total, a 1ª parcela e o que ainda resta pagar. A memória fiscal completa fica abaixo.</p>
           </div>
 
-          <div class="cp-kpis">
-            <div class="cp-kpi"><strong>Base usada</strong><span data-kpi="base">—</span></div>
-            <div class="cp-kpi"><strong>13º total</strong><span data-kpi="total13">—</span></div>
+          <div class="d13-result-summary">
+            <div class="d13-result-card">
+              <small>13º total estimado</small>
+              <strong data-kpi="total13">—</strong>
+            </div>
+            <div class="d13-result-card">
+              <small>1ª parcela / adiantamento</small>
+              <strong data-row="primeira">—</strong>
+            </div>
+            <div class="d13-result-card d13-result-card--main">
+              <small>2ª parcela líquida a pagar</small>
+              <strong data-row="segunda-liquida">—</strong>
+            </div>
           </div>
 
-          <div class="cp-rows">
-            <div class="cp-row"><span>Avos considerados</span><strong data-row="avos">—</strong></div>
-            <div class="cp-row"><span>1ª parcela</span><strong data-row="primeira">—</strong></div>
-            <div class="cp-row"><span>Origem da 1ª parcela</span><strong data-row="status-adiantamento">—</strong></div>
-            <div class="cp-row"><span>2ª parcela bruta a pagar</span><strong data-row="segunda-bruta">—</strong></div>
-            <div class="cp-row"><span>INSS do 13º — apuração separada</span><strong class="cp-neg" data-row="inss13">—</strong></div>
-            <div class="cp-row"><span>IRRF do 13º — apuração exclusiva</span><strong class="cp-neg" data-row="ir13">—</strong></div>
-            <div class="cp-row"><span>2ª parcela líquida a pagar</span><strong class="cp-pos" data-row="segunda-liquida">—</strong></div>
-            <div class="cp-row"><span>Situação da liquidação</span><strong data-row="status-liquidacao">—</strong></div>
-            <div class="cp-row"><span>Saldo matemático antes do piso zero</span><strong data-row="saldo-antes-piso">—</strong></div>
-            <div class="cp-row"><span>Insuficiência a conferir</span><strong class="cp-neg" data-row="insuficiencia">—</strong></div>
-            <div class="cp-row"><span>Base do IRRF do 13º</span><strong data-row="base-ir">—</strong></div>
-            <div class="cp-row"><span>IRRF antes do redutor</span><strong data-row="ir-antes-reducao">—</strong></div>
-            <div class="cp-row"><span>Rendimento testado no redutor</span><strong data-row="renda-redutor">—</strong></div>
-            <div class="cp-row"><span>Modo de dedução do IR</span><strong data-row="modo">—</strong></div>
-            <div class="cp-row"><span>Redução aplicada</span><strong class="cp-pos" data-row="reducao">—</strong></div>
-            <div class="cp-row"><span>Ano de referência</span><strong data-row="ano-fiscal">—</strong></div>
-            <div class="cp-row"><span>Data fiscal usada</span><strong data-row="referencia">—</strong></div>
-            <div class="cp-row"><span>Release fiscal usada</span><strong data-row="release-id">—</strong></div>
+          <div class="d13-state">
+            <span>Situação da liquidação</span>
+            <strong data-row="status-liquidacao">—</strong>
           </div>
+
+          <div class="d13-warning">
+            Se adiantamento e descontos superarem o saldo disponível, a 2ª parcela fica em R$ 0,00 e a diferença aparece como <strong>insuficiência a conferir</strong>. A ferramenta não determina por si só como eventual diferença será compensada ou tratada na folha.
+          </div>
+
+          <details class="d13-detail" open>
+            <summary>Composição do 13º e das parcelas</summary>
+            <div class="cp-rows">
+              <div class="cp-row"><span>Base usada</span><strong data-kpi="base">—</strong></div>
+              <div class="cp-row"><span>Avos considerados</span><strong data-row="avos">—</strong></div>
+              <div class="cp-row"><span>Origem da 1ª parcela</span><strong data-row="status-adiantamento">—</strong></div>
+              <div class="cp-row"><span>2ª parcela bruta a pagar</span><strong data-row="segunda-bruta">—</strong></div>
+              <div class="cp-row"><span>Saldo matemático antes do piso zero</span><strong data-row="saldo-antes-piso">—</strong></div>
+              <div class="cp-row"><span>Insuficiência a conferir</span><strong class="cp-neg" data-row="insuficiencia">—</strong></div>
+            </div>
+          </details>
+
+          <details class="d13-detail">
+            <summary>INSS, IRRF e memória fiscal</summary>
+            <div class="cp-rows">
+              <div class="cp-row"><span>INSS do 13º — apuração separada</span><strong class="cp-neg" data-row="inss13">—</strong></div>
+              <div class="cp-row"><span>IRRF do 13º — apuração exclusiva</span><strong class="cp-neg" data-row="ir13">—</strong></div>
+              <div class="cp-row"><span>Base do IRRF do 13º</span><strong data-row="base-ir">—</strong></div>
+              <div class="cp-row"><span>IRRF antes do redutor</span><strong data-row="ir-antes-reducao">—</strong></div>
+              <div class="cp-row"><span>Rendimento testado no redutor</span><strong data-row="renda-redutor">—</strong></div>
+              <div class="cp-row"><span>Modo de dedução do IR</span><strong data-row="modo">—</strong></div>
+              <div class="cp-row"><span>Redução aplicada</span><strong class="cp-pos" data-row="reducao">—</strong></div>
+              <div class="cp-row"><span>Ano de referência</span><strong data-row="ano-fiscal">—</strong></div>
+              <div class="cp-row"><span>Data fiscal usada</span><strong data-row="referencia">—</strong></div>
+              <div class="cp-row"><span>Release fiscal usada</span><strong data-row="release-id">—</strong></div>
+            </div>
+          </details>
 
           <p class="cp-disclaimer">
-            Estimativa educativa para conferência. Quando o saldo matemático ficar negativo, a ferramenta mostra a 2ª parcela a pagar como R$ 0,00 e apresenta a insuficiência separadamente. Isso não determina por si só como eventual diferença será compensada ou tratada na folha. Casos de admissão no ano ou remuneração variável podem exigir que você informe a 1ª parcela efetivamente paga. A ferramenta falha fechado quando o contrato fiscal publicado não cobre o cenário automaticamente.
+            Estimativa educativa para conferência. Casos de admissão no ano ou remuneração variável podem exigir que você informe a 1ª parcela efetivamente paga. A ferramenta falha fechado quando o contrato fiscal publicado não cobre o cenário automaticamente.
           </p>
         </aside>
       </div>
