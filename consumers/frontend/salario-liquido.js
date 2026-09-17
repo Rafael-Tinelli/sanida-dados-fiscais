@@ -169,6 +169,17 @@
   const alertBox = page.querySelector('[data-alert]');
   const result = page.querySelector('[data-result]');
 
+  if (alertBox) {
+    alertBox.setAttribute('role', 'alert');
+    alertBox.setAttribute('aria-live', 'assertive');
+    alertBox.setAttribute('aria-atomic', 'true');
+  }
+  if (result) {
+    result.setAttribute('role', 'status');
+    result.setAttribute('aria-live', 'polite');
+    result.setAttribute('aria-atomic', 'true');
+  }
+
   function showError(message) {
     if (!alertBox) return;
     alertBox.textContent = message;
