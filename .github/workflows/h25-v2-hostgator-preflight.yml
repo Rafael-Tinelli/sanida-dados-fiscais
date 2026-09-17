@@ -136,7 +136,9 @@ jobs:
             echo "PYTHON_CLI_MISSING"
             exit 5
           fi
-          "$PY" -m pip install --disable-pip-version-check --no-input --target "$PYDEPS" -r "$REPO/requirements-contract.txt" >/dev/null
+          "$PY" -m pip install --disable-pip-version-check --no-input --target "$PYDEPS" \
+            -r "$REPO/requirements-contract.txt" \
+            "eval_type_backport>=0.2,<1" >/dev/null
           export PYTHONPATH="$PYDEPS:$REPO"
 
           "$PY" scripts/build_phase7_c71_bundle_v2.py --output-dir "$BUNDLE"
