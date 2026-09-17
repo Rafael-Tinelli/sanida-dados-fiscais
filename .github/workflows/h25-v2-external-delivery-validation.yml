@@ -143,7 +143,6 @@ jobs:
 
           printf '%s' "$EVIDENCE_B64" | base64 --decode > "$RUNTIME/c75-external-evidence.json"
           test "$(sha256sum "$RUNTIME/c75-external-evidence.json" | awk '{print $1}')" = "$EXPECTED_EVIDENCE_SHA"
-          "$PYTHON" 2>/dev/null || true
           PY="$(command -v python3.9 || command -v python3)"
           export PYTHONPATH="$REPO"
           "$PY" scripts/validate_phase7_c75_external_evidence_v2.py \
