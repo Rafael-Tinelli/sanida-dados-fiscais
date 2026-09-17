@@ -25,11 +25,11 @@
       <input id="pensao" name="pensao" inputmode="decimal" autocomplete="off" value="0,00" required>
 
       <button type="submit">Calcular férias</button>
-      <div class="alert" data-alert role="alert"></div>
+      <div class="alert" data-alert role="alert" aria-live="assertive" aria-atomic="true"></div>
     </form>
   </div>
 
-  <div class="panel" data-result style="display:none">
+  <div class="panel" data-result role="status" aria-live="polite" aria-atomic="true" style="display:none">
     <h2>Resultado</h2>
     <div class="kpis">
       <div class="kpi"><small>Total bruto das férias</small><strong data-kpi="bruto">—</strong></div>
