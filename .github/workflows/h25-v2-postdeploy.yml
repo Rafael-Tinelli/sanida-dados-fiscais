@@ -165,13 +165,13 @@ jobs:
           dep_index = {(d['target_root'], d['relative_path']): d for d in evidence['dependencies']}
           dependencies = []
           for rec in manifest['preexisting_dependencies']:
-              key = (rec['target_root'], rec['path'])
+              key = (rec['target_root'], rec['target_path'])
               prior = dep_index[key]
-              target = roots[rec['target_root']] / rec['path']
+              target = roots[rec['target_root']] / rec['target_path']
               assert target.is_file(), str(target)
               observed = digest(target)
               assert observed == prior['sha256'], (str(target), observed, prior['sha256'])
-              dependencies.append({'target_root': rec['target_root'], 'path': rec['path'], 'sha256': observed})
+              dependencies.append({'target_root': rec['target_root'], 'target_path': rec['target_path'], 'sha256': observed})
 
           php = os.popen('command -v php').read().strip()
           assert php
