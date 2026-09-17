@@ -3,9 +3,9 @@
       <div class="cp-faq-wrap">
         <div class="cp-section-head cp-section-head--faq">
           <p class="cp-section-kicker">Perguntas frequentes</p>
-          <h2>FAQ sobre décimo terceiro salário</h2>
+          <h2>Dúvidas sobre décimo terceiro salário</h2>
           <p>
-            Respostas rápidas para dúvidas comuns sobre cálculo do décimo terceiro salário, 1ª parcela, 2ª parcela, proporcionalidade, base de cálculo e descontos.
+            Respostas rápidas sobre valor total, proporcionalidade, primeira e segunda parcelas, médias e descontos do 13º.
           </p>
         </div>
 
@@ -14,70 +14,70 @@
             <summary>Como calcular o décimo terceiro salário?</summary>
             <div class="cp-faq__body">
               <p>
-                Para calcular o décimo terceiro salário, a lógica parte da remuneração considerada para o benefício e aplica 1/12 por mês trabalhado. Se o ano foi completo, o valor tende a equivaler a uma remuneração mensal integral. Se não foi, entra o décimo terceiro proporcional.
+                O 13º parte da remuneração considerada para o benefício e da quantidade de avos devidos. Cada mês válido acrescenta 1/12. Com 12/12, o valor bruto tende a corresponder à remuneração de referência integral; com menos avos, o resultado é proporcional.
               </p>
             </div>
           </details>
 
           <details class="cp-faq-item">
-            <summary>O que entra na base de cálculo do décimo terceiro salário?</summary>
+            <summary>Trabalhei 7 meses. Quanto recebo de décimo terceiro?</summary>
             <div class="cp-faq__body">
               <p>
-                A base de cálculo do décimo terceiro salário pode considerar salário-base e, conforme o caso, médias de variáveis como comissão, hora extra e adicionais habituais. É por isso que esta calculadora possui um campo específico para média de variáveis.
+                Se os sete meses qualificarem para a contagem, o ponto de partida é 7/12 da remuneração de referência. Quando houver meses incompletos, a regra dos 15 dias pode alterar a quantidade de avos. A calculadora permite informar os avos ou contá-los pelas datas.
               </p>
             </div>
           </details>
 
           <details class="cp-faq-item">
-            <summary>Como funciona a primeira parcela do décimo terceiro salário?</summary>
+            <summary>A primeira parcela é sempre metade do décimo terceiro total?</summary>
             <div class="cp-faq__body">
               <p>
-                A primeira parcela do décimo terceiro salário funciona como adiantamento. Em regra, ela não sofre INSS nem IRRF no momento do pagamento, o que ajuda a explicar por que a quitação final costuma parecer menor.
+                Não necessariamente. No ramo padrão desta ferramenta, o adiantamento usa metade do salário do mês anterior ao pagamento. Admissão no ano ou remuneração variável podem exigir que você informe o valor efetivamente antecipado.
               </p>
             </div>
           </details>
 
           <details class="cp-faq-item">
-            <summary>Por que a segunda parcela do décimo terceiro salário é menor?</summary>
+            <summary>Por que a segunda parcela do décimo terceiro costuma ser menor?</summary>
             <div class="cp-faq__body">
               <p>
-                A segunda parcela do décimo terceiro salário tende a ser menor porque nela entram os descontos incidentes sobre o 13º total e, além disso, já se desconta o valor pago como primeira parcela.
+                Porque a quitação considera o adiantamento já pago e, quando aplicável, os descontos apurados sobre o 13º, como INSS e IRRF. Por isso a 2ª parcela não deve ser tratada simplesmente como “a outra metade”.
               </p>
             </div>
           </details>
 
           <details class="cp-faq-item">
-            <summary>Como calcular décimo terceiro salário proporcional?</summary>
+            <summary>O que acontece se o adiantamento for maior que o saldo final?</summary>
             <div class="cp-faq__body">
               <p>
-                Para calcular décimo terceiro salário proporcional, a ferramenta considera os meses trabalhados informados e distribui a base em avos. Em geral, a contagem do avo depende da regra mínima usada para considerar o mês como válido.
+                A calculadora não mostra uma 2ª parcela negativa. O valor a pagar fica em R$ 0,00 e a diferença aparece separadamente como insuficiência para conferência. A ferramenta não determina sozinha como essa diferença será tratada na folha.
               </p>
             </div>
           </details>
 
           <details class="cp-faq-item">
-            <summary>A regra dos 15 dias interfere no décimo terceiro salário?</summary>
+            <summary>Comissão e hora extra entram no décimo terceiro?</summary>
             <div class="cp-faq__body">
               <p>
-                Sim. Em termos gerais, a regra dos 15 dias é importante para a contagem do avo no décimo terceiro salário proporcional. Isso afeta principalmente admissões, desligamentos e meses incompletos.
+                Podem influenciar a remuneração considerada por meio de médias. Esta calculadora recebe uma média monetária já apurada; ela não calcula horas, adicionais, DSR ou o critério de média do vínculo.
               </p>
             </div>
           </details>
 
           <details class="cp-faq-item">
-            <summary>Comissão e hora extra entram no cálculo do décimo terceiro salário?</summary>
+            <summary>O décimo terceiro tem INSS e IRRF?</summary>
             <div class="cp-faq__body">
               <p>
-                Comissão e hora extra podem influenciar o cálculo do décimo terceiro salário por meio de médias. Por isso, o campo de variáveis existe nesta calculadora de décimo terceiro salário.
+                O 13º possui apurações próprias de INSS e IRRF, separadas da folha mensal. Quando a estimativa líquida está ativa, a ferramenta mostra esses descontos e a 2ª parcela líquida projetada.
               </p>
             </div>
           </details>
 
           <details class="cp-faq-item">
-            <summary>Esta calculadora de décimo terceiro salário mostra valor líquido?</summary>
+            <summary>Qual data define as regras fiscais da simulação?</summary>
             <div class="cp-faq__body">
               <p>
-                Sim. Quando a opção de estimar líquido está ativada, a calculadora de décimo terceiro salário projeta INSS, IRRF e a segunda parcela líquida para facilitar a conferência.
+                A data de quitação ou referência fiscal informada no formulário seleciona a vigência das regras publicadas usadas pelo cálculo. A release fiscal utilizada fica disponível nos detalhes da memória.
               </p>
             </div>
           </details>
