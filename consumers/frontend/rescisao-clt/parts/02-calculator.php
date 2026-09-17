@@ -66,7 +66,7 @@
                 placeholder="Ex.: 3100,00"
                 required
               >
-              <small>Valor indispensável para calcular o saldo de salário.</small>
+              <small>Este valor é indispensável para o saldo de salário e deve ser maior que zero.</small>
             </div>
 
             <div class="rc-field rc-field--full" data-conditional="thirteenth">
@@ -80,7 +80,7 @@
                 required
               >
               <small>
-                Informe uma remuneração fixa já apurada para o mês do desligamento.
+                Quando o motivo inclui 13º proporcional, informe uma remuneração fixa já apurada e maior que zero para o mês do desligamento.
                 Médias e verbas variáveis não são estimadas automaticamente.
               </small>
             </div>
@@ -105,9 +105,9 @@
                   required
                 >
                 <small>
-                  A ferramenta preenche este campo a partir das datas. Ajuste apenas se férias,
-                  afastamentos ou outro fato reduzirem os dias efetivamente computados.
-                  O denominador continua sendo o número real de dias civis do mês.
+                  A ferramenta preenche este campo a partir das datas. Se admissão e desligamento ocorrerem no mesmo mês,
+                  conta os dias inclusivos entre as duas datas. Ajuste o campo se houve férias, afastamentos ou outro fato
+                  que reduza os dias efetivamente computados. O denominador continua sendo o número real de dias civis do mês.
                 </small>
               </div>
             </div>
