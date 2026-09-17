@@ -16,7 +16,15 @@
     if (!raw) {
       h28Error('h28_payment_date_required', 'Informe a data de pagamento das férias para definir a vigência fiscal usada no cálculo.');
     }
-    const iso = SFA.normalizeDate(raw, 'data_pagamento');
+    let iso;
+    try {
+      iso = SFA.normalizeDate(raw, 'data_pagamento');
+    } catch (error) {
+      if (error && (error.code === 'date_required' || error.code === 'date_invalid')) {
+        h28Error('h28_payment_date_invalid', 'Informe uma data de pagamento válida.');
+      }
+      throw error;
+    }
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
     if (!match) h28Error('h28_payment_date_invalid', 'Informe uma data de pagamento válida.');
     const year = Number(match[1]);
