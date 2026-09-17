@@ -25,6 +25,7 @@ README = ROOT / "README.md"
 CI = ROOT / ".github/workflows/remake-ci.yml"
 PLUGIN = ROOT / "consumers/wordpress/sanida-fiscais-auto.php"
 PLUGIN_DIR = ROOT / "consumers/wordpress"
+EXPECTED_MANAGED_FILES = 33
 
 
 def require(condition: bool, message: str) -> None:
@@ -61,7 +62,7 @@ def main() -> int:
     require(source_manifest.get("production_deployed") is False, "C7.1 must not claim production deployment")
     managed = source_manifest.get("managed_files") or []
     dependencies = source_manifest.get("preexisting_dependencies") or []
-    require(len(managed) == 32, "C7.1 managed file set must contain exactly 32 files")
+    require(len(managed) == EXPECTED_MANAGED_FILES, f"C7.1 managed file set must contain exactly {EXPECTED_MANAGED_FILES} files")
     require(len(dependencies) == 11, "C7.1 preexisting dependency set must contain exactly 11 files")
 
     managed_targets = {
@@ -76,8 +77,6 @@ def main() -> int:
     require(len(dependency_targets) == len(dependencies), "duplicate preexisting dependency")
     require(not (managed_targets & dependency_targets), "managed target also declared as preexisting dependency")
 
-    # Every local runtime/include dependency referenced by the managed PHP pages must
-    # be either part of the bundle or explicitly declared as pre-existing.
     php_sources = [ROOT / item["source"] for item in managed if item["source"].endswith(".php")]
     referenced: set[str] = set()
     for source in php_sources:
@@ -115,7 +114,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="c71-gate-") as raw:
         bundle_dir = Path(raw) / "bundle"
         bundle = build_bundle(DEPLOYMENT_MANIFEST, bundle_dir)
-        require(bundle["managed_file_count"] == 32, "built bundle file count drift")
+        require(bundle["managed_file_count"] == EXPECTED_MANAGED_FILES, "built bundle file count drift")
         require(bundle["release"]["release_id"] == release.release_id, "bundle bound to wrong release")
         require(bundle["production_deployed"] is False, "built bundle claims production deployment")
 
@@ -186,7 +185,7 @@ def main() -> int:
     for marker in (
         "**Status:** CONCLUÍDO",
         "plugin 2.7.0",
-        "32 arquivos gerenciados",
+        "33 arquivos gerenciados",
         "11 dependências pré-existentes",
         "rollback",
         "não realiza implantação no HostGator",
@@ -205,7 +204,7 @@ def main() -> int:
 
     print(
         "Phase 7 C7.1 gate: PASS "
-        f"(release={release.release_id}, managed=32, dependencies=11, e2e=H26-H29, rollback=exact, production_deployed=false)"
+        f"(release={release.release_id}, managed={EXPECTED_MANAGED_FILES}, dependencies=11, e2e=H26-H29, rollback=exact, production_deployed=false)"
     )
     return 0
 
