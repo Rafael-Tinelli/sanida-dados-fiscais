@@ -16,7 +16,6 @@ from sanida_fiscal.publication_v1 import FiscalReleaseStore
 
 DEFAULT_MANIFEST = ROOT / "docs/phase7-c71-deployment-manifest-v1.json"
 STORE = ROOT / "releases/fiscal-v1"
-EXPECTED_MANAGED_FILES = 33
 
 
 def fail(message: str) -> None:
@@ -76,8 +75,8 @@ def build_bundle(manifest_path: Path, output_dir: Path) -> dict:
 
     pointer, artifact = validate_release(manifest["release_binding"])
     managed = manifest.get("managed_files") or []
-    if len(managed) != EXPECTED_MANAGED_FILES:
-        fail(f"expected {EXPECTED_MANAGED_FILES} managed files, got {len(managed)}")
+    if len(managed) != 32:
+        fail(f"expected 32 managed files, got {len(managed)}")
 
     seen_sources: set[str] = set()
     seen_destinations: set[str] = set()
