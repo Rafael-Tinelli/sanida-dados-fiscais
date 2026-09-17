@@ -1,0 +1,284 @@
+name: H25 V2 HostGator Controlled Deploy
+
+# WORKFLOW OPERACIONAL SINGLE-USE.
+# Só existe no branch dedicado de deployment e deve ser removido antes do merge em main.
+
+on:
+  push:
+    branches:
+      - deploy/h25-v2-production
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: h25-v2-hostgator-controlled-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SSH_PORT: "2222"
+      SITE_ROOT: /home1/sanid210/public_html
+      PLUGIN_ROOT: /home1/sanid210/public_html/blog/wp-content/plugins/sanida-fiscais-auto
+      REPO_URL: https://github.com/Rafael-Tinelli/sanida-dados-fiscais.git
+      HEALTH_BASE_URL: https://sanida.com.br
+      AUTHORIZED_SOURCE_COMMIT: 505144918d05fb4932064f6f9da9b9358c448ac0
+      AUTHORIZATION_ID: c74-v2-h25-production-20260917-505144
+      AUTHORIZATION_PATH: docs/phase7-v2-c74-authorization-505144918d05fb4932064f6f9da9b9358c448ac0.json
+      EXPECTED_BUNDLE_SHA256: 4ca95de84822fc3bc70ee59c86e73e540e38bec9e6ce5951266ce62a7f8e6627
+      EXPECTED_PREFLIGHT_SHA256: 2fc6f01a6f68d3402ea7476cc12d6925ea4daca852e8eef917e3e179f8016e8f
+
+    steps:
+      - name: Checkout operational head
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install validation dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Gate exact authorized candidate before SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/h25-v2-authorized-bundle
+          python scripts/build_phase7_c71_bundle_v2.py --output-dir /tmp/h25-v2-authorized-bundle
+          python scripts/validate_phase7_c71_v2_gate.py
+          ACTUAL_BUNDLE_SHA256="$(sha256sum /tmp/h25-v2-authorized-bundle/bundle-manifest.json | awk '{print $1}')"
+          test "$ACTUAL_BUNDLE_SHA256" = "$EXPECTED_BUNDLE_SHA256"
+          python -m pytest -q \
+            tests/test_phase7_c71_v2.py \
+            tests/test_phase7_v2_remote_preflight.py \
+            tests/test_phase7_v2_controlled_deploy.py
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path(os.environ["AUTHORIZATION_PATH"])
+          d = json.loads(p.read_text(encoding="utf-8"))
+          c = d.get("candidate") or {}
+          assert d.get("authorization_id") == os.environ["AUTHORIZATION_ID"]
+          assert d.get("record_type") == "single_use_deployment_authorization_v2"
+          assert d.get("single_use_authorization") is True
+          assert d.get("deployment_authorized") is True
+          assert d.get("production_deployed") is False
+          assert c.get("source_commit") == os.environ["AUTHORIZED_SOURCE_COMMIT"]
+          assert c.get("inventory_version") == 2
+          assert c.get("bundle_manifest_sha256") == os.environ["EXPECTED_BUNDLE_SHA256"]
+          assert c.get("c73_remote_evidence_sha256") == os.environ["EXPECTED_PREFLIGHT_SHA256"]
+          assert c.get("managed_files") == 33
+          assert c.get("preexisting_dependencies") == 11
+          print("SINGLE_USE_AUTHORIZATION_LOCAL_GATE=PASS")
+          PY
+          echo "AUTHORIZED_BUNDLE_LOCAL_GATE=PASS"
+
+      - name: Verify HostGator credential contract
+        shell: bash
+        env:
+          HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          USER: ${{ secrets.V2_HOSTGATOR_USER }}
+          SSH_KEY: ${{ secrets.V2_HOSTGATOR_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.V2_HOSTGATOR_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for item in HOST USER SSH_KEY KNOWN_HOSTS; do
+            if [ -z "${!item:-}" ]; then
+              echo "HOSTGATOR_CREDENTIAL_MISSING=$item"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "HOSTGATOR_CREDENTIALS=BLOCKED"
+            exit 2
+          fi
+          echo "HOSTGATOR_CREDENTIALS=PRESENT"
+
+      - name: Configure pinned SSH client
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.V2_HOSTGATOR_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.V2_HOSTGATOR_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$HOME/.ssh/id_ed25519" >/dev/null
+          test -s "$HOME/.ssh/known_hosts"
+          echo "SSH_RUNTIME_CONFIG=PASS"
+
+      - name: Execute single-use controlled deployment
+        shell: bash
+        env:
+          HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          USER: ${{ secrets.V2_HOSTGATOR_USER }}
+        run: |
+          set -euo pipefail
+          SSH_OPTS=(
+            -p "$SSH_PORT"
+            -i "$HOME/.ssh/id_ed25519"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o PreferredAuthentications=publickey
+            -o PasswordAuthentication=no
+            -o KbdInteractiveAuthentication=no
+            -o StrictHostKeyChecking=yes
+            -o UpdateHostKeys=no
+            -o ServerAliveInterval=30
+            -o ServerAliveCountMax=6
+          )
+
+          set +e
+          ssh "${SSH_OPTS[@]}" "$USER@$HOST" bash -s -- \
+            "$GITHUB_SHA" \
+            "$GITHUB_RUN_ID" \
+            "$GITHUB_RUN_ATTEMPT" \
+            "$REPO_URL" \
+            "$SITE_ROOT" \
+            "$PLUGIN_ROOT" \
+            "$HEALTH_BASE_URL" \
+            "$AUTHORIZED_SOURCE_COMMIT" \
+            "$AUTHORIZATION_ID" \
+            "$AUTHORIZATION_PATH" \
+            "$EXPECTED_BUNDLE_SHA256" \
+            "$EXPECTED_PREFLIGHT_SHA256" <<'REMOTE' | tee /tmp/h25-v2-deploy-remote.log
+          set -euo pipefail
+          RUNNER_COMMIT="$1"
+          RUN_ID="$2"
+          RUN_ATTEMPT="$3"
+          REPO_URL="$4"
+          SITE_ROOT="$5"
+          PLUGIN_ROOT="$6"
+          HEALTH_BASE_URL="$7"
+          AUTHORIZED_SOURCE_COMMIT="$8"
+          AUTHORIZATION_ID="$9"
+          AUTHORIZATION_PATH="${10}"
+          EXPECTED_BUNDLE_SHA256="${11}"
+          EXPECTED_PREFLIGHT_SHA256="${12}"
+
+          RUNTIME="$HOME/h25-v2-deploy-runs/${RUN_ID}-${RUN_ATTEMPT}"
+          REPO="$RUNTIME/repo"
+          BUNDLE="$RUNTIME/bundle"
+          PYDEPS="$RUNTIME/pydeps"
+          C73="$HOME/h25-v2-preflight/$AUTHORIZED_SOURCE_COMMIT/preflight.json"
+          JOURNAL="$HOME/h25-v2-deployment-journals/$AUTHORIZATION_ID"
+
+          if [ -e "$RUNTIME" ]; then
+            echo "DEPLOY_RUNTIME_ALREADY_EXISTS=$RUNTIME"
+            exit 10
+          fi
+          mkdir -p "$RUNTIME"
+          git clone --quiet "$REPO_URL" "$REPO"
+          cd "$REPO"
+          git checkout --quiet --detach "$RUNNER_COMMIT"
+          test "$(git rev-parse HEAD)" = "$RUNNER_COMMIT"
+
+          PY="$(command -v python3.9 || command -v python3 || true)"
+          if [ -z "$PY" ]; then
+            echo "PYTHON_CLI_MISSING"
+            exit 11
+          fi
+          "$PY" -m pip install --disable-pip-version-check --no-input --target "$PYDEPS" \
+            -r "$REPO/requirements-contract.txt" \
+            "eval_type_backport>=0.2,<1" >/dev/null
+          export PYTHONPATH="$PYDEPS:$REPO"
+
+          "$PY" scripts/build_phase7_c71_bundle_v2.py --output-dir "$BUNDLE"
+          BUNDLE_SHA="$(sha256sum "$BUNDLE/bundle-manifest.json" | awk '{print $1}')"
+          test "$BUNDLE_SHA" = "$EXPECTED_BUNDLE_SHA256"
+
+          test -f "$C73"
+          C73_SHA="$(sha256sum "$C73" | awk '{print $1}')"
+          test "$C73_SHA" = "$EXPECTED_PREFLIGHT_SHA256"
+          "$PY" scripts/validate_phase7_v2_remote_evidence.py \
+            --evidence "$C73" \
+            --bundle-manifest "$BUNDLE/bundle-manifest.json"
+
+          test -f "$REPO/$AUTHORIZATION_PATH"
+          echo "REMOTE_AUTHORIZED_SOURCE_COMMIT=$AUTHORIZED_SOURCE_COMMIT"
+          echo "REMOTE_OPERATIONAL_COMMIT=$RUNNER_COMMIT"
+          echo "REMOTE_BUNDLE_MANIFEST_SHA256=$BUNDLE_SHA"
+          echo "REMOTE_C73_EVIDENCE_SHA256=$C73_SHA"
+          echo "REMOTE_SINGLE_USE_JOURNAL=$JOURNAL"
+          echo "PRODUCTION_WRITE_GATE=OPEN"
+
+          set +e
+          "$PY" scripts/run_phase7_v2_controlled_deploy.py \
+            --bundle-dir "$BUNDLE" \
+            --site-root "$SITE_ROOT" \
+            --wordpress-plugin-dir "$PLUGIN_ROOT" \
+            --c73-evidence "$C73" \
+            --authorization-file "$REPO/$AUTHORIZATION_PATH" \
+            --authorization-id "$AUTHORIZATION_ID" \
+            --authorized-source-commit "$AUTHORIZED_SOURCE_COMMIT" \
+            --journal-dir "$JOURNAL" \
+            --health-base-url "$HEALTH_BASE_URL" \
+            > "$RUNTIME/deploy-output.json"
+          DEPLOY_RC=$?
+          set -e
+
+          cat "$RUNTIME/deploy-output.json"
+          if [ -f "$JOURNAL/deployment-state.json" ]; then
+            echo "__SANIDA_DEPLOYMENT_STATE_BEGIN__"
+            base64 "$JOURNAL/deployment-state.json" | tr -d '\n'
+            echo
+            echo "__SANIDA_DEPLOYMENT_STATE_END__"
+            echo "DEPLOYMENT_STATE_SHA256=$(sha256sum "$JOURNAL/deployment-state.json" | awk '{print $1}')"
+          fi
+          echo "CONTROLLED_DEPLOY_RC=$DEPLOY_RC"
+          exit "$DEPLOY_RC"
+          REMOTE
+          SSH_RC=${PIPESTATUS[0]}
+          set -e
+
+          awk '/__SANIDA_DEPLOYMENT_STATE_BEGIN__/{flag=1;next}/__SANIDA_DEPLOYMENT_STATE_END__/{flag=0}flag' /tmp/h25-v2-deploy-remote.log \
+            | tr -d '\n' \
+            | base64 --decode > /tmp/h25-v2-deployment-state.json 2>/dev/null || true
+
+          echo "SSH_CONTROLLED_DEPLOY_RC=$SSH_RC"
+          if [ "$SSH_RC" -ne 0 ]; then
+            exit "$SSH_RC"
+          fi
+          test -s /tmp/h25-v2-deployment-state.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d = json.loads(Path('/tmp/h25-v2-deployment-state.json').read_text(encoding='utf-8'))
+          assert d.get('authorization_id') == 'c74-v2-h25-production-20260917-505144'
+          assert d.get('status') == 'ORIGIN_HEALTHY_EXTERNAL_PENDING'
+          assert d.get('production_deployed') is True
+          assert d.get('origin_health_verified') is True
+          assert d.get('external_delivery_verified') is False
+          assert d.get('bundle_manifest_sha256') == '4ca95de84822fc3bc70ee59c86e73e540e38bec9e6ce5951266ce62a7f8e6627'
+          assert d.get('c73_evidence_sha256') == '2fc6f01a6f68d3402ea7476cc12d6925ea4daca852e8eef917e3e179f8016e8f'
+          assert len(d.get('applied_files') or []) == 33
+          print('ORIGIN_DEPLOYMENT_STATE_LOCAL_GATE=PASS')
+          PY
+
+      - name: Upload controlled deployment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: h25-v2-controlled-deploy-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            /tmp/h25-v2-deploy-remote.log
+            /tmp/h25-v2-deployment-state.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Remove ephemeral SSH key
+        if: always()
+        shell: bash
+        run: rm -f "$HOME/.ssh/id_ed25519"
