@@ -76,7 +76,7 @@ def test_c75_v2_final_record_preserves_current_deployment_binding() -> None:
     assert record["phase7_v2_status"] == "CONCLUDED"
     assert record["authorization"]["authorized_source_commit"] == V2_AUTHORIZED_COMMIT
     assert record["origin_integrity"]["managed_js_assets_matching"] == 8
-    assert record["external_delivery"]["authorized_commit"] if "authorized_commit" in record["external_delivery"] else V2_AUTHORIZED_COMMIT
+    assert record["external_delivery"]["evidence_path"].endswith(f"{V2_AUTHORIZED_COMMIT}.json")
     assert record["external_delivery"]["assets_matching"] == 8
     assert record["external_delivery"]["evidence_sha256"] == "b70c0948e95821d85edf30baa05ef38a05e03c49a2db565d9eafd842ebb6c05d"
     assert record["journal_finalization"]["status"] == "APPLIED_EXTERNALLY_HEALTHY"
