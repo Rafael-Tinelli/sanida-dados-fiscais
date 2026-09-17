@@ -1,0 +1,178 @@
+name: H25 V2 Post-Deploy Final
+
+on:
+  push:
+    branches:
+      - deploy/h25-v2-preflight-run
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: h25-v2-postdeploy-final
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      SSH_PORT: "2222"
+      SITE_ROOT: /home1/sanid210/public_html
+      PLUGIN_ROOT: /home1/sanid210/public_html/blog/wp-content/plugins/sanida-fiscais-auto
+      EXPECTED_BUNDLE_SHA: 4ca95de84822fc3bc70ee59c86e73e540e38bec9e6ce5951266ce62a7f8e6627
+      EXPECTED_PREFLIGHT_SHA: 3debda4e9c18cc5bde643d1a93b9960a594586bbd5b27f8f42838b862600b248
+      EXPECTED_RELEASE: fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e
+      PREFLIGHT_RUN_ID: "35215782976"
+      PREFLIGHT_ARTIFACT: h25-v2-hostgator-preflight-20734ebbedee2681af2a111381759772500f45ed
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Build exact bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r requirements-contract.txt
+          python scripts/build_phase7_c71_bundle_v2.py --output-dir /tmp/v2bundle
+          test "$(sha256sum /tmp/v2bundle/bundle-manifest.json | awk '{print $1}')" = "$EXPECTED_BUNDLE_SHA"
+          echo "EXACT_V2_BUNDLE=PASS"
+
+      - name: Download exact preflight evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PREFLIGHT_ARTIFACT }}
+          path: /tmp/preflight
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ env.PREFLIGHT_RUN_ID }}
+
+      - name: Verify preflight binding
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(sha256sum /tmp/preflight/h25-v2-preflight.json | awk '{print $1}')" = "$EXPECTED_PREFLIGHT_SHA"
+          python scripts/validate_phase7_v2_remote_evidence.py \
+            --evidence /tmp/preflight/h25-v2-preflight.json \
+            --bundle-manifest /tmp/v2bundle/bundle-manifest.json
+
+      - name: Configure pinned SSH
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.V2_HOSTGATOR_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.V2_HOSTGATOR_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$SSH_KEY" && test -n "$KNOWN_HOSTS"
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$HOME/.ssh/id_ed25519" >/dev/null
+
+      - name: Independent production validation
+        shell: bash
+        env:
+          HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          USER: ${{ secrets.V2_HOSTGATOR_USER }}
+        run: |
+          set -euo pipefail
+          SSH=(ssh -p "$SSH_PORT" -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o IdentitiesOnly=yes -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no -o StrictHostKeyChecking=yes -o UpdateHostKeys=no)
+          SCP=(scp -P "$SSH_PORT" -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes -o IdentitiesOnly=yes -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no -o StrictHostKeyChecking=yes -o UpdateHostKeys=no)
+          STAGE="h25-v2-postdeploy-final/$GITHUB_SHA"
+          "${SSH[@]}" "$USER@$HOST" "mkdir -p \"\$HOME/$STAGE\""
+          "${SCP[@]}" /tmp/v2bundle/bundle-manifest.json "$USER@$HOST:$STAGE/bundle-manifest.json"
+          "${SCP[@]}" /tmp/preflight/h25-v2-preflight.json "$USER@$HOST:$STAGE/preflight.json"
+
+          "${SSH[@]}" "$USER@$HOST" python3.9 - "$SITE_ROOT" "$PLUGIN_ROOT" "$EXPECTED_BUNDLE_SHA" "$EXPECTED_PREFLIGHT_SHA" "$EXPECTED_RELEASE" "$STAGE" <<'PYREMOTE' | tee /tmp/postdeploy.log
+          from hashlib import sha256
+          from pathlib import Path
+          from urllib.error import HTTPError
+          from urllib.request import Request, urlopen
+          import base64, json, os, subprocess, sys
+
+          site, plugin = Path(sys.argv[1]), Path(sys.argv[2])
+          bundle_sha, preflight_sha, release_id, stage_rel = sys.argv[3:7]
+          stage = Path.home() / stage_rel
+          roots = {'site_root': site, 'wordpress_plugin_dir': plugin}
+          def digest(p):
+              h=sha256()
+              with Path(p).open('rb') as f:
+                  for c in iter(lambda:f.read(1048576), b''): h.update(c)
+              return h.hexdigest()
+          manifest_path, preflight_path = stage/'bundle-manifest.json', stage/'preflight.json'
+          assert digest(manifest_path)==bundle_sha
+          assert digest(preflight_path)==preflight_sha
+          m=json.loads(manifest_path.read_text(encoding='utf-8'))
+          p=json.loads(preflight_path.read_text(encoding='utf-8'))
+          assert m['inventory_version']==2 and len(m['files'])==33 and len(m['preexisting_dependencies'])==11
+
+          for r in m['files']:
+              t=roots[r['target_root']]/r['target_path']
+              assert t.is_file() and digest(t)==r['sha256'], str(t)
+          dep={(d['target_root'],d['relative_path']):d for d in p['dependencies']}
+          for r in m['preexisting_dependencies']:
+              t=roots[r['target_root']]/r['target_path']; old=dep[(r['target_root'],r['target_path'])]
+              assert t.is_file() and digest(t)==old['sha256'], str(t)
+
+          php=os.popen('command -v php').read().strip(); assert php
+          php_count=0
+          for r in m['files']:
+              if r['target_path'].endswith('.php'):
+                  t=roots[r['target_root']]/r['target_path']
+                  q=subprocess.run([php,'-l',str(t)],capture_output=True,text=True)
+                  assert q.returncode==0, q.stdout+q.stderr
+                  php_count+=1
+
+          def get(path):
+              req=Request('https://sanida.com.br'+path,headers={'User-Agent':'Sanida-V2-PostDeploy/1.0'})
+              try:
+                  with urlopen(req,timeout=20) as r: return int(r.status),r.read()
+              except HTTPError as e: return int(e.code),e.read()
+          pages={'H25':'/financas/calculadoras/','H26':'/financas/calculadoras/salario-liquido-clt/','H27':'/financas/calculadoras/decimo-terceiro/','H28':'/financas/calculadoras/ferias-clt/','H29':'/financas/calculadoras/rescisao-clt/'}
+          http={}; bodies={}
+          for name,path in pages.items():
+              s,b=get(path); assert s==200,(name,s)
+              text=b.decode('utf-8',errors='replace'); assert 'Fatal error' not in text and 'Parse error' not in text
+              http[name]={'status':s,'bytes':len(b)}; bodies[name]=text
+          for marker in ('/financas/calculadoras/salario-liquido-clt/','/financas/calculadoras/decimo-terceiro/','/financas/calculadoras/ferias-clt/','/financas/calculadoras/rescisao-clt/','Não calcula FGTS','aviso prévio'):
+              assert marker in bodies['H25'], marker
+          assert bodies['H26'].count('20260916-f06f10')==2
+
+          s,b=get('/blog/wp-json/sfa/v1/fiscal-health'); assert s==200
+          health=json.loads(b.decode()); assert health['status']=='healthy' and health['release_id']==release_id
+          s,b=get('/blog/wp-json/sfa/v1/fiscal-release'); assert s==200
+          rel=json.loads(b.decode()); assert rel['release_id']==release_id
+          legacy_status,_=get('/blog/wp-json/sfa/v1/folha'); assert legacy_status==410,legacy_status
+
+          result={'schema_version':'1.0.0','checkpoint':'V2_POST_DEPLOY','status':'PASS','production_deployed':True,'bundle_manifest_sha256':bundle_sha,'preflight_evidence_sha256':preflight_sha,'release_id':release_id,'managed_files_verified':33,'dependencies_verified_unchanged':11,'php_files_linted':php_count,'http':http,'h25_boundary_markers':'PASS','h26_cache_key_occurrences':2,'fiscal_health':{'status':'healthy','release_id':release_id},'legacy_folha_http_status':legacy_status}
+          out=stage/'postdeploy-evidence.json'; out.write_text(json.dumps(result,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          print(json.dumps(result,ensure_ascii=False,sort_keys=True))
+          print('__EVIDENCE__'+base64.b64encode(out.read_bytes()).decode())
+          PYREMOTE
+
+          grep '^__EVIDENCE__' /tmp/postdeploy.log | sed 's/^__EVIDENCE__//' | base64 --decode > /tmp/h25-v2-postdeploy-evidence.json
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/h25-v2-postdeploy-evidence.json'))
+          assert d['status']=='PASS' and d['managed_files_verified']==33 and d['dependencies_verified_unchanged']==11
+          assert d['legacy_folha_http_status']==410 and d['fiscal_health']['status']=='healthy'
+          print('V2_POSTDEPLOY_FINAL=PASS')
+          PY
+
+      - name: Upload final post-deploy evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: h25-v2-postdeploy-final-${{ github.sha }}
+          path: /tmp/h25-v2-postdeploy-evidence.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Remove SSH key
+        if: always()
+        shell: bash
+        run: rm -f "$HOME/.ssh/id_ed25519"
