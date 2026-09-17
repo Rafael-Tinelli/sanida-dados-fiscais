@@ -38,13 +38,17 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-dev.txt
 
-      - name: Validate v2 locally before remote access
+      - name: Build and validate v2 locally before remote access
         shell: bash
         run: |
           set -euo pipefail
+          rm -rf /tmp/h25-v2-bundle /tmp/h25-v2-bundle.tgz
           python scripts/build_phase7_c71_bundle_v2.py --output-dir /tmp/h25-v2-bundle
           python scripts/validate_phase7_c71_v2_gate.py
           python -m pytest -q tests/test_phase7_c71_v2.py tests/test_phase7_v2_remote_preflight.py
+          tar -C /tmp/h25-v2-bundle -czf /tmp/h25-v2-bundle.tgz .
+          test -s /tmp/h25-v2-bundle.tgz
+          echo "LOCAL_V2_BUNDLE=PASS"
 
       - name: Verify HostGator credential contract
         shell: bash
@@ -84,7 +88,7 @@ jobs:
           test -s "$HOME/.ssh/known_hosts"
           echo "SSH_RUNTIME_CONFIG=PASS"
 
-      - name: Run one-session HostGator read-only preflight
+      - name: Transfer validated bundle and run HostGator read-only preflight
         shell: bash
         env:
           HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
@@ -104,6 +108,20 @@ jobs:
             -o ServerAliveInterval=30
             -o ServerAliveCountMax=6
           )
+          SCP_OPTS=(
+            -P "$SSH_PORT"
+            -i "$HOME/.ssh/id_ed25519"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o PreferredAuthentications=publickey
+            -o PasswordAuthentication=no
+            -o KbdInteractiveAuthentication=no
+            -o StrictHostKeyChecking=yes
+            -o UpdateHostKeys=no
+          )
+
+          ssh "${SSH_OPTS[@]}" "$USER@$HOST" 'mkdir -p "$HOME/h25-v2-preflight"'
+          scp "${SCP_OPTS[@]}" /tmp/h25-v2-bundle.tgz "$USER@$HOST:h25-v2-preflight/$GITHUB_SHA.tgz"
 
           ssh "${SSH_OPTS[@]}" "$USER@$HOST" bash -s -- "$GITHUB_SHA" "$REPO_URL" "$SITE_ROOT" "$PLUGIN_ROOT" <<'REMOTE' | tee /tmp/h25-v2-preflight-remote.log
           set -euo pipefail
@@ -112,45 +130,37 @@ jobs:
           SITE_ROOT="$3"
           PLUGIN_ROOT="$4"
           RUNTIME="$HOME/h25-v2-preflight/$COMMIT"
+          ARCHIVE="$HOME/h25-v2-preflight/$COMMIT.tgz"
           REPO="$RUNTIME/repo"
           BUNDLE="$RUNTIME/bundle"
           EVIDENCE="$RUNTIME/preflight.json"
-          PYDEPS="$RUNTIME/pydeps"
 
           if [ -e "$RUNTIME" ]; then
             echo "RUNTIME_ALREADY_EXISTS=$RUNTIME"
             exit 4
           fi
-          mkdir -p "$RUNTIME"
+          if [ ! -f "$ARCHIVE" ]; then
+            echo "TRANSFER_ARCHIVE_MISSING=$ARCHIVE"
+            exit 5
+          fi
+
+          mkdir -p "$RUNTIME" "$BUNDLE"
+          mv "$ARCHIVE" "$RUNTIME/bundle.tgz"
+          tar -C "$BUNDLE" -xzf "$RUNTIME/bundle.tgz"
+          test -f "$BUNDLE/bundle-manifest.json"
+
           git clone --quiet "$REPO_URL" "$REPO"
           cd "$REPO"
           git checkout --quiet --detach "$COMMIT"
           test "$(git rev-parse HEAD)" = "$COMMIT"
 
-          PY=""
-          for candidate in python3.13 python3.12 python3.11 python3.10 python3; do
-            CANDIDATE="$(command -v "$candidate" || true)"
-            if [ -z "$CANDIDATE" ]; then
-              continue
-            fi
-            if "$CANDIDATE" - <<'PYVER'
-          import sys
-          raise SystemExit(0 if sys.version_info >= (3, 10) else 1)
-          PYVER
-            then
-              PY="$CANDIDATE"
-              break
-            fi
-          done
+          PY="$(command -v python3.9 || command -v python3 || true)"
           if [ -z "$PY" ]; then
-            echo "PYTHON_COMPATIBLE_CLI_MISSING=requires>=3.10"
-            exit 5
+            echo "PYTHON_CLI_MISSING"
+            exit 6
           fi
           echo "REMOTE_PYTHON=$($PY -c 'import sys; print(sys.version.split()[0])')"
-          "$PY" -m pip install --disable-pip-version-check --no-input --target "$PYDEPS" -r "$REPO/requirements-contract.txt" >/dev/null
-          export PYTHONPATH="$PYDEPS:$REPO"
 
-          "$PY" scripts/build_phase7_c71_bundle_v2.py --output-dir "$BUNDLE"
           "$PY" scripts/run_phase7_v2_host_preflight.py \
             --bundle-manifest "$BUNDLE/bundle-manifest.json" \
             --site-root "$SITE_ROOT" \
@@ -177,10 +187,9 @@ jobs:
             | base64 --decode > /tmp/h25-v2-preflight.json
           test -s /tmp/h25-v2-preflight.json
 
-          python scripts/build_phase7_c71_bundle_v2.py --output-dir /tmp/h25-v2-bundle-verify >/dev/null
           python scripts/validate_phase7_v2_remote_evidence.py \
             --evidence /tmp/h25-v2-preflight.json \
-            --bundle-manifest /tmp/h25-v2-bundle-verify/bundle-manifest.json
+            --bundle-manifest /tmp/h25-v2-bundle/bundle-manifest.json
           echo "HOSTGATOR_V2_PREFLIGHT_LOCAL_REVALIDATION=PASS"
 
       - name: Upload read-only preflight evidence
