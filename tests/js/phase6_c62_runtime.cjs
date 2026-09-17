@@ -27,6 +27,49 @@ try {
   floatRejected = Boolean(error && error.code === 'binary_float_rejected');
 }
 
+const normalizedDates = {
+  regular: SFA.normalizeDate('2026-09-16', 'regular_date'),
+  leap_day: SFA.normalizeDate('2028-02-29', 'leap_date'),
+  date_object: SFA.normalizeDate(new Date('2028-02-29T12:00:00.000Z'), 'date_object')
+};
+
+const impossibleCivilDates = [
+  '2026-02-29',
+  '2026-02-31',
+  '2026-04-31',
+  '2026-00-10',
+  '2026-13-01',
+  '2026-01-00'
+];
+const civilDateRejections = {};
+for (const value of impossibleCivilDates) {
+  try {
+    SFA.normalizeDate(value, 'civil_date_probe');
+    civilDateRejections[value] = false;
+  } catch (error) {
+    civilDateRejections[value] = Boolean(error && error.code === 'date_invalid');
+  }
+}
+
+let malformedDateRejected = false;
+try {
+  SFA.normalizeDate('2026-2-01', 'malformed_date_probe');
+} catch (error) {
+  malformedDateRejected = Boolean(error && error.code === 'date_required');
+}
+
+let impossibleSelectionDateRejected = false;
+try {
+  SFA.selectRule(release, {
+    ruleId: 'irrf.monthly.progressive_table',
+    consumer: 'H26',
+    context: 'monthly',
+    targetDate: '2026-02-31'
+  });
+} catch (error) {
+  impossibleSelectionDateRejected = Boolean(error && error.code === 'date_invalid');
+}
+
 const targetDate = '2026-09-13';
 const inss = SFA.assessInss(release, {
   consumer: 'H26',
@@ -88,6 +131,10 @@ process.stdout.write(JSON.stringify({
   release_id: release.release_id,
   decimal,
   float_rejected: floatRejected,
+  normalized_dates: normalizedDates,
+  civil_date_rejections: civilDateRejections,
+  malformed_date_rejected: malformedDateRejected,
+  impossible_selection_date_rejected: impossibleSelectionDateRejected,
   missing_rule_rejected: missingRuleRejected,
   incompatible_assessment_rejected: incompatibleAssessmentRejected,
   selected_rule: selected.audit,
