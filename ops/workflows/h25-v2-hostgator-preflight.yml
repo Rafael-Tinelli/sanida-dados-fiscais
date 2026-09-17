@@ -1,0 +1,188 @@
+name: H25 V2 HostGator Preflight
+
+# TEMPLATE OPERACIONAL — não é um workflow ativo em main.
+# Antes do uso, copie temporariamente este arquivo para .github/workflows/
+# em um branch operacional dedicado. O gate da Fase 3 proíbe workflows
+# temporários residuais em main.
+
+on:
+  push:
+    branches:
+      - deploy/h25-v2-preflight
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: h25-v2-hostgator-preflight
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    env:
+      SSH_PORT: "2222"
+      SITE_ROOT: /home1/sanid210/public_html
+      PLUGIN_ROOT: /home1/sanid210/public_html/blog/wp-content/plugins/sanida-fiscais-auto
+      REPO_URL: https://github.com/Rafael-Tinelli/sanida-dados-fiscais.git
+
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install local validation dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Validate v2 locally before remote access
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/build_phase7_c71_bundle_v2.py --output-dir /tmp/h25-v2-bundle
+          python scripts/validate_phase7_c71_v2_gate.py
+          python -m pytest -q tests/test_phase7_c71_v2.py tests/test_phase7_v2_remote_preflight.py
+
+      - name: Verify HostGator credential contract
+        shell: bash
+        env:
+          HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          USER: ${{ secrets.V2_HOSTGATOR_USER }}
+          SSH_KEY: ${{ secrets.V2_HOSTGATOR_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.V2_HOSTGATOR_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for item in HOST USER SSH_KEY KNOWN_HOSTS; do
+            if [ -z "${!item:-}" ]; then
+              echo "HOSTGATOR_CREDENTIAL_MISSING=$item"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "HOSTGATOR_CREDENTIALS=BLOCKED"
+            exit 2
+          fi
+          echo "HOSTGATOR_CREDENTIALS=PRESENT"
+
+      - name: Configure pinned SSH client
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.V2_HOSTGATOR_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.V2_HOSTGATOR_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$HOME/.ssh/id_ed25519" >/dev/null
+          test -s "$HOME/.ssh/known_hosts"
+          echo "SSH_RUNTIME_CONFIG=PASS"
+
+      - name: Run one-session HostGator read-only preflight
+        shell: bash
+        env:
+          HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          USER: ${{ secrets.V2_HOSTGATOR_USER }}
+        run: |
+          set -euo pipefail
+          SSH_OPTS=(
+            -p "$SSH_PORT"
+            -i "$HOME/.ssh/id_ed25519"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o PreferredAuthentications=publickey
+            -o PasswordAuthentication=no
+            -o KbdInteractiveAuthentication=no
+            -o StrictHostKeyChecking=yes
+            -o UpdateHostKeys=no
+            -o ServerAliveInterval=30
+            -o ServerAliveCountMax=6
+          )
+
+          ssh "${SSH_OPTS[@]}" "$USER@$HOST" bash -s -- "$GITHUB_SHA" "$REPO_URL" "$SITE_ROOT" "$PLUGIN_ROOT" <<'REMOTE' | tee /tmp/h25-v2-preflight-remote.log
+          set -euo pipefail
+          COMMIT="$1"
+          REPO_URL="$2"
+          SITE_ROOT="$3"
+          PLUGIN_ROOT="$4"
+          RUNTIME="$HOME/h25-v2-preflight/$COMMIT"
+          REPO="$RUNTIME/repo"
+          BUNDLE="$RUNTIME/bundle"
+          EVIDENCE="$RUNTIME/preflight.json"
+          PYDEPS="$RUNTIME/pydeps"
+
+          if [ -e "$RUNTIME" ]; then
+            echo "RUNTIME_ALREADY_EXISTS=$RUNTIME"
+            exit 4
+          fi
+          mkdir -p "$RUNTIME"
+          git clone --quiet "$REPO_URL" "$REPO"
+          cd "$REPO"
+          git checkout --quiet --detach "$COMMIT"
+          test "$(git rev-parse HEAD)" = "$COMMIT"
+
+          PY="$(command -v python3.9 || command -v python3 || true)"
+          if [ -z "$PY" ]; then
+            echo "PYTHON_CLI_MISSING"
+            exit 5
+          fi
+          "$PY" -m pip install --disable-pip-version-check --no-input --target "$PYDEPS" -r "$REPO/requirements-contract.txt" >/dev/null
+          export PYTHONPATH="$PYDEPS:$REPO"
+
+          "$PY" scripts/build_phase7_c71_bundle_v2.py --output-dir "$BUNDLE"
+          "$PY" scripts/run_phase7_v2_host_preflight.py \
+            --bundle-manifest "$BUNDLE/bundle-manifest.json" \
+            --site-root "$SITE_ROOT" \
+            --wordpress-plugin-dir "$PLUGIN_ROOT" \
+            --evidence-out "$EVIDENCE" >/dev/null
+          "$PY" scripts/validate_phase7_v2_remote_evidence.py \
+            --evidence "$EVIDENCE" \
+            --bundle-manifest "$BUNDLE/bundle-manifest.json"
+
+          echo "REMOTE_USER=$(id -un)"
+          echo "REMOTE_HOME=$HOME"
+          echo "REMOTE_COMMIT=$COMMIT"
+          echo "BUNDLE_MANIFEST_SHA256=$(sha256sum "$BUNDLE/bundle-manifest.json" | awk '{print $1}')"
+          echo "PREFLIGHT_EVIDENCE_SHA256=$(sha256sum "$EVIDENCE" | awk '{print $1}')"
+          echo "__SANIDA_EVIDENCE_BEGIN__"
+          base64 "$EVIDENCE" | tr -d '\n'
+          echo
+          echo "__SANIDA_EVIDENCE_END__"
+          echo "HOSTGATOR_V2_PREFLIGHT=PASS"
+          REMOTE
+
+          awk '/__SANIDA_EVIDENCE_BEGIN__/{flag=1;next}/__SANIDA_EVIDENCE_END__/{flag=0}flag' /tmp/h25-v2-preflight-remote.log \
+            | tr -d '\n' \
+            | base64 --decode > /tmp/h25-v2-preflight.json
+          test -s /tmp/h25-v2-preflight.json
+
+          python scripts/build_phase7_c71_bundle_v2.py --output-dir /tmp/h25-v2-bundle-verify >/dev/null
+          python scripts/validate_phase7_v2_remote_evidence.py \
+            --evidence /tmp/h25-v2-preflight.json \
+            --bundle-manifest /tmp/h25-v2-bundle-verify/bundle-manifest.json
+          echo "HOSTGATOR_V2_PREFLIGHT_LOCAL_REVALIDATION=PASS"
+
+      - name: Upload read-only preflight evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: h25-v2-hostgator-preflight-${{ github.sha }}
+          path: /tmp/h25-v2-preflight.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Remove ephemeral SSH key
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$HOME/.ssh/id_ed25519"
