@@ -127,11 +127,26 @@ jobs:
           git checkout --quiet --detach "$COMMIT"
           test "$(git rev-parse HEAD)" = "$COMMIT"
 
-          PY="$(command -v python3.9 || command -v python3 || true)"
+          PY=""
+          for candidate in python3.13 python3.12 python3.11 python3.10 python3; do
+            CANDIDATE="$(command -v "$candidate" || true)"
+            if [ -z "$CANDIDATE" ]; then
+              continue
+            fi
+            if "$CANDIDATE" - <<'PYVER'
+          import sys
+          raise SystemExit(0 if sys.version_info >= (3, 10) else 1)
+          PYVER
+            then
+              PY="$CANDIDATE"
+              break
+            fi
+          done
           if [ -z "$PY" ]; then
-            echo "PYTHON_CLI_MISSING"
+            echo "PYTHON_COMPATIBLE_CLI_MISSING=requires>=3.10"
             exit 5
           fi
+          echo "REMOTE_PYTHON=$($PY -c 'import sys; print(sys.version.split()[0])')"
           "$PY" -m pip install --disable-pip-version-check --no-input --target "$PYDEPS" -r "$REPO/requirements-contract.txt" >/dev/null
           export PYTHONPATH="$PYDEPS:$REPO"
 
