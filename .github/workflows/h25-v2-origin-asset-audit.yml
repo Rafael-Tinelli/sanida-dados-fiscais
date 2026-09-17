@@ -1,0 +1,115 @@
+name: H25 V2 Origin Asset Audit
+
+on:
+  push:
+    branches:
+      - deploy/h25-v2-production
+    paths:
+      - .github/workflows/h25-v2-origin-asset-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit-origin-assets:
+    runs-on: ubuntu-latest
+    env:
+      AUTHORIZED_SOURCE_COMMIT: 505144918d05fb4932064f6f9da9b9358c448ac0
+      SSH_PORT: "2222"
+      SITE_ROOT: /home1/sanid210/public_html
+
+    steps:
+      - name: Checkout operational branch
+        uses: actions/checkout@v5
+
+      - name: Build expected hashes from authorized commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          assets=(
+            folha-core.js
+            salario-liquido.js
+            folha-thirteenth.js
+            decimo-terceiro.js
+            folha-vacation.js
+            ferias-clt.js
+            folha-termination.js
+            rescisao-clt.js
+          )
+          : > /tmp/expected.tsv
+          for asset in "${assets[@]}"; do
+            url="https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/${AUTHORIZED_SOURCE_COMMIT}/consumers/frontend/${asset}"
+            curl --fail --silent --show-error --location "$url" -o "/tmp/$asset"
+            printf '%s\t%s\n' "$asset" "$(sha256sum "/tmp/$asset" | awk '{print $1}')" >> /tmp/expected.tsv
+          done
+          cat /tmp/expected.tsv
+
+      - name: Configure pinned SSH client
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.V2_HOSTGATOR_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.V2_HOSTGATOR_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$SSH_KEY"
+          test -n "$KNOWN_HOSTS"
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$HOME/.ssh/id_ed25519" >/dev/null
+
+      - name: Compare HostGator origin hashes
+        shell: bash
+        env:
+          HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          USER: ${{ secrets.V2_HOSTGATOR_USER }}
+        run: |
+          set -euo pipefail
+          test -n "$HOST"
+          test -n "$USER"
+          SSH_OPTS=(
+            -p "$SSH_PORT"
+            -i "$HOME/.ssh/id_ed25519"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o PreferredAuthentications=publickey
+            -o PasswordAuthentication=no
+            -o KbdInteractiveAuthentication=no
+            -o StrictHostKeyChecking=yes
+            -o UpdateHostKeys=no
+          )
+          expected_b64="$(base64 -w0 /tmp/expected.tsv)"
+          ssh "${SSH_OPTS[@]}" "$USER@$HOST" bash -s -- "$SITE_ROOT" "$expected_b64" <<'REMOTE'
+          set -euo pipefail
+          SITE_ROOT="$1"
+          EXPECTED_B64="$2"
+          TMP="$(mktemp)"
+          trap 'rm -f "$TMP"' EXIT
+          printf '%s' "$EXPECTED_B64" | base64 --decode > "$TMP"
+          failures=0
+          while IFS=$'\t' read -r asset expected; do
+            path="$SITE_ROOT/financas/calculadoras/assets/$asset"
+            if [ ! -f "$path" ]; then
+              echo "ORIGIN_ASSET=$asset status=MISSING expected=$expected"
+              failures=$((failures+1))
+              continue
+            fi
+            actual="$(sha256sum "$path" | awk '{print $1}')"
+            if [ "$actual" = "$expected" ]; then
+              echo "ORIGIN_ASSET=$asset status=MATCH sha256=$actual"
+            else
+              echo "ORIGIN_ASSET=$asset status=MISMATCH expected=$expected actual=$actual"
+              failures=$((failures+1))
+            fi
+          done < "$TMP"
+          echo "ORIGIN_ASSET_FAILURES=$failures"
+          test "$failures" -eq 0
+          echo "C75_ORIGIN_ASSET_AUDIT=PASS"
+          REMOTE
+
+      - name: Remove ephemeral SSH key
+        if: always()
+        shell: bash
+        run: rm -f "$HOME/.ssh/id_ed25519"
