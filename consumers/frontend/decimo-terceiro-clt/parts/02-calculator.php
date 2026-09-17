@@ -133,7 +133,7 @@
           <div class="cp-kpis">
             <div class="cp-kpi"><strong>13º total</strong><span data-kpi="total13">—</span></div>
             <div class="cp-kpi"><strong>1ª parcela</strong><span data-kpi="primeira">—</span></div>
-            <div class="cp-kpi"><strong>2ª parcela líquida</strong><span data-kpi="segunda-liquida">—</span></div>
+            <div class="cp-kpi"><strong>2ª parcela a pagar</strong><span data-kpi="segunda-liquida">—</span></div>
           </div>
 
           <div class="cp-note">
