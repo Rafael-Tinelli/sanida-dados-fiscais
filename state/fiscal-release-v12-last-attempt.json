@@ -1,5 +1,5 @@
 {
-  "attempted_at_utc": "2026-09-17T14:26:52.416026Z",
+  "attempted_at_utc": "2026-09-18T13:49:51.805935Z",
   "candidate_release_id": "candidate-v1-2",
   "changed_rules": [
     {
@@ -241,6 +241,34 @@
       "rule_id": "thirteenth.variable_remuneration"
     },
     {
+      "candidate_rule_version": "1.0.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.0",
+      "rule_id": "vacation.abono.ir_exemption"
+    },
+    {
+      "candidate_rule_version": "1.0.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.0",
+      "rule_id": "vacation.abono_constitutional_third.ir_incidence"
+    },
+    {
       "candidate_rule_version": "1.1.1",
       "change_class": "SOURCE_REFRESH_NO_CHANGE",
       "changed_paths": [
@@ -345,6 +373,8 @@
     "thirteenth.irrf.reduction.2026: automatic promotion requires parser-backed hashed evidence",
     "thirteenth.reference_remuneration: source refresh on structural rule requires human review",
     "thirteenth.variable_remuneration: source refresh on structural rule requires human review",
+    "vacation.abono.ir_exemption: source refresh on structural rule requires human review",
+    "vacation.abono_constitutional_third.ir_incidence: source refresh on structural rule requires human review",
     "vacation.abono_pecuniario: source refresh on structural rule requires human review",
     "vacation.acquisition_period: source refresh on structural rule requires human review",
     "vacation.entitlement_days_by_absences: source refresh on structural rule requires human review",
@@ -353,6 +383,6 @@
     "vacation.remuneration_and_constitutional_third: source refresh on structural rule requires human review"
   ],
   "review_issue_action": "UPSERT_REQUIRED",
-  "review_key": "4984ef322641f15fb369febadd481d6896f5c24f005f5f4a97712f55e864ef7b",
+  "review_key": "b7464fde32bffaf466074d29d427020ae8d9463dd9bd3a2511fdc3804d5b0bbc",
   "schema_version": "1.0.0"
 }
