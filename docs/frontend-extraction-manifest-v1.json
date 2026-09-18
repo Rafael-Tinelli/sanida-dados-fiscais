@@ -1,0 +1,93 @@
+{
+  "schema_version": "1.1.0",
+  "status": "migration_in_progress",
+  "purpose": "Define the intended ownership split between sanida-dados-fiscais and sanida-financas-frontend while preserving the production baseline until an explicit cutover.",
+  "baseline_commit": "427d93e4cfcddb848e59dcad89f207ed66a754b8",
+  "frontend_repository": "Rafael-Tinelli/sanida-financas-frontend",
+  "frontend_bootstrap_branch": "bootstrap/frontend-boundary-r1",
+  "move_to_frontend": [
+    "consumers/frontend/calculadoras/index.php",
+    "consumers/frontend/salario-liquido-clt/index.php",
+    "consumers/frontend/decimo-terceiro-clt/index.php",
+    "consumers/frontend/decimo-terceiro-clt/parts/01-head-hero.php",
+    "consumers/frontend/decimo-terceiro-clt/parts/02-calculator.php",
+    "consumers/frontend/decimo-terceiro-clt/parts/03-guide.php",
+    "consumers/frontend/decimo-terceiro-clt/parts/04-faq-footer.php",
+    "consumers/frontend/ferias-clt/index.php",
+    "consumers/frontend/ferias-clt/parts/01-head-hero.php",
+    "consumers/frontend/ferias-clt/parts/02-calculator.php",
+    "consumers/frontend/ferias-clt/parts/03-guide.php",
+    "consumers/frontend/ferias-clt/parts/04-faq-footer.php",
+    "consumers/frontend/rescisao-clt/index.php",
+    "consumers/frontend/rescisao-clt/parts/01-head-hero.php",
+    "consumers/frontend/rescisao-clt/parts/02-calculator.php",
+    "consumers/frontend/rescisao-clt/parts/03-guide.php",
+    "consumers/frontend/rescisao-clt/parts/04-faq-footer.php",
+    "consumers/frontend/decimo-terceiro.js",
+    "consumers/frontend/ferias-clt.js",
+    "consumers/frontend/rescisao-clt.js"
+  ],
+  "retain_in_fiscal_repository": [
+    "consumers/frontend/folha-core.js",
+    "consumers/frontend/folha-thirteenth.js",
+    "consumers/frontend/folha-vacation.js",
+    "consumers/frontend/folha-termination.js",
+    "consumers/runtime/salario-liquido-runtime.js",
+    "releases/fiscal-v1/current.json",
+    "schemas/fiscal-contract-v1.2.schema.json"
+  ],
+  "completed_splits": [
+    {
+      "legacy_path": "consumers/frontend/salario-liquido.js",
+      "fiscal_runtime": "consumers/runtime/salario-liquido-runtime.js",
+      "frontend_adapter_target": "src/adapters/salario-liquido-ui.js",
+      "status": "code_split_materialized_not_deployed",
+      "invariant": "legacy production asset remains unchanged until explicit cross-repository cutover"
+    }
+  ],
+  "split_before_move": [
+    {
+      "path": "scripts/run_calculators_browser_smoke.py",
+      "reason": "The current smoke covers both fiscal integration and page behavior. Split into fiscal contract integration tests and frontend browser/visual tests before extraction."
+    },
+    {
+      "path": "docs/phase7-c71-deployment-manifest-v2.json",
+      "reason": "The current deployment inventory combines fiscal/plugin/runtime files with public frontend pages. Future deployment ownership must be separated without rewriting historical evidence."
+    }
+  ],
+  "frontend_owned_after_split": [
+    "public calculator PHP templates",
+    "design tokens",
+    "calculator CSS",
+    "DOM/UI adapters",
+    "UX copy structure",
+    "responsive behavior",
+    "visual accessibility",
+    "frontend browser smoke",
+    "computed-style assertions",
+    "frontend deployment and rollback"
+  ],
+  "fiscal_owned_after_split": [
+    "fiscal contracts and schemas",
+    "fiscal releases",
+    "official-source collection and validation",
+    "pure fiscal browser runtime",
+    "rule selection and fail-closed behavior",
+    "fiscal parity tests",
+    "fiscal publication endpoints",
+    "fiscal deployment and rollback"
+  ],
+  "integration_contract": {
+    "contract_schema_version": "1.2.0",
+    "release_pointer": "releases/fiscal-v1/current.json",
+    "public_release_endpoint": "/blog/wp-json/sfa/v1/fiscal-release",
+    "requirements": [
+      "frontend must fail closed when the required fiscal release cannot be validated",
+      "frontend must not duplicate fiscal formulas in presentation code",
+      "frontend deploy must not mutate fiscal releases or backend rules",
+      "fiscal deploy must not mutate visual templates or CSS",
+      "cross-repository compatibility must be validated before production"
+    ]
+  },
+  "migration_rule": "No file is moved solely because its current path contains consumers/frontend; ownership follows responsibility, not directory name."
+}
