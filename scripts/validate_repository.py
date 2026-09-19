@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+
 ROOT = Path(__file__).resolve().parents[1]
 CALCULATORS = {"H26", "H27", "H28", "H29"}
 PHASE1_REQUIRED_RULES = {
@@ -58,6 +59,16 @@ PHASE1_REQUIRED_CASES = {
     "termination_reason_33_mutual_agreement",
     "termination_salary_balance_monthly_31_days",
 }
+
+LEGACY_SOURCE_ID_ALIASES = {
+    "RFB_IRRF_TABLE_2026": "RFB_IRRF_TABLE_CURRENT",
+    "INSS_TABLE_2026": "INSS_TABLE_CURRENT",
+}
+
+
+def canonical_source_id(source_id: str) -> str:
+    return LEGACY_SOURCE_ID_ALIASES.get(source_id, source_id)
+
 
 
 class ValidationError(RuntimeError):
@@ -277,7 +288,8 @@ def validate_rule_inventory(source_ids: set[str]) -> dict[str, dict[str, Any]]:
 
         refs = rule.get("source_ids")
         require(isinstance(refs, list), f"{rule_id}: source_ids deve ser lista")
-        unknown = set(refs) - source_ids
+        canonical_refs = {canonical_source_id(str(ref)) for ref in refs}
+        unknown = canonical_refs - source_ids
         require(not unknown, f"{rule_id}: source_ids desconhecidos: {sorted(unknown)}")
 
     missing = PHASE1_REQUIRED_RULES - set(indexed)
@@ -326,7 +338,10 @@ def validate_reference_cases(source_ids: set[str]) -> None:
         require(case_id not in ids, f"case_id duplicado: {case_id}")
         ids.add(case_id)
         indexed[case_id] = case
-        require(case.get("source") in source_ids, f"{case_id}: source não existe no registry")
+        require(
+            canonical_source_id(str(case.get("source"))) in source_ids,
+            f"{case_id}: source não existe no registry",
+        )
         require(case.get("calculator_target") in CALCULATORS, f"{case_id}: calculator_target inválido")
         require(isinstance(case.get("inputs"), dict), f"{case_id}: inputs ausente")
         require(isinstance(case.get("expected"), dict), f"{case_id}: expected ausente")

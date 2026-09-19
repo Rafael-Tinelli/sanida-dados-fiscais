@@ -23,7 +23,7 @@ from sanida_fiscal.sources_v1 import (
 
 NOW = datetime(2026, 9, 13, 20, 0, tzinfo=timezone.utc)
 SOURCE = SourceSpec(
-    source_id="RFB_IRRF_TABLE_2026",
+    source_id="RFB_IRRF_TABLE_CURRENT",
     url="https://example.invalid/irrf",
     role="official_operational",
     machine_readability="html",
@@ -204,6 +204,6 @@ def test_failed_collection_cannot_enter_parser(tmp_path: Path):
 def test_source_registry_loads_phase1_sources_without_loosening_schema():
     registry = load_source_registry(Path("docs/source-registry-v1.json"))
 
-    assert "RFB_IRRF_TABLE_2026" in registry
-    assert registry["RFB_IRRF_TABLE_2026"].role == "official_operational"
-    assert registry["INSS_TABLE_2026"].machine_readability == "html"
+    assert "RFB_IRRF_TABLE_CURRENT" in registry
+    assert registry["RFB_IRRF_TABLE_CURRENT"].role == "official_operational"
+    assert registry["INSS_TABLE_CURRENT"].machine_readability == "html"

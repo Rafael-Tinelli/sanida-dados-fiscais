@@ -11,6 +11,7 @@ sys.path.insert(0, str(ROOT))
 
 from jsonschema import Draft202012Validator
 from sanida_fiscal.contract_v1 import FiscalContractV1
+from sanida_fiscal.source_ids_v1 import canonical_source_id
 from sanida_fiscal.types_v1 import (
     AssessmentContext,
     CompetenceBasis,
@@ -255,8 +256,14 @@ def main() -> int:
                 f"{rule.rule_id} policy_kind mismatch with coverage map",
             )
 
-        allowed_sources = set(inventory_rule["source_ids"])
-        observed_sources = {evidence.source_id for evidence in rule.provenance}
+        allowed_sources = {
+            canonical_source_id(source_id)
+            for source_id in inventory_rule["source_ids"]
+        }
+        observed_sources = {
+            canonical_source_id(evidence.source_id)
+            for evidence in rule.provenance
+        }
         require(observed_sources, f"{rule.rule_id} requires provenance")
         require(
             observed_sources <= allowed_sources,
@@ -264,11 +271,12 @@ def main() -> int:
         )
 
         for evidence in rule.provenance:
+            canonical_evidence_source_id = canonical_source_id(evidence.source_id)
             require(
-                evidence.source_id in source_by_id,
+                canonical_evidence_source_id in source_by_id,
                 f"unknown source_id {evidence.source_id} in {rule.rule_id}",
             )
-            expected_role = source_by_id[evidence.source_id]["role"]
+            expected_role = source_by_id[canonical_evidence_source_id]["role"]
             require(
                 evidence.role.value == expected_role,
                 f"source role mismatch for {evidence.source_id}: "

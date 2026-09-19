@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0.0",
+  "decision_id": "evergreen.payroll_source_identity.v2",
+  "status": "active",
+  "as_of": "2026-09-19",
+  "scope": "operational_source_identity_only",
+  "canonical_source_ids": {
+    "rfb_irrf": "RFB_IRRF_TABLE_CURRENT",
+    "inss_employee": "INSS_TABLE_CURRENT"
+  },
+  "legacy_aliases": {
+    "RFB_IRRF_TABLE_2026": "RFB_IRRF_TABLE_CURRENT",
+    "INSS_TABLE_2026": "INSS_TABLE_CURRENT"
+  },
+  "url_policy": {
+    "RFB_IRRF_TABLE_CURRENT": {
+      "registry_template": "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/tabelas/{year}",
+      "runtime_resolution": "replace_{year}_with_execution_UTC_year",
+      "content_year_must_match_execution_year": true
+    },
+    "INSS_TABLE_CURRENT": {
+      "registry_url": "https://www.gov.br/inss/pt-br/direitos-e-deveres/inscricao-e-contribuicao/tabela-de-contribuicao-mensal",
+      "runtime_resolution": "stable_url",
+      "content_year_must_match_execution_year": true
+    }
+  },
+  "parser_identity": {
+    "canonical_functions": [
+      "parse_rfb_irrf_snapshot",
+      "parse_inss_employee_snapshot"
+    ],
+    "legacy_import_aliases_retained": [
+      "parse_rfb_irrf_2026_snapshot",
+      "parse_inss_employee_2026_snapshot"
+    ]
+  },
+  "state_migration": {
+    "strategy": "copy_pointer_state_once",
+    "canonical_state_created_only_if_absent": true,
+    "immutable_snapshot_bytes_moved": false,
+    "immutable_candidate_bytes_moved": false,
+    "legacy_state_deleted": false,
+    "legacy_paths_may_remain_referenced_until_next_successful_collection": true,
+    "http_validators_reused_only_when_effective_source_url_is_unchanged": true
+  },
+  "compatibility": {
+    "historical_releases_rewritten": false,
+    "historical_evidence_rewritten": false,
+    "current_legacy_dados_fiscais_remains_verifiable": true,
+    "legacy_source_ids_accepted_only_as_aliases_at_runtime_boundaries": true
+  },
+  "explicitly_out_of_scope": [
+    "rule_ids_with_2026_semantics",
+    "historical_dates_and_law_identifiers",
+    "immutable_release_payloads",
+    "historical_phase_closure_records"
+  ]
+}

@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal, InvalidOperation
 from typing import Any, Mapping
 
+from .source_ids_v1 import INSS_SOURCE_ID, RFB_SOURCE_ID
 from .source_runtime_v1 import SourcePipelineRun
 from .sources_v1 import ParseStatus
 
@@ -169,8 +170,8 @@ def build_legacy_dados_fiscais(
     taxas_source_meta: Mapping[str, Any],
     generated_at_utc: str,
 ) -> dict[str, Any]:
-    rfb_payload = _require_payload(rfb_run, "RFB_IRRF_TABLE_2026")
-    inss_payload = _require_payload(inss_run, "INSS_TABLE_2026")
+    rfb_payload = _require_payload(rfb_run, RFB_SOURCE_ID)
+    inss_payload = _require_payload(inss_run, INSS_SOURCE_ID)
     payroll = build_legacy_payroll_fields(
         rfb_payload=rfb_payload,
         inss_payload=inss_payload,

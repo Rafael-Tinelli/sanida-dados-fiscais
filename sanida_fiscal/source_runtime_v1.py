@@ -171,9 +171,13 @@ def run_source_pipeline(
 ) -> SourcePipelineRun:
     previous = state_store.load(source.source_id)
     same_source_url = bool(previous and previous.source_url == source.url)
+    same_observation_year = bool(
+        previous and previous.last_observed_at_utc.year == observed_at_utc.year
+    )
+    same_validation_window = same_source_url and same_observation_year
     can_use_http_validators = bool(
         use_http_validators
-        and same_source_url
+        and same_validation_window
         and previous
         and previous.last_parse_status == ParseStatus.PARSED
         and previous.parser_id == parser_id
@@ -196,9 +200,11 @@ def run_source_pipeline(
             last_observed_at_utc=observed_at_utc,
             last_collection_status=collection.status,
             last_http_status=collection.http_status,
-            etag=collection.etag or (previous.etag if same_source_url and previous else None),
+            etag=collection.etag or (
+                previous.etag if same_validation_window and previous else None
+            ),
             last_modified=collection.last_modified or (
-                previous.last_modified if same_source_url and previous else None
+                previous.last_modified if same_validation_window and previous else None
             ),
             consecutive_source_failures=(previous.consecutive_source_failures if previous else 0) + 1,
             last_source_error=collection.error_detail or (collection.failure_kind.value if collection.failure_kind else None),

@@ -193,7 +193,9 @@ Tabela, legislação, vigência e exemplos oficiais são reconciliados. HTML é 
 
 ### 10.3. INSS / MPS / eSocial
 
-`INSS_TABLE_2026` é a entrada operacional registrada. Notícia anual pinned e `@@search` não são fallback automático.
+`RFB_IRRF_TABLE_CURRENT` e `INSS_TABLE_CURRENT` são as identidades operacionais canônicas. A Receita usa template anual resolvido pelo ano UTC da execução; o INSS usa URL estável e o ano declarado no conteúdo. Os aliases históricos `RFB_IRRF_TABLE_2026` e `INSS_TABLE_2026` permanecem apenas para leitura/auditoria de estado e evidência anteriores. Notícia anual pinned e `@@search` não são fallback automático.
+
+A política de identidade e migração sem reescrita histórica está em `docs/evergreen-source-identity-v2.json`.
 
 ---
 

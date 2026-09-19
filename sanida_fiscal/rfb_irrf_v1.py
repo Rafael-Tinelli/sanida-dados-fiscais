@@ -6,6 +6,7 @@ import re
 from bs4 import BeautifulSoup
 from pydantic import JsonValue
 
+from .source_ids_v1 import RFB_SOURCE_ID
 from .sources_v1 import ParserIncompatibleError
 
 
@@ -46,7 +47,7 @@ def _decimal(value: str) -> str:
     return format(number.normalize(), "f")
 
 
-def parse_rfb_irrf_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
+def parse_rfb_irrf_snapshot(body: bytes) -> dict[str, JsonValue]:
     """Parse the current RFB annual IRRF page into a normalized source observation.
 
     This parser does not publish fiscal rules. It only normalizes values observed
@@ -160,3 +161,8 @@ def parse_rfb_irrf_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
             "input_semantic": "rendimentos_tributaveis_sujeitos_incidencia_mensal",
         },
     }
+
+
+# Backward-compatible import alias for historical callers and evidence tooling.
+def parse_rfb_irrf_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
+    return parse_rfb_irrf_snapshot(body)

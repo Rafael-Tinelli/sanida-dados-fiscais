@@ -4,7 +4,20 @@ import json
 from pathlib import Path
 
 
+
 ROOT = Path(__file__).resolve().parents[1]
+
+RFB_SOURCE_ID = "RFB_IRRF_TABLE_CURRENT"
+INSS_SOURCE_ID = "INSS_TABLE_CURRENT"
+LEGACY_SOURCE_ID_ALIASES = {
+    "RFB_IRRF_TABLE_2026": RFB_SOURCE_ID,
+    "INSS_TABLE_2026": INSS_SOURCE_ID,
+}
+
+
+def canonical_source_id(source_id: str) -> str:
+    return LEGACY_SOURCE_ID_ALIASES.get(source_id, source_id)
+
 
 
 def _read(path: str) -> str:
@@ -60,10 +73,10 @@ def main() -> None:
     _require(financial_input.get("remote_fallback_allowed") is False, "A01 remote financial fallback is allowed")
     composed = boundary.get("composed_evidence_gate", {})
     _require(
-        set(composed.get("required_sources", []))
+        {canonical_source_id(str(item)) for item in composed.get("required_sources", [])}
         == {
-            "RFB_IRRF_TABLE_2026",
-            "INSS_TABLE_2026",
+            RFB_SOURCE_ID,
+            INSS_SOURCE_ID,
             "BCB_SELIC_META_SGS_432",
             "BCB_CDI_DAILY_SGS_12",
         },

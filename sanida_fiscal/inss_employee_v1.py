@@ -6,6 +6,7 @@ import re
 from bs4 import BeautifulSoup
 from pydantic import JsonValue
 
+from .source_ids_v1 import INSS_SOURCE_ID
 from .sources_v1 import ParserIncompatibleError
 
 
@@ -49,7 +50,7 @@ def _assert_contiguous(bands: list[dict[str, JsonValue]]) -> None:
             raise ParserIncompatibleError("INSS employee progressive bands are not contiguous")
 
 
-def parse_inss_employee_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
+def parse_inss_employee_snapshot(body: bytes) -> dict[str, JsonValue]:
     """Normalize the current canonical INSS employee contribution table.
 
     The parser is deliberately bound to the registered operational table page.
@@ -175,3 +176,8 @@ def parse_inss_employee_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
             ),
         },
     }
+
+
+# Backward-compatible import alias for historical callers and evidence tooling.
+def parse_inss_employee_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
+    return parse_inss_employee_snapshot(body)

@@ -7,6 +7,12 @@ from typing import Any, Mapping
 from .contract_v1 import FiscalContractV1
 from .contract_v1_2 import FiscalContractV12, GovernanceEvidenceObservation
 from .semantic_diff_v1 import diff_contracts
+from .source_ids_v1 import (
+    INSS_SOURCE_ID,
+    RFB_SOURCE_ID,
+    canonical_source_id,
+    source_ids_equivalent,
+)
 from .sources_v1 import NormalizedSourceCandidate, ParseStatus
 from .types_v1 import (
     ChangeClass,
@@ -21,9 +27,6 @@ from .types_v1 import (
 class ReleaseAssemblyError(RuntimeError):
     pass
 
-
-RFB_SOURCE_ID = "RFB_IRRF_TABLE_2026"
-INSS_SOURCE_ID = "INSS_TABLE_2026"
 
 TECHNICAL_MONEY_ROUNDING_POLICY: dict[str, Any] = {
     "decimal_places": 2,
@@ -172,6 +175,15 @@ def _parsed_payload(
 ) -> dict[str, Any]:
     candidate = candidates.get(source_id)
     if candidate is None:
+        candidate = next(
+            (
+                item
+                for candidate_source_id, item in candidates.items()
+                if source_ids_equivalent(candidate_source_id, source_id)
+            ),
+            None,
+        )
+    if candidate is None:
         raise ReleaseAssemblyError(f"normalized candidate missing: {source_id}")
     if candidate.status != ParseStatus.PARSED or candidate.payload is None:
         raise ReleaseAssemblyError(f"normalized candidate is not PARSED: {source_id}")
@@ -290,7 +302,7 @@ def _rule_source_ids(inventory_rule: Mapping[str, Any]) -> list[str]:
     values = inventory_rule.get("source_ids")
     if not isinstance(values, list) or any(not isinstance(value, str) for value in values):
         raise ReleaseAssemblyError("inventory source_ids are invalid")
-    return list(values)
+    return [canonical_source_id(value) for value in values]
 
 
 def _preferred_external_evidence(
@@ -306,6 +318,15 @@ def _preferred_external_evidence(
     ]
     for source_id in ordered:
         evidence = official_evidence.get(source_id)
+        if evidence is None:
+            evidence = next(
+                (
+                    item
+                    for evidence_source_id, item in official_evidence.items()
+                    if source_ids_equivalent(evidence_source_id, source_id)
+                ),
+                None,
+            )
         if evidence is not None and source_id in allowed:
             return evidence
     raise ReleaseAssemblyError(
@@ -327,7 +348,9 @@ def _reuse_previous_evidence_if_same_hash(
         if not isinstance(item, dict):
             continue
         if (
-            item.get("source_id") == current.get("source_id")
+            isinstance(item.get("source_id"), str)
+            and isinstance(current.get("source_id"), str)
+            and source_ids_equivalent(item["source_id"], current["source_id"])
             and item.get("snapshot_sha256") == current.get("snapshot_sha256")
         ):
             return deepcopy(item)

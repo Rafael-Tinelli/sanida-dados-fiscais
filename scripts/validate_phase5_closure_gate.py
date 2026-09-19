@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
 from sanida_fiscal.authority_evidence_v12 import PARSER_BINDINGS, select_authority_sources
 from sanida_fiscal.governance_evidence_v12 import load_governance_registry
 from sanida_fiscal.release_assembler_v12 import MISSING_RULE_SPECS
+from sanida_fiscal.source_ids_v1 import INSS_SOURCE_ID, RFB_SOURCE_ID
 from scripts.generate_contract_schema_v12 import SCHEMA_ID, build_schema
 
 
@@ -32,9 +33,13 @@ EXPECTED_TECHNICAL = {
     "technical.money_decimal_and_rounding",
     "technical.contract_vigency_and_quality",
 }
-EXPECTED_PARSER_SOURCES = {
+EXPECTED_HISTORICAL_PARSER_SOURCES = {
     "RFB_IRRF_TABLE_2026",
     "INSS_TABLE_2026",
+}
+EXPECTED_PARSER_SOURCES = {
+    RFB_SOURCE_ID,
+    INSS_SOURCE_ID,
 }
 
 
@@ -70,7 +75,7 @@ def validate_closure_policy() -> None:
     promotion = policy.get("automatic_promotion", {})
     _require(promotion.get("requires_hashed_evidence") is True, "hashed evidence no longer required")
     _require(promotion.get("requires_parser_backing_for_automatic_changed_source") is True, "parser backing gate disabled")
-    _require(set(promotion.get("current_parser_bindings", [])) == EXPECTED_PARSER_SOURCES, "automatic parser binding set drift")
+    _require(set(promotion.get("current_parser_bindings", [])) == EXPECTED_HISTORICAL_PARSER_SOURCES, "automatic parser binding set drift")
     _require(promotion.get("structural_raw_snapshots_are_not_interpreted_automatically") is True, "structural source interpretation became automatic")
 
     publication = policy.get("publication", {})
