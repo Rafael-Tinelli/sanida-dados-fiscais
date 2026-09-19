@@ -174,6 +174,28 @@ def test_c61_plugin_keeps_financial_reference_separate() -> None:
     assert "OPT_TAXAS_LAST_GOOD" in text
 
 
+def test_c61_financial_rate_fallback_is_fail_closed() -> None:
+    text = _plugin_text()
+    for marker in (
+        "taxas_unavailable_fail_closed",
+        "'origin' => 'unavailable_fail_closed'",
+        "'unavailable' => true",
+        "'cdi_basis' => 'unavailable'",
+        "fiscais_unavailable_text('taxa')",
+    ):
+        assert marker in text
+    for forbidden in (
+        "'selic' => 15.00",
+        "'cdi'   => 14.90",
+        "'origin' => 'minimal_fallback'",
+        "isset($d['taxas']['selic']) ? (float)$d['taxas']['selic'] : 0",
+        "isset($d['taxas']['cdi']) ? (float)$d['taxas']['cdi'] : 0",
+        "(float)($t['selic'] ?? 0)",
+        "(float)($t['cdi'] ?? 0)",
+    ):
+        assert forbidden not in text
+
+
 def test_c61_plugin_has_no_stale_generated_at_relabeling_for_fiscal_release() -> None:
     text = _plugin_text()
     block = re.search(
