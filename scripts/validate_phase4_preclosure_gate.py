@@ -3,10 +3,21 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sanida_fiscal.source_ids_v1 import INSS_SOURCE_ID, RFB_SOURCE_ID, canonical_source_id
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+RFB_SOURCE_ID = "RFB_IRRF_TABLE_CURRENT"
+INSS_SOURCE_ID = "INSS_TABLE_CURRENT"
+LEGACY_SOURCE_ID_ALIASES = {
+    "RFB_IRRF_TABLE_2026": RFB_SOURCE_ID,
+    "INSS_TABLE_2026": INSS_SOURCE_ID,
+}
+
+
+def canonical_source_id(source_id: str) -> str:
+    return LEGACY_SOURCE_ID_ALIASES.get(source_id, source_id)
+
 
 
 def _read(path: str) -> str:
