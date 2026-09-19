@@ -65,6 +65,15 @@ def test_rfb_parser_normalizes_official_2026_values():
     }
 
 
+def test_rfb_parser_discovers_reference_year_from_annual_page():
+    future_fixture = FIXTURE.replace(b"2026", b"2027")
+    payload = parse_rfb_irrf_2026_snapshot(future_fixture)
+
+    assert payload["reference_year"] == 2027
+    assert payload["monthly_effective_from"] == "2027-01-01"
+    assert payload["observation_type"] == "rfb_irrf_2027"
+
+
 def test_first_real_pipeline_persists_snapshot_candidate_and_state(tmp_path: Path):
     def handler(request: httpx.Request):
         return httpx.Response(
