@@ -16,10 +16,7 @@ from sanida_fiscal.legacy_artifact_v1 import (
     LegacyArtifactBoundaryError,
     build_legacy_dados_fiscais,
 )
-from sanida_fiscal.source_catalog_v1 import (
-    registered_reference_year,
-    run_registered_source_pipeline,
-)
+from sanida_fiscal.source_catalog_v1 import run_registered_source_pipeline
 
 
 OUTPUT_FILE = "dados_fiscais.json"
@@ -279,17 +276,10 @@ def write_json_atomic(data: Dict[str, Any]) -> None:
 
 
 def collect_payroll_source_runs(reference_year: int, observed_at_utc: dt.datetime):
-    registered_years = {
-        source_id: registered_reference_year(source_id) for source_id in PAYROLL_SOURCE_IDS
-    }
-    mismatched = {
-        source_id: year
-        for source_id, year in registered_years.items()
-        if year != reference_year
-    }
-    if mismatched:
+    if observed_at_utc.year != reference_year:
         raise RuntimeError(
-            f"no canonical payroll parser registered for current year {reference_year}: {mismatched}"
+            f"payroll reference year must match observation year: "
+            f"reference={reference_year} observed={observed_at_utc.year}"
         )
 
     runs = {}
@@ -307,7 +297,6 @@ def collect_payroll_source_runs(reference_year: int, observed_at_utc: dt.datetim
             use_http_validators=False,
         )
     return runs
-
 
 def main():
     observed_at_utc = now_utc()

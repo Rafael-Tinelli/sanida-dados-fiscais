@@ -128,19 +128,35 @@ def test_load_taxas_requires_durable_financial_evidence(tmp_path: Path):
         scraper.load_taxas_payload(runtime_root=tmp_path / "runtime", artifact_path=artifact)
 
 
-def test_scraper_refuses_to_collect_when_registered_parsers_are_for_other_year(monkeypatch):
+def test_scraper_attempts_current_year_collection_without_static_year_gate(monkeypatch):
+    calls = []
+
+    def fake_run(**kwargs):
+        calls.append(kwargs)
+        return object()
+
+    monkeypatch.setattr(scraper, "run_registered_source_pipeline", fake_run)
+    observed = scraper.now_utc().replace(year=2027)
+    runs = scraper.collect_payroll_source_runs(2027, observed)
+
+    assert set(runs) == set(scraper.PAYROLL_SOURCE_IDS)
+    assert len(calls) == len(scraper.PAYROLL_SOURCE_IDS)
+    assert {item["source_id"] for item in calls} == set(scraper.PAYROLL_SOURCE_IDS)
+    assert all(item["observed_at_utc"].year == 2027 for item in calls)
+
+
+def test_scraper_rejects_reference_year_that_disagrees_with_observation_year(monkeypatch):
     called = False
 
     def fake_run(**kwargs):
         nonlocal called
         called = True
-        raise AssertionError("network pipeline must not run on unsupported reference year")
+        return object()
 
     monkeypatch.setattr(scraper, "run_registered_source_pipeline", fake_run)
-    with pytest.raises(RuntimeError, match="no canonical payroll parser registered"):
-        scraper.collect_payroll_source_runs(2027, scraper.now_utc())
+    with pytest.raises(RuntimeError, match="must match observation year"):
+        scraper.collect_payroll_source_runs(2027, scraper.now_utc().replace(year=2026))
     assert called is False
-
 
 def test_requirements_install_phase4_runtime_dependencies():
     text = Path("requirements.txt").read_text(encoding="utf-8")

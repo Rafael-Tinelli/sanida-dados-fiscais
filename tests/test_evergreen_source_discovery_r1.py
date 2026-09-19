@@ -1,0 +1,118 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from pathlib import Path
+
+import httpx
+import pytest
+
+from sanida_fiscal.source_catalog_v1 import (
+    parser_binding,
+    parser_for_reference_year,
+    resolve_source_for_reference_year,
+    run_registered_source_pipeline,
+)
+from sanida_fiscal.sources_v1 import ParserIncompatibleError, load_source_registry
+
+
+REGISTRY = Path("docs/source-registry-v1.json")
+RFB_FIXTURE = Path("tests/fixtures/sources/rfb_irrf_2026_fragment.html").read_bytes()
+INSS_FIXTURE = Path("tests/fixtures/sources/inss_employee_2026_fragment.html").read_bytes()
+
+
+def test_rfb_annual_url_is_resolved_from_reference_year():
+    source = load_source_registry(REGISTRY)["RFB_IRRF_TABLE_2026"]
+    resolved = resolve_source_for_reference_year(
+        source,
+        source_id=source.source_id,
+        reference_year=2027,
+    )
+
+    assert source.url.endswith("/2026")
+    assert resolved.url.endswith("/2027")
+    assert resolved.source_id == source.source_id
+
+
+def test_inss_operational_url_remains_stable_across_years():
+    source = load_source_registry(REGISTRY)["INSS_TABLE_2026"]
+    resolved = resolve_source_for_reference_year(
+        source,
+        source_id=source.source_id,
+        reference_year=2027,
+    )
+
+    assert resolved.url == source.url
+    assert resolved.source_id == source.source_id
+
+
+@pytest.mark.parametrize(
+    ("source_id", "fixture"),
+    [
+        ("RFB_IRRF_TABLE_2026", RFB_FIXTURE),
+        ("INSS_TABLE_2026", INSS_FIXTURE),
+    ],
+)
+def test_current_year_parser_fails_closed_on_previous_year_snapshot(source_id, fixture):
+    parser = parser_for_reference_year(parser_binding(source_id), 2027)
+
+    with pytest.raises(ParserIncompatibleError, match="reference-year mismatch"):
+        parser(fixture)
+
+
+@pytest.mark.parametrize(
+    ("source_id", "fixture"),
+    [
+        ("RFB_IRRF_TABLE_2026", RFB_FIXTURE.replace(b"2026", b"2027")),
+        ("INSS_TABLE_2026", INSS_FIXTURE.replace(b"2026", b"2027")),
+    ],
+)
+def test_current_year_parser_accepts_matching_rollover_snapshot(source_id, fixture):
+    parser = parser_for_reference_year(parser_binding(source_id), 2027)
+    payload = parser(fixture)
+
+    assert payload["reference_year"] == 2027
+
+
+def test_rollover_does_not_reuse_http_validators_from_previous_annual_url(tmp_path: Path):
+    calls = []
+    fixture_2027 = RFB_FIXTURE.replace(b"2026", b"2027")
+
+    def handler(request: httpx.Request):
+        calls.append(request)
+        if str(request.url).endswith("/2026"):
+            return httpx.Response(
+                200,
+                content=RFB_FIXTURE,
+                headers={"content-type": "text/html", "etag": '"rfb-2026"'},
+            )
+        if str(request.url).endswith("/2027"):
+            assert "if-none-match" not in request.headers
+            return httpx.Response(
+                200,
+                content=fixture_2027,
+                headers={"content-type": "text/html", "etag": '"rfb-2027"'},
+            )
+        raise AssertionError(f"unexpected URL: {request.url}")
+
+    transport = httpx.MockTransport(handler)
+    run_registered_source_pipeline(
+        source_id="RFB_IRRF_TABLE_2026",
+        observed_at_utc=datetime(2026, 12, 31, 12, 0, tzinfo=timezone.utc),
+        snapshot_root=tmp_path / "snapshots",
+        state_root=tmp_path / "state",
+        candidate_root=tmp_path / "candidates",
+        transport=transport,
+    )
+    second = run_registered_source_pipeline(
+        source_id="RFB_IRRF_TABLE_2026",
+        observed_at_utc=datetime(2027, 1, 1, 12, 0, tzinfo=timezone.utc),
+        snapshot_root=tmp_path / "snapshots",
+        state_root=tmp_path / "state",
+        candidate_root=tmp_path / "candidates",
+        transport=transport,
+    )
+
+    assert len(calls) == 2
+    assert second.collection.source_url.endswith("/2027")
+    assert second.candidate is not None
+    assert second.candidate.payload["reference_year"] == 2027

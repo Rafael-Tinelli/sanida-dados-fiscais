@@ -10,7 +10,7 @@ from .sources_v1 import ParserIncompatibleError
 
 
 PARSER_ID = "inss_employee_table_v1"
-PARSER_VERSION = "1.0.1"
+PARSER_VERSION = "1.1.0"
 REFERENCE_YEAR = 2026
 CANONICAL_SOURCE_ID = "INSS_TABLE_2026"
 
@@ -50,7 +50,7 @@ def _assert_contiguous(bands: list[dict[str, JsonValue]]) -> None:
 
 
 def parse_inss_employee_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
-    """Normalize the canonical INSS employee contribution table for 2026.
+    """Normalize the current canonical INSS employee contribution table.
 
     The parser is deliberately bound to the registered operational table page.
     It does not discover annual news articles and does not accept them as a
@@ -69,13 +69,21 @@ def parse_inss_employee_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
 
     required_markers = (
         "tabela de contribuição mensal",
-        "tabelas válidas a partir da competência janeiro de 2026",
         "1. para empregado, empregado doméstico e trabalhador avulso",
         "2. para contribuinte individual, facultativo e microempreendedor individual",
     )
     missing = [marker for marker in required_markers if marker.casefold() not in folded]
     if missing:
-        raise ParserIncompatibleError(f"INSS canonical 2026 structural markers missing: {missing}")
+        raise ParserIncompatibleError(f"INSS canonical structural markers missing: {missing}")
+
+    year_match = re.search(
+        r"tabelas válidas a partir da competência janeiro de\s+(20\d{2})",
+        folded,
+        re.IGNORECASE,
+    )
+    if not year_match:
+        raise ParserIncompatibleError("INSS reference-year marker changed")
+    reference_year = int(year_match.group(1))
 
     employee_section = re.search(
         r"1\.\s*Para Empregado, Empregado Doméstico e Trabalhador Avulso:\s*(.*?)\s*"
@@ -121,12 +129,17 @@ def parse_inss_employee_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
     _assert_contiguous(bands)
 
     normative = re.search(
-        r"PORTARIA\s+INTERMINISTERIAL\s+MPS/MF\s+N[º°]?\s*13\s*,\s*de\s*09/01/2026",
+        r"PORTARIA\s+INTERMINISTERIAL\s+MPS/MF\s+N[º°]?\s*([0-9]+)\s*,\s*de\s*([0-3]?\d)/([01]?\d)/(20\d{2})",
         text,
         re.IGNORECASE,
     )
     if not normative:
-        raise ParserIncompatibleError("INSS 2026 normative-reference marker changed")
+        raise ParserIncompatibleError("INSS normative-reference marker changed")
+    normative_year = int(normative.group(4))
+    if normative_year != reference_year:
+        raise ParserIncompatibleError(
+            f"INSS normative year mismatch: table={reference_year} act={normative_year}"
+        )
 
     separate_thirteenth = re.search(
         r"décimo terceiro salário.*?não deve ser somado à remuneração mensal.*?valores em separado",
@@ -141,9 +154,9 @@ def parse_inss_employee_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
         raise ParserIncompatibleError("INSS employee contribution ceiling is missing")
 
     return {
-        "observation_type": "inss_employee_progressive_table_2026",
-        "reference_year": REFERENCE_YEAR,
-        "effective_from": "2026-01-01",
+        "observation_type": f"inss_employee_progressive_table_{reference_year}",
+        "reference_year": reference_year,
+        "effective_from": f"{reference_year}-01-01",
         "employment_categories": [
             "empregado",
             "empregado_domestico",
@@ -154,7 +167,11 @@ def parse_inss_employee_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
         "contribution_ceiling_brl": ceiling,
         "thirteenth_assessment": "separate_from_monthly_remuneration",
         "normative_reference": {
-            "act_id": "PORTARIA_INTERMINISTERIAL_MPS_MF_13_2026",
-            "act_date": "2026-01-09",
+            "act_id": (
+                f"PORTARIA_INTERMINISTERIAL_MPS_MF_{normative.group(1)}_{reference_year}"
+            ),
+            "act_date": (
+                f"{reference_year}-{int(normative.group(3)):02d}-{int(normative.group(2)):02d}"
+            ),
         },
     }

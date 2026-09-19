@@ -26,7 +26,14 @@ from .source_runtime_v1 import (
     SourceStateStore,
     run_source_pipeline,
 )
-from .sources_v1 import HttpCollectorV1, RetryPolicy, SnapshotStore, load_source_registry
+from .sources_v1 import (
+    HttpCollectorV1,
+    ParserIncompatibleError,
+    RetryPolicy,
+    SnapshotStore,
+    SourceSpec,
+    load_source_registry,
+)
 
 
 @dataclass(frozen=True)
@@ -70,7 +77,42 @@ def parser_binding(source_id: str) -> ParserBinding:
 
 
 def registered_reference_year(source_id: str) -> int:
+    """Historical compatibility helper; runtime discovery is year-aware."""
     return parser_binding(source_id).reference_year
+
+
+def resolve_source_for_reference_year(
+    source: SourceSpec,
+    *,
+    source_id: str,
+    reference_year: int,
+) -> SourceSpec:
+    """Resolve only the year-varying part of a known official source URL.
+
+    Source IDs stay unchanged in this first migration layer so historical
+    evidence and contracts remain addressable. The annual RFB table path is
+    resolved from the execution year; the INSS canonical table URL is stable.
+    """
+    if source_id == "RFB_IRRF_TABLE_2026":
+        url = source.url
+        if not url.rstrip("/").endswith("/2026"):
+            raise ValueError("RFB annual source URL no longer has the registered year suffix")
+        url = url.rstrip("/")[:-4] + str(reference_year)
+        return source.model_copy(update={"url": url})
+    return source
+
+
+def parser_for_reference_year(binding: ParserBinding, reference_year: int):
+    def parse(body: bytes) -> dict[str, JsonValue]:
+        payload = binding.parser(body)
+        observed_year = payload.get("reference_year")
+        if observed_year != reference_year:
+            raise ParserIncompatibleError(
+                f"reference-year mismatch: expected={reference_year} observed={observed_year}"
+            )
+        return payload
+
+    return parse
 
 
 def run_registered_source_pipeline(
@@ -92,7 +134,12 @@ def run_registered_source_pipeline(
         raise ValueError(f"unknown source_id: {source_id}")
 
     binding = parser_binding(source_id)
-    source = registry[source_id]
+    reference_year = observed_at_utc.year
+    source = resolve_source_for_reference_year(
+        registry[source_id],
+        source_id=source_id,
+        reference_year=reference_year,
+    )
     snapshot_store = SnapshotStore(snapshot_root)
     state_store = SourceStateStore(state_root)
     candidate_store = CandidateStore(candidate_root)
@@ -111,7 +158,7 @@ def run_registered_source_pipeline(
         observed_at_utc=observed_at_utc,
         parser_id=binding.parser_id,
         parser_version=binding.parser_version,
-        parser=binding.parser,
+        parser=parser_for_reference_year(binding, reference_year),
         candidate_store=candidate_store,
         use_http_validators=use_http_validators,
     )

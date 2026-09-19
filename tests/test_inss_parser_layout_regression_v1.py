@@ -17,7 +17,7 @@ def test_inss_normative_reference_survives_html_tag_boundary_before_comma() -> N
 
     payload = parse_inss_employee_2026_snapshot(html.encode("utf-8"))
 
-    assert PARSER_VERSION == "1.0.1"
+    assert PARSER_VERSION == "1.1.0"
     assert payload["normative_reference"] == {
         "act_id": "PORTARIA_INTERMINISTERIAL_MPS_MF_13_2026",
         "act_date": "2026-01-09",
