@@ -164,3 +164,45 @@ def test_legacy_state_is_materialized_under_canonical_id_without_deletion(tmp_pa
     assert run.state.source_id == RFB_SOURCE_ID
     assert state_store.load(RFB_SOURCE_ID) is not None
     assert state_store.load("RFB_IRRF_TABLE_2026") == legacy
+
+
+def test_stable_inss_url_still_forces_full_fetch_at_year_boundary(tmp_path: Path):
+    calls = []
+    fixture_2027 = INSS_FIXTURE.replace(b"2026", b"2027")
+
+    def handler(request: httpx.Request):
+        calls.append(request)
+        if len(calls) == 1:
+            return httpx.Response(
+                200,
+                content=INSS_FIXTURE,
+                headers={"content-type": "text/html", "etag": '"inss-2026"'},
+            )
+        assert "if-none-match" not in request.headers
+        return httpx.Response(
+            200,
+            content=fixture_2027,
+            headers={"content-type": "text/html", "etag": '"inss-2027"'},
+        )
+
+    transport = httpx.MockTransport(handler)
+    run_registered_source_pipeline(
+        source_id=INSS_SOURCE_ID,
+        observed_at_utc=datetime(2026, 12, 31, 12, 0, tzinfo=timezone.utc),
+        snapshot_root=tmp_path / "snapshots",
+        state_root=tmp_path / "state",
+        candidate_root=tmp_path / "candidates",
+        transport=transport,
+    )
+    second = run_registered_source_pipeline(
+        source_id=INSS_SOURCE_ID,
+        observed_at_utc=datetime(2027, 1, 1, 12, 0, tzinfo=timezone.utc),
+        snapshot_root=tmp_path / "snapshots",
+        state_root=tmp_path / "state",
+        candidate_root=tmp_path / "candidates",
+        transport=transport,
+    )
+
+    assert len(calls) == 2
+    assert second.candidate is not None
+    assert second.candidate.payload["reference_year"] == 2027
