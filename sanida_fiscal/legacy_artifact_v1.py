@@ -43,13 +43,16 @@ def build_legacy_payroll_fields(
     inss_payload: Mapping[str, Any],
     expected_year: int,
 ) -> dict[str, Any]:
-    if rfb_payload.get("observation_type") != "rfb_irrf_2026":
-        raise LegacyArtifactBoundaryError("unexpected RFB observation_type")
-    if inss_payload.get("observation_type") != "inss_employee_progressive_table_2026":
-        raise LegacyArtifactBoundaryError("unexpected INSS observation_type")
-
     rfb_year = rfb_payload.get("reference_year")
     inss_year = inss_payload.get("reference_year")
+
+    if rfb_payload.get("observation_type") != f"rfb_irrf_{rfb_year}":
+        raise LegacyArtifactBoundaryError("unexpected RFB observation_type")
+    if (
+        inss_payload.get("observation_type")
+        != f"inss_employee_progressive_table_{inss_year}"
+    ):
+        raise LegacyArtifactBoundaryError("unexpected INSS observation_type")
     if rfb_year != inss_year or rfb_year != expected_year:
         raise LegacyArtifactBoundaryError(
             f"reference-year mismatch: expected={expected_year} rfb={rfb_year} inss={inss_year}"
