@@ -54,7 +54,7 @@ def test_c61_current_manifest_points_to_exact_immutable_artifact() -> None:
 
 def test_c61_plugin_uses_manifest_and_immutable_release_not_legacy_json() -> None:
     text = _plugin_text()
-    assert "Version:     2.7.1" in text
+    assert "Version:     2.8.0" in text
     assert "/releases/fiscal-v1/current.json" in text
     assert "RELEASE_BASE_URL_DEFAULT" in text
     assert "dados_fiscais.json" not in text
