@@ -1,7 +1,7 @@
 {
   "schema_version": "1.1.0",
   "status": "phase1_closed",
-  "as_of": "2026-09-19",
+  "as_of": "2026-09-13",
   "scope": [
     "H26",
     "H27",
@@ -28,7 +28,7 @@
       "rule_class": "parameterizable_rule",
       "applies_to": "employee_social_security_contribution_base",
       "source_ids": [
-        "INSS_TABLE_CURRENT"
+        "INSS_TABLE_2026"
       ],
       "phase1_status": "closed",
       "current_state": "implemented_without_strong_contract",
@@ -45,7 +45,7 @@
       "rule_class": "parameterizable_rule",
       "applies_to": "irrf_tax_base_after_allowed_deductions",
       "source_ids": [
-        "RFB_IRRF_TABLE_CURRENT",
+        "RFB_IRRF_TABLE_2026",
         "RFB_IN_1500_2014"
       ],
       "phase1_status": "closed",
@@ -64,7 +64,7 @@
       "rule_class": "parameter",
       "applies_to": "legal_deductions_for_matching_income_type",
       "source_ids": [
-        "RFB_IRRF_TABLE_CURRENT",
+        "RFB_IRRF_TABLE_2026",
         "ESOCIAL_TABLES_S13_NT07_2026"
       ],
       "phase1_status": "closed",
@@ -83,7 +83,7 @@
       "rule_class": "parameterizable_rule",
       "applies_to": "deduction_choice_within_each_irrf_assessment",
       "source_ids": [
-        "RFB_IRRF_TABLE_CURRENT",
+        "RFB_IRRF_TABLE_2026",
         "RFB_IN_1500_2014",
         "ESOCIAL_TABLES_S13_NT07_2026"
       ],
@@ -122,7 +122,7 @@
       "applies_to": "taxable_income_subject_to_monthly_incidence_before_irrf_deductions",
       "source_ids": [
         "PLANALTO_LEI_15270_2025",
-        "RFB_IRRF_TABLE_CURRENT",
+        "RFB_IRRF_TABLE_2026",
         "RFB_IRRF_EXAMPLES_2026",
         "RFB_IN_1500_2014"
       ],
@@ -224,7 +224,7 @@
       "rule_class": "structural_rule",
       "applies_to": "thirteenth_social_security_assessment",
       "source_ids": [
-        "INSS_TABLE_CURRENT",
+        "INSS_TABLE_2026",
         "ESOCIAL_WEB_MEI_2026"
       ],
       "phase1_status": "closed",
@@ -564,13 +564,6 @@
     "employment_basis": "monthly_or_fortnightly_employee",
     "contract_type": "indefinite_term_only",
     "supported_esocial_reasons": {
-      "33": {
-        "label": "mutual_agreement_art_484A",
-        "salary_balance": true,
-        "thirteenth_proportional": true,
-        "vacation_proportional": true,
-        "acquired_or_overdue_vacation": true
-      },
       "01": {
         "label": "just_cause_by_employer",
         "salary_balance": true,
@@ -587,6 +580,13 @@
       },
       "07": {
         "label": "resignation_by_employee",
+        "salary_balance": true,
+        "thirteenth_proportional": true,
+        "vacation_proportional": true,
+        "acquired_or_overdue_vacation": true
+      },
+      "33": {
+        "label": "mutual_agreement_art_484A",
         "salary_balance": true,
         "thirteenth_proportional": true,
         "vacation_proportional": true,
