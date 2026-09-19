@@ -15,7 +15,6 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from sanida_fiscal.source_ids_v1 import canonical_source_id
 
 ROOT = Path(__file__).resolve().parents[1]
 CALCULATORS = {"H26", "H27", "H28", "H29"}
@@ -60,6 +59,16 @@ PHASE1_REQUIRED_CASES = {
     "termination_reason_33_mutual_agreement",
     "termination_salary_balance_monthly_31_days",
 }
+
+LEGACY_SOURCE_ID_ALIASES = {
+    "RFB_IRRF_TABLE_2026": "RFB_IRRF_TABLE_CURRENT",
+    "INSS_TABLE_2026": "INSS_TABLE_CURRENT",
+}
+
+
+def canonical_source_id(source_id: str) -> str:
+    return LEGACY_SOURCE_ID_ALIASES.get(source_id, source_id)
+
 
 
 class ValidationError(RuntimeError):
