@@ -11,12 +11,12 @@ import requests
 from .inss_employee_v1 import (
     PARSER_ID as INSS_PARSER_ID,
     PARSER_VERSION as INSS_PARSER_VERSION,
-    parse_inss_employee_snapshot,
+    parse_inss_employee_2026_snapshot,
 )
 from .rfb_irrf_v1 import (
     PARSER_ID as RFB_PARSER_ID,
     PARSER_VERSION as RFB_PARSER_VERSION,
-    parse_rfb_irrf_snapshot,
+    parse_rfb_irrf_2026_snapshot,
 )
 from .source_catalog_v1 import resolve_source_for_reference_year
 from .sources_v1 import (
@@ -51,12 +51,12 @@ PARSER_BINDINGS = {
     RFB_SOURCE_ID: (
         RFB_PARSER_ID,
         RFB_PARSER_VERSION,
-        parse_rfb_irrf_snapshot,
+        parse_rfb_irrf_2026_snapshot,
     ),
     INSS_SOURCE_ID: (
         INSS_PARSER_ID,
         INSS_PARSER_VERSION,
-        parse_inss_employee_snapshot,
+        parse_inss_employee_2026_snapshot,
     ),
 }
 
