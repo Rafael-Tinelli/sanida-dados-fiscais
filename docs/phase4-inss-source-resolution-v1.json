@@ -9,7 +9,7 @@
     "role": "official_operational",
     "collection_mode": "direct_registered_url",
     "parser_id": "inss_employee_table_v1",
-    "parser_version": "1.0.1",
+    "parser_version": "1.1.0",
     "reference_year": 2026,
     "effective_from": "2026-01-01"
   },
