@@ -212,7 +212,7 @@ def test_parser_change_forces_full_refetch_instead_of_accepting_304(tmp_path: Pa
     )
     run_source_pipeline(
         source=source(), collector=collector, snapshot_store=snapshot_store, state_store=state_store,
-        observed_at_utc=NOW + timedelta(hours=1), parser_id=PARSER_ID, parser_version="1.1.0",
+        observed_at_utc=NOW + timedelta(hours=1), parser_id=PARSER_ID, parser_version="1.2.0",
         parser=parse_rfb_irrf_2026_snapshot,
     )
 
