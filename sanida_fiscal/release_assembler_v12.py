@@ -7,6 +7,7 @@ from typing import Any, Mapping
 from .contract_v1 import FiscalContractV1
 from .contract_v1_2 import FiscalContractV12, GovernanceEvidenceObservation
 from .semantic_diff_v1 import diff_contracts
+from .source_ids_v1 import INSS_SOURCE_ID, RFB_SOURCE_ID, source_ids_equivalent
 from .sources_v1 import NormalizedSourceCandidate, ParseStatus
 from .types_v1 import (
     ChangeClass,
@@ -21,9 +22,6 @@ from .types_v1 import (
 class ReleaseAssemblyError(RuntimeError):
     pass
 
-
-RFB_SOURCE_ID = "RFB_IRRF_TABLE_2026"
-INSS_SOURCE_ID = "INSS_TABLE_2026"
 
 TECHNICAL_MONEY_ROUNDING_POLICY: dict[str, Any] = {
     "decimal_places": 2,
@@ -327,7 +325,9 @@ def _reuse_previous_evidence_if_same_hash(
         if not isinstance(item, dict):
             continue
         if (
-            item.get("source_id") == current.get("source_id")
+            isinstance(item.get("source_id"), str)
+            and isinstance(current.get("source_id"), str)
+            and source_ids_equivalent(item["source_id"], current["source_id"])
             and item.get("snapshot_sha256") == current.get("snapshot_sha256")
         ):
             return deepcopy(item)
