@@ -129,7 +129,7 @@ def parse_inss_employee_snapshot(body: bytes) -> dict[str, JsonValue]:
     _assert_contiguous(bands)
 
     normative = re.search(
-        r"PORTARIA\\s+INTERMINISTERIAL\\s+MPS/MF\\s+N[º°]?\\s*([0-9]+)\\s*,\\s*de\\s*([0-3]?\\d)/([01]?\\d)/(20\\d{2})",
+        r"PORTARIA\s+INTERMINISTERIAL\s+MPS/MF\s+N[º°]?\s*([0-9]+)\s*,\s*de\s*([0-3]?\d)/([01]?\d)/(20\d{2})",
         text,
         re.IGNORECASE,
     )
