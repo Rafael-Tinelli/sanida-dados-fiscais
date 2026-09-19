@@ -1,0 +1,131 @@
+name: Atualizar séries históricas Selic/CDI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "update_taxas_series.py"
+      - "sanida_fiscal/financial_series_v1.py"
+      - "docs/financial-series-policy-v1.json"
+      - ".github/workflows/taxas-series.yml"
+  schedule:
+    # Uma vez por dia, após o fechamento do dia no Brasil.
+    - cron: "17 23 * * *"
+
+concurrency:
+  group: sanida-dados-fiscais-writes-main
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      SFA_FINANCIAL_SERIES_RUNTIME_ROOT: evidence/financial-series-v1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate 10-year monthly financial series
+        id: updater
+        shell: bash
+        run: |
+          set +e
+          python update_taxas_series.py
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Validate series artifact and durable evidence
+        id: evidence
+        shell: bash
+        run: |
+          set +e
+          if [ "${{ steps.updater.outputs.exit_code }}" = "0" ]; then
+            python scripts/validate_financial_series_v1.py \
+              --artifact taxas_bacen_series.json \
+              --runtime-root "$SFA_FINANCIAL_SERIES_RUNTIME_ROOT"
+            code=$?
+          else
+            echo "Skipping historical-series validation because updater failed."
+            code=99
+          fi
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Show preview
+        if: always()
+        run: |
+          if [ -f taxas_bacen_series.json ]; then
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("taxas_bacen_series.json").read_text(encoding="utf-8"))
+          print(json.dumps({
+              "schema_version": data.get("schema_version"),
+              "window": data.get("meta", {}).get("window"),
+              "latest": data.get("points", [])[-1] if data.get("points") else None,
+              "points": len(data.get("points", [])),
+          }, ensure_ascii=False, indent=2))
+          PY
+          fi
+          git status --short
+
+      - name: Persist operational evidence and validated historical artifact
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if [ "${{ steps.updater.outputs.exit_code }}" = "0" ] && \
+             [ "${{ steps.evidence.outputs.exit_code }}" = "0" ]; then
+            git add taxas_bacen_series.json "$SFA_FINANCIAL_SERIES_RUNTIME_ROOT"
+            commit_message="chore(data): atualizar séries históricas Selic/CDI"
+          else
+            if git ls-files --error-unmatch taxas_bacen_series.json >/dev/null 2>&1; then
+              git restore --source=HEAD --staged --worktree taxas_bacen_series.json || true
+            else
+              rm -f taxas_bacen_series.json
+            fi
+            git add "$SFA_FINANCIAL_SERIES_RUNTIME_ROOT" || true
+            commit_message="chore(source-state): persistir evidências das séries financeiras"
+          fi
+
+          if git diff --cached --quiet; then
+            echo "No persisted changes to commit."
+            exit 0
+          fi
+
+          git commit -m "$commit_message"
+          git pull --rebase origin main
+          git push origin main
+
+      - name: Enforce historical-series production gate
+        shell: bash
+        run: |
+          if [ "${{ steps.updater.outputs.exit_code }}" != "0" ]; then
+            echo "update_taxas_series.py failed with exit code ${{ steps.updater.outputs.exit_code }}"
+            exit 1
+          fi
+          if [ "${{ steps.evidence.outputs.exit_code }}" != "0" ]; then
+            echo "historical-series evidence validation failed with exit code ${{ steps.evidence.outputs.exit_code }}"
+            exit 1
+          fi
+          echo "Historical financial series and durable source evidence are consistent."
