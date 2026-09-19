@@ -106,9 +106,9 @@ def _normalized_candidates(previous) -> dict[str, NormalizedSourceCandidate]:
     rfb_provenance = rules["irrf.monthly.progressive_table"].provenance[0]
     inss_provenance = rules["inss.employee.progressive_table"].provenance[0]
     return {
-        "RFB_IRRF_TABLE_2026": NormalizedSourceCandidate(
-            source_id="RFB_IRRF_TABLE_2026",
-            source_url=registry["RFB_IRRF_TABLE_2026"]["url"],
+        "RFB_IRRF_TABLE_CURRENT": NormalizedSourceCandidate(
+            source_id="RFB_IRRF_TABLE_CURRENT",
+            source_url=registry["RFB_IRRF_TABLE_CURRENT"]["url"],
             observed_at_utc=NOW,
             snapshot_sha256=rfb_provenance.snapshot_sha256,
             snapshot_path=rfb_provenance.snapshot_path,
@@ -117,9 +117,9 @@ def _normalized_candidates(previous) -> dict[str, NormalizedSourceCandidate]:
             status=ParseStatus.PARSED,
             payload=rfb_payload,
         ),
-        "INSS_TABLE_2026": NormalizedSourceCandidate(
-            source_id="INSS_TABLE_2026",
-            source_url=registry["INSS_TABLE_2026"]["url"],
+        "INSS_TABLE_CURRENT": NormalizedSourceCandidate(
+            source_id="INSS_TABLE_CURRENT",
+            source_url=registry["INSS_TABLE_CURRENT"]["url"],
             observed_at_utc=NOW,
             snapshot_sha256=inss_provenance.snapshot_sha256,
             snapshot_path=inss_provenance.snapshot_path,
