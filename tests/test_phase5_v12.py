@@ -15,7 +15,7 @@ from sanida_fiscal.governance_evidence_v12 import build_governance_evidence
 from sanida_fiscal.inss_employee_v1 import (
     PARSER_ID as INSS_PARSER_ID,
     PARSER_VERSION as INSS_PARSER_VERSION,
-    parse_inss_employee_2026_snapshot,
+    parse_inss_employee_snapshot,
 )
 from sanida_fiscal.publication_v1 import (
     FiscalReleaseStore,
@@ -27,7 +27,7 @@ from sanida_fiscal.release_assembler_v12 import assemble_candidate_v12
 from sanida_fiscal.rfb_irrf_v1 import (
     PARSER_ID as RFB_PARSER_ID,
     PARSER_VERSION as RFB_PARSER_VERSION,
-    parse_rfb_irrf_2026_snapshot,
+    parse_rfb_irrf_snapshot,
 )
 from sanida_fiscal.semantic_diff_v1 import PromotionOutcome, assess_promotion
 from sanida_fiscal.sources_v1 import NormalizedSourceCandidate, ParseStatus
@@ -73,10 +73,10 @@ def _official_evidence(
         source_id = source["source_id"]
         parser_id = None
         parser_version = None
-        if source_id == "RFB_IRRF_TABLE_2026":
+        if source_id == "RFB_IRRF_TABLE_CURRENT":
             parser_id = RFB_PARSER_ID
             parser_version = RFB_PARSER_VERSION
-        elif source_id == "INSS_TABLE_2026":
+        elif source_id == "INSS_TABLE_CURRENT":
             parser_id = INSS_PARSER_ID
             parser_version = INSS_PARSER_VERSION
         method = (
@@ -105,25 +105,25 @@ def _normalized_candidates(
     rfb_sha: str | None = None,
 ) -> dict[str, NormalizedSourceCandidate]:
     registry = {item["source_id"]: item for item in _load(SOURCE_REGISTRY)["sources"]}
-    rfb_payload = rfb_payload_override or parse_rfb_irrf_2026_snapshot(RFB_FIXTURE.read_bytes())
-    inss_payload = parse_inss_employee_2026_snapshot(INSS_FIXTURE.read_bytes())
+    rfb_payload = rfb_payload_override or parse_rfb_irrf_snapshot(RFB_FIXTURE.read_bytes())
+    inss_payload = parse_inss_employee_snapshot(INSS_FIXTURE.read_bytes())
     return {
-        "RFB_IRRF_TABLE_2026": NormalizedSourceCandidate(
-            source_id="RFB_IRRF_TABLE_2026",
-            source_url=registry["RFB_IRRF_TABLE_2026"]["url"],
+        "RFB_IRRF_TABLE_CURRENT": NormalizedSourceCandidate(
+            source_id="RFB_IRRF_TABLE_CURRENT",
+            source_url=registry["RFB_IRRF_TABLE_CURRENT"]["url"],
             observed_at_utc=observed_at,
-            snapshot_sha256=rfb_sha or _digest("RFB_IRRF_TABLE_2026"),
+            snapshot_sha256=rfb_sha or _digest("RFB_IRRF_TABLE_CURRENT"),
             snapshot_path="test-authority/RFB_IRRF_TABLE_2026.html",
             parser_id=RFB_PARSER_ID,
             parser_version=RFB_PARSER_VERSION,
             status=ParseStatus.PARSED,
             payload=rfb_payload,
         ),
-        "INSS_TABLE_2026": NormalizedSourceCandidate(
-            source_id="INSS_TABLE_2026",
-            source_url=registry["INSS_TABLE_2026"]["url"],
+        "INSS_TABLE_CURRENT": NormalizedSourceCandidate(
+            source_id="INSS_TABLE_CURRENT",
+            source_url=registry["INSS_TABLE_CURRENT"]["url"],
             observed_at_utc=observed_at,
-            snapshot_sha256=_digest("INSS_TABLE_2026"),
+            snapshot_sha256=_digest("INSS_TABLE_CURRENT"),
             snapshot_path="test-authority/INSS_TABLE_2026.html",
             parser_id=INSS_PARSER_ID,
             parser_version=INSS_PARSER_VERSION,
@@ -286,12 +286,12 @@ def test_v12_identical_successor_is_idempotent_even_with_new_observation_time() 
 def test_v12_parser_backed_numeric_refresh_can_auto_publish() -> None:
     previous = _published_bootstrap()
     later = NOW + timedelta(hours=2)
-    rfb_payload = deepcopy(parse_rfb_irrf_2026_snapshot(RFB_FIXTURE.read_bytes()))
+    rfb_payload = deepcopy(parse_rfb_irrf_snapshot(RFB_FIXTURE.read_bytes()))
     rfb_payload["monthly_table"][1]["upper_bound_brl"] = "2826.66"
     changed_sha = "b" * 64
     official = _official_evidence(
         observed_at=later,
-        overrides={"RFB_IRRF_TABLE_2026": changed_sha},
+        overrides={"RFB_IRRF_TABLE_CURRENT": changed_sha},
     )
     normalized = _normalized_candidates(
         observed_at=later,
