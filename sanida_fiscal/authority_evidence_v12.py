@@ -11,14 +11,15 @@ import requests
 from .inss_employee_v1 import (
     PARSER_ID as INSS_PARSER_ID,
     PARSER_VERSION as INSS_PARSER_VERSION,
-    parse_inss_employee_2026_snapshot,
+    parse_inss_employee_snapshot,
 )
 from .rfb_irrf_v1 import (
     PARSER_ID as RFB_PARSER_ID,
     PARSER_VERSION as RFB_PARSER_VERSION,
-    parse_rfb_irrf_2026_snapshot,
+    parse_rfb_irrf_snapshot,
 )
 from .source_catalog_v1 import resolve_source_for_reference_year
+from .source_ids_v1 import INSS_SOURCE_ID, RFB_SOURCE_ID
 from .sources_v1 import (
     CollectionResult,
     CollectionStatus,
@@ -40,8 +41,6 @@ class AuthorityEvidenceError(RuntimeError):
     pass
 
 
-RFB_SOURCE_ID = "RFB_IRRF_TABLE_2026"
-INSS_SOURCE_ID = "INSS_TABLE_2026"
 PLANALTO_CLT_SOURCE_ID = "PLANALTO_CLT"
 
 
@@ -51,12 +50,12 @@ PARSER_BINDINGS = {
     RFB_SOURCE_ID: (
         RFB_PARSER_ID,
         RFB_PARSER_VERSION,
-        parse_rfb_irrf_2026_snapshot,
+        parse_rfb_irrf_snapshot,
     ),
     INSS_SOURCE_ID: (
         INSS_PARSER_ID,
         INSS_PARSER_VERSION,
-        parse_inss_employee_2026_snapshot,
+        parse_inss_employee_snapshot,
     ),
 }
 
@@ -355,8 +354,7 @@ def collect_authority_evidence(
 ) -> AuthorityEvidenceBundle:
     """Collect one authorized official snapshot per external rule.
 
-    Sources are deduplicated across rules. Only RFB_IRRF_TABLE_2026 and
-    INSS_TABLE_2026 are parsed; every other source remains uninterpreted raw
+    Sources are deduplicated across rules. Only the canonical RFB/INSS\n    payroll sources are parsed; every other source remains uninterpreted raw
     evidence and therefore cannot silently change structural semantics.
     """
     _require_utc(observed_at_utc)
