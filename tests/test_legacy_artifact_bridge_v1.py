@@ -30,8 +30,8 @@ INSS_FIXTURE = Path("tests/fixtures/sources/inss_employee_2026_fragment.html").r
 
 def test_legacy_bridge_preserves_schema_2_2_values_from_canonical_payloads():
     fields = build_legacy_payroll_fields(
-        rfb_payload=parse_rfb_irrf_2026_snapshot(RFB_FIXTURE),
-        inss_payload=parse_inss_employee_2026_snapshot(INSS_FIXTURE),
+        rfb_payload=parse_rfb_irrf_snapshot(RFB_FIXTURE),
+        inss_payload=parse_inss_employee_snapshot(INSS_FIXTURE),
         expected_year=2026,
     )
 
@@ -61,15 +61,15 @@ def test_legacy_bridge_preserves_schema_2_2_values_from_canonical_payloads():
 def test_legacy_bridge_rejects_relabeling_2026_candidates_as_2027():
     with pytest.raises(LegacyArtifactBoundaryError, match="reference-year mismatch"):
         build_legacy_payroll_fields(
-            rfb_payload=parse_rfb_irrf_2026_snapshot(RFB_FIXTURE),
-            inss_payload=parse_inss_employee_2026_snapshot(INSS_FIXTURE),
+            rfb_payload=parse_rfb_irrf_snapshot(RFB_FIXTURE),
+            inss_payload=parse_inss_employee_snapshot(INSS_FIXTURE),
             expected_year=2027,
         )
 
 
 def test_legacy_bridge_accepts_matching_2027_rollover_payloads():
-    rfb = parse_rfb_irrf_2026_snapshot(RFB_FIXTURE.replace(b"2026", b"2027"))
-    inss = parse_inss_employee_2026_snapshot(INSS_FIXTURE.replace(b"2026", b"2027"))
+    rfb = parse_rfb_irrf_snapshot(RFB_FIXTURE.replace(b"2026", b"2027"))
+    inss = parse_inss_employee_snapshot(INSS_FIXTURE.replace(b"2026", b"2027"))
 
     fields = build_legacy_payroll_fields(
         rfb_payload=rfb,
@@ -81,8 +81,8 @@ def test_legacy_bridge_accepts_matching_2027_rollover_payloads():
 
 
 def test_legacy_bridge_rejects_malformed_observation_type_even_when_year_matches():
-    rfb = parse_rfb_irrf_2026_snapshot(RFB_FIXTURE)
-    inss = parse_inss_employee_2026_snapshot(INSS_FIXTURE)
+    rfb = parse_rfb_irrf_snapshot(RFB_FIXTURE)
+    inss = parse_inss_employee_snapshot(INSS_FIXTURE)
     rfb["observation_type"] = "rfb_irrf_current"
 
     with pytest.raises(LegacyArtifactBoundaryError, match="unexpected RFB observation_type"):
