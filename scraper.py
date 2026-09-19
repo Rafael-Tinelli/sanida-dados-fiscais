@@ -17,13 +17,14 @@ from sanida_fiscal.legacy_artifact_v1 import (
     build_legacy_dados_fiscais,
 )
 from sanida_fiscal.source_catalog_v1 import run_registered_source_pipeline
+from sanida_fiscal.source_ids_v1 import INSS_SOURCE_ID, RFB_SOURCE_ID
 
 
 OUTPUT_FILE = "dados_fiscais.json"
 TAXAS_FILE_LOCAL = "taxas_bacen.json"
 SOURCE_REGISTRY = Path("docs/source-registry-v1.json")
 SOURCE_RUNTIME_ROOT = Path(os.getenv("SFA_SOURCE_RUNTIME_ROOT", ".source-runtime").strip())
-PAYROLL_SOURCE_IDS = ("RFB_IRRF_TABLE_2026", "INSS_TABLE_2026")
+PAYROLL_SOURCE_IDS = (RFB_SOURCE_ID, INSS_SOURCE_ID)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; SanidaFiscaisBot/4.0; +https://sanida.com.br)",
@@ -333,8 +334,8 @@ def main():
     if payroll_runs and taxas:
         try:
             payload = build_legacy_dados_fiscais(
-                rfb_run=payroll_runs["RFB_IRRF_TABLE_2026"],
-                inss_run=payroll_runs["INSS_TABLE_2026"],
+                rfb_run=payroll_runs[RFB_SOURCE_ID],
+                inss_run=payroll_runs[INSS_SOURCE_ID],
                 expected_year=year,
                 taxas=taxas,
                 taxas_source_meta=taxas_source_meta,
