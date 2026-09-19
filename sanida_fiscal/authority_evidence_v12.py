@@ -19,7 +19,7 @@ from .rfb_irrf_v1 import (
     parse_rfb_irrf_snapshot,
 )
 from .source_catalog_v1 import resolve_source_for_reference_year
-from .source_ids_v1 import INSS_SOURCE_ID, RFB_SOURCE_ID
+from .source_ids_v1 import INSS_SOURCE_ID, RFB_SOURCE_ID, canonical_source_id
 from .sources_v1 import (
     CollectionResult,
     CollectionStatus,
@@ -177,9 +177,10 @@ def select_authority_sources(
     for rule_id, rule in sorted(inventory.items()):
         if rule.get("rule_class") == "technical_contract_rule":
             continue
-        source_ids = rule.get("source_ids")
-        if not isinstance(source_ids, list) or not source_ids:
+        raw_source_ids = rule.get("source_ids")
+        if not isinstance(raw_source_ids, list) or not raw_source_ids:
             raise AuthorityEvidenceError(f"{rule_id}: legal/fiscal rule has no authorized source_ids")
+        source_ids = [canonical_source_id(str(source_id)) for source_id in raw_source_ids]
         if any(source_id not in registry for source_id in source_ids):
             missing = sorted(source_id for source_id in source_ids if source_id not in registry)
             raise AuthorityEvidenceError(f"{rule_id}: source_ids absent from registry: {missing}")
