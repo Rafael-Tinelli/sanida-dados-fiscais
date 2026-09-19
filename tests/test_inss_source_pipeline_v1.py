@@ -85,9 +85,20 @@ def test_legacy_news_fragment_is_not_accepted_as_canonical_table():
     try:
         parse_inss_employee_2026_snapshot(legacy_news)
     except ParserIncompatibleError as exc:
-        assert "canonical 2026 structural markers" in str(exc)
+        assert "canonical structural markers" in str(exc)
     else:
         raise AssertionError("legacy yearly news must not be accepted by the canonical INSS parser")
+
+
+def test_inss_parser_discovers_reference_year_from_source_markers():
+    future_fixture = FIXTURE.replace(b"2026", b"2027")
+    payload = parse_inss_employee_2026_snapshot(future_fixture)
+
+    assert payload["reference_year"] == 2027
+    assert payload["effective_from"] == "2027-01-01"
+    assert payload["observation_type"] == "inss_employee_progressive_table_2027"
+    assert payload["normative_reference"]["act_id"].endswith("_2027")
+    assert payload["normative_reference"]["act_date"].endswith("-01-09")
 
 
 def test_source_resolution_binds_registry_url_and_forbids_legacy_fallback():
