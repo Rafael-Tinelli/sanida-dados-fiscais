@@ -15,6 +15,7 @@ from sanida_fiscal.production_evidence_v1 import (
     verify_legacy_artifact_evidence,
 )
 from sanida_fiscal.source_catalog_v1 import run_registered_source_pipeline
+from sanida_fiscal.source_ids_v1 import INSS_SOURCE_ID, RFB_SOURCE_ID
 from sanida_fiscal.source_runtime_v1 import SourceStateStore
 
 
@@ -66,8 +67,8 @@ def _run_financial(tmp_path: Path, source_id: str, body: bytes):
 
 
 def _build_artifact(tmp_path: Path):
-    rfb = _run_source(tmp_path, "RFB_IRRF_TABLE_2026", RFB_FIXTURE)
-    inss = _run_source(tmp_path, "INSS_TABLE_2026", INSS_FIXTURE)
+    rfb = _run_source(tmp_path, RFB_SOURCE_ID, RFB_FIXTURE)
+    inss = _run_source(tmp_path, INSS_SOURCE_ID, INSS_FIXTURE)
     selic = _run_financial(tmp_path, "BCB_SELIC_META_SGS_432", SELIC_FIXTURE)
     cdi = _run_financial(tmp_path, "BCB_CDI_DAILY_SGS_12", CDI_FIXTURE)
 
@@ -107,13 +108,13 @@ def test_production_evidence_resolves_all_four_source_chains(tmp_path: Path):
     )
 
     assert set(verified) == {
-        "RFB_IRRF_TABLE_2026",
-        "INSS_TABLE_2026",
+        RFB_SOURCE_ID,
+        INSS_SOURCE_ID,
         "BCB_SELIC_META_SGS_432",
         "BCB_CDI_DAILY_SGS_12",
     }
-    assert verified["RFB_IRRF_TABLE_2026"]["snapshot_sha256"] == rfb.candidate.snapshot_sha256
-    assert verified["INSS_TABLE_2026"]["candidate_sha256"] == inss.state.last_candidate_sha256
+    assert verified[RFB_SOURCE_ID]["snapshot_sha256"] == rfb.candidate.snapshot_sha256
+    assert verified[INSS_SOURCE_ID]["candidate_sha256"] == inss.state.last_candidate_sha256
     assert verified["BCB_SELIC_META_SGS_432"]["candidate_sha256"] == selic.state.last_candidate_sha256
     assert verified["BCB_CDI_DAILY_SGS_12"]["snapshot_sha256"] == cdi.candidate.snapshot_sha256
 
@@ -157,14 +158,14 @@ def test_production_evidence_rejects_nonlocal_financial_origin(tmp_path: Path):
 
 
 def test_current_source_failure_preserves_last_good_evidence_pointers(tmp_path: Path):
-    first = _run_source(tmp_path, "RFB_IRRF_TABLE_2026", RFB_FIXTURE)
+    first = _run_source(tmp_path, RFB_SOURCE_ID, RFB_FIXTURE)
     runtime_root = _runtime_root(tmp_path)
 
     def failing_handler(request: httpx.Request):
         return httpx.Response(503)
 
     failed = run_registered_source_pipeline(
-        source_id="RFB_IRRF_TABLE_2026",
+        source_id=RFB_SOURCE_ID,
         observed_at_utc=NOW + timedelta(hours=1),
         snapshot_root=runtime_root / "snapshots",
         state_root=runtime_root / "state",
@@ -186,9 +187,9 @@ def test_current_source_failure_preserves_last_good_evidence_pointers(tmp_path: 
 
 
 def test_state_store_materializes_candidate_and_last_good_paths(tmp_path: Path):
-    run = _run_source(tmp_path, "INSS_TABLE_2026", INSS_FIXTURE)
+    run = _run_source(tmp_path, INSS_SOURCE_ID, INSS_FIXTURE)
     runtime_root = _runtime_root(tmp_path)
-    state = SourceStateStore(runtime_root / "state").load("INSS_TABLE_2026")
+    state = SourceStateStore(runtime_root / "state").load(INSS_SOURCE_ID)
 
     assert state is not None
     assert state.schema_version == "1.1.0"
@@ -216,3 +217,32 @@ def test_production_persistence_policy_is_git_backed_and_has_no_auto_pruning():
     assert policy["retention_policy"]["automatic_pruning"] is False
     assert policy["integrity_gates"]["snapshot_file_sha256_must_equal_artifact_provenance"] is True
     assert policy["integrity_gates"]["candidate_file_sha256_must_equal_artifact_provenance"] is True
+
+
+def test_legacy_year_qualified_artifact_provenance_remains_verifiable(tmp_path: Path):
+    runtime_root, artifact_path, *_ = _build_artifact(tmp_path)
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    artifact["meta"]["sources"]["irrf"]["source_id"] = "RFB_IRRF_TABLE_2026"
+    artifact["meta"]["sources"]["inss"]["source_id"] = "INSS_TABLE_2026"
+    artifact_path.write_text(json.dumps(artifact), encoding="utf-8")
+
+    verified = verify_legacy_artifact_evidence(
+        artifact_path=artifact_path,
+        runtime_root=runtime_root,
+    )
+
+    assert "RFB_IRRF_TABLE_2026" in verified
+    assert "INSS_TABLE_2026" in verified
+
+
+def test_unknown_payroll_source_identity_is_rejected(tmp_path: Path):
+    runtime_root, artifact_path, *_ = _build_artifact(tmp_path)
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    artifact["meta"]["sources"]["irrf"]["source_id"] = "RFB_IRRF_TABLE_UNKNOWN"
+    artifact_path.write_text(json.dumps(artifact), encoding="utf-8")
+
+    with pytest.raises(ProductionEvidenceError, match="source_id mismatch"):
+        verify_legacy_artifact_evidence(
+            artifact_path=artifact_path,
+            runtime_root=runtime_root,
+        )
