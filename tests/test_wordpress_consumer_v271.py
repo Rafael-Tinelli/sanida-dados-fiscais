@@ -136,7 +136,7 @@ def test_v271_consumer_has_no_numeric_rate_fallbacks() -> None:
         path.read_text(encoding="utf-8")
         for path in [PLUGIN, *sorted((PLUGIN.parent / "includes").glob("*.php"))]
     )
-    assert "Version:     2.7.1" in text
+    assert "Version:     2.8.0" in text
     for forbidden in (
         "'selic' => 15.00",
         "'cdi'   => 14.90",
