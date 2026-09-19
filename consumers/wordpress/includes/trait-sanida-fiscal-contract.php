@@ -50,6 +50,44 @@ trait Sanida_Fiscais_Fiscal_Contract_Trait {
     ];
   }
 
+  private function valid_iso_date($value){
+    if (!is_string($value) || !preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $m)) return false;
+    return checkdate((int)$m[2], (int)$m[3], (int)$m[1]);
+  }
+
+  private function current_fiscal_date(){
+    $date = current_time('Y-m-d');
+    return $this->valid_iso_date($date) ? $date : gmdate('Y-m-d');
+  }
+
+  private function rule_within_effective_window($rule, $as_of = null){
+    if (!is_array($rule) || !isset($rule['vigency']) || !is_array($rule['vigency'])) return false;
+    $vigency = $rule['vigency'];
+    $effective_from = $vigency['effective_from'] ?? null;
+    if (!$this->valid_iso_date($effective_from)) return false;
+
+    $date = $as_of === null ? $this->current_fiscal_date() : $as_of;
+    if (!$this->valid_iso_date($date)) return false;
+    if ($date < $effective_from) return false;
+
+    if (array_key_exists('effective_until', $vigency) && $vigency['effective_until'] !== null) {
+      $effective_until = $vigency['effective_until'];
+      if (!$this->valid_iso_date($effective_until)) return false;
+      if ($date > $effective_until) return false;
+    }
+    return true;
+  }
+
+  private function release_within_effective_window($release, $as_of = null){
+    if (!is_array($release) || !isset($release['rules']) || !is_array($release['rules'])) return false;
+    $date = $as_of === null ? $this->current_fiscal_date() : $as_of;
+    if (!$this->valid_iso_date($date)) return false;
+    foreach ($release['rules'] as $rule) {
+      if (!$this->rule_within_effective_window($rule, $date)) return false;
+    }
+    return true;
+  }
+
   private function validate_manifest($m){
     if (!is_array($m)) return false;
     foreach (['artifact','artifact_sha256','contract_api_version','contract_id','published_at_utc','release_id','schema_version','schema_version_contract'] as $k) {
@@ -214,6 +252,7 @@ trait Sanida_Fiscais_Fiscal_Contract_Trait {
     foreach ($required as $rule_id) {
       if (!isset($seen[$rule_id])) return false;
     }
+    if (!$this->release_within_effective_window($r)) return false;
 
     if (is_array($manifest)) {
       if (!$this->validate_manifest($manifest)) return false;
@@ -248,6 +287,7 @@ trait Sanida_Fiscais_Fiscal_Contract_Trait {
     if (($p['require_validated_rule'] ?? null) !== true) return false;
     if (($p['require_within_effective_window'] ?? null) !== true) return false;
     if (($p['require_no_known_successor'] ?? null) !== true) return false;
+    if (!$this->release_within_effective_window($package['release'])) return false;
     if ($known_successor) return false;
     return true;
   }
