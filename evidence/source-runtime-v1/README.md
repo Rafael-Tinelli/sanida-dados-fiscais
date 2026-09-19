@@ -14,12 +14,14 @@ evidence/source-runtime-v1/
     └── <source_id>.json
 ```
 
-Fontes preparadas para usar a árvore:
+Fontes canônicas preparadas para usar a árvore:
 
-- `RFB_IRRF_TABLE_2026`;
-- `INSS_TABLE_2026`;
+- `RFB_IRRF_TABLE_CURRENT`;
+- `INSS_TABLE_CURRENT`;
 - `BCB_SELIC_META_SGS_432`;
 - `BCB_CDI_DAILY_SGS_12`.
+
+Diretórios e estados já persistidos sob `RFB_IRRF_TABLE_2026` e `INSS_TABLE_2026` são evidência histórica imutável e não são renomeados. Na migração, o runtime pode materializar uma cópia do ponteiro de estado sob o ID canônico quando ele ainda não existir; snapshots/candidatos antigos permanecem nos caminhos originais.
 
 Regras:
 
@@ -32,4 +34,4 @@ Regras:
 - falhas podem atualizar estado/evidência sem autorizar a reescrita do artefato público;
 - não há pruning automático na política v1; arquivos únicos observados em produção são retidos.
 
-A política machine-readable está em `docs/phase4-production-persistence-v1.json`. O gate permanente também é validado por `scripts/validate_phase4_foundation.py` no Remake CI.
+A política histórica de persistência está em `docs/phase4-production-persistence-v1.json`; a identidade operacional vigente e a regra de migração estão em `docs/evergreen-source-identity-v2.json`. O gate permanente também é validado por `scripts/validate_phase4_foundation.py` no Remake CI.
