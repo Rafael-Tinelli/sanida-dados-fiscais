@@ -7,7 +7,12 @@ from typing import Any, Mapping
 from .contract_v1 import FiscalContractV1
 from .contract_v1_2 import FiscalContractV12, GovernanceEvidenceObservation
 from .semantic_diff_v1 import diff_contracts
-from .source_ids_v1 import INSS_SOURCE_ID, RFB_SOURCE_ID, source_ids_equivalent
+from .source_ids_v1 import (
+    INSS_SOURCE_ID,
+    RFB_SOURCE_ID,
+    canonical_source_id,
+    source_ids_equivalent,
+)
 from .sources_v1 import NormalizedSourceCandidate, ParseStatus
 from .types_v1 import (
     ChangeClass,
@@ -297,7 +302,7 @@ def _rule_source_ids(inventory_rule: Mapping[str, Any]) -> list[str]:
     values = inventory_rule.get("source_ids")
     if not isinstance(values, list) or any(not isinstance(value, str) for value in values):
         raise ReleaseAssemblyError("inventory source_ids are invalid")
-    return list(values)
+    return [canonical_source_id(value) for value in values]
 
 
 def _preferred_external_evidence(
