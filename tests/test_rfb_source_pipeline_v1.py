@@ -48,7 +48,7 @@ def source():
 
 
 def test_rfb_parser_normalizes_official_2026_values():
-    payload = parse_rfb_irrf_2026_snapshot(FIXTURE)
+    payload = parse_rfb_irrf_snapshot(FIXTURE)
 
     assert payload["reference_year"] == 2026
     assert payload["monthly_effective_from"] == "2026-01-01"
@@ -74,7 +74,7 @@ def test_rfb_parser_normalizes_official_2026_values():
 
 def test_rfb_parser_discovers_reference_year_from_annual_page():
     future_fixture = FIXTURE.replace(b"2026", b"2027")
-    payload = parse_rfb_irrf_2026_snapshot(future_fixture)
+    payload = parse_rfb_irrf_snapshot(future_fixture)
 
     assert payload["reference_year"] == 2027
     assert payload["monthly_effective_from"] == "2027-01-01"
@@ -102,7 +102,7 @@ def test_first_real_pipeline_persists_snapshot_candidate_and_state(tmp_path: Pat
         observed_at_utc=NOW,
         parser_id=PARSER_ID,
         parser_version=PARSER_VERSION,
-        parser=parse_rfb_irrf_2026_snapshot,
+        parser=parse_rfb_irrf_snapshot,
     )
 
     assert run.collection.status == CollectionStatus.COLLECTED
@@ -134,12 +134,12 @@ def test_second_run_uses_http_validator_and_preserves_last_good_state(tmp_path: 
     first = run_source_pipeline(
         source=source(), collector=collector, snapshot_store=snapshot_store, state_store=state_store,
         observed_at_utc=NOW, parser_id=PARSER_ID, parser_version=PARSER_VERSION,
-        parser=parse_rfb_irrf_2026_snapshot,
+        parser=parse_rfb_irrf_snapshot,
     )
     second = run_source_pipeline(
         source=source(), collector=collector, snapshot_store=snapshot_store, state_store=state_store,
         observed_at_utc=NOW + timedelta(hours=1), parser_id=PARSER_ID, parser_version=PARSER_VERSION,
-        parser=parse_rfb_irrf_2026_snapshot,
+        parser=parse_rfb_irrf_snapshot,
     )
 
     assert second.collection.status == CollectionStatus.NOT_MODIFIED
@@ -158,12 +158,12 @@ def test_same_200_body_is_operationally_unchanged_without_semantic_classificatio
     first = run_source_pipeline(
         source=source(), collector=collector, snapshot_store=snapshot_store, state_store=state_store,
         observed_at_utc=NOW, parser_id=PARSER_ID, parser_version=PARSER_VERSION,
-        parser=parse_rfb_irrf_2026_snapshot,
+        parser=parse_rfb_irrf_snapshot,
     )
     second = run_source_pipeline(
         source=source(), collector=collector, snapshot_store=snapshot_store, state_store=state_store,
         observed_at_utc=NOW + timedelta(hours=1), parser_id=PARSER_ID, parser_version=PARSER_VERSION,
-        parser=parse_rfb_irrf_2026_snapshot,
+        parser=parse_rfb_irrf_snapshot,
     )
 
     assert second.collection.status == CollectionStatus.COLLECTED
@@ -186,12 +186,12 @@ def test_source_failure_keeps_previous_candidate_but_records_current_failure(tmp
     first = run_source_pipeline(
         source=source(), collector=collector, snapshot_store=snapshot_store, state_store=state_store,
         observed_at_utc=NOW, parser_id=PARSER_ID, parser_version=PARSER_VERSION,
-        parser=parse_rfb_irrf_2026_snapshot,
+        parser=parse_rfb_irrf_snapshot,
     )
     failed = run_source_pipeline(
         source=source(), collector=collector, snapshot_store=snapshot_store, state_store=state_store,
         observed_at_utc=NOW + timedelta(hours=1), parser_id=PARSER_ID, parser_version=PARSER_VERSION,
-        parser=parse_rfb_irrf_2026_snapshot,
+        parser=parse_rfb_irrf_snapshot,
     )
 
     assert failed.collection.status == CollectionStatus.SOURCE_UNAVAILABLE
@@ -215,12 +215,12 @@ def test_parser_change_forces_full_refetch_instead_of_accepting_304(tmp_path: Pa
     run_source_pipeline(
         source=source(), collector=collector, snapshot_store=snapshot_store, state_store=state_store,
         observed_at_utc=NOW, parser_id=PARSER_ID, parser_version=PARSER_VERSION,
-        parser=parse_rfb_irrf_2026_snapshot,
+        parser=parse_rfb_irrf_snapshot,
     )
     run_source_pipeline(
         source=source(), collector=collector, snapshot_store=snapshot_store, state_store=state_store,
         observed_at_utc=NOW + timedelta(hours=1), parser_id=PARSER_ID, parser_version="1.2.0",
-        parser=parse_rfb_irrf_2026_snapshot,
+        parser=parse_rfb_irrf_snapshot,
     )
 
     assert "if-none-match" not in requests[1].headers
