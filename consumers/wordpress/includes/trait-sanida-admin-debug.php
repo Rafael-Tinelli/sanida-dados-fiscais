@@ -20,6 +20,8 @@ trait Sanida_Fiscais_Admin_Debug_Trait {
     // refresh must not erase knowledge that a newer release was observed.
     delete_transient(self::T_TAXAS_CACHE);
     delete_option(self::OPT_TAXAS_ETAG);
+    delete_transient(self::T_TAXAS_SERIES_CACHE);
+    delete_option(self::OPT_TAXAS_SERIES_ETAG);
 
     wp_safe_redirect(remove_query_arg(['sfa_flush','_wpnonce']));
     exit;
@@ -108,6 +110,7 @@ trait Sanida_Fiscais_Admin_Debug_Trait {
     $cc = is_array($release['consumer_compatibility'] ?? null) ? $release['consumer_compatibility'] : [];
     $lifecycle = is_array($release['lifecycle'] ?? null) ? $release['lifecycle'] : [];
     $tx = $this->get_taxas_data();
+    $series = $this->get_taxas_series_data();
 
     $out = [
       'plugin_version' => self::VERSION,
@@ -133,6 +136,15 @@ trait Sanida_Fiscais_Admin_Debug_Trait {
       'taxas' => $tx['taxas'] ?? null,
       'taxas_runtime' => $tx['_runtime'] ?? null,
       'taxas_meta' => $tx['meta'] ?? null,
+
+      'taxas_series_json_url' => $this->taxas_series_json_url(),
+      'taxas_series_cached_transient' => (bool) get_transient(self::T_TAXAS_SERIES_CACHE),
+      'taxas_series_has_last_good' => (bool) get_option(self::OPT_TAXAS_SERIES_LAST_GOOD),
+      'taxas_series_origin' => $series['_runtime']['origin'] ?? null,
+      'taxas_series_available' => $this->validate_taxas_series_payload($series),
+      'taxas_series_window' => $series['meta']['window'] ?? null,
+      'taxas_series_latest' => !empty($series['points']) ? $series['points'][count($series['points']) - 1] : null,
+      'taxas_series_runtime' => $series['_runtime'] ?? null,
     ];
 
     return '<pre style="white-space:pre-wrap">'.esc_html(print_r($out, true)).'</pre>';

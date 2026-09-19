@@ -103,7 +103,7 @@ def main() -> int:
     ):
         require(forbidden not in plugin_text, f"expired presentation adapter remains: {forbidden}")
     for marker in (
-        "Version:     2.7.1",
+        "Version:     2.8.0",
         "canonical_rules_for_shortcodes",
         "inss.employee.progressive_table",
         "irrf.monthly.progressive_table",
