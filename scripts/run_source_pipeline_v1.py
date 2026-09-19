@@ -6,12 +6,18 @@ import json
 from pathlib import Path
 
 from sanida_fiscal.source_catalog_v1 import run_registered_source_pipeline
+from sanida_fiscal.source_ids_v1 import (
+    INSS_SOURCE_ID,
+    RFB_SOURCE_ID,
+    LEGACY_SOURCE_ID_ALIASES,
+)
 from sanida_fiscal.source_runtime_v1 import SourceStateStore
 
 
 SUPPORTED_SOURCE_IDS = (
-    "RFB_IRRF_TABLE_2026",
-    "INSS_TABLE_2026",
+    RFB_SOURCE_ID,
+    INSS_SOURCE_ID,
+    *tuple(LEGACY_SOURCE_ID_ALIASES),
 )
 
 
@@ -21,7 +27,7 @@ def utc_now() -> datetime:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run one Phase 4 source pipeline without publishing anything.")
-    parser.add_argument("--source-id", default="RFB_IRRF_TABLE_2026", choices=SUPPORTED_SOURCE_IDS)
+    parser.add_argument("--source-id", default=RFB_SOURCE_ID, choices=SUPPORTED_SOURCE_IDS)
     parser.add_argument("--registry", type=Path, default=Path("docs/source-registry-v1.json"))
     parser.add_argument("--snapshot-root", type=Path, default=Path(".source-runtime/snapshots"))
     parser.add_argument("--state-root", type=Path, default=Path(".source-runtime/state"))
