@@ -54,7 +54,7 @@ def test_c61_current_manifest_points_to_exact_immutable_artifact() -> None:
 
 def test_c61_plugin_uses_manifest_and_immutable_release_not_legacy_json() -> None:
     text = _plugin_text()
-    assert "Version:     2.7.0" in text
+    assert "Version:     2.7.1" in text
     assert "/releases/fiscal-v1/current.json" in text
     assert "RELEASE_BASE_URL_DEFAULT" in text
     assert "dados_fiscais.json" not in text
@@ -234,6 +234,9 @@ def test_c61_php_identity_matches_real_release_and_preserves_empty_json_objects(
     define('ABSPATH', __DIR__);
     function wp_json_encode($value, $flags = 0, $depth = 512) {
       return json_encode($value, $flags, $depth);
+    }
+    function current_time($type) {
+      return $type === 'Y-m-d' ? '2026-09-19' : time();
     }
     require $argv[1];
     final class C61_Identity_Harness {
