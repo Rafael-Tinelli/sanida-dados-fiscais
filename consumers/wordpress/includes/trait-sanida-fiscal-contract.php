@@ -56,7 +56,7 @@ trait Sanida_Fiscais_Fiscal_Contract_Trait {
   }
 
   private function current_fiscal_date(){
-    $date = current_time('Y-m-d');
+    $date = function_exists('current_time') ? current_time('Y-m-d') : gmdate('Y-m-d');
     return $this->valid_iso_date($date) ? $date : gmdate('Y-m-d');
   }
 
