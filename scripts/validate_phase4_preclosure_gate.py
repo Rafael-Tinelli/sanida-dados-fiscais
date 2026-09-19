@@ -60,10 +60,10 @@ def main() -> None:
     _require(financial_input.get("remote_fallback_allowed") is False, "A01 remote financial fallback is allowed")
     composed = boundary.get("composed_evidence_gate", {})
     _require(
-        set(composed.get("required_sources", []))
+        {canonical_source_id(str(item)) for item in composed.get("required_sources", [])}
         == {
-            "RFB_IRRF_TABLE_2026",
-            "INSS_TABLE_2026",
+            RFB_SOURCE_ID,
+            INSS_SOURCE_ID,
             "BCB_SELIC_META_SGS_432",
             "BCB_CDI_DAILY_SGS_12",
         },
