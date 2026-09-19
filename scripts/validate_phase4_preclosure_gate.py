@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from sanida_fiscal.source_ids_v1 import INSS_SOURCE_ID, RFB_SOURCE_ID, canonical_source_id
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
