@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sanida_fiscal.inss_employee_v1 import PARSER_VERSION, parse_inss_employee_2026_snapshot
+from sanida_fiscal.inss_employee_v1 import PARSER_VERSION, parse_inss_employee_snapshot
 
 
 FIXTURE = Path("tests/fixtures/sources/inss_employee_2026_fragment.html")
@@ -15,7 +15,7 @@ def test_inss_normative_reference_survives_html_tag_boundary_before_comma() -> N
         "<a href='https://www.gov.br/previdencia/portaria-13'>PORTARIA INTERMINISTERIAL MPS/MF Nº 13</a>, de 09/01/2026",
     )
 
-    payload = parse_inss_employee_2026_snapshot(html.encode("utf-8"))
+    payload = parse_inss_employee_snapshot(html.encode("utf-8"))
 
     assert PARSER_VERSION == "1.1.0"
     assert payload["normative_reference"] == {
