@@ -6,7 +6,8 @@ import re
 from bs4 import BeautifulSoup
 from pydantic import JsonValue
 
-from .source_ids_v1 import RFB_SOURCE_ID\nfrom .sources_v1 import ParserIncompatibleError
+from .source_ids_v1 import RFB_SOURCE_ID
+from .sources_v1 import ParserIncompatibleError
 
 
 PARSER_ID = "rfb_irrf_table_v1"
