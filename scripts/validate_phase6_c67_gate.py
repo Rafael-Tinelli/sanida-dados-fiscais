@@ -139,7 +139,7 @@ def main() -> int:
         require(forbidden not in plugin_text, f"retired fiscal runtime/adapter remains in WordPress plugin: {forbidden}")
 
     for marker in (
-        "Version:     2.7.1",
+        "Version:     2.8.0",
         "register_rest_route('sfa/v1', '/fiscal-release'",
         "register_rest_route('sfa/v1', '/folha'",
         "sfa_legacy_folha_retired",
