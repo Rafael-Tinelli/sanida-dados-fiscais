@@ -50,7 +50,7 @@ def main() -> int:
     network = NETWORK.read_text(encoding="utf-8")
     admin = ADMIN.read_text(encoding="utf-8")
     for marker in (
-        "Version:     2.7.0",
+        "Version:     2.7.1",
         "OPT_KNOWN_SUCCESSOR",
         "sfa_fiscal_v12_known_successor",
         "/releases/fiscal-v1/current.json",
