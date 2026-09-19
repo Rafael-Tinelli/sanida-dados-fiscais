@@ -44,7 +44,7 @@ def make_runtime(tmp_path: Path, handler):
 
 
 def test_inss_parser_normalizes_official_2026_employee_table():
-    payload = parse_inss_employee_2026_snapshot(FIXTURE)
+    payload = parse_inss_employee_snapshot(FIXTURE)
 
     assert payload["reference_year"] == 2026
     assert payload["effective_from"] == "2026-01-01"
@@ -64,7 +64,7 @@ def test_inss_parser_normalizes_official_2026_employee_table():
 
 
 def test_inss_parser_captures_13th_separate_assessment_and_normative_reference():
-    payload = parse_inss_employee_2026_snapshot(FIXTURE)
+    payload = parse_inss_employee_snapshot(FIXTURE)
 
     assert payload["thirteenth_assessment"] == "separate_from_monthly_remuneration"
     assert payload["normative_reference"] == {
@@ -84,7 +84,7 @@ def test_legacy_news_fragment_is_not_accepted_as_canonical_table():
     from sanida_fiscal.sources_v1 import ParserIncompatibleError
 
     try:
-        parse_inss_employee_2026_snapshot(legacy_news)
+        parse_inss_employee_snapshot(legacy_news)
     except ParserIncompatibleError as exc:
         assert "canonical structural markers" in str(exc)
     else:
@@ -93,7 +93,7 @@ def test_legacy_news_fragment_is_not_accepted_as_canonical_table():
 
 def test_inss_parser_discovers_reference_year_from_source_markers():
     future_fixture = FIXTURE.replace(b"2026", b"2027")
-    payload = parse_inss_employee_2026_snapshot(future_fixture)
+    payload = parse_inss_employee_snapshot(future_fixture)
 
     assert payload["reference_year"] == 2027
     assert payload["effective_from"] == "2027-01-01"
@@ -137,7 +137,7 @@ def test_inss_pipeline_fetches_registry_url_directly_and_persists_state(tmp_path
         observed_at_utc=NOW,
         parser_id=PARSER_ID,
         parser_version=PARSER_VERSION,
-        parser=parse_inss_employee_2026_snapshot,
+        parser=parse_inss_employee_snapshot,
     )
 
     assert requested_urls == [source().url]
@@ -166,7 +166,7 @@ def test_canonical_source_failure_does_not_fall_back_to_news_or_search(tmp_path:
         observed_at_utc=NOW,
         parser_id=PARSER_ID,
         parser_version=PARSER_VERSION,
-        parser=parse_inss_employee_2026_snapshot,
+        parser=parse_inss_employee_snapshot,
     )
 
     assert requested_urls == [source().url]
