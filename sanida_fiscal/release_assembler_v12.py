@@ -170,6 +170,15 @@ def _parsed_payload(
 ) -> dict[str, Any]:
     candidate = candidates.get(source_id)
     if candidate is None:
+        candidate = next(
+            (
+                item
+                for candidate_source_id, item in candidates.items()
+                if source_ids_equivalent(candidate_source_id, source_id)
+            ),
+            None,
+        )
+    if candidate is None:
         raise ReleaseAssemblyError(f"normalized candidate missing: {source_id}")
     if candidate.status != ParseStatus.PARSED or candidate.payload is None:
         raise ReleaseAssemblyError(f"normalized candidate is not PARSED: {source_id}")
@@ -304,6 +313,15 @@ def _preferred_external_evidence(
     ]
     for source_id in ordered:
         evidence = official_evidence.get(source_id)
+        if evidence is None:
+            evidence = next(
+                (
+                    item
+                    for evidence_source_id, item in official_evidence.items()
+                    if source_ids_equivalent(evidence_source_id, source_id)
+                ),
+                None,
+            )
         if evidence is not None and source_id in allowed:
             return evidence
     raise ReleaseAssemblyError(
