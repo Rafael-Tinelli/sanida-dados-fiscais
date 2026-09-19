@@ -14,10 +14,15 @@ from sanida_fiscal.financial_reference_v1 import (
     parse_bcb_selic_meta_sgs432_snapshot,
 )
 from sanida_fiscal.financial_source_catalog_v1 import FINANCIAL_PARSER_BINDINGS
-from sanida_fiscal.inss_employee_v1 import parse_inss_employee_2026_snapshot
+from sanida_fiscal.inss_employee_v1 import parse_inss_employee_snapshot
 from sanida_fiscal.legacy_artifact_v1 import build_legacy_payroll_fields
-from sanida_fiscal.rfb_irrf_v1 import parse_rfb_irrf_2026_snapshot
+from sanida_fiscal.rfb_irrf_v1 import parse_rfb_irrf_snapshot
 from sanida_fiscal.source_catalog_v1 import PARSER_BINDINGS
+from sanida_fiscal.source_ids_v1 import (
+    INSS_SOURCE_ID,
+    RFB_SOURCE_ID,
+    canonical_source_id,
+)
 from sanida_fiscal.source_runtime_v1 import SourcePipelineState
 from sanida_fiscal.sources_v1 import load_source_registry
 
@@ -27,6 +32,7 @@ REQUIRED = {
     "sanida_fiscal/sources_v1.py",
     "sanida_fiscal/source_runtime_v1.py",
     "sanida_fiscal/source_catalog_v1.py",
+    "sanida_fiscal/source_ids_v1.py",
     "sanida_fiscal/rfb_irrf_v1.py",
     "sanida_fiscal/inss_employee_v1.py",
     "sanida_fiscal/legacy_artifact_v1.py",
@@ -51,6 +57,7 @@ REQUIRED = {
     "scripts/validate_production_evidence_v1.py",
     "scripts/validate_financial_evidence_v1.py",
     "docs/phase4-sources-sensors-v1.md",
+    "docs/evergreen-source-identity-v2.json",
     "docs/phase4-collection-surface-v1.json",
     "docs/phase4-inss-source-resolution-v1.json",
     "docs/phase4-legacy-artifact-boundary-v1.json",
@@ -114,9 +121,15 @@ def main() -> None:
                 if registry_path == "docs/financial-source-registry-v1.json"
                 else registry
             )
-            if registry_source_id not in target_registry:
+            effective_registry_source_id = (
+                registry_source_id
+                if target_registry is financial_registry
+                else canonical_source_id(registry_source_id)
+            )
+            if effective_registry_source_id not in target_registry:
                 raise SystemExit(
-                    f"Phase 4 foundation: unknown registry source {registry_source_id}"
+                    f"Phase 4 foundation: unknown registry source {registry_source_id} "
+                    f"(canonical={effective_registry_source_id})"
                 )
         if entry.get("current_behavior") == entry.get("target_behavior"):
             raise SystemExit(
@@ -129,7 +142,7 @@ def main() -> None:
     if unexpected:
         raise SystemExit(f"Phase 4 foundation: unexpected workflows: {unexpected}")
 
-    required_sources = {"RFB_IRRF_TABLE_2026", "INSS_TABLE_2026"}
+    required_sources = {RFB_SOURCE_ID, INSS_SOURCE_ID}
     if not required_sources.issubset(registry):
         raise SystemExit("Phase 4 foundation: canonical RFB/INSS sources are missing")
     if set(PARSER_BINDINGS) != required_sources:
@@ -142,7 +155,7 @@ def main() -> None:
         raise SystemExit("Phase 4 foundation: financial parser catalog drift")
 
     rfb_fixture = (ROOT / "tests/fixtures/sources/rfb_irrf_2026_fragment.html").read_bytes()
-    rfb_payload = parse_rfb_irrf_2026_snapshot(rfb_fixture)
+    rfb_payload = parse_rfb_irrf_snapshot(rfb_fixture)
     if rfb_payload.get("dependent_deduction_brl") != "189.59":
         raise SystemExit("Phase 4 foundation: RFB parser dependent deduction drift")
     if rfb_payload.get("simplified_discount_brl") != "607.20":
@@ -152,7 +165,7 @@ def main() -> None:
         raise SystemExit("Phase 4 foundation: RFB parser reduction drift")
 
     inss_fixture = (ROOT / "tests/fixtures/sources/inss_employee_2026_fragment.html").read_bytes()
-    inss_payload = parse_inss_employee_2026_snapshot(inss_fixture)
+    inss_payload = parse_inss_employee_snapshot(inss_fixture)
     if inss_payload.get("contribution_ceiling_brl") != "8475.55":
         raise SystemExit("Phase 4 foundation: INSS parser ceiling drift")
     if inss_payload.get("thirteenth_assessment") != "separate_from_monthly_remuneration":
@@ -171,13 +184,23 @@ def main() -> None:
         raise SystemExit("Phase 4 foundation: CDI 252-business-day annualization drift")
 
     policy = json.loads((ROOT / "docs/phase4-inss-source-resolution-v1.json").read_text(encoding="utf-8"))
-    if policy.get("registry_source_id") != "INSS_TABLE_2026":
-        raise SystemExit("Phase 4 foundation: INSS source policy registry id drift")
+    if canonical_source_id(str(policy.get("registry_source_id"))) != INSS_SOURCE_ID:
+        raise SystemExit("Phase 4 foundation: historical INSS source policy alias drift")
     resolution = policy.get("resolution", {})
     if resolution.get("allow_pinned_news_fallback") is not False or resolution.get("allow_search_discovery_fallback") is not False:
         raise SystemExit("Phase 4 foundation: INSS discovery fallback re-enabled")
-    if policy.get("canonical_source", {}).get("url") != registry["INSS_TABLE_2026"].url:
+    if policy.get("canonical_source", {}).get("url") != registry[INSS_SOURCE_ID].url:
         raise SystemExit("Phase 4 foundation: INSS canonical URL differs from source registry")
+
+    identity = json.loads((ROOT / "docs/evergreen-source-identity-v2.json").read_text(encoding="utf-8"))
+    canonical_ids = set(identity.get("canonical_source_ids", {}).values())
+    if canonical_ids != required_sources:
+        raise SystemExit("Phase 4 foundation: evergreen canonical payroll source IDs drift")
+    aliases = identity.get("legacy_aliases", {})
+    if {
+        canonical_source_id(str(source_id)) for source_id in aliases
+    } != required_sources:
+        raise SystemExit("Phase 4 foundation: evergreen legacy alias mapping drift")
 
     financial_policy = json.loads((ROOT / "docs/phase4-financial-reference-policy-v1.json").read_text(encoding="utf-8"))
     if financial_policy.get("failure_policy", {}).get("write_static_fallback") is not False:
@@ -213,7 +236,10 @@ def main() -> None:
         raise SystemExit("Phase 4 foundation: snapshot provenance hash gate disabled")
     if integrity.get("candidate_file_sha256_must_equal_artifact_provenance") is not True:
         raise SystemExit("Phase 4 foundation: candidate provenance hash gate disabled")
-    included_sources = set(persistence.get("scope", {}).get("included_sources", []))
+    included_sources = {
+        canonical_source_id(str(source_id))
+        for source_id in persistence.get("scope", {}).get("included_sources", [])
+    }
     if included_sources != required_sources | required_financial_sources:
         raise SystemExit("Phase 4 foundation: persisted production source set drift")
 
