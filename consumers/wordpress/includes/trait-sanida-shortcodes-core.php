@@ -62,13 +62,15 @@ trait Sanida_Fiscais_Shortcodes_Core_Trait {
 
   public function sc_selic(){
     $d = $this->get_taxas_data();
-    $v = isset($d['taxas']['selic']) ? (float)$d['taxas']['selic'] : 0;
+    if (!isset($d['taxas']['selic']) || !is_numeric($d['taxas']['selic'])) return $this->fiscais_unavailable_text('taxa');
+    $v = (float)$d['taxas']['selic'];
     return esc_html(number_format($v, 2, ',', '.')) . '% a.a.';
   }
 
   public function sc_cdi(){
     $d = $this->get_taxas_data();
-    $v = isset($d['taxas']['cdi']) ? (float)$d['taxas']['cdi'] : 0;
+    if (!isset($d['taxas']['cdi']) || !is_numeric($d['taxas']['cdi'])) return $this->fiscais_unavailable_text('taxa');
+    $v = (float)$d['taxas']['cdi'];
     return esc_html(number_format($v, 2, ',', '.')) . '% a.a.';
   }
 
@@ -160,8 +162,11 @@ trait Sanida_Fiscais_Shortcodes_Core_Trait {
   public function sc_bcb_box(){
     $d = $this->get_taxas_data();
     $t = $d['taxas'] ?? [];
-    $sel = (float)($t['selic'] ?? 0);
-    $cdi = (float)($t['cdi'] ?? 0);
+    if (!isset($t['selic'], $t['cdi']) || !is_numeric($t['selic']) || !is_numeric($t['cdi'])) {
+      return $this->fiscais_unavailable_text('taxa');
+    }
+    $sel = (float)$t['selic'];
+    $cdi = (float)$t['cdi'];
     return "<div style='border:1px solid #ddd;padding:15px;border-radius:8px;display:flex;gap:20px;background:#fff'>"
       ."<div><strong>Selic</strong><br><span style='color:#007cba;font-size:1.4em'>".esc_html(number_format($sel,2,',','.'))."%</span></div>"
       ."<div><strong>CDI</strong><br><span style='color:#007cba;font-size:1.4em'>".esc_html(number_format($cdi,2,',','.'))."%</span></div>"

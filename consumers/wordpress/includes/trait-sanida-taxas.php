@@ -25,19 +25,25 @@ trait Sanida_Fiscais_Taxas_Trait {
       'meta' => [
         'generated_at_utc' => gmdate('c'),
         'sources' => [],
-        'errors' => ['fallback_minimal_taxas'],
+        'errors' => ['taxas_unavailable_fail_closed'],
         'warnings' => [],
       ],
       'taxas' => [
-        'selic' => 15.00,
-        'cdi'   => 14.90,
-        'cdi_basis' => 'fallback',
+        'selic' => null,
+        'cdi'   => null,
+        'cdi_basis' => 'unavailable',
+      ],
+      '_runtime' => [
+        'origin' => 'unavailable_fail_closed',
+        'unavailable' => true,
+        'checked_at_utc' => gmdate('c'),
       ],
     ];
   }
 
   private function get_taxas_data(){
     $d = get_transient(self::T_TAXAS_CACHE);
+    if (is_array($d) && !empty($d['_runtime']['unavailable'])) return $d;
     if ($this->validate_taxas_payload($d)) {
       if (!isset($d['_runtime']) || !is_array($d['_runtime'])) {
         $d['_runtime'] = [
@@ -118,10 +124,6 @@ trait Sanida_Fiscais_Taxas_Trait {
     }
 
     $min = $this->minimal_taxas_fallback();
-    $min['_runtime'] = [
-      'origin' => 'minimal_fallback',
-      'checked_at_utc' => gmdate('c'),
-    ];
     set_transient(self::T_TAXAS_CACHE, $min, self::TTL_TAXAS_FAIL);
     return $min;
   }

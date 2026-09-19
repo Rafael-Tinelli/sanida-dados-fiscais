@@ -93,6 +93,13 @@ def main() -> int:
         "2902.84",
         "4354.27",
         "8475.55",
+        "'selic' => 15.00",
+        "'cdi'   => 14.90",
+        "'origin' => 'minimal_fallback'",
+        "isset($d['taxas']['selic']) ? (float)$d['taxas']['selic'] : 0",
+        "isset($d['taxas']['cdi']) ? (float)$d['taxas']['cdi'] : 0",
+        "(float)($t['selic'] ?? 0)",
+        "(float)($t['cdi'] ?? 0)",
     )
     for token in forbidden:
         require(token not in text, f"legacy fiscal authority/adapter/formula remains in plugin: {token}")
@@ -129,6 +136,11 @@ def main() -> int:
         "data-sfa-retired=\"folha\"",
         "/financas/calculadoras/salario-liquido-clt/",
         "/financas/calculadoras/decimo-terceiro/",
+        "taxas_unavailable_fail_closed",
+        "'origin' => 'unavailable_fail_closed'",
+        "'unavailable' => true",
+        "'cdi_basis' => 'unavailable'",
+        "fiscais_unavailable_text('taxa')",
     )
     for marker in required_markers:
         require(marker in text, f"plugin missing required C6.1/C7.1 marker: {marker}")
