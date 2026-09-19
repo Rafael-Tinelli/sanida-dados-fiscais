@@ -12,6 +12,7 @@ trait Sanida_Fiscais_Shortcodes_Core_Trait {
       'taxas_bacen'          => 'sc_bcb_box',
       'selic_atual'          => 'sc_selic',
       'cdi_atual'            => 'sc_cdi',
+      'taxas_historicas_json' => 'sc_taxas_historicas_json',
       'sfa_bootstrap_folha'  => 'sc_bootstrap_folha',
       'sanida_calculadora_13' => 'sc_calc13_assets',
       'sfa_calc13_assets'     => 'sc_calc13_assets',
@@ -72,6 +73,29 @@ trait Sanida_Fiscais_Shortcodes_Core_Trait {
     if (!isset($d['taxas']['cdi']) || !is_numeric($d['taxas']['cdi'])) return $this->fiscais_unavailable_text('taxa');
     $v = (float)$d['taxas']['cdi'];
     return esc_html(number_format($v, 2, ',', '.')) . '% a.a.';
+  }
+
+  public function sc_taxas_historicas_json($atts = []){
+    $atts = shortcode_atts([
+      'meses' => '60',
+      'incluir_mes_corrente' => '1',
+    ], $atts, 'taxas_historicas_json');
+
+    $months = max(1, min(self::TAXAS_SERIES_MONTHS, (int)$atts['meses']));
+    $include = !in_array(
+      strtolower(trim((string)$atts['incluir_mes_corrente'])),
+      ['0', 'false', 'nao', 'não', 'no'],
+      true
+    );
+    $view = $this->taxas_series_view($months, $include);
+    $json = wp_json_encode(
+      $view,
+      JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+      | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+    );
+    return is_string($json)
+      ? $json
+      : '{"schema_version":"1.0.0","available":false,"points":[]}';
   }
 
   public function sc_bootstrap_folha($atts = []){
