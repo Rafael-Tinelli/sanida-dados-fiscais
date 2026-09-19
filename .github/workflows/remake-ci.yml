@@ -33,7 +33,7 @@ jobs:
 
       - name: Compile Python
         run: |
-          python -m compileall -q scraper.py update_taxas.py scripts tests sanida_fiscal
+          python -m compileall -q scraper.py update_taxas.py update_taxas_series.py scripts tests sanida_fiscal
 
       - name: Validate repository baseline and reference cases
         run: |
