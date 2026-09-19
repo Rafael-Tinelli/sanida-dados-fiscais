@@ -147,6 +147,19 @@ def main() -> int:
         "cdi_observation_is_fresh",
         "BCB_CDI_DAILY_SGS_12",
         "max_observation_age_calendar_days",
+        "TAXAS_SERIES_JSON_URL_DEFAULT",
+        "taxas_bacen_series.json",
+        "TAXAS_SERIES_SCHEMA_VERSION = '1.0.0'",
+        "TAXAS_SERIES_MONTHS = 120",
+        "validate_taxas_series_payload",
+        "taxas_series_cdi_is_fresh",
+        "'taxas_historicas_json' => 'sc_taxas_historicas_json'",
+        "register_financial_series_route",
+        "register_rest_route('sfa/v1', '/taxas-historicas'",
+        "BCB_SELIC_META_SGS_432",
+        "minimal_taxas_series_fallback",
+        "'available' => false",
+        "'points' => []",
     )
     for marker in required_markers:
         require(marker in text, f"plugin missing required C6.1/C7.1 marker: {marker}")
