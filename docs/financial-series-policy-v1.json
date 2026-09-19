@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0.0",
+  "decision_id": "financial_reference.historical_series_policy",
+  "status": "active",
+  "as_of": "2026-09-19",
+  "scope": {
+    "artifact": "taxas_bacen_series.json",
+    "window_months": 120,
+    "timezone": "America/Sao_Paulo",
+    "separate_from_fiscal_contract": true,
+    "separate_from_current_taxas_artifact": true
+  },
+  "sources": {
+    "selic": {
+      "source_id": "BCB_SELIC_META_SGS_432",
+      "series_code": 432,
+      "semantic": "Copom Selic target level",
+      "monthly_projection": "last observation in each calendar month",
+      "unit": "percent_per_year"
+    },
+    "cdi": {
+      "source_id": "BCB_CDI_DAILY_SGS_12",
+      "series_code": 12,
+      "semantic": "daily CDI rate",
+      "monthly_level": "last daily observation in each calendar month, annualized by compounding 252 business days",
+      "monthly_return": "compound every daily observation published in the calendar month",
+      "daily_unit": "percent_per_business_day",
+      "annualization_basis_business_days": 252
+    }
+  },
+  "freshness": {
+    "latest_cdi_max_observation_age_calendar_days": 7,
+    "selic_max_observation_age_calendar_days": null,
+    "current_month_marked_incomplete": true
+  },
+  "failure_policy": {
+    "missing_calendar_month": "hard_fail",
+    "parser_incompatible": "hard_fail",
+    "stale_latest_cdi": "hard_fail",
+    "source_unavailable": "preserve_existing_artifact_bytes",
+    "static_fallback_allowed": false,
+    "relabel_prior_history_as_current": false
+  },
+  "public_use": {
+    "suitable_for": [
+      "editorial charts",
+      "finance hub context",
+      "benchmark context",
+      "historical CDI monthly return calculations"
+    ],
+    "not_a_claim_that_investment_returns_equal_benchmark": true,
+    "raw_daily_points_not_exposed_in_public_artifact": true
+  }
+}
