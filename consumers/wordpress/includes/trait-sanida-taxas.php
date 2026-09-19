@@ -20,7 +20,9 @@ trait Sanida_Fiscais_Taxas_Trait {
     $observation_date = $source['source_observation_date'] ?? null;
     if (!$this->valid_taxas_iso_date($observation_date)) return false;
 
-    $date = $as_of === null ? current_time('Y-m-d') : $as_of;
+    $date = $as_of === null
+      ? (function_exists('current_time') ? current_time('Y-m-d') : gmdate('Y-m-d'))
+      : $as_of;
     if (!$this->valid_taxas_iso_date($date)) return false;
     if ($observation_date > $date) return false;
 
