@@ -11,14 +11,18 @@ from pydantic import JsonValue
 from .inss_employee_v1 import (
     PARSER_ID as INSS_PARSER_ID,
     PARSER_VERSION as INSS_PARSER_VERSION,
-    REFERENCE_YEAR as INSS_REFERENCE_YEAR,
-    parse_inss_employee_2026_snapshot,
+    parse_inss_employee_snapshot,
 )
 from .rfb_irrf_v1 import (
     PARSER_ID as RFB_PARSER_ID,
     PARSER_VERSION as RFB_PARSER_VERSION,
-    REFERENCE_YEAR as RFB_REFERENCE_YEAR,
-    parse_rfb_irrf_2026_snapshot,
+    parse_rfb_irrf_snapshot,
+)
+from .source_ids_v1 import (
+    INSS_SOURCE_ID,
+    RFB_SOURCE_ID,
+    canonical_source_id,
+    legacy_source_ids_for,
 )
 from .source_runtime_v1 import (
     CandidateStore,
@@ -41,24 +45,21 @@ class ParserBinding:
     source_id: str
     parser_id: str
     parser_version: str
-    reference_year: int
     parser: Callable[[bytes], dict[str, JsonValue]]
 
 
 PARSER_BINDINGS = {
-    "RFB_IRRF_TABLE_2026": ParserBinding(
-        source_id="RFB_IRRF_TABLE_2026",
+    RFB_SOURCE_ID: ParserBinding(
+        source_id=RFB_SOURCE_ID,
         parser_id=RFB_PARSER_ID,
         parser_version=RFB_PARSER_VERSION,
-        reference_year=RFB_REFERENCE_YEAR,
-        parser=parse_rfb_irrf_2026_snapshot,
+        parser=parse_rfb_irrf_snapshot,
     ),
-    "INSS_TABLE_2026": ParserBinding(
-        source_id="INSS_TABLE_2026",
+    INSS_SOURCE_ID: ParserBinding(
+        source_id=INSS_SOURCE_ID,
         parser_id=INSS_PARSER_ID,
         parser_version=INSS_PARSER_VERSION,
-        reference_year=INSS_REFERENCE_YEAR,
-        parser=parse_inss_employee_2026_snapshot,
+        parser=parse_inss_employee_snapshot,
     ),
 }
 
@@ -70,15 +71,27 @@ DEFAULT_HEADERS = {
 
 
 def parser_binding(source_id: str) -> ParserBinding:
+    canonical = canonical_source_id(source_id)
     try:
-        return PARSER_BINDINGS[source_id]
+        return PARSER_BINDINGS[canonical]
     except KeyError as exc:
-        raise ValueError(f"no Phase 4 parser binding for source_id: {source_id}") from exc
+        raise ValueError(f"no payroll parser binding for source_id: {source_id}") from exc
 
 
-def registered_reference_year(source_id: str) -> int:
-    """Historical compatibility helper; runtime discovery is year-aware."""
-    return parser_binding(source_id).reference_year
+def _migrate_legacy_state_once(
+    state_store: SourceStateStore,
+    *,
+    source_id: str,
+) -> None:
+    """Materialize canonical state without rewriting immutable legacy evidence."""
+    if state_store.load(source_id) is not None:
+        return
+    for legacy_id in legacy_source_ids_for(source_id):
+        legacy = state_store.load(legacy_id)
+        if legacy is None:
+            continue
+        state_store.persist(legacy.model_copy(update={"source_id": source_id}))
+        return
 
 
 def resolve_source_for_reference_year(
@@ -87,20 +100,13 @@ def resolve_source_for_reference_year(
     source_id: str,
     reference_year: int,
 ) -> SourceSpec:
-    """Resolve only the year-varying part of a known official source URL.
-
-    Source IDs stay unchanged in this first migration layer so historical
-    evidence and contracts remain addressable. The annual RFB table path is
-    resolved from the execution year; the INSS canonical table URL is stable.
-    """
-    if source_id == "RFB_IRRF_TABLE_2026":
-        url = source.url
-        if not url.rstrip("/").endswith("/2026"):
-            raise ValueError("RFB annual source URL no longer has the registered year suffix")
-        url = url.rstrip("/")[:-4] + str(reference_year)
-        return source.model_copy(update={"url": url})
+    """Resolve the execution-year URL for a canonical evergreen source."""
+    canonical = canonical_source_id(source_id)
+    if canonical == RFB_SOURCE_ID:
+        if "{year}" not in source.url:
+            raise ValueError("RFB annual source URL template lost {year} placeholder")
+        return source.model_copy(update={"url": source.url.replace("{year}", str(reference_year))})
     return source
-
 
 def parser_for_reference_year(binding: ParserBinding, reference_year: int):
     def parse(body: bytes) -> dict[str, JsonValue]:
@@ -130,6 +136,7 @@ def run_registered_source_pipeline(
     use_http_validators: bool = True,
 ) -> SourcePipelineRun:
     registry = load_source_registry(registry_path)
+    source_id = canonical_source_id(source_id)
     if source_id not in registry:
         raise ValueError(f"unknown source_id: {source_id}")
 
@@ -142,6 +149,7 @@ def run_registered_source_pipeline(
     )
     snapshot_store = SnapshotStore(snapshot_root)
     state_store = SourceStateStore(state_root)
+    _migrate_legacy_state_once(state_store, source_id=source_id)
     candidate_store = CandidateStore(candidate_root)
     collector = HttpCollectorV1(
         snapshot_store=snapshot_store,
