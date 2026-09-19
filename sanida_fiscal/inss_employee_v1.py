@@ -129,12 +129,17 @@ def parse_inss_employee_snapshot(body: bytes) -> dict[str, JsonValue]:
     _assert_contiguous(bands)
 
     normative = re.search(
-        r"PORTARIA\s+INTERMINISTERIAL\s+MPS/MF\s+N[º°]?\s*13\s*,\s*de\s*09/01/2026",
+        r"PORTARIA\\s+INTERMINISTERIAL\\s+MPS/MF\\s+N[º°]?\\s*([0-9]+)\\s*,\\s*de\\s*([0-3]?\\d)/([01]?\\d)/(20\\d{2})",
         text,
         re.IGNORECASE,
     )
     if not normative:
-        raise ParserIncompatibleError("INSS 2026 normative-reference marker changed")
+        raise ParserIncompatibleError("INSS normative-reference marker changed")
+    normative_year = int(normative.group(4))
+    if normative_year != reference_year:
+        raise ParserIncompatibleError(
+            f"INSS normative year mismatch: table={reference_year} act={normative_year}"
+        )
 
     separate_thirteenth = re.search(
         r"décimo terceiro salário.*?não deve ser somado à remuneração mensal.*?valores em separado",
