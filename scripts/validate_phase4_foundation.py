@@ -73,6 +73,7 @@ REQUIRED = {
 ALLOWED_WORKFLOWS = {
     "main.yml",
     "taxas.yml",
+    "taxas-series.yml",
     "remake-ci.yml",
     "fiscal-release-v12.yml",
 }
