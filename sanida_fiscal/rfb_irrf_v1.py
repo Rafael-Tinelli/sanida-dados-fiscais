@@ -46,7 +46,7 @@ def _decimal(value: str) -> str:
     return format(number.normalize(), "f")
 
 
-def parse_rfb_irrf_snapshot(body: bytes) -> dict[str, JsonValue]:
+def parse_rfb_irrf_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
     """Parse the current RFB annual IRRF page into a normalized source observation.
 
     This parser does not publish fiscal rules. It only normalizes values observed
@@ -160,9 +160,3 @@ def parse_rfb_irrf_snapshot(body: bytes) -> dict[str, JsonValue]:
             "input_semantic": "rendimentos_tributaveis_sujeitos_incidencia_mensal",
         },
     }
-
-
-# Compatibility alias kept during the first evergreen migration layer.
-# Historical tests/callers may still import the year-qualified symbol.
-def parse_rfb_irrf_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
-    return parse_rfb_irrf_snapshot(body)
