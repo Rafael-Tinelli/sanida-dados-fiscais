@@ -9,8 +9,9 @@ import httpx
 from sanida_fiscal.inss_employee_v1 import (
     PARSER_ID,
     PARSER_VERSION,
-    parse_inss_employee_2026_snapshot,
+    parse_inss_employee_snapshot,
 )
+from sanida_fiscal.source_ids_v1 import INSS_SOURCE_ID, canonical_source_id
 from sanida_fiscal.source_runtime_v1 import SourceStateStore, run_source_pipeline
 from sanida_fiscal.sources_v1 import (
     CollectionStatus,
@@ -28,7 +29,7 @@ POLICY = Path("docs/phase4-inss-source-resolution-v1.json")
 
 
 def source():
-    return load_source_registry(Path("docs/source-registry-v1.json"))["INSS_TABLE_2026"]
+    return load_source_registry(Path("docs/source-registry-v1.json"))[INSS_SOURCE_ID]
 
 
 def make_runtime(tmp_path: Path, handler):
@@ -106,7 +107,7 @@ def test_source_resolution_binds_registry_url_and_forbids_legacy_fallback():
     spec = source()
 
     assert policy["status"] == "resolved"
-    assert policy["registry_source_id"] == spec.source_id
+    assert canonical_source_id(policy["registry_source_id"]) == spec.source_id
     assert policy["canonical_source"]["url"] == spec.url
     assert policy["canonical_source"]["parser_id"] == PARSER_ID
     assert policy["canonical_source"]["parser_version"] == PARSER_VERSION
