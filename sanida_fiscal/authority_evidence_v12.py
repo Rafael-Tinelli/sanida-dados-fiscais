@@ -11,13 +11,14 @@ import requests
 from .inss_employee_v1 import (
     PARSER_ID as INSS_PARSER_ID,
     PARSER_VERSION as INSS_PARSER_VERSION,
-    parse_inss_employee_2026_snapshot,
+    parse_inss_employee_snapshot,
 )
 from .rfb_irrf_v1 import (
     PARSER_ID as RFB_PARSER_ID,
     PARSER_VERSION as RFB_PARSER_VERSION,
-    parse_rfb_irrf_2026_snapshot,
+    parse_rfb_irrf_snapshot,
 )
+from .source_catalog_v1 import resolve_source_for_reference_year
 from .sources_v1 import (
     CollectionResult,
     CollectionStatus,
@@ -25,6 +26,7 @@ from .sources_v1 import (
     HttpCollectorV1,
     NormalizedSourceCandidate,
     ParseStatus,
+    ParserIncompatibleError,
     RetryPolicy,
     SnapshotStore,
     SourceSpec,
@@ -49,12 +51,12 @@ PARSER_BINDINGS = {
     RFB_SOURCE_ID: (
         RFB_PARSER_ID,
         RFB_PARSER_VERSION,
-        parse_rfb_irrf_2026_snapshot,
+        parse_rfb_irrf_snapshot,
     ),
     INSS_SOURCE_ID: (
         INSS_PARSER_ID,
         INSS_PARSER_VERSION,
-        parse_inss_employee_2026_snapshot,
+        parse_inss_employee_snapshot,
     ),
 }
 
@@ -380,6 +382,11 @@ def collect_authority_evidence(
         source = registry.get(source_id)
         if source is None:
             raise AuthorityEvidenceError(f"source absent from registry: {source_id}")
+        source = resolve_source_for_reference_year(
+            source,
+            source_id=source_id,
+            reference_year=observed_at_utc.year,
+        )
         result = _collect_authority_source(
             source_id=source_id,
             source=source,
@@ -399,12 +406,22 @@ def collect_authority_evidence(
         parser_version = None
         if source_id in PARSER_BINDINGS:
             parser_id, parser_version, parser = PARSER_BINDINGS[source_id]
+            def parse_current_year(body: bytes):
+                payload = parser(body)
+                observed_year = payload.get("reference_year")
+                if observed_year != observed_at_utc.year:
+                    raise ParserIncompatibleError(
+                        f"reference-year mismatch: expected={observed_at_utc.year} "
+                        f"observed={observed_year}"
+                    )
+                return payload
+
             candidate = parse_snapshot(
                 snapshot_store=store,
                 collection=result,
                 parser_id=parser_id,
                 parser_version=parser_version,
-                parser=parser,
+                parser=parse_current_year,
             )
             if candidate.status != ParseStatus.PARSED:
                 raise AuthorityEvidenceError(
