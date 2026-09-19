@@ -8,8 +8,10 @@ import httpx
 from sanida_fiscal.rfb_irrf_v1 import (
     PARSER_ID,
     PARSER_VERSION,
-    parse_rfb_irrf_2026_snapshot,
+    parse_rfb_irrf_snapshot,
 )
+from sanida_fiscal.source_ids_v1 import RFB_SOURCE_ID
+from sanida_fiscal.source_catalog_v1 import resolve_source_for_reference_year
 from sanida_fiscal.source_runtime_v1 import SourceStateStore, run_source_pipeline
 from sanida_fiscal.sources_v1 import (
     CollectionStatus,
@@ -37,7 +39,12 @@ def make_runtime(tmp_path: Path, handler):
 
 
 def source():
-    return load_source_registry(Path("docs/source-registry-v1.json"))["RFB_IRRF_TABLE_2026"]
+    spec = load_source_registry(Path("docs/source-registry-v1.json"))[RFB_SOURCE_ID]
+    return resolve_source_for_reference_year(
+        spec,
+        source_id=RFB_SOURCE_ID,
+        reference_year=NOW.year,
+    )
 
 
 def test_rfb_parser_normalizes_official_2026_values():
