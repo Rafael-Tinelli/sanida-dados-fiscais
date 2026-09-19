@@ -13,7 +13,13 @@ from sanida_fiscal.source_catalog_v1 import (
     resolve_source_for_reference_year,
     run_registered_source_pipeline,
 )
-from sanida_fiscal.sources_v1 import ParserIncompatibleError, load_source_registry
+from sanida_fiscal.source_runtime_v1 import SourcePipelineState, SourceStateStore
+from sanida_fiscal.sources_v1 import (
+    CollectionStatus,
+    ParseStatus,
+    ParserIncompatibleError,
+    load_source_registry,
+)
 
 
 REGISTRY = Path("docs/source-registry-v1.json")
@@ -122,3 +128,39 @@ def test_rollover_does_not_reuse_http_validators_from_previous_annual_url(tmp_pa
 def test_legacy_source_ids_resolve_to_canonical_bindings():
     assert parser_binding("RFB_IRRF_TABLE_2026").source_id == RFB_SOURCE_ID
     assert parser_binding("INSS_TABLE_2026").source_id == INSS_SOURCE_ID
+
+
+def test_legacy_state_is_materialized_under_canonical_id_without_deletion(tmp_path: Path):
+    state_store = SourceStateStore(tmp_path / "state")
+    binding = parser_binding(RFB_SOURCE_ID)
+    legacy = SourcePipelineState(
+        source_id="RFB_IRRF_TABLE_2026",
+        source_url="https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/tabelas/2026",
+        last_observed_at_utc=datetime(2026, 12, 31, 10, 0, tzinfo=timezone.utc),
+        last_collection_status=CollectionStatus.COLLECTED,
+        last_http_status=200,
+        etag='"legacy-2026"',
+        last_parse_status=ParseStatus.PARSED,
+        parser_id=binding.parser_id,
+        parser_version=binding.parser_version,
+        last_successful_parser_id=binding.parser_id,
+        last_successful_parser_version=binding.parser_version,
+    )
+    state_store.persist(legacy)
+
+    def handler(request: httpx.Request):
+        return httpx.Response(503)
+
+    run = run_registered_source_pipeline(
+        source_id=RFB_SOURCE_ID,
+        observed_at_utc=datetime(2026, 12, 31, 12, 0, tzinfo=timezone.utc),
+        snapshot_root=tmp_path / "snapshots",
+        state_root=tmp_path / "state",
+        candidate_root=tmp_path / "candidates",
+        transport=httpx.MockTransport(handler),
+        max_attempts=1,
+    )
+
+    assert run.state.source_id == RFB_SOURCE_ID
+    assert state_store.load(RFB_SOURCE_ID) is not None
+    assert state_store.load("RFB_IRRF_TABLE_2026") == legacy
