@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Sanida - Fiscais (Git Source + Calculadoras)
- * Description: Release fiscal canônica v1.2, cache/REST auditável, tabelas informativas e pontes para as calculadoras atuais.
- * Version:     2.7.1
+ * Description: Release fiscal canônica v1.2, referências financeiras atuais/históricas, cache/REST auditável e pontes para calculadoras.
+ * Version:     2.8.0
  * Author:      Sanida
  */
 
@@ -18,11 +18,12 @@ require_once plugin_dir_path(__FILE__) . 'includes/trait-sanida-admin-debug.php'
 
 final class Sanida_Fiscais_Git {
 
-  const VERSION = '2.7.1';
+  const VERSION = '2.8.0';
 
   const CURRENT_JSON_URL_DEFAULT = 'https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/main/releases/fiscal-v1/current.json';
   const RELEASE_BASE_URL_DEFAULT = 'https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/main/releases/fiscal-v1/';
   const TAXAS_JSON_URL_DEFAULT   = 'https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/main/taxas_bacen.json';
+  const TAXAS_SERIES_JSON_URL_DEFAULT = 'https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/main/taxas_bacen_series.json';
 
   const CONTRACT_ID                    = 'br.sanida.fiscal';
   const SUPPORTED_SCHEMA_VERSION       = '1.2.0';
@@ -38,12 +39,21 @@ final class Sanida_Fiscais_Git {
   const OPT_TAXAS_LAST_GOOD = 'sfa_git_v2_taxas_last_good';
   const OPT_TAXAS_ETAG      = 'sfa_git_v2_taxas_etag';
 
+  const T_TAXAS_SERIES_CACHE       = 'sfa_git_v2_taxas_series_cache';
+  const OPT_TAXAS_SERIES_LAST_GOOD = 'sfa_git_v2_taxas_series_last_good';
+  const OPT_TAXAS_SERIES_ETAG      = 'sfa_git_v2_taxas_series_etag';
+
   const TTL_SUCCESS   = 12 * HOUR_IN_SECONDS;
   const TTL_FAIL      = 15 * MINUTE_IN_SECONDS;
 
   const TTL_TAXAS_SUCCESS = 10 * MINUTE_IN_SECONDS;
   const TTL_TAXAS_FAIL    = 5 * MINUTE_IN_SECONDS;
+  const TTL_TAXAS_SERIES_SUCCESS = 6 * HOUR_IN_SECONDS;
+  const TTL_TAXAS_SERIES_FAIL    = 15 * MINUTE_IN_SECONDS;
+
   const CDI_MAX_OBSERVATION_AGE_DAYS = 7;
+  const TAXAS_SERIES_SCHEMA_VERSION = '1.0.0';
+  const TAXAS_SERIES_MONTHS = 120;
 
   use Sanida_Fiscais_Fiscal_Network_Trait;
   use Sanida_Fiscais_Fiscal_Contract_Trait;
@@ -64,6 +74,7 @@ final class Sanida_Fiscais_Git {
     add_action('admin_init',     [$this, 'clear_cache']);
     add_action('rest_api_init',  [$this, 'register_rest_routes']);
     add_action('rest_api_init',  [$this, 'register_fiscal_health_route']);
+    add_action('rest_api_init',  [$this, 'register_financial_series_route']);
   }
 
 }
