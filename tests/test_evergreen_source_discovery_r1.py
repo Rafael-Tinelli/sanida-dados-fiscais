@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
 
+import httpx
 import pytest
 
 from sanida_fiscal.source_catalog_v1 import (
     parser_binding,
     parser_for_reference_year,
     resolve_source_for_reference_year,
+    run_registered_source_pipeline,
 )
 from sanida_fiscal.sources_v1 import ParserIncompatibleError, load_source_registry
 
@@ -68,3 +71,48 @@ def test_current_year_parser_accepts_matching_rollover_snapshot(source_id, fixtu
     payload = parser(fixture)
 
     assert payload["reference_year"] == 2027
+
+
+def test_rollover_does_not_reuse_http_validators_from_previous_annual_url(tmp_path: Path):
+    calls = []
+    fixture_2027 = RFB_FIXTURE.replace(b"2026", b"2027")
+
+    def handler(request: httpx.Request):
+        calls.append(request)
+        if str(request.url).endswith("/2026"):
+            return httpx.Response(
+                200,
+                content=RFB_FIXTURE,
+                headers={"content-type": "text/html", "etag": '"rfb-2026"'},
+            )
+        if str(request.url).endswith("/2027"):
+            assert "if-none-match" not in request.headers
+            return httpx.Response(
+                200,
+                content=fixture_2027,
+                headers={"content-type": "text/html", "etag": '"rfb-2027"'},
+            )
+        raise AssertionError(f"unexpected URL: {request.url}")
+
+    transport = httpx.MockTransport(handler)
+    run_registered_source_pipeline(
+        source_id="RFB_IRRF_TABLE_2026",
+        observed_at_utc=datetime(2026, 12, 31, 12, 0, tzinfo=timezone.utc),
+        snapshot_root=tmp_path / "snapshots",
+        state_root=tmp_path / "state",
+        candidate_root=tmp_path / "candidates",
+        transport=transport,
+    )
+    second = run_registered_source_pipeline(
+        source_id="RFB_IRRF_TABLE_2026",
+        observed_at_utc=datetime(2027, 1, 1, 12, 0, tzinfo=timezone.utc),
+        snapshot_root=tmp_path / "snapshots",
+        state_root=tmp_path / "state",
+        candidate_root=tmp_path / "candidates",
+        transport=transport,
+    )
+
+    assert len(calls) == 2
+    assert second.collection.source_url.endswith("/2027")
+    assert second.candidate is not None
+    assert second.candidate.payload["reference_year"] == 2027
