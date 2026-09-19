@@ -105,7 +105,7 @@ def main() -> int:
         require(token not in text, f"legacy fiscal authority/adapter/formula remains in plugin: {token}")
 
     required_markers = (
-        "Version:     2.7.1",
+        "Version:     2.8.0",
         "/releases/fiscal-v1/current.json",
         "RELEASE_BASE_URL_DEFAULT",
         "hash('sha256', $artifact['body'])",
