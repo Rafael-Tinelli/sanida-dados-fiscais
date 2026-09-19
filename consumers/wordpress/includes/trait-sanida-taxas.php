@@ -156,6 +156,8 @@ trait Sanida_Fiscais_Taxas_Trait {
       $expected = $expected->modify('+1 month');
 
       if (!is_bool($point['month_complete'] ?? null)) return false;
+      $expected_complete = $month < substr($end_date, 0, 7);
+      if ($point['month_complete'] !== $expected_complete) return false;
       if (!is_numeric($point['selic_annual_rate_pct'] ?? null)) return false;
       if (!is_numeric($point['cdi_daily_rate_pct'] ?? null)) return false;
       if (!is_numeric($point['cdi_annualized_rate_pct'] ?? null)) return false;
