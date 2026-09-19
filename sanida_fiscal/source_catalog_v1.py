@@ -12,13 +12,13 @@ from .inss_employee_v1 import (
     PARSER_ID as INSS_PARSER_ID,
     PARSER_VERSION as INSS_PARSER_VERSION,
     REFERENCE_YEAR as INSS_REFERENCE_YEAR,
-    parse_inss_employee_snapshot,
+    parse_inss_employee_2026_snapshot,
 )
 from .rfb_irrf_v1 import (
     PARSER_ID as RFB_PARSER_ID,
     PARSER_VERSION as RFB_PARSER_VERSION,
     REFERENCE_YEAR as RFB_REFERENCE_YEAR,
-    parse_rfb_irrf_snapshot,
+    parse_rfb_irrf_2026_snapshot,
 )
 from .source_runtime_v1 import (
     CandidateStore,
@@ -51,14 +51,14 @@ PARSER_BINDINGS = {
         parser_id=RFB_PARSER_ID,
         parser_version=RFB_PARSER_VERSION,
         reference_year=RFB_REFERENCE_YEAR,
-        parser=parse_rfb_irrf_snapshot,
+        parser=parse_rfb_irrf_2026_snapshot,
     ),
     "INSS_TABLE_2026": ParserBinding(
         source_id="INSS_TABLE_2026",
         parser_id=INSS_PARSER_ID,
         parser_version=INSS_PARSER_VERSION,
         reference_year=INSS_REFERENCE_YEAR,
-        parser=parse_inss_employee_snapshot,
+        parser=parse_inss_employee_2026_snapshot,
     ),
 }
 
