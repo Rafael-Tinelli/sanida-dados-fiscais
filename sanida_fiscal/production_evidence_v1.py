@@ -7,12 +7,17 @@ from pathlib import Path
 from typing import Any
 
 from .financial_evidence_v1 import FinancialEvidenceError, verify_financial_source_provenance
+from .source_ids_v1 import (
+    INSS_SOURCE_ID,
+    RFB_SOURCE_ID,
+    canonical_source_id,
+)
 from .source_runtime_v1 import CandidateStore, SourceStateStore
 
 
 PAYROLL_PROVENANCE = {
-    "irrf": "RFB_IRRF_TABLE_2026",
-    "inss": "INSS_TABLE_2026",
+    "irrf": RFB_SOURCE_ID,
+    "inss": INSS_SOURCE_ID,
 }
 
 
@@ -96,14 +101,22 @@ def verify_legacy_artifact_evidence(
         provenance = sources.get(provenance_key)
         if not isinstance(provenance, dict):
             raise ProductionEvidenceError(f"missing provenance for {provenance_key}")
-        if provenance.get("source_id") != source_id:
+        provenance_source_id = provenance.get("source_id")
+        if not isinstance(provenance_source_id, str) or canonical_source_id(provenance_source_id) != source_id:
             raise ProductionEvidenceError(
-                f"{provenance_key} source_id mismatch: expected={source_id} got={provenance.get('source_id')}"
+                f"{provenance_key} source_id mismatch: expected canonical={source_id} "
+                f"got={provenance_source_id}"
             )
 
-        state = state_store.load(source_id)
+        # Existing compatibility artifacts may legitimately point to the legacy
+        # year-qualified state until the first post-migration producer run.
+        state = state_store.load(provenance_source_id)
+        if state is None and provenance_source_id != source_id:
+            state = state_store.load(source_id)
         if state is None:
-            raise ProductionEvidenceError(f"missing operational state for {source_id}")
+            raise ProductionEvidenceError(
+                f"missing operational state for {provenance_source_id}"
+            )
 
         snapshot_sha = provenance.get("snapshot_sha256")
         candidate_sha = provenance.get("candidate_sha256")
@@ -148,7 +161,7 @@ def verify_legacy_artifact_evidence(
             expected_sha256=candidate_sha,
         )
 
-        verified[source_id] = {
+        verified[provenance_source_id] = {
             "snapshot_sha256": snapshot_sha,
             "snapshot_path": snapshot_path,
             "candidate_sha256": candidate_sha,
