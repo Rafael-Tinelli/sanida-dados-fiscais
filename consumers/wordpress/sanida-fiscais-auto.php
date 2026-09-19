@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Sanida - Fiscais (Git Source + Calculadoras)
  * Description: Release fiscal canônica v1.2, cache/REST auditável, tabelas informativas e pontes para as calculadoras atuais.
- * Version:     2.7.0
+ * Version:     2.7.1
  * Author:      Sanida
  */
 
@@ -18,7 +18,7 @@ require_once plugin_dir_path(__FILE__) . 'includes/trait-sanida-admin-debug.php'
 
 final class Sanida_Fiscais_Git {
 
-  const VERSION = '2.7.0';
+  const VERSION = '2.7.1';
 
   const CURRENT_JSON_URL_DEFAULT = 'https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/main/releases/fiscal-v1/current.json';
   const RELEASE_BASE_URL_DEFAULT = 'https://raw.githubusercontent.com/Rafael-Tinelli/sanida-dados-fiscais/main/releases/fiscal-v1/';
@@ -43,6 +43,7 @@ final class Sanida_Fiscais_Git {
 
   const TTL_TAXAS_SUCCESS = 10 * MINUTE_IN_SECONDS;
   const TTL_TAXAS_FAIL    = 5 * MINUTE_IN_SECONDS;
+  const CDI_MAX_OBSERVATION_AGE_DAYS = 7;
 
   use Sanida_Fiscais_Fiscal_Network_Trait;
   use Sanida_Fiscais_Fiscal_Contract_Trait;

@@ -105,7 +105,7 @@ def main() -> int:
         require(token not in text, f"legacy fiscal authority/adapter/formula remains in plugin: {token}")
 
     required_markers = (
-        "Version:     2.7.0",
+        "Version:     2.7.1",
         "/releases/fiscal-v1/current.json",
         "RELEASE_BASE_URL_DEFAULT",
         "hash('sha256', $artifact['body'])",
@@ -141,6 +141,12 @@ def main() -> int:
         "'unavailable' => true",
         "'cdi_basis' => 'unavailable'",
         "fiscais_unavailable_text('taxa')",
+        "release_within_effective_window",
+        "rule_within_effective_window",
+        "CDI_MAX_OBSERVATION_AGE_DAYS = 7",
+        "cdi_observation_is_fresh",
+        "BCB_CDI_DAILY_SGS_12",
+        "max_observation_age_calendar_days",
     )
     for marker in required_markers:
         require(marker in text, f"plugin missing required C6.1/C7.1 marker: {marker}")
