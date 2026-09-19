@@ -10,7 +10,7 @@ from .sources_v1 import ParserIncompatibleError
 
 
 PARSER_ID = "rfb_irrf_table_v1"
-PARSER_VERSION = "1.0.0"
+PARSER_VERSION = "1.1.0"
 REFERENCE_YEAR = 2026
 
 
@@ -46,8 +46,8 @@ def _decimal(value: str) -> str:
     return format(number.normalize(), "f")
 
 
-def parse_rfb_irrf_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
-    """Parse the known RFB 2026 IRRF page into a normalized source observation.
+def parse_rfb_irrf_snapshot(body: bytes) -> dict[str, JsonValue]:
+    """Parse the current RFB annual IRRF page into a normalized source observation.
 
     This parser does not publish fiscal rules. It only normalizes values observed
     in the already-known official source structure so Phase 5 can compare them.
@@ -62,18 +62,22 @@ def parse_rfb_irrf_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
     text = _normalize_space(soup.get_text(" ", strip=True))
 
     required_markers = (
-        "Tributação de 2026",
         "Tabela de Incidência Mensal",
         "Tabela de Redução Mensal",
     )
     missing = [marker for marker in required_markers if marker not in text]
     if missing:
-        raise ParserIncompatibleError(f"RFB 2026 structural markers missing: {missing}")
+        raise ParserIncompatibleError(f"RFB structural markers missing: {missing}")
+
+    year_match = re.search(r"Tributação de\s+(20\d{2})", text, re.IGNORECASE)
+    if not year_match:
+        raise ParserIncompatibleError("RFB reference-year marker changed")
+    reference_year = int(year_match.group(1))
 
     monthly_start = text.index("Tabela de Incidência Mensal")
     reduction_start = text.index("Tabela de Redução Mensal")
     if reduction_start <= monthly_start:
-        raise ParserIncompatibleError("RFB 2026 section order changed")
+        raise ParserIncompatibleError("RFB section order changed")
 
     monthly = text[monthly_start:reduction_start]
     reduction = text[reduction_start:]
@@ -140,9 +144,9 @@ def parse_rfb_irrf_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
         raise ParserIncompatibleError("RFB IRRF scalar/reduction structure changed")
 
     return {
-        "observation_type": "rfb_irrf_2026",
-        "reference_year": REFERENCE_YEAR,
-        "monthly_effective_from": "2026-01-01",
+        "observation_type": f"rfb_irrf_{reference_year}",
+        "reference_year": reference_year,
+        "monthly_effective_from": f"{reference_year}-01-01",
         "monthly_table": bands,
         "dependent_deduction_brl": _br_money(dependent.group(1)),
         "simplified_discount_brl": _br_money(simplified.group(1)),
@@ -156,3 +160,9 @@ def parse_rfb_irrf_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
             "input_semantic": "rendimentos_tributaveis_sujeitos_incidencia_mensal",
         },
     }
+
+
+# Compatibility alias kept during the first evergreen migration layer.
+# Historical tests/callers may still import the year-qualified symbol.
+def parse_rfb_irrf_2026_snapshot(body: bytes) -> dict[str, JsonValue]:
+    return parse_rfb_irrf_snapshot(body)
