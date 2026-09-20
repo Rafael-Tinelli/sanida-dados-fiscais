@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "meta": {
-    "generated_at_utc": "2026-09-19T22:27:35Z",
+    "generated_at_utc": "2026-09-20T01:12:45Z",
     "timezone": "America/Sao_Paulo",
     "window": {
       "months": 120,
@@ -23,7 +23,7 @@
         "candidate_sha256": "828b788cf0ea65c2606a8714b149781986d7f8c9589041fb9c644624991e2bf4",
         "parser_id": "bcb_selic_meta_sgs432_history_v1",
         "parser_version": "1.0.0",
-        "observed_at_utc": "2026-09-19T22:27:35Z",
+        "observed_at_utc": "2026-09-20T01:12:45Z",
         "observation_count": 3641
       },
       "cdi": {
@@ -34,7 +34,7 @@
         "candidate_sha256": "2a351ae8c5e7f02089573e373bb19c0f0ada121eadacf86918f0a9e8f33f3669",
         "parser_id": "bcb_cdi_daily_sgs12_history_v1",
         "parser_version": "1.0.0",
-        "observed_at_utc": "2026-09-19T22:27:35Z",
+        "observed_at_utc": "2026-09-20T01:12:45Z",
         "observation_count": 2499
       }
     },
