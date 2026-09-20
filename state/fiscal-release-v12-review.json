@@ -6,7 +6,7 @@
     "H29"
   ],
   "approval": {
-    "required_command": "/approve b7464fde32bffaf466074d29d427020ae8d9463dd9bd3a2511fdc3804d5b0bbc",
+    "required_command": "/approve 84f97c484a8f26503364c2e49a2f01cc58a8d750b4f7f876f5b9b44c75f55ee9",
     "stale_review_must_block_publication": true
   },
   "bootstrap_baseline": null,
@@ -14,7 +14,7 @@
   "candidate_rule_count": 32,
   "candidate_schema_version": "1.2.0",
   "contract_changed_paths": [],
-  "created_at_utc": "2026-09-18T13:49:51.805935Z",
+  "created_at_utc": "2026-09-20T13:41:32.001294Z",
   "previous_release_id": "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e",
   "promotion_outcome": "REVIEW_REQUIRED",
   "reasons": [
@@ -47,13 +47,13 @@
     },
     "ESOCIAL_WEB_MEI_2026": {
       "mode": "html-visible-text-links-v1",
-      "raw_snapshot_sha256": "7e9980dadfaf6cc3f3c86e7a2383dd3c95255e374397baf8c4d61edf5aa8e12e",
+      "raw_snapshot_sha256": "0e5db904b51b9cf2da3b0625f85a33274c9e40c6ba8fabef975f848f436effbb",
       "review_fingerprint_sha256": "00b2ef31f06359e4b8b85135677672770c279f64448d5dae60cf7cf12ddde442"
     },
-    "INSS_TABLE_2026": {
+    "INSS_TABLE_CURRENT": {
       "mode": "parsed-normalized-payload-v1",
-      "raw_snapshot_sha256": "34bc2f28a1bd2f4d2948a3579a23ac28f796d14a45b1dbffdeda64c1691e108f",
-      "review_fingerprint_sha256": "d5ef2111b58bc976d0309bf36eb239ded7b39b24ab6263ce7bedd84870601940"
+      "raw_snapshot_sha256": "23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0",
+      "review_fingerprint_sha256": "f7f1d85c3f850c45f325e418610f63e0c9a5dd8d4ea4f88a0ccf83600c564b4c"
     },
     "MTE_TERMINATION_FAQ": {
       "mode": "html-visible-text-links-v1",
@@ -62,17 +62,17 @@
     },
     "PLANALTO_CLT": {
       "mode": "html-visible-text-links-v1",
-      "raw_snapshot_sha256": "2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9",
+      "raw_snapshot_sha256": "4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57",
       "review_fingerprint_sha256": "0601a66cabfca5fcf866c9a0f2c42432ecf6635e3907d68ec42217593a175bcf"
     },
     "PLANALTO_DECRETO_10854_2021": {
       "mode": "html-visible-text-links-v1",
-      "raw_snapshot_sha256": "eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33",
+      "raw_snapshot_sha256": "f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242",
       "review_fingerprint_sha256": "0f2bf55bd3cb7ee20619f4a5015ab8541762ce0959bb71da9727d3473a92ef00"
     },
     "PLANALTO_LEI_15270_2025": {
       "mode": "html-visible-text-links-v1",
-      "raw_snapshot_sha256": "02142c5a994f11b8e02c4dd154f046f3a2c9da4b276dfaca71d155992236fac8",
+      "raw_snapshot_sha256": "965cdf243419b8a2d160ead69cb6e8e04a3c13d63d6c8e96f729f7f7d5bcd3ab",
       "review_fingerprint_sha256": "88721f308e7f46dcbf659e507c619800aab3865c1a75145e9eb93d323f7b342b"
     },
     "RFB_CP_INCIDENCE_TABLE": {
@@ -85,10 +85,10 @@
       "raw_snapshot_sha256": "2e96f3517260a3e0d61197e112b18e4929682eacdae1861c774ea200821fd73a",
       "review_fingerprint_sha256": "67a53fb8067ea729483ce32a61f26418175bc419f324216d8be316473706eca2"
     },
-    "RFB_IRRF_TABLE_2026": {
+    "RFB_IRRF_TABLE_CURRENT": {
       "mode": "parsed-normalized-payload-v1",
-      "raw_snapshot_sha256": "3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca",
-      "review_fingerprint_sha256": "fbcf3c8e1e3f41f456ae73df44f4f9b70264d617a2062140724c494607556124"
+      "raw_snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+      "review_fingerprint_sha256": "2882c81f59618da171ee92099c8c24c381620d71740867ca4d9e70e22949c7b0"
     },
     "RFB_SC_209_2021": {
       "mode": "html-visible-text-links-v1",
@@ -106,7 +106,7 @@
       "review_fingerprint_sha256": "5ba891a0b028728a55417da44ac8896f61dc8019ae3814e96f5abc5f8c39fc4a"
     }
   },
-  "review_key": "b7464fde32bffaf466074d29d427020ae8d9463dd9bd3a2511fdc3804d5b0bbc",
+  "review_key": "84f97c484a8f26503364c2e49a2f01cc58a8d750b4f7f876f5b9b44c75f55ee9",
   "review_kind": "SUCCESSOR",
   "rules": [
     {
@@ -251,21 +251,23 @@
       "change_class": "SOURCE_REFRESH_NO_CHANGE",
       "changed_paths": [
         "provenance[0].observed_at_utc",
+        "provenance[0].parser_version",
         "provenance[0].snapshot_path",
         "provenance[0].snapshot_sha256",
+        "provenance[0].source_id",
         "quality.last_validated_at_utc",
         "rule_version"
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "parser_id": "inss_employee_table_v1",
-          "parser_version": "1.0.1",
+          "parser_version": "1.1.0",
           "retrieval_method": "http_html",
           "role": "official_operational",
-          "snapshot_path": "INSS_TABLE_2026/34/34bc2f28a1bd2f4d2948a3579a23ac28f796d14a45b1dbffdeda64c1691e108f.html",
-          "snapshot_sha256": "34bc2f28a1bd2f4d2948a3579a23ac28f796d14a45b1dbffdeda64c1691e108f",
-          "source_id": "INSS_TABLE_2026",
+          "snapshot_path": "INSS_TABLE_CURRENT/23/23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0.html",
+          "snapshot_sha256": "23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0",
+          "source_id": "INSS_TABLE_CURRENT",
           "status": "AVAILABLE"
         }
       ],
@@ -285,14 +287,14 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "parser_id": "inss_employee_table_v1",
-            "parser_version": "1.0.1",
+            "parser_version": "1.1.0",
             "retrieval_method": "http_html",
             "role": "official_operational",
-            "snapshot_path": "INSS_TABLE_2026/34/34bc2f28a1bd2f4d2948a3579a23ac28f796d14a45b1dbffdeda64c1691e108f.html",
-            "snapshot_sha256": "34bc2f28a1bd2f4d2948a3579a23ac28f796d14a45b1dbffdeda64c1691e108f",
-            "source_id": "INSS_TABLE_2026",
+            "snapshot_path": "INSS_TABLE_CURRENT/23/23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0.html",
+            "snapshot_sha256": "23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0",
+            "source_id": "INSS_TABLE_CURRENT",
             "status": "AVAILABLE"
           },
           "before": {
@@ -403,21 +405,23 @@
       "change_class": "SOURCE_REFRESH_NO_CHANGE",
       "changed_paths": [
         "provenance[0].observed_at_utc",
+        "provenance[0].parser_version",
         "provenance[0].snapshot_path",
         "provenance[0].snapshot_sha256",
+        "provenance[0].source_id",
         "quality.last_validated_at_utc",
         "rule_version"
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "parser_id": "rfb_irrf_table_v1",
-          "parser_version": "1.0.0",
+          "parser_version": "1.1.0",
           "retrieval_method": "http_html",
           "role": "official_operational",
-          "snapshot_path": "RFB_IRRF_TABLE_2026/3d/3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca.html",
-          "snapshot_sha256": "3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca",
-          "source_id": "RFB_IRRF_TABLE_2026",
+          "snapshot_path": "RFB_IRRF_TABLE_CURRENT/48/489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce.html",
+          "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+          "source_id": "RFB_IRRF_TABLE_CURRENT",
           "status": "AVAILABLE"
         }
       ],
@@ -437,14 +441,14 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "parser_id": "rfb_irrf_table_v1",
-            "parser_version": "1.0.0",
+            "parser_version": "1.1.0",
             "retrieval_method": "http_html",
             "role": "official_operational",
-            "snapshot_path": "RFB_IRRF_TABLE_2026/3d/3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca.html",
-            "snapshot_sha256": "3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca",
-            "source_id": "RFB_IRRF_TABLE_2026",
+            "snapshot_path": "RFB_IRRF_TABLE_CURRENT/48/489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce.html",
+            "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+            "source_id": "RFB_IRRF_TABLE_CURRENT",
             "status": "AVAILABLE"
           },
           "before": {
@@ -612,21 +616,23 @@
       "change_class": "SOURCE_REFRESH_NO_CHANGE",
       "changed_paths": [
         "provenance[0].observed_at_utc",
+        "provenance[0].parser_version",
         "provenance[0].snapshot_path",
         "provenance[0].snapshot_sha256",
+        "provenance[0].source_id",
         "quality.last_validated_at_utc",
         "rule_version"
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "parser_id": "rfb_irrf_table_v1",
-          "parser_version": "1.0.0",
+          "parser_version": "1.1.0",
           "retrieval_method": "http_html",
           "role": "official_operational",
-          "snapshot_path": "RFB_IRRF_TABLE_2026/3d/3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca.html",
-          "snapshot_sha256": "3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca",
-          "source_id": "RFB_IRRF_TABLE_2026",
+          "snapshot_path": "RFB_IRRF_TABLE_CURRENT/48/489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce.html",
+          "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+          "source_id": "RFB_IRRF_TABLE_CURRENT",
           "status": "AVAILABLE"
         }
       ],
@@ -646,14 +652,14 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "parser_id": "rfb_irrf_table_v1",
-            "parser_version": "1.0.0",
+            "parser_version": "1.1.0",
             "retrieval_method": "http_html",
             "role": "official_operational",
-            "snapshot_path": "RFB_IRRF_TABLE_2026/3d/3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca.html",
-            "snapshot_sha256": "3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca",
-            "source_id": "RFB_IRRF_TABLE_2026",
+            "snapshot_path": "RFB_IRRF_TABLE_CURRENT/48/489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce.html",
+            "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+            "source_id": "RFB_IRRF_TABLE_CURRENT",
             "status": "AVAILABLE"
           },
           "before": {
@@ -796,21 +802,23 @@
       "change_class": "SOURCE_REFRESH_NO_CHANGE",
       "changed_paths": [
         "provenance[0].observed_at_utc",
+        "provenance[0].parser_version",
         "provenance[0].snapshot_path",
         "provenance[0].snapshot_sha256",
+        "provenance[0].source_id",
         "quality.last_validated_at_utc",
         "rule_version"
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "parser_id": "rfb_irrf_table_v1",
-          "parser_version": "1.0.0",
+          "parser_version": "1.1.0",
           "retrieval_method": "http_html",
           "role": "official_operational",
-          "snapshot_path": "RFB_IRRF_TABLE_2026/3d/3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca.html",
-          "snapshot_sha256": "3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca",
-          "source_id": "RFB_IRRF_TABLE_2026",
+          "snapshot_path": "RFB_IRRF_TABLE_CURRENT/48/489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce.html",
+          "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+          "source_id": "RFB_IRRF_TABLE_CURRENT",
           "status": "AVAILABLE"
         }
       ],
@@ -830,14 +838,14 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "parser_id": "rfb_irrf_table_v1",
-            "parser_version": "1.0.0",
+            "parser_version": "1.1.0",
             "retrieval_method": "http_html",
             "role": "official_operational",
-            "snapshot_path": "RFB_IRRF_TABLE_2026/3d/3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca.html",
-            "snapshot_sha256": "3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca",
-            "source_id": "RFB_IRRF_TABLE_2026",
+            "snapshot_path": "RFB_IRRF_TABLE_CURRENT/48/489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce.html",
+            "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+            "source_id": "RFB_IRRF_TABLE_CURRENT",
             "status": "AVAILABLE"
           },
           "before": {
@@ -953,21 +961,23 @@
       "change_class": "SOURCE_REFRESH_NO_CHANGE",
       "changed_paths": [
         "provenance[0].observed_at_utc",
+        "provenance[0].parser_version",
         "provenance[0].snapshot_path",
         "provenance[0].snapshot_sha256",
+        "provenance[0].source_id",
         "quality.last_validated_at_utc",
         "rule_version"
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "parser_id": "rfb_irrf_table_v1",
-          "parser_version": "1.0.0",
+          "parser_version": "1.1.0",
           "retrieval_method": "http_html",
           "role": "official_operational",
-          "snapshot_path": "RFB_IRRF_TABLE_2026/3d/3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca.html",
-          "snapshot_sha256": "3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca",
-          "source_id": "RFB_IRRF_TABLE_2026",
+          "snapshot_path": "RFB_IRRF_TABLE_CURRENT/48/489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce.html",
+          "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+          "source_id": "RFB_IRRF_TABLE_CURRENT",
           "status": "AVAILABLE"
         }
       ],
@@ -987,14 +997,14 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "parser_id": "rfb_irrf_table_v1",
-            "parser_version": "1.0.0",
+            "parser_version": "1.1.0",
             "retrieval_method": "http_html",
             "role": "official_operational",
-            "snapshot_path": "RFB_IRRF_TABLE_2026/3d/3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca.html",
-            "snapshot_sha256": "3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca",
-            "source_id": "RFB_IRRF_TABLE_2026",
+            "snapshot_path": "RFB_IRRF_TABLE_CURRENT/48/489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce.html",
+            "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+            "source_id": "RFB_IRRF_TABLE_CURRENT",
             "status": "AVAILABLE"
           },
           "before": {
@@ -1109,11 +1119,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_CLT/2a/2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9.html",
-          "snapshot_sha256": "2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9",
+          "snapshot_path": "PLANALTO_CLT/4a/4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57.html",
+          "snapshot_sha256": "4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57",
           "source_id": "PLANALTO_CLT",
           "status": "AVAILABLE"
         }
@@ -1132,11 +1142,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_CLT/2a/2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9.html",
-            "snapshot_sha256": "2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9",
+            "snapshot_path": "PLANALTO_CLT/4a/4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57.html",
+            "snapshot_sha256": "4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57",
             "source_id": "PLANALTO_CLT",
             "status": "AVAILABLE"
           },
@@ -1276,7 +1286,7 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "official_operational",
           "snapshot_path": "MTE_TERMINATION_FAQ/9f/9f47f3e47fbe8b487f043d7fbc4f440636f0111cb5d24323dd1f23f44886d184.html",
@@ -1299,7 +1309,7 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "official_operational",
             "snapshot_path": "MTE_TERMINATION_FAQ/9f/9f47f3e47fbe8b487f043d7fbc4f440636f0111cb5d24323dd1f23f44886d184.html",
@@ -1425,11 +1435,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "official_operational",
-          "snapshot_path": "ESOCIAL_WEB_MEI_2026/7e/7e9980dadfaf6cc3f3c86e7a2383dd3c95255e374397baf8c4d61edf5aa8e12e.html",
-          "snapshot_sha256": "7e9980dadfaf6cc3f3c86e7a2383dd3c95255e374397baf8c4d61edf5aa8e12e",
+          "snapshot_path": "ESOCIAL_WEB_MEI_2026/0e/0e5db904b51b9cf2da3b0625f85a33274c9e40c6ba8fabef975f848f436effbb.html",
+          "snapshot_sha256": "0e5db904b51b9cf2da3b0625f85a33274c9e40c6ba8fabef975f848f436effbb",
           "source_id": "ESOCIAL_WEB_MEI_2026",
           "status": "AVAILABLE"
         }
@@ -1448,11 +1458,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "official_operational",
-            "snapshot_path": "ESOCIAL_WEB_MEI_2026/7e/7e9980dadfaf6cc3f3c86e7a2383dd3c95255e374397baf8c4d61edf5aa8e12e.html",
-            "snapshot_sha256": "7e9980dadfaf6cc3f3c86e7a2383dd3c95255e374397baf8c4d61edf5aa8e12e",
+            "snapshot_path": "ESOCIAL_WEB_MEI_2026/0e/0e5db904b51b9cf2da3b0625f85a33274c9e40c6ba8fabef975f848f436effbb.html",
+            "snapshot_sha256": "0e5db904b51b9cf2da3b0625f85a33274c9e40c6ba8fabef975f848f436effbb",
             "source_id": "ESOCIAL_WEB_MEI_2026",
             "status": "AVAILABLE"
           },
@@ -1578,11 +1588,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_DECRETO_10854_2021/ea/eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33.html",
-          "snapshot_sha256": "eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/f6/f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242.html",
+          "snapshot_sha256": "f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242",
           "source_id": "PLANALTO_DECRETO_10854_2021",
           "status": "AVAILABLE"
         }
@@ -1601,11 +1611,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_DECRETO_10854_2021/ea/eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33.html",
-            "snapshot_sha256": "eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33",
+            "snapshot_path": "PLANALTO_DECRETO_10854_2021/f6/f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242.html",
+            "snapshot_sha256": "f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242",
             "source_id": "PLANALTO_DECRETO_10854_2021",
             "status": "AVAILABLE"
           },
@@ -1733,7 +1743,7 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "official_operational",
           "snapshot_path": "RFB_CP_INCIDENCE_TABLE/15/1528d719fe677b7143fc97d7d3c17c1e6bcab5eb9384bba5d30f6726987fba79.html",
@@ -1756,7 +1766,7 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "official_operational",
             "snapshot_path": "RFB_CP_INCIDENCE_TABLE/15/1528d719fe677b7143fc97d7d3c17c1e6bcab5eb9384bba5d30f6726987fba79.html",
@@ -1884,11 +1894,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_CLT/2a/2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9.html",
-          "snapshot_sha256": "2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9",
+          "snapshot_path": "PLANALTO_CLT/4a/4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57.html",
+          "snapshot_sha256": "4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57",
           "source_id": "PLANALTO_CLT",
           "status": "AVAILABLE"
         }
@@ -1907,11 +1917,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_CLT/2a/2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9.html",
-            "snapshot_sha256": "2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9",
+            "snapshot_path": "PLANALTO_CLT/4a/4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57.html",
+            "snapshot_sha256": "4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57",
             "source_id": "PLANALTO_CLT",
             "status": "AVAILABLE"
           },
@@ -2034,11 +2044,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_DECRETO_10854_2021/ea/eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33.html",
-          "snapshot_sha256": "eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/f6/f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242.html",
+          "snapshot_sha256": "f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242",
           "source_id": "PLANALTO_DECRETO_10854_2021",
           "status": "AVAILABLE"
         }
@@ -2057,11 +2067,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_DECRETO_10854_2021/ea/eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33.html",
-            "snapshot_sha256": "eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33",
+            "snapshot_path": "PLANALTO_DECRETO_10854_2021/f6/f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242.html",
+            "snapshot_sha256": "f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242",
             "source_id": "PLANALTO_DECRETO_10854_2021",
             "status": "AVAILABLE"
           },
@@ -2180,11 +2190,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_DECRETO_10854_2021/ea/eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33.html",
-          "snapshot_sha256": "eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/f6/f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242.html",
+          "snapshot_sha256": "f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242",
           "source_id": "PLANALTO_DECRETO_10854_2021",
           "status": "AVAILABLE"
         }
@@ -2203,11 +2213,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_DECRETO_10854_2021/ea/eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33.html",
-            "snapshot_sha256": "eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33",
+            "snapshot_path": "PLANALTO_DECRETO_10854_2021/f6/f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242.html",
+            "snapshot_sha256": "f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242",
             "source_id": "PLANALTO_DECRETO_10854_2021",
             "status": "AVAILABLE"
           },
@@ -2317,21 +2327,23 @@
       "change_class": "SOURCE_REFRESH_NO_CHANGE",
       "changed_paths": [
         "provenance[0].observed_at_utc",
+        "provenance[0].parser_version",
         "provenance[0].snapshot_path",
         "provenance[0].snapshot_sha256",
+        "provenance[0].source_id",
         "quality.last_validated_at_utc",
         "rule_version"
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "parser_id": "inss_employee_table_v1",
-          "parser_version": "1.0.1",
+          "parser_version": "1.1.0",
           "retrieval_method": "http_html",
           "role": "official_operational",
-          "snapshot_path": "INSS_TABLE_2026/34/34bc2f28a1bd2f4d2948a3579a23ac28f796d14a45b1dbffdeda64c1691e108f.html",
-          "snapshot_sha256": "34bc2f28a1bd2f4d2948a3579a23ac28f796d14a45b1dbffdeda64c1691e108f",
-          "source_id": "INSS_TABLE_2026",
+          "snapshot_path": "INSS_TABLE_CURRENT/23/23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0.html",
+          "snapshot_sha256": "23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0",
+          "source_id": "INSS_TABLE_CURRENT",
           "status": "AVAILABLE"
         }
       ],
@@ -2351,14 +2363,14 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "parser_id": "inss_employee_table_v1",
-            "parser_version": "1.0.1",
+            "parser_version": "1.1.0",
             "retrieval_method": "http_html",
             "role": "official_operational",
-            "snapshot_path": "INSS_TABLE_2026/34/34bc2f28a1bd2f4d2948a3579a23ac28f796d14a45b1dbffdeda64c1691e108f.html",
-            "snapshot_sha256": "34bc2f28a1bd2f4d2948a3579a23ac28f796d14a45b1dbffdeda64c1691e108f",
-            "source_id": "INSS_TABLE_2026",
+            "snapshot_path": "INSS_TABLE_CURRENT/23/23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0.html",
+            "snapshot_sha256": "23fc4864a13f75334c6563021a3fe1182eacf8d406eba47f86bd33d15766e7c0",
+            "source_id": "INSS_TABLE_CURRENT",
             "status": "AVAILABLE"
           },
           "before": {
@@ -2496,11 +2508,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_LEI_15270_2025/02/02142c5a994f11b8e02c4dd154f046f3a2c9da4b276dfaca71d155992236fac8.html",
-          "snapshot_sha256": "02142c5a994f11b8e02c4dd154f046f3a2c9da4b276dfaca71d155992236fac8",
+          "snapshot_path": "PLANALTO_LEI_15270_2025/96/965cdf243419b8a2d160ead69cb6e8e04a3c13d63d6c8e96f729f7f7d5bcd3ab.html",
+          "snapshot_sha256": "965cdf243419b8a2d160ead69cb6e8e04a3c13d63d6c8e96f729f7f7d5bcd3ab",
           "source_id": "PLANALTO_LEI_15270_2025",
           "status": "AVAILABLE"
         }
@@ -2519,11 +2531,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_LEI_15270_2025/02/02142c5a994f11b8e02c4dd154f046f3a2c9da4b276dfaca71d155992236fac8.html",
-            "snapshot_sha256": "02142c5a994f11b8e02c4dd154f046f3a2c9da4b276dfaca71d155992236fac8",
+            "snapshot_path": "PLANALTO_LEI_15270_2025/96/965cdf243419b8a2d160ead69cb6e8e04a3c13d63d6c8e96f729f7f7d5bcd3ab.html",
+            "snapshot_sha256": "965cdf243419b8a2d160ead69cb6e8e04a3c13d63d6c8e96f729f7f7d5bcd3ab",
             "source_id": "PLANALTO_LEI_15270_2025",
             "status": "AVAILABLE"
           },
@@ -2634,11 +2646,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_DECRETO_10854_2021/ea/eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33.html",
-          "snapshot_sha256": "eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/f6/f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242.html",
+          "snapshot_sha256": "f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242",
           "source_id": "PLANALTO_DECRETO_10854_2021",
           "status": "AVAILABLE"
         }
@@ -2657,11 +2669,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_DECRETO_10854_2021/ea/eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33.html",
-            "snapshot_sha256": "eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33",
+            "snapshot_path": "PLANALTO_DECRETO_10854_2021/f6/f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242.html",
+            "snapshot_sha256": "f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242",
             "source_id": "PLANALTO_DECRETO_10854_2021",
             "status": "AVAILABLE"
           },
@@ -2778,11 +2790,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_DECRETO_10854_2021/ea/eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33.html",
-          "snapshot_sha256": "eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/f6/f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242.html",
+          "snapshot_sha256": "f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242",
           "source_id": "PLANALTO_DECRETO_10854_2021",
           "status": "AVAILABLE"
         }
@@ -2801,11 +2813,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_DECRETO_10854_2021/ea/eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33.html",
-            "snapshot_sha256": "eab0165465aade9d50a4fcf9f418c5bdcc4839e94d918449d242768f9a7fff33",
+            "snapshot_path": "PLANALTO_DECRETO_10854_2021/f6/f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242.html",
+            "snapshot_sha256": "f66855b386079af1d0879b92a60862a1e36f98b6bc1f716d2e9a5f61a3b2f242",
             "source_id": "PLANALTO_DECRETO_10854_2021",
             "status": "AVAILABLE"
           },
@@ -2921,7 +2933,7 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "administrative_norm",
           "snapshot_path": "RFB_SC_209_2021/62/62f3cc9a00b15a161548004ce88682e12e32af88ae6b506c702847c52edc457f.html",
@@ -2944,7 +2956,7 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "administrative_norm",
             "snapshot_path": "RFB_SC_209_2021/62/62f3cc9a00b15a161548004ce88682e12e32af88ae6b506c702847c52edc457f.html",
@@ -3066,7 +3078,7 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "administrative_norm",
           "snapshot_path": "RFB_SC_209_2021/62/62f3cc9a00b15a161548004ce88682e12e32af88ae6b506c702847c52edc457f.html",
@@ -3089,7 +3101,7 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "administrative_norm",
             "snapshot_path": "RFB_SC_209_2021/62/62f3cc9a00b15a161548004ce88682e12e32af88ae6b506c702847c52edc457f.html",
@@ -3200,11 +3212,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_CLT/2a/2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9.html",
-          "snapshot_sha256": "2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9",
+          "snapshot_path": "PLANALTO_CLT/4a/4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57.html",
+          "snapshot_sha256": "4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57",
           "source_id": "PLANALTO_CLT",
           "status": "AVAILABLE"
         }
@@ -3223,11 +3235,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_CLT/2a/2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9.html",
-            "snapshot_sha256": "2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9",
+            "snapshot_path": "PLANALTO_CLT/4a/4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57.html",
+            "snapshot_sha256": "4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57",
             "source_id": "PLANALTO_CLT",
             "status": "AVAILABLE"
           },
@@ -3344,11 +3356,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_CLT/2a/2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9.html",
-          "snapshot_sha256": "2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9",
+          "snapshot_path": "PLANALTO_CLT/4a/4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57.html",
+          "snapshot_sha256": "4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57",
           "source_id": "PLANALTO_CLT",
           "status": "AVAILABLE"
         }
@@ -3367,11 +3379,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_CLT/2a/2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9.html",
-            "snapshot_sha256": "2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9",
+            "snapshot_path": "PLANALTO_CLT/4a/4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57.html",
+            "snapshot_sha256": "4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57",
             "source_id": "PLANALTO_CLT",
             "status": "AVAILABLE"
           },
@@ -3519,11 +3531,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_CLT/2a/2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9.html",
-          "snapshot_sha256": "2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9",
+          "snapshot_path": "PLANALTO_CLT/4a/4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57.html",
+          "snapshot_sha256": "4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57",
           "source_id": "PLANALTO_CLT",
           "status": "AVAILABLE"
         }
@@ -3542,11 +3554,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_CLT/2a/2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9.html",
-            "snapshot_sha256": "2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9",
+            "snapshot_path": "PLANALTO_CLT/4a/4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57.html",
+            "snapshot_sha256": "4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57",
             "source_id": "PLANALTO_CLT",
             "status": "AVAILABLE"
           },
@@ -3680,7 +3692,7 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "official_operational",
           "snapshot_path": "RFB_CP_INCIDENCE_TABLE/15/1528d719fe677b7143fc97d7d3c17c1e6bcab5eb9384bba5d30f6726987fba79.html",
@@ -3703,7 +3715,7 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "official_operational",
             "snapshot_path": "RFB_CP_INCIDENCE_TABLE/15/1528d719fe677b7143fc97d7d3c17c1e6bcab5eb9384bba5d30f6726987fba79.html",
@@ -3843,11 +3855,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_LEI_15270_2025/02/02142c5a994f11b8e02c4dd154f046f3a2c9da4b276dfaca71d155992236fac8.html",
-          "snapshot_sha256": "02142c5a994f11b8e02c4dd154f046f3a2c9da4b276dfaca71d155992236fac8",
+          "snapshot_path": "PLANALTO_LEI_15270_2025/96/965cdf243419b8a2d160ead69cb6e8e04a3c13d63d6c8e96f729f7f7d5bcd3ab.html",
+          "snapshot_sha256": "965cdf243419b8a2d160ead69cb6e8e04a3c13d63d6c8e96f729f7f7d5bcd3ab",
           "source_id": "PLANALTO_LEI_15270_2025",
           "status": "AVAILABLE"
         }
@@ -3866,11 +3878,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_LEI_15270_2025/02/02142c5a994f11b8e02c4dd154f046f3a2c9da4b276dfaca71d155992236fac8.html",
-            "snapshot_sha256": "02142c5a994f11b8e02c4dd154f046f3a2c9da4b276dfaca71d155992236fac8",
+            "snapshot_path": "PLANALTO_LEI_15270_2025/96/965cdf243419b8a2d160ead69cb6e8e04a3c13d63d6c8e96f729f7f7d5bcd3ab.html",
+            "snapshot_sha256": "965cdf243419b8a2d160ead69cb6e8e04a3c13d63d6c8e96f729f7f7d5bcd3ab",
             "source_id": "PLANALTO_LEI_15270_2025",
             "status": "AVAILABLE"
           },
@@ -4012,11 +4024,11 @@
       ],
       "evidence_after": [
         {
-          "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+          "observed_at_utc": "2026-09-20T13:41:32.001294Z",
           "retrieval_method": "http_html",
           "role": "normative_primary",
-          "snapshot_path": "PLANALTO_CLT/2a/2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9.html",
-          "snapshot_sha256": "2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9",
+          "snapshot_path": "PLANALTO_CLT/4a/4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57.html",
+          "snapshot_sha256": "4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57",
           "source_id": "PLANALTO_CLT",
           "status": "AVAILABLE"
         }
@@ -4035,11 +4047,11 @@
       "evidence_changed": [
         {
           "after": {
-            "observed_at_utc": "2026-09-18T13:49:51.805935Z",
+            "observed_at_utc": "2026-09-20T13:41:32.001294Z",
             "retrieval_method": "http_html",
             "role": "normative_primary",
-            "snapshot_path": "PLANALTO_CLT/2a/2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9.html",
-            "snapshot_sha256": "2aca031d3e96d29a6e49cc4745fc71e158b1594ef8e009de426e0621865271a9",
+            "snapshot_path": "PLANALTO_CLT/4a/4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57.html",
+            "snapshot_sha256": "4a7060be5ddc035b19691b1174c6b69808f3e2d7615c56c7d64c4ec7b31c1d57",
             "source_id": "PLANALTO_CLT",
             "status": "AVAILABLE"
           },

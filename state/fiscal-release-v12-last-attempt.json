@@ -1,9 +1,400 @@
 {
-  "attempted_at_utc": "2026-09-19T13:24:11.400604Z",
-  "previous_release_id": "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e",
-  "promotion_outcome": "BLOCKED_BEFORE_DIFF",
-  "reasons": [
-    "ESOCIAL_TABLES_S13_NT07_2026: official source unavailable: ConnectError"
+  "attempted_at_utc": "2026-09-20T13:41:32.001294Z",
+  "candidate_release_id": "candidate-v1-2",
+  "changed_rules": [
+    {
+      "candidate_rule_version": "1.0.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].parser_version",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "provenance[0].source_id",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.0",
+      "rule_id": "inss.employee.progressive_table"
+    },
+    {
+      "candidate_rule_version": "1.0.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].parser_version",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "provenance[0].source_id",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.1",
+      "rule_id": "irrf.dependent_deduction"
+    },
+    {
+      "candidate_rule_version": "1.0.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].parser_version",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "provenance[0].source_id",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.1",
+      "rule_id": "irrf.monthly.progressive_table"
+    },
+    {
+      "candidate_rule_version": "1.0.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].parser_version",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "provenance[0].source_id",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.1",
+      "rule_id": "irrf.reduction.2026"
+    },
+    {
+      "candidate_rule_version": "1.0.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].parser_version",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "provenance[0].source_id",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.1",
+      "rule_id": "irrf.simplified_monthly_discount"
+    },
+    {
+      "candidate_rule_version": "1.0.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.2",
+      "rule_id": "termination.acquired_and_overdue_vacation"
+    },
+    {
+      "candidate_rule_version": "1.0.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.1",
+      "rule_id": "termination.partial_output_scope"
+    },
+    {
+      "candidate_rule_version": "1.0.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.0",
+      "rule_id": "termination.salary_balance"
+    },
+    {
+      "candidate_rule_version": "1.0.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.2",
+      "rule_id": "termination.thirteenth_proportional"
+    },
+    {
+      "candidate_rule_version": "1.0.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.1",
+      "rule_id": "termination.vacation_indemnity_tax_treatment"
+    },
+    {
+      "candidate_rule_version": "1.0.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.2",
+      "rule_id": "termination.vacation_proportional"
+    },
+    {
+      "candidate_rule_version": "1.0.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.2",
+      "rule_id": "thirteenth.accrual.twelfths"
+    },
+    {
+      "candidate_rule_version": "1.0.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.2",
+      "rule_id": "thirteenth.advance"
+    },
+    {
+      "candidate_rule_version": "1.0.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].parser_version",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "provenance[0].source_id",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.0",
+      "rule_id": "thirteenth.inss.separate_assessment"
+    },
+    {
+      "candidate_rule_version": "1.0.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.2",
+      "rule_id": "thirteenth.irrf.reduction.2026"
+    },
+    {
+      "candidate_rule_version": "1.0.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.2",
+      "rule_id": "thirteenth.reference_remuneration"
+    },
+    {
+      "candidate_rule_version": "1.0.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.2",
+      "rule_id": "thirteenth.variable_remuneration"
+    },
+    {
+      "candidate_rule_version": "1.0.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.0",
+      "rule_id": "vacation.abono.ir_exemption"
+    },
+    {
+      "candidate_rule_version": "1.0.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.0",
+      "rule_id": "vacation.abono_constitutional_third.ir_incidence"
+    },
+    {
+      "candidate_rule_version": "1.1.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "change_class",
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.1.0",
+      "rule_id": "vacation.abono_pecuniario"
+    },
+    {
+      "candidate_rule_version": "1.1.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.1.2",
+      "rule_id": "vacation.acquisition_period"
+    },
+    {
+      "candidate_rule_version": "1.0.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.2",
+      "rule_id": "vacation.entitlement_days_by_absences"
+    },
+    {
+      "candidate_rule_version": "1.0.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.1",
+      "rule_id": "vacation.inss.enjoyed"
+    },
+    {
+      "candidate_rule_version": "1.0.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.2",
+      "rule_id": "vacation.irrf.reduction.2026"
+    },
+    {
+      "candidate_rule_version": "1.1.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "change_class",
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.1.0",
+      "rule_id": "vacation.remuneration_and_constitutional_third"
+    }
   ],
+  "contract_changed_paths": [],
+  "contract_schema_version": "1.2.0",
+  "previous_release_id": "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e",
+  "promotion_outcome": "REVIEW_REQUIRED",
+  "publication_status": "REVIEW_REQUIRED",
+  "reasons": [
+    "termination.acquired_and_overdue_vacation: source refresh on structural rule requires human review",
+    "termination.partial_output_scope: source refresh on structural rule requires human review",
+    "termination.salary_balance: source refresh on structural rule requires human review",
+    "termination.thirteenth_proportional: source refresh on structural rule requires human review",
+    "termination.vacation_indemnity_tax_treatment: source refresh on structural rule requires human review",
+    "termination.vacation_proportional: source refresh on structural rule requires human review",
+    "thirteenth.accrual.twelfths: source refresh on structural rule requires human review",
+    "thirteenth.advance: source refresh on structural rule requires human review",
+    "thirteenth.inss.separate_assessment: source refresh on structural rule requires human review",
+    "thirteenth.irrf.reduction.2026: automatic promotion requires parser-backed hashed evidence",
+    "thirteenth.reference_remuneration: source refresh on structural rule requires human review",
+    "thirteenth.variable_remuneration: source refresh on structural rule requires human review",
+    "vacation.abono.ir_exemption: source refresh on structural rule requires human review",
+    "vacation.abono_constitutional_third.ir_incidence: source refresh on structural rule requires human review",
+    "vacation.abono_pecuniario: source refresh on structural rule requires human review",
+    "vacation.acquisition_period: source refresh on structural rule requires human review",
+    "vacation.entitlement_days_by_absences: source refresh on structural rule requires human review",
+    "vacation.inss.enjoyed: source refresh on structural rule requires human review",
+    "vacation.irrf.reduction.2026: automatic promotion requires parser-backed hashed evidence",
+    "vacation.remuneration_and_constitutional_third: source refresh on structural rule requires human review"
+  ],
+  "review_issue_action": "UPSERT_REQUIRED",
+  "review_key": "84f97c484a8f26503364c2e49a2f01cc58a8d750b4f7f876f5b9b44c75f55ee9",
   "schema_version": "1.0.0"
 }
