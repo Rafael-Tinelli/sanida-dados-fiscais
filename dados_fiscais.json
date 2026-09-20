@@ -1,18 +1,18 @@
 {
   "schema_version": "2.2.0",
   "meta": {
-    "generated_at_utc": "2026-09-19T13:12:00Z",
+    "generated_at_utc": "2026-09-20T13:35:56Z",
     "sources": {
       "irrf": {
         "source_id": "RFB_IRRF_TABLE_CURRENT",
         "url": "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/tabelas/2026",
         "http_code": 200,
         "collection_status": "COLLECTED",
-        "snapshot_sha256": "489b7b5cff7e2e5cfbf130b08eb50733ea7dd31f93d9fc8100a74ce7368086ce",
+        "snapshot_sha256": "3d2c2167ca248b89442c6cd267fc4c520fa309352df7d6016aa749a6b8211fca",
         "candidate_sha256": "787ecdf33486305d7da8f0117c5943a563c68386593cbac415567e7ce6e8b10d",
         "parser_id": "rfb_irrf_table_v1",
         "parser_version": "1.1.0",
-        "observed_at_utc": "2026-09-19T13:12:00Z"
+        "observed_at_utc": "2026-09-20T13:35:56Z"
       },
       "inss": {
         "source_id": "INSS_TABLE_CURRENT",
@@ -23,25 +23,25 @@
         "candidate_sha256": "1836a09ba4520d61e2d6c6677ee6b34fac640a4bdfc94aa243827272b5a63fc5",
         "parser_id": "inss_employee_table_v1",
         "parser_version": "1.1.0",
-        "observed_at_utc": "2026-09-19T13:12:00Z"
+        "observed_at_utc": "2026-09-20T13:35:56Z"
       },
       "taxas": {
         "origin": "local_file",
         "origin_ref": "taxas_bacen.json",
         "schema_version": "1.4.0",
-        "generated_at_utc": "2026-09-19T11:37:40Z",
+        "generated_at_utc": "2026-09-20T12:19:08Z",
         "source_meta": {
           "selic": {
             "source_id": "BCB_SELIC_META_SGS_432",
-            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?formato=json&dataInicial=19%2F08%2F2026&dataFinal=19%2F09%2F2026",
+            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?formato=json&dataInicial=20%2F08%2F2026&dataFinal=20%2F09%2F2026",
             "http_code": 200,
             "collection_status": "COLLECTED",
-            "snapshot_sha256": "bb685c402758fe068395c5000c7a9aaa6bac1fdfe31b2294dc1443d870d91cca",
-            "candidate_sha256": "e485536279d08ead82c24e0f64b532274640d8562bff883b79236eb4598618d2",
+            "snapshot_sha256": "b879c43522258aaade24d35af43be7183e7e26f1e844b9fdd43980f9319a8765",
+            "candidate_sha256": "ce9d78059ee9453ba239a869f73aecfa040ec26f5611d8ec8a351c7d85f6a1f8",
             "parser_id": "bcb_selic_meta_sgs432_v1",
             "parser_version": "1.1.0",
-            "observed_at_utc": "2026-09-19T11:37:40Z",
-            "source_observation_date": "2026-09-19",
+            "observed_at_utc": "2026-09-20T12:19:08Z",
+            "source_observation_date": "2026-09-20",
             "series_code": 432,
             "source_value_pct": "13.75",
             "source_unit": "percent_per_year",
@@ -56,7 +56,7 @@
             "candidate_sha256": "b3679aedac9beadfaf0602413b83c8521190775099f0b2a871fc6f3f74eeaa1e",
             "parser_id": "bcb_cdi_daily_sgs12_v1",
             "parser_version": "1.0.0",
-            "observed_at_utc": "2026-09-19T11:37:40Z",
+            "observed_at_utc": "2026-09-20T12:19:08Z",
             "source_observation_date": "2026-09-17",
             "series_code": 12,
             "source_value_pct": "0.050788",
