@@ -2,16 +2,16 @@
   "consecutive_parser_failures": 0,
   "consecutive_source_failures": 0,
   "etag": "W/\"1903c-ZsiKeJmzuiq2o6ZIQ7arfdxx+pk\"",
-  "last_candidate_path": "BCB_CDI_DAILY_SGS_12/2a/2a351ae8c5e7f02089573e373bb19c0f0ada121eadacf86918f0a9e8f33f3669.json",
-  "last_candidate_sha256": "2a351ae8c5e7f02089573e373bb19c0f0ada121eadacf86918f0a9e8f33f3669",
+  "last_candidate_path": "BCB_CDI_DAILY_SGS_12/02/02c75c9569f106fada4c083178930e854479a20bc27afd4e5114f8aa1b8b151a.json",
+  "last_candidate_sha256": "02c75c9569f106fada4c083178930e854479a20bc27afd4e5114f8aa1b8b151a",
   "last_collected_snapshot_path": "BCB_CDI_DAILY_SGS_12/a2/a2d07b59a2850781b216e758c7059490e2a7edfe683de54b29d14aaa6faa7811.json",
   "last_collected_snapshot_sha256": "a2d07b59a2850781b216e758c7059490e2a7edfe683de54b29d14aaa6faa7811",
   "last_collection_status": "COLLECTED",
   "last_http_status": 200,
   "last_modified": null,
-  "last_observed_at_utc": "2026-09-20T01:12:45Z",
+  "last_observed_at_utc": "2026-09-21T01:09:38Z",
   "last_parse_status": "PARSED",
-  "last_parsed_at_utc": "2026-09-20T01:12:45Z",
+  "last_parsed_at_utc": "2026-09-21T01:09:38Z",
   "last_parsed_snapshot_path": "BCB_CDI_DAILY_SGS_12/a2/a2d07b59a2850781b216e758c7059490e2a7edfe683de54b29d14aaa6faa7811.json",
   "last_parsed_snapshot_sha256": "a2d07b59a2850781b216e758c7059490e2a7edfe683de54b29d14aaa6faa7811",
   "last_parser_error": null,
@@ -22,5 +22,5 @@
   "parser_version": "1.0.0",
   "schema_version": "1.1.0",
   "source_id": "BCB_CDI_DAILY_SGS_12",
-  "source_url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?dataInicial=01%2F10%2F2016&dataFinal=19%2F09%2F2026&formato=json"
+  "source_url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?dataInicial=01%2F10%2F2016&dataFinal=20%2F09%2F2026&formato=json"
 }
