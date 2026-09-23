@@ -58,9 +58,10 @@ def test_v280_php_accepts_real_series_and_serves_compact_views_fail_closed() -> 
     $GLOBALS['sfa_transients'] = [];
     $GLOBALS['sfa_options'] = [];
 
+    $GLOBALS['v280_today'] = '1970-01-01';
     function current_time($type) {
-      if ($type === 'Y-m-d') return '2026-09-19';
-      if ($type === 'timestamp') return strtotime('2026-09-19 12:00:00');
+      if ($type === 'Y-m-d') return $GLOBALS['v280_today'];
+      if ($type === 'timestamp') return strtotime($GLOBALS['v280_today'] . ' 12:00:00');
       return time();
     }
     function get_transient($key) {
@@ -121,9 +122,10 @@ def test_v280_php_accepts_real_series_and_serves_compact_views_fail_closed() -> 
     }
 
     $artifact = json_decode(file_get_contents($argv[3]), true);
+    $GLOBALS['v280_today'] = $artifact['meta']['window']['end_date'];
     $h = new V280_Harness();
 
-    $valid = $h->valid_series($artifact, '2026-09-19');
+    $valid = $h->valid_series($artifact, $GLOBALS['v280_today']);
 
     $GLOBALS['sfa_transients'][V280_Harness::T_TAXAS_SERIES_CACHE] = $artifact;
     $view12 = $h->view_series(12, true);
@@ -139,7 +141,8 @@ def test_v280_php_accepts_real_series_and_serves_compact_views_fail_closed() -> 
 
     $stale = $artifact;
     $last = count($stale['points']) - 1;
-    $stale['points'][$last]['cdi_observation_date'] = '2026-09-10';
+    $stale['points'][$last]['cdi_observation_date'] =
+      date('Y-m-d', strtotime($GLOBALS['v280_today'] . ' -8 days'));
 
     $missing = $artifact;
     array_splice($missing['points'], 40, 1);
@@ -185,9 +188,15 @@ def test_v280_php_accepts_real_series_and_serves_compact_views_fail_closed() -> 
     assert result["valid_real"] is True
     assert result["view12_count"] == 12
     assert result["view12_available"] is True
-    assert result["view12_last"] == "2026-09"
+    artifact = json.loads(SERIES.read_text(encoding="utf-8"))
+    expected_last = artifact["points"][-1]["month"]
+    expected_complete_last = next(
+        point["month"] for point in reversed(artifact["points"]) if point["month_complete"]
+    )
+
+    assert result["view12_last"] == expected_last
     assert result["complete12_count"] == 12
-    assert result["complete12_last"] == "2026-08"
+    assert result["complete12_last"] == expected_complete_last
     assert result["complete12_current"] is False
     assert result["shortcode_available"] is True
     assert result["shortcode_count"] == 12
