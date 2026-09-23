@@ -77,7 +77,9 @@ def test_v271_cdi_freshness_boundary_and_persistent_selic() -> None:
     const DAY_IN_SECONDS = 86400;
     $GLOBALS['v271_today'] = '2026-09-19';
     function current_time($type) {
-      return $type === 'Y-m-d' ? $GLOBALS['v271_today'] : time();
+      if ($type === 'Y-m-d') return $GLOBALS['v271_today'];
+      if ($type === 'timestamp') return strtotime($GLOBALS['v271_today'] . ' 12:00:00');
+      return time();
     }
     require $argv[1];
 
