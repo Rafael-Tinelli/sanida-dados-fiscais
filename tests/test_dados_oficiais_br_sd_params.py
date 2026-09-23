@@ -63,6 +63,10 @@ def test_sd_params_parser_accepts_new_year_without_code_change() -> None:
     function add_shortcode($a,$b){}
     function is_admin(){return false;}
     function add_action($a,$b,$c=null,$d=null){}
+    function add_filter($a,$b,$c=null,$d=null){}
+    function is_admin_bar_showing(){return false;}
+    function register_activation_hook($a,$b){}
+    function register_deactivation_hook($a,$b){}
     function apply_filters($tag,$value){return $value;}
     function current_time($type){
       if ($type === 'Y') return '2027';
