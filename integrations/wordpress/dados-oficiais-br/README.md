@@ -4,10 +4,10 @@ Código versionado do plugin WordPress **Dados Oficiais BR**.
 
 ## Estado canônico
 
-- versão: **1.4.8**
+- versão: **1.4.9**
 - produção: `/home1/sanid210/public_html/blog/wp-content/plugins/dados-oficiais-br/dados-oficiais-br.php`
 - fonte versionada: `integrations/wordpress/dados-oficiais-br/dados-oficiais-br.php`
-- produção v1.4.8 foi validada em 2026-09-19 com PHP lint, harness sintético e WP-CLI.
+- produção atualmente implantada permanece na versão anterior até o deploy controlado; a versão 1.4.9 adiciona o contrato evergreen do seguro-desemprego e só deve ser promovida após CI e validação.
 
 Este diretório é deliberadamente separado de `consumers/wordpress/sanida-fiscais-auto.php`.
 O DOBR não integra o contrato `br.sanida.fiscal` nem as releases imutáveis de `releases/fiscal-v1`.
@@ -46,7 +46,27 @@ O cache também é year-aware: um transient do ano anterior não atravessa a vir
 
 ### Seguro-desemprego
 
-`[sd_min_parcela]` expõe o salário mínimo efetivo como referência mínima. Mudanças legais nessa semântica exigem revisão explícita.
+Shortcodes:
+
+- `[sd_min_parcela]` — piso vinculado ao salário mínimo efetivo;
+- `[sd_parametros_json]` — contrato público JSON da tabela vigente;
+- `[sd_debug]` — diagnóstico restrito ao administrador.
+
+A tabela do trabalhador formal é descoberta automaticamente em fontes oficiais do MTE/FAT. A coleta:
+
+1. procura primeiro o slug estável observado do Portal FAT;
+2. descobre candidatos nas páginas oficiais de notícias/pesquisa do FAT;
+3. usa a página operacional do MTE apenas quando ela contém a competência esperada;
+4. exige marcador inequívoco do ano de referência;
+5. extrai piso, limites das duas primeiras faixas, percentuais, parcela-base, teto e vigência;
+6. valida continuidade das faixas, referência da segunda faixa, limiar do teto e consistência da parcela-base;
+7. cruza o piso com o salário mínimo corrente quando ambos estão disponíveis;
+8. preserva `last_good` somente para a mesma competência esperada;
+9. falha fechado quando a nova competência deveria estar vigente mas ainda não foi encontrada/validada.
+
+A troca anual é automática. Até 10 de janeiro, a competência esperada continua sendo a do ano anterior; a partir de 11 de janeiro, o plugin exige a tabela do novo ano. Se a publicação oficial atrasar ou mudar estruturalmente, o shortcode retorna `status=unavailable` em vez de relabelar a tabela anterior.
+
+Nenhum valor anual da tabela do seguro-desemprego fica hardcoded no plugin.
 
 ### Desemprego / PNAD Contínua
 
@@ -79,6 +99,10 @@ Todas são opcionais:
 - `DOBR_DESEMPREGO_CACHE_TTL_FALLBACK`
 - `DOBR_DESEMPREGO_LAST_GOOD_MAX_AGE`
 - `DOBR_DESEMPREGO_SSLVERIFY`
+- `DOBR_SD_PARAMS_CACHE_TTL_SUCCESS`
+- `DOBR_SD_PARAMS_CACHE_TTL_FALLBACK`
+- `DOBR_SD_PARAMS_LAST_GOOD_MAX_AGE`
+- `DOBR_SD_PARAMS_SSLVERIFY`
 - `DOBR_DEBUG_LOG`
 
 Seed/manual são fallback opt-in; não existe default operacional anual.
