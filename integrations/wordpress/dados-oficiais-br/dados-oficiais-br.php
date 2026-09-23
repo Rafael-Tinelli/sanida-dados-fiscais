@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Dados Oficiais BR
  * Description: Shortcodes de dados oficiais (salário mínimo, PIS etc.), série histórica automática e suporte a meta description dos plugins de SEO. Inclui série dinâmica da taxa de desemprego (PNAD Contínua via IpeaData) com fallback, cache inteligente e diagnóstico; e automação assistida do salário mínimo com cron, fallback e debug.
- * Version: 1.4.11
+ * Version: 1.4.12
  * Author: Sanida
  */
 
@@ -68,32 +68,69 @@ final class DOBR_Plugin {
     // Frontend do estimador do seguro-desemprego.
     // O JS fica fora do conteúdo editorial para evitar corrupção por editor/bloco.
     add_action('wp_enqueue_scripts', [$this, 'enqueue_sd_calculator_asset']);
+    add_filter('the_content', [$this, 'strip_legacy_sd_inline_script'], 99);
+  }
+
+  private function is_sd_calculator_context(?string $content = null): bool {
+    if (is_admin()) return false;
+
+    // Fallback estável para a matéria canônica (post 944), inclusive preview/autosave.
+    $queriedId = (int) get_queried_object_id();
+    if ($queriedId === 944) return true;
+
+    if ($content === null) {
+      global $post;
+      if (!($post instanceof WP_Post)) return false;
+      $content = (string) $post->post_content;
+    }
+
+    return (
+      strpos($content, 'data-sd-params') !== false &&
+      strpos($content, 'data-sd-calc') !== false &&
+      strpos($content, 'sd_parametros_json') !== false
+    );
   }
 
   public function enqueue_sd_calculator_asset(): void {
-    if (is_admin() || !is_singular()) return;
+    if (!$this->is_sd_calculator_context()) return;
 
-    global $post;
-    if (!($post instanceof WP_Post)) return;
-
-    $content = (string) $post->post_content;
-
-    // Só carrega no conteúdo que realmente contém o estimador.
-    if (
-      strpos($content, 'data-sd-params') === false ||
-      strpos($content, 'data-sd-calc') === false ||
-      strpos($content, 'sd_parametros_json') === false
-    ) {
-      return;
-    }
+    $path = plugin_dir_path(__FILE__) . 'assets/seguro-desemprego-calculadora.js';
+    $version = is_file($path) ? (string) filemtime($path) : '1.4.12';
 
     wp_enqueue_script(
       'dobr-seguro-desemprego-calculadora',
       plugins_url('assets/seguro-desemprego-calculadora.js', __FILE__),
       [],
-      '1.4.11',
+      $version,
       true
     );
+  }
+
+  public function strip_legacy_sd_inline_script(string $content): string {
+    if (!$this->is_sd_calculator_context($content)) return $content;
+    if (stripos($content, '<script') === false) return $content;
+
+    $result = preg_replace_callback(
+      '#<script\\b[^>]*>[\\s\\S]*?<\\/script>#i',
+      static function(array $m): string {
+        $script = (string) $m[0];
+
+        $isLegacySd = (
+          strpos($script, 'Sanida seguro-desemprego') !== false ||
+          strpos($script, '__SANIDA_SD_B14_LOADED__') !== false
+        );
+
+        $hasEstimatorMarkers = (
+          strpos($script, 'data-sd-') !== false ||
+          strpos($script, 'sd_parametros_json') !== false
+        );
+
+        return ($isLegacySd && $hasEstimatorMarkers) ? '' : $script;
+      },
+      $content
+    );
+
+    return is_string($result) ? $result : $content;
   }
 
   /* ===== Config helpers ===== */
@@ -539,7 +576,7 @@ final class DOBR_Plugin {
       'redirection' => 4,
       'sslverify' => $this->sd_params_sslverify(),
       'headers' => [
-        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.11; WordPress)',
+        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.12; WordPress)',
         'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Connection' => 'keep-alive',
       ],
@@ -850,7 +887,7 @@ final class DOBR_Plugin {
 
     $payload = $this->get_sd_params_payload(false);
     $out = [
-      'plugin_version_esperada' => '1.4.11',
+      'plugin_version_esperada' => '1.4.12',
       'reference_year_candidates' => $this->sd_reference_year_candidates(),
       'sd_params_payload' => $payload,
       'sd_params_transient' => get_transient(self::SD_PARAMS_CACHE_KEY),
@@ -1022,7 +1059,7 @@ final class DOBR_Plugin {
       'redirection' => 3,
       'sslverify'   => $this->sm_sslverify(),
       'headers'     => [
-        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.11; WordPress)',
+        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.12; WordPress)',
         'Accept'     => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Connection' => 'keep-alive',
       ],
@@ -1392,7 +1429,7 @@ final class DOBR_Plugin {
     $payload = $this->get_sm_payload(false);
 
     $out = [
-      'plugin_version_esperada' => '1.4.11',
+      'plugin_version_esperada' => '1.4.12',
       'sm_payload' => $payload,
       'sm_transient' => get_transient(self::SM_CACHE_KEY),
       'sm_last_good_option' => get_option(self::SM_LAST_GOOD_OPTION),
@@ -1465,7 +1502,7 @@ final class DOBR_Plugin {
       'redirection' => 3,
       'sslverify'   => $this->desemprego_sslverify(),
       'headers'     => [
-        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.11; WordPress)',
+        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.12; WordPress)',
         'Accept'     => 'application/json, text/plain, */*',
         'Connection' => 'keep-alive',
       ],
@@ -1751,7 +1788,7 @@ final class DOBR_Plugin {
     $payload = $this->get_desemprego_payload($top);
 
     $out = [
-      'plugin_version_esperada' => '1.4.11',
+      'plugin_version_esperada' => '1.4.12',
       'desemprego_payload' => $payload,
       'transient_payload' => get_transient($this->desemprego_cache_key($top)),
       'transient_payload_key' => $this->desemprego_cache_key($top),
@@ -2000,7 +2037,7 @@ final class DOBR_Plugin {
 
       <hr>
 
-      <h2>Status do Salário Mínimo (v1.4.11)</h2>
+      <h2>Status do Salário Mínimo (v1.4.12)</h2>
       <p><strong>Valor efetivo atual:</strong> <?php echo esc_html($smValor); ?></p>
       <p><strong>Vigência efetiva:</strong> <?php echo esc_html($smVig); ?></p>
       <p><strong>Origem:</strong> <code><?php echo esc_html($smSource); ?></code> (api_auto | last_good | history_auto | manual_settings | seed | none)</p>
