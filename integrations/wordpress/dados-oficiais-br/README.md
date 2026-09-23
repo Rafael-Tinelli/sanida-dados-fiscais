@@ -4,10 +4,10 @@ Código versionado do plugin WordPress **Dados Oficiais BR**.
 
 ## Estado canônico
 
-- versão: **1.4.10**
+- versão: **1.4.11**
 - produção: `/home1/sanid210/public_html/blog/wp-content/plugins/dados-oficiais-br/dados-oficiais-br.php`
 - fonte versionada: `integrations/wordpress/dados-oficiais-br/dados-oficiais-br.php`
-- produção atualmente implantada permanece na versão anterior até o deploy controlado; a versão 1.4.10 consolida o contrato evergreen do seguro-desemprego com seleção por vigência oficial e só deve ser promovida após CI e validação.
+- produção atualmente implantada permanece na versão anterior até o deploy controlado; a versão 1.4.11 consolida o contrato evergreen do seguro-desemprego com seleção por vigência oficial e só deve ser promovida após CI e validação.
 
 Este diretório é deliberadamente separado de `consumers/wordpress/sanida-fiscais-auto.php`.
 O DOBR não integra o contrato `br.sanida.fiscal` nem as releases imutáveis de `releases/fiscal-v1`.
@@ -124,3 +124,10 @@ Antes de substituir o arquivo de produção:
 6. validar os shortcodes reais via WP-CLI.
 
 Não editar a cópia de produção como nova fonte de verdade sem posteriormente reconciliar o Git.
+
+
+### Frontend do estimador de seguro-desemprego
+
+A partir da versão 1.4.11, o JavaScript do estimador não deve ser mantido dentro do conteúdo do WordPress. O plugin enfileira automaticamente `assets/seguro-desemprego-calculadora.js` quando o post contém o contrato `[sd_parametros_json]` e os marcadores do estimador. Isso evita corrupção de JavaScript por serialização, editor ou bloco HTML.
+
+O HTML e o CSS permanecem no conteúdo editorial; a aba/bloco JS da matéria deve ficar vazio para este estimador.
