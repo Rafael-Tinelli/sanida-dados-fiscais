@@ -80,7 +80,7 @@ def test_dobr_has_no_stale_admin_version_copy() -> None:
     assert "plugin 1.4.4" not in text
     assert "Status do Salário Mínimo (v1.4.4)" not in text
     assert "Status do Salário Mínimo (v1.4.9)" in text
-    assert text.count("'plugin_version_esperada' => '1.4.9'") == 2
+    assert text.count("'plugin_version_esperada' => '1.4.9'") == 3
 
 
 def test_dobr_php_lint_and_evergreen_harness() -> None:
