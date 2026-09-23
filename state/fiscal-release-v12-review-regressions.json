@@ -1,7 +1,7 @@
 {
   "command": "python -m pytest -q tests",
-  "exit_code": 1,
+  "exit_code": 0,
   "schema_version": "1.0.0",
-  "status": "FAIL",
-  "summary": "        'stale_cdi_rejected': True,\n    }\nFAILED tests/test_wordpress_financial_series_v280.py::test_v280_php_accepts_real_series_and_serves_compact_views_fail_closed - AssertionError: PHP Fatal error:  Uncaught Error: Call to undefined function wp_remote_get() in /home/runner/work/sanida-dados-fiscais/sanida-dados-fiscais/consumers/wordpress/includes/trait-sanida-taxas.php:228\n  Stack trace:\n  #0 /home/runner/work/sanida-dados-fiscais/sanida-dados-fiscais/consumers/wordpress/includes/trait-sanida-taxas.php(287): V280_Harness->get_taxas_series_data()\n  #1 /tmp/tmp7pow1c9y/v280-series.php(61): V280_Harness->taxas_series_view()\n  #2 /tmp/tmp7pow1c9y/v280-series.php(75): V280_Harness->view_series()\n  #3 {main}\n    thrown in /home/runner/work/sanida-dados-fiscais/sanida-dados-fiscais/consumers/wordpress/includes/trait-sanida-taxas.php on line 228\nassert 255 == 0\n +  where 255 = CompletedProcess(args=['/usr/bin/php', '/tmp/tmp7pow1c9y/v280-series.php', '/home/runner/work/sanida-dados-fiscais/san...nner/work/sanida-dados-fiscais/sanida-dados-fiscais/consumers/wordpress/includes/trait-sanida-taxas.php on line 228\\n').returncode\n2 failed, 448 passed in 16.10s"
+  "status": "PASS",
+  "summary": "........................................................................ [ 15%]\n........................................................................ [ 31%]\n........................................................................ [ 47%]\n........................................................................ [ 63%]\n........................................................................ [ 79%]\n........................................................................ [ 95%]\n......................                                                   [100%]\n454 passed in 14.67s"
 }
