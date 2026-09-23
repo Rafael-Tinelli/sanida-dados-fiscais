@@ -20,7 +20,11 @@ def test_sd_calculator_asset_is_externalized_and_enqueued() -> None:
     assert "data-sd-params" in plugin
     assert "data-sd-calc" in plugin
     assert "sd_parametros_json" in plugin
-    assert "Version: 1.4.11" in plugin
+    assert "get_queried_object_id" in plugin
+    assert "=== 944" in plugin
+    assert "strip_legacy_sd_inline_script" in plugin
+    assert "filemtime" in plugin
+    assert "Version: 1.4.12" in plugin
 
     assert "window.__SANIDA_SD_B14_LOADED__ = true;" in asset
     assert "DOMContentLoaded" in asset
