@@ -22,19 +22,23 @@ def test_sd_params_contract_is_evergreen_and_fail_closed() -> None:
         "SD_PARAMS_CACHE_KEY",
         "SD_PARAMS_LAST_GOOD_OPTION",
         "CRON_HOOK_SD_PARAMS_REFRESH",
-        "sd_expected_reference_year",
+        "sd_reference_year_candidates",
         "current_reference_year_marker_missing",
         "band_continuity_mismatch",
         "second_band_reference_mismatch",
         "cap_threshold_mismatch",
         "second_band_base_mismatch",
         "minimum_wage_crosscheck_mismatch",
-        "candidate_not_effective_yet",
+        "current_year_evidence_unparseable",
         "status' => 'unavailable",
         "dobr_sd_params_auto_urls",
         "portalfat.mte.gov.br/category/noticias/",
     ):
         assert marker in text
+
+    assert "monthDay >= 111" not in text
+    assert "400 * DAY_IN_SECONDS" not in text
+    assert "60 * DAY_IN_SECONDS" in text
 
     # Annual monetary parameters must come from the official source, not source code.
     for forbidden in (
@@ -70,7 +74,6 @@ def test_sd_params_parser_accepts_new_year_without_code_change() -> None:
     function apply_filters($tag,$value){return $value;}
     function current_time($type){
       if ($type === 'Y') return '2027';
-      if ($type === 'md') return '0215';
       if ($type === 'timestamp') return strtotime('2027-02-15 12:00:00');
       return time();
     }
@@ -87,9 +90,9 @@ def test_sd_params_parser_accepts_new_year_without_code_change() -> None:
 
     $html = '<article>'
       . 'Tabela Anual do Seguro-Desemprego - 2027. '
-      . 'Tabela com vigência a partir de 11 de janeiro de 2027. '
-      . 'Até R$ 2.100,00 - Multiplica-se o salário médio por 0,75. '
-      . 'De R$ 2.100,01 até R$ 3.500,00 - O que exceder a R$ 2.100,00 multiplica-se por 0,55 e soma-se com R$ 1.575,00. '
+      . 'Tabela com vigência a partir de 3 de fevereiro de 2027. '
+      . 'Até R$ 2.100,00 - Multiplica-se o salário médio por 75%. '
+      . 'De R$ 2.100,01 até R$ 3.500,00 - O que exceder a R$ 2.100,00 multiplica-se por 55% e soma-se com R$ 1.575,00. '
       . 'Acima de R$ 3.500,00 - O valor será invariável de R$ 2.500,00. '
       . 'O valor do benefício não será inferior ao valor do salário mínimo de R$ 1.700,00 vigente para o ano de 2027.'
       . '</article>';
@@ -101,7 +104,7 @@ def test_sd_params_parser_accepts_new_year_without_code_change() -> None:
     }
 
     if (($ok['reference_year'] ?? null) !== 2027) exit(32);
-    if (($ok['effective_from'] ?? '') !== '2027-01-11') exit(33);
+    if (($ok['effective_from'] ?? '') !== '2027-02-03') exit(33);
     if (abs(($ok['first_band_limit'] ?? 0) - 2100.00) > 0.001) exit(34);
     if (abs(($ok['first_band_rate'] ?? 0) - 0.75) > 0.0001) exit(35);
     if (abs(($ok['second_band_limit'] ?? 0) - 3500.00) > 0.001) exit(36);
@@ -124,6 +127,26 @@ def test_sd_params_parser_accepts_new_year_without_code_change() -> None:
     );
     $r3 = $parser->invoke($obj, $old, 2027);
     if (!empty($r3['ok']) || ($r3['error'] ?? '') !== 'current_reference_year_marker_missing') exit(42);
+
+    $activeMethod = $rc->getMethod('sd_active_candidate');
+    $activeMethod->setAccessible(true);
+
+    $previousStillActive = $activeMethod->invoke($obj, [
+      2027 => ['ok'=>true, 'reference_year'=>2027, 'effective_from'=>'2027-03-01'],
+      2026 => ['ok'=>true, 'reference_year'=>2026, 'effective_from'=>'2026-02-01'],
+    ]);
+    if (($previousStillActive['reference_year'] ?? null) !== 2026) exit(43);
+
+    $currentNowActive = $activeMethod->invoke($obj, [
+      2027 => ['ok'=>true, 'reference_year'=>2027, 'effective_from'=>'2027-02-03'],
+      2026 => ['ok'=>true, 'reference_year'=>2026, 'effective_from'=>'2026-02-01'],
+    ]);
+    if (($currentNowActive['reference_year'] ?? null) !== 2027) exit(44);
+
+    $yearsMethod = $rc->getMethod('sd_reference_year_candidates');
+    $yearsMethod->setAccessible(true);
+    $years = $yearsMethod->invoke($obj);
+    if ($years !== [2027, 2026]) exit(45);
 
     echo "DOBR_SD_PARAMS_HARNESS_PASS\n";
     ?>"""
