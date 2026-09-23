@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Dados Oficiais BR
  * Description: Shortcodes de dados oficiais (salário mínimo, PIS etc.), série histórica automática e suporte a meta description dos plugins de SEO. Inclui série dinâmica da taxa de desemprego (PNAD Contínua via IpeaData) com fallback, cache inteligente e diagnóstico; e automação assistida do salário mínimo com cron, fallback e debug.
- * Version: 1.4.10
+ * Version: 1.4.11
  * Author: Sanida
  */
 
@@ -64,6 +64,36 @@ final class DOBR_Plugin {
     add_action('init', [$this, 'ensure_cron_events']);
     add_action(self::CRON_HOOK_SM_REFRESH, [$this, 'cron_refresh_sm']);
     add_action(self::CRON_HOOK_SD_PARAMS_REFRESH, [$this, 'cron_refresh_sd_params']);
+
+    // Frontend do estimador do seguro-desemprego.
+    // O JS fica fora do conteúdo editorial para evitar corrupção por editor/bloco.
+    add_action('wp_enqueue_scripts', [$this, 'enqueue_sd_calculator_asset']);
+  }
+
+  public function enqueue_sd_calculator_asset(): void {
+    if (is_admin() || !is_singular()) return;
+
+    global $post;
+    if (!($post instanceof WP_Post)) return;
+
+    $content = (string) $post->post_content;
+
+    // Só carrega no conteúdo que realmente contém o estimador.
+    if (
+      strpos($content, 'data-sd-params') === false ||
+      strpos($content, 'data-sd-calc') === false ||
+      strpos($content, 'sd_parametros_json') === false
+    ) {
+      return;
+    }
+
+    wp_enqueue_script(
+      'dobr-seguro-desemprego-calculadora',
+      plugins_url('assets/seguro-desemprego-calculadora.js', __FILE__),
+      [],
+      '1.4.11',
+      true
+    );
   }
 
   /* ===== Config helpers ===== */
@@ -509,7 +539,7 @@ final class DOBR_Plugin {
       'redirection' => 4,
       'sslverify' => $this->sd_params_sslverify(),
       'headers' => [
-        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.10; WordPress)',
+        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.11; WordPress)',
         'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Connection' => 'keep-alive',
       ],
@@ -820,7 +850,7 @@ final class DOBR_Plugin {
 
     $payload = $this->get_sd_params_payload(false);
     $out = [
-      'plugin_version_esperada' => '1.4.10',
+      'plugin_version_esperada' => '1.4.11',
       'reference_year_candidates' => $this->sd_reference_year_candidates(),
       'sd_params_payload' => $payload,
       'sd_params_transient' => get_transient(self::SD_PARAMS_CACHE_KEY),
@@ -992,7 +1022,7 @@ final class DOBR_Plugin {
       'redirection' => 3,
       'sslverify'   => $this->sm_sslverify(),
       'headers'     => [
-        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.10; WordPress)',
+        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.11; WordPress)',
         'Accept'     => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Connection' => 'keep-alive',
       ],
@@ -1362,7 +1392,7 @@ final class DOBR_Plugin {
     $payload = $this->get_sm_payload(false);
 
     $out = [
-      'plugin_version_esperada' => '1.4.10',
+      'plugin_version_esperada' => '1.4.11',
       'sm_payload' => $payload,
       'sm_transient' => get_transient(self::SM_CACHE_KEY),
       'sm_last_good_option' => get_option(self::SM_LAST_GOOD_OPTION),
@@ -1435,7 +1465,7 @@ final class DOBR_Plugin {
       'redirection' => 3,
       'sslverify'   => $this->desemprego_sslverify(),
       'headers'     => [
-        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.10; WordPress)',
+        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.11; WordPress)',
         'Accept'     => 'application/json, text/plain, */*',
         'Connection' => 'keep-alive',
       ],
@@ -1721,7 +1751,7 @@ final class DOBR_Plugin {
     $payload = $this->get_desemprego_payload($top);
 
     $out = [
-      'plugin_version_esperada' => '1.4.10',
+      'plugin_version_esperada' => '1.4.11',
       'desemprego_payload' => $payload,
       'transient_payload' => get_transient($this->desemprego_cache_key($top)),
       'transient_payload_key' => $this->desemprego_cache_key($top),
@@ -1970,7 +2000,7 @@ final class DOBR_Plugin {
 
       <hr>
 
-      <h2>Status do Salário Mínimo (v1.4.10)</h2>
+      <h2>Status do Salário Mínimo (v1.4.11)</h2>
       <p><strong>Valor efetivo atual:</strong> <?php echo esc_html($smValor); ?></p>
       <p><strong>Vigência efetiva:</strong> <?php echo esc_html($smVig); ?></p>
       <p><strong>Origem:</strong> <code><?php echo esc_html($smSource); ?></code> (api_auto | last_good | history_auto | manual_settings | seed | none)</p>
