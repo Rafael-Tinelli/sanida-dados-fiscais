@@ -60,6 +60,7 @@ def test_v280_php_accepts_real_series_and_serves_compact_views_fail_closed() -> 
 
     function current_time($type) {
       if ($type === 'Y-m-d') return '2026-09-19';
+      if ($type === 'timestamp') return strtotime('2026-09-19 12:00:00');
       return time();
     }
     function get_transient($key) {
