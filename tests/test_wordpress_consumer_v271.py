@@ -98,16 +98,21 @@ def test_v271_cdi_freshness_boundary_and_persistent_selic() -> None:
     $h = new V271_Taxas_Harness();
     $cdi = $payload['meta']['sources']['cdi'];
 
-    $GLOBALS['v271_today'] = '2026-09-19';
+    $obs = $cdi['source_observation_date'];
+    $age7 = date('Y-m-d', strtotime($obs . ' +7 days'));
+    $age8 = date('Y-m-d', strtotime($obs . ' +8 days'));
+    $GLOBALS['v271_today'] = $age7;
+
     $selic_old = $payload;
     $selic_old['meta']['sources']['selic']['source_observation_date'] = '2020-01-01';
 
     $cdi_stale = $payload;
-    $cdi_stale['meta']['sources']['cdi']['source_observation_date'] = '2026-09-11';
+    $cdi_stale['meta']['sources']['cdi']['source_observation_date'] =
+      date('Y-m-d', strtotime($age7 . ' -8 days'));
 
     echo json_encode([
-      'age7' => $h->fresh($cdi, '2026-09-24'),
-      'age8' => $h->fresh($cdi, '2026-09-25'),
+      'age7' => $h->fresh($cdi, $age7),
+      'age8' => $h->fresh($cdi, $age8),
       'selic_old_still_valid' => $h->valid($selic_old),
       'stale_cdi_rejected' => !$h->valid($cdi_stale),
     ]);
