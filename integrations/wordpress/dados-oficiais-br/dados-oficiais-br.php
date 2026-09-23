@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Dados Oficiais BR
  * Description: Shortcodes de dados oficiais (salário mínimo, PIS etc.), série histórica automática e suporte a meta description dos plugins de SEO. Inclui série dinâmica da taxa de desemprego (PNAD Contínua via IpeaData) com fallback, cache inteligente e diagnóstico; e automação assistida do salário mínimo com cron, fallback e debug.
- * Version: 1.4.8
+ * Version: 1.4.9
  * Author: Sanida
  */
 
@@ -22,6 +22,11 @@ final class DOBR_Plugin {
   const SM_LAST_GOOD_OPTION = 'dobr_sm_last_good';
   const CRON_HOOK_SM_REFRESH = 'dobr_cron_refresh_sm';
 
+  // Seguro-desemprego (tabela anual do trabalhador formal)
+  const SD_PARAMS_CACHE_KEY = 'dobr_sd_params_payload';
+  const SD_PARAMS_LAST_GOOD_OPTION = 'dobr_sd_params_last_good';
+  const CRON_HOOK_SD_PARAMS_REFRESH = 'dobr_cron_refresh_sd_params';
+
   public function __construct() {
     // Shortcodes existentes (SM)
     add_shortcode('sm_valor',         [$this,'sc_sm_valor']);
@@ -31,6 +36,7 @@ final class DOBR_Plugin {
     add_shortcode('sm_hora',          [$this,'sc_sm_hora']);
     add_shortcode('pis_valor',        [$this,'sc_pis_valor']);
     add_shortcode('sd_min_parcela',   [$this,'sc_sd_min_parcela']);
+    add_shortcode('sd_parametros_json', [$this,'sc_sd_parametros_json']);
     add_shortcode('sm_serie_json',    [$this,'sc_sm_serie_json']);
 
     // Desemprego PNAD Contínua (IpeaData)
@@ -40,6 +46,7 @@ final class DOBR_Plugin {
     // Debugs (admin only no retorno)
     add_shortcode('desemprego_debug', [$this, 'sc_desemprego_debug']);
     add_shortcode('sm_debug',         [$this, 'sc_sm_debug']);
+    add_shortcode('sd_debug',         [$this, 'sc_sd_debug']);
 
     // Admin
     if (is_admin()) {
@@ -56,6 +63,7 @@ final class DOBR_Plugin {
     // Cron (salário mínimo)
     add_action('init', [$this, 'ensure_cron_events']);
     add_action(self::CRON_HOOK_SM_REFRESH, [$this, 'cron_refresh_sm']);
+    add_action(self::CRON_HOOK_SD_PARAMS_REFRESH, [$this, 'cron_refresh_sd_params']);
   }
 
   /* ===== Config helpers ===== */
@@ -109,6 +117,32 @@ final class DOBR_Plugin {
   private function sm_seed_vigencia(): string {
     $v = trim((string) $this->cfg('DOBR_SM_SEED_VIGENCIA', ''));
     return preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) ? $v : '';
+  }
+
+  // Seguro-desemprego
+  private function sd_params_ttl_success(): int {
+    $v = (int) $this->cfg('DOBR_SD_PARAMS_CACHE_TTL_SUCCESS', 24 * HOUR_IN_SECONDS);
+    return max(300, $v);
+  }
+
+  private function sd_params_ttl_fallback(): int {
+    $v = (int) $this->cfg('DOBR_SD_PARAMS_CACHE_TTL_FALLBACK', 30 * MINUTE_IN_SECONDS);
+    return max(300, $v);
+  }
+
+  private function sd_params_last_good_max_age(): int {
+    $v = (int) $this->cfg('DOBR_SD_PARAMS_LAST_GOOD_MAX_AGE', 400 * DAY_IN_SECONDS);
+    return max(30 * DAY_IN_SECONDS, $v);
+  }
+
+  private function sd_params_sslverify(): bool {
+    return (bool) $this->cfg('DOBR_SD_PARAMS_SSLVERIFY', true);
+  }
+
+  private function sd_expected_reference_year(): int {
+    $year = (int) current_time('Y');
+    $monthDay = (int) current_time('md');
+    return $monthDay >= 111 ? $year : ($year - 1);
   }
 
   // Geral
@@ -238,6 +272,11 @@ final class DOBR_Plugin {
     if (!wp_next_scheduled(self::CRON_HOOK_SM_REFRESH)) {
       wp_schedule_event(time() + 600, 'daily', self::CRON_HOOK_SM_REFRESH);
     }
+
+    // Tabela anual do seguro-desemprego: descoberta e validação automáticas.
+    if (!wp_next_scheduled(self::CRON_HOOK_SD_PARAMS_REFRESH)) {
+      wp_schedule_event(time() + 900, 'daily', self::CRON_HOOK_SD_PARAMS_REFRESH);
+    }
   }
 
   public function cron_refresh_sm(): void {
@@ -249,6 +288,466 @@ final class DOBR_Plugin {
       'ok' => isset($payload['ok']) ? $payload['ok'] : null,
       'error' => isset($payload['error']) ? $payload['error'] : null,
     ]);
+  }
+
+  public function cron_refresh_sd_params(): void {
+    delete_transient(self::SD_PARAMS_CACHE_KEY);
+    $payload = $this->get_sd_params_payload(true);
+    $this->log('cron_refresh_sd_params executado', [
+      'source' => isset($payload['source']) ? $payload['source'] : null,
+      'ok' => isset($payload['ok']) ? $payload['ok'] : null,
+      'reference_year' => isset($payload['reference_year']) ? $payload['reference_year'] : null,
+      'error' => isset($payload['error']) ? $payload['error'] : null,
+    ]);
+  }
+
+  /* ===== Seguro-desemprego: parâmetros oficiais evergreen ===== */
+
+  private function sd_params_payload_shape_valid($payload): bool {
+    return is_array($payload)
+      && array_key_exists('ok', $payload)
+      && array_key_exists('status', $payload)
+      && array_key_exists('reference_year', $payload)
+      && array_key_exists('effective_from', $payload)
+      && array_key_exists('floor', $payload)
+      && array_key_exists('first_band_limit', $payload)
+      && array_key_exists('first_band_rate', $payload)
+      && array_key_exists('second_band_limit', $payload)
+      && array_key_exists('second_band_excess_rate', $payload)
+      && array_key_exists('second_band_base', $payload)
+      && array_key_exists('cap', $payload)
+      && array_key_exists('source_url', $payload)
+      && array_key_exists('source', $payload)
+      && array_key_exists('error', $payload)
+      && array_key_exists('fetched_at', $payload);
+  }
+
+  private function sd_params_last_good_is_fresh($lg): bool {
+    if (!is_array($lg) || !isset($lg['ts']) || !is_numeric($lg['ts'])) return false;
+    $age = time() - (int)$lg['ts'];
+    return $age >= 0 && $age <= $this->sd_params_last_good_max_age();
+  }
+
+  private function sd_parse_decimal(string $raw): ?float {
+    $raw = trim(str_replace(',', '.', $raw));
+    if ($raw === '' || !is_numeric($raw)) return null;
+    $value = (float)$raw;
+    return ($value > 0 && $value < 1) ? $value : null;
+  }
+
+  private function sd_parse_currency(string $raw): ?float {
+    $value = $this->normalize_currency_input($raw);
+    return ($value >= 100.0 && $value <= 100000.0) ? (float)$value : null;
+  }
+
+  private function sd_extract_effective_from(string $plain, int $targetYear): ?string {
+    $year = preg_quote((string)$targetYear, '/');
+    $patterns = [
+      '/(?:vig[eê]ncia|valer|vigor).{0,120}?(\d{1,2})\s+de\s+janeiro\s+de\s+' . $year . '/iu',
+      '/(?:vig[eê]ncia|valer|vigor).{0,120}?(\d{1,2})\/(\d{1,2})\/' . $year . '/iu',
+    ];
+
+    foreach ($patterns as $index => $pattern) {
+      if (!preg_match($pattern, $plain, $m)) continue;
+      $day = (int)$m[1];
+      $month = ($index === 1 && isset($m[2])) ? (int)$m[2] : 1;
+      if ($month !== 1 || $day < 1 || $day > 31) continue;
+      return sprintf('%04d-01-%02d', $targetYear, $day);
+    }
+
+    return null;
+  }
+
+  private function sd_extract_from_official_html(string $html, int $targetYear): array {
+    $plain = wp_strip_all_tags($html, true);
+    $plain = html_entity_decode($plain, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $plain = preg_replace('/\s+/u', ' ', $plain);
+
+    if (!is_string($plain) || trim($plain) === '') {
+      return ['ok' => false, 'error' => 'empty_official_page'];
+    }
+
+    $year = preg_quote((string)$targetYear, '/');
+    $yearMarkers = [
+      '/tabela\s+anual.{0,140}?' . $year . '/iu',
+      '/per[ií]odo\s*:\s*ano\s+de\s+' . $year . '/iu',
+      '/vig[eê]ncia.{0,120}?' . $year . '/iu',
+      '/vigente\s+para\s+o\s+ano\s+de\s+' . $year . '/iu',
+    ];
+    $hasYearMarker = false;
+    foreach ($yearMarkers as $pattern) {
+      if (preg_match($pattern, $plain)) {
+        $hasYearMarker = true;
+        break;
+      }
+    }
+    if (!$hasYearMarker) {
+      return ['ok' => false, 'error' => 'current_reference_year_marker_missing'];
+    }
+
+    $firstPattern = '/at[eé]\s+R\$\s*([\d\.\,]+).{0,120}?multiplica-se\s+o\s+sal[aá]rio\s+m[eé]dio\s+por\s+([0-9]+(?:[\.,][0-9]+)?)/iu';
+    $secondPattern = '/de\s+R\$\s*([\d\.\,]+)\s+at[eé]\s+R\$\s*([\d\.\,]+).{0,180}?exceder(?:\s+a|\s+de)?\s*R\$\s*([\d\.\,]+).{0,120}?multiplica-se\s+por\s+([0-9]+(?:[\.,][0-9]+)?).{0,140}?soma-se\s+(?:com|a)\s+R\$\s*([\d\.\,]+)/iu';
+    $thirdPattern = '/acima\s+de\s+R\$\s*([\d\.\,]+).{0,140}?valor\s+ser[aá]\s+invari[aá]vel\s+de\s+R\$\s*([\d\.\,]+)/iu';
+
+    if (!preg_match($firstPattern, $plain, $m1)) {
+      return ['ok' => false, 'error' => 'first_band_missing'];
+    }
+    if (!preg_match($secondPattern, $plain, $m2)) {
+      return ['ok' => false, 'error' => 'second_band_missing'];
+    }
+    if (!preg_match($thirdPattern, $plain, $m3)) {
+      return ['ok' => false, 'error' => 'cap_band_missing'];
+    }
+
+    $floor = null;
+    $floorPatterns = [
+      '/n[aã]o\s+(?:poder[aá]\s+)?ser[aá]\s+inferior.{0,180}?R\$\s*([\d\.\,]+)/iu',
+      '/sal[aá]rio\s+m[ií]nimo\s*:?\s*R\$\s*([\d\.\,]+)/iu',
+    ];
+    foreach ($floorPatterns as $pattern) {
+      if (preg_match($pattern, $plain, $mf)) {
+        $floor = $this->sd_parse_currency($mf[1]);
+        if ($floor !== null) break;
+      }
+    }
+    if ($floor === null) {
+      return ['ok' => false, 'error' => 'floor_missing'];
+    }
+
+    $firstLimit = $this->sd_parse_currency($m1[1]);
+    $firstRate = $this->sd_parse_decimal($m1[2]);
+    $secondStart = $this->sd_parse_currency($m2[1]);
+    $secondLimit = $this->sd_parse_currency($m2[2]);
+    $secondExcessBase = $this->sd_parse_currency($m2[3]);
+    $secondRate = $this->sd_parse_decimal($m2[4]);
+    $secondBase = $this->sd_parse_currency($m2[5]);
+    $thirdStart = $this->sd_parse_currency($m3[1]);
+    $cap = $this->sd_parse_currency($m3[2]);
+    $effectiveFrom = $this->sd_extract_effective_from($plain, $targetYear);
+
+    foreach ([
+      $firstLimit, $firstRate, $secondStart, $secondLimit,
+      $secondExcessBase, $secondRate, $secondBase, $thirdStart, $cap
+    ] as $value) {
+      if ($value === null) {
+        return ['ok' => false, 'error' => 'parsed_parameter_invalid'];
+      }
+    }
+    if ($effectiveFrom === null) {
+      return ['ok' => false, 'error' => 'effective_date_missing'];
+    }
+
+    // Invariantes semânticos: se a estrutura anual mudar, falha fechado.
+    if (abs($secondStart - ($firstLimit + 0.01)) > 0.011) {
+      return ['ok' => false, 'error' => 'band_continuity_mismatch'];
+    }
+    if (abs($secondExcessBase - $firstLimit) > 0.011) {
+      return ['ok' => false, 'error' => 'second_band_reference_mismatch'];
+    }
+    if (abs($thirdStart - $secondLimit) > 0.011) {
+      return ['ok' => false, 'error' => 'cap_threshold_mismatch'];
+    }
+
+    $expectedSecondBase = round($firstLimit * $firstRate, 2, PHP_ROUND_HALF_UP);
+    if (abs($secondBase - $expectedSecondBase) > 0.011) {
+      return ['ok' => false, 'error' => 'second_band_base_mismatch'];
+    }
+
+    if ($firstLimit <= $floor || $secondLimit <= $firstLimit || $cap < $floor || $secondBase <= 0) {
+      return ['ok' => false, 'error' => 'numeric_invariant_mismatch'];
+    }
+
+    return [
+      'ok' => true,
+      'status' => 'candidate',
+      'reference_year' => $targetYear,
+      'effective_from' => $effectiveFrom,
+      'floor' => round($floor, 2),
+      'first_band_limit' => round($firstLimit, 2),
+      'first_band_rate' => $firstRate,
+      'second_band_limit' => round($secondLimit, 2),
+      'second_band_excess_rate' => $secondRate,
+      'second_band_base' => round($secondBase, 2),
+      'cap' => round($cap, 2),
+      'parse_rule' => 'sd_three_bands_plus_floor_and_effective_date_v1',
+      'error' => null,
+    ];
+  }
+
+  private function sd_params_http_args(): array {
+    return [
+      'timeout' => 25,
+      'redirection' => 4,
+      'sslverify' => $this->sd_params_sslverify(),
+      'headers' => [
+        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.9; WordPress)',
+        'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Connection' => 'keep-alive',
+      ],
+    ];
+  }
+
+  private function sd_params_discover_links(string $url, int $targetYear): array {
+    $host = (string) parse_url($url, PHP_URL_HOST);
+    if ($host === '' || !$this->can_request_host($host)) return [];
+
+    $res = wp_remote_get($url, $this->sd_params_http_args());
+    if (is_wp_error($res) || (int)wp_remote_retrieve_response_code($res) !== 200) return [];
+
+    $body = (string) wp_remote_retrieve_body($res);
+    if ($body === '') return [];
+
+    preg_match_all('/href\s*=\s*["\']([^"\']+)["\']/iu', $body, $matches);
+    $out = [];
+    foreach (($matches[1] ?? []) as $href) {
+      $candidate = html_entity_decode(trim((string)$href), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+      if (!preg_match('#^https://#i', $candidate)) continue;
+      $candidateHost = strtolower((string)parse_url($candidate, PHP_URL_HOST));
+      if (!in_array($candidateHost, ['portalfat.mte.gov.br', 'portalfat.trabalho.gov.br'], true)) continue;
+      $path = strtolower((string)parse_url($candidate, PHP_URL_PATH));
+      if (strpos($path, 'seguro-desemprego') === false) continue;
+      $out[] = $candidate;
+      if (count($out) >= 20) break;
+    }
+
+    return array_values(array_unique($out));
+  }
+
+  private function sd_params_candidate_urls(int $targetYear): array {
+    $urls = [
+      // Slug estável observado no FAT.
+      'https://portalfat.mte.gov.br/mte-reajusta-valores-do-beneficio-seguro-desemprego/',
+      'https://portalfat.trabalho.gov.br/mte-reajusta-valores-do-beneficio-seguro-desemprego/',
+      // Página operacional MTE: só será aceita se contiver a referência esperada.
+      'https://www.gov.br/trabalho-e-emprego/pt-br/servicos/trabalhador/seguro-desemprego/seguro-desemprego-formal',
+    ];
+
+    $discoveryPages = [
+      'https://portalfat.mte.gov.br/category/noticias/',
+      'https://portalfat.trabalho.gov.br/category/noticias/',
+      'https://portalfat.mte.gov.br/?s=seguro-desemprego+' . $targetYear,
+      'https://portalfat.trabalho.gov.br/?s=seguro-desemprego+' . $targetYear,
+    ];
+    foreach ($discoveryPages as $page) {
+      foreach ($this->sd_params_discover_links($page, $targetYear) as $found) {
+        $urls[] = $found;
+      }
+    }
+
+    $urls = apply_filters('dobr_sd_params_auto_urls', $urls, $targetYear);
+    $normalized = [];
+    foreach ((array)$urls as $url) {
+      $url = trim((string)$url);
+      if ($url === '' || !preg_match('#^https://#i', $url)) continue;
+      $host = strtolower((string)parse_url($url, PHP_URL_HOST));
+      if (!in_array($host, ['www.gov.br', 'gov.br', 'portalfat.mte.gov.br', 'portalfat.trabalho.gov.br'], true)) continue;
+      $normalized[] = $url;
+    }
+
+    return array_values(array_unique($normalized));
+  }
+
+  private function fetch_sd_params_auto_from_official(int $targetYear): array {
+    $urls = $this->sd_params_candidate_urls($targetYear);
+    $attempts = 0;
+    $lastError = 'no_candidate_succeeded';
+    $lastHttpCode = null;
+    $lastEndpoint = null;
+
+    foreach ($urls as $url) {
+      $host = (string)parse_url($url, PHP_URL_HOST);
+      if ($host === '' || !$this->can_request_host($host)) {
+        $lastError = 'external_http_blocked_for_' . $host;
+        continue;
+      }
+
+      $lastEndpoint = $url;
+      $attempts++;
+      $res = wp_remote_get($url, $this->sd_params_http_args());
+
+      if (is_wp_error($res)) {
+        $lastError = 'wp_error: ' . $res->get_error_message();
+        continue;
+      }
+
+      $code = (int)wp_remote_retrieve_response_code($res);
+      $lastHttpCode = $code;
+      if ($code !== 200) {
+        $lastError = 'http_status_' . $code;
+        continue;
+      }
+
+      $parsed = $this->sd_extract_from_official_html((string)wp_remote_retrieve_body($res), $targetYear);
+      if (empty($parsed['ok'])) {
+        $lastError = isset($parsed['error']) ? (string)$parsed['error'] : 'parse_failed';
+        continue;
+      }
+
+      $parsed['source_url'] = $url;
+      $parsed['http_code'] = 200;
+      $parsed['attempts'] = $attempts;
+      return $parsed;
+    }
+
+    return [
+      'ok' => false,
+      'error' => $lastError,
+      'http_code' => $lastHttpCode,
+      'endpoint' => $lastEndpoint,
+      'attempts' => $attempts,
+    ];
+  }
+
+  private function get_sd_params_payload(bool $forceRefresh = false): array {
+    $expectedYear = $this->sd_expected_reference_year();
+    $cached = get_transient(self::SD_PARAMS_CACHE_KEY);
+
+    if (!$forceRefresh && $this->sd_params_payload_shape_valid($cached)) {
+      if (!empty($cached['ok']) && (int)$cached['reference_year'] === $expectedYear) {
+        return $cached;
+      }
+      delete_transient(self::SD_PARAMS_CACHE_KEY);
+    }
+    if ($forceRefresh) delete_transient(self::SD_PARAMS_CACHE_KEY);
+
+    $fetched = $this->fetch_sd_params_auto_from_official($expectedYear);
+    $payload = null;
+
+    if (!empty($fetched['ok'])) {
+      $effectiveTs = strtotime((string)$fetched['effective_from'] . ' 00:00:00');
+      $now = (int)current_time('timestamp');
+      if (!$effectiveTs || $effectiveTs > $now) {
+        $fetched = ['ok' => false, 'error' => 'candidate_not_effective_yet'];
+      }
+    }
+
+    // Corroboração independente: quando o salário mínimo corrente estiver disponível,
+    // o piso publicado na tabela deve coincidir com ele.
+    if (!empty($fetched['ok']) && $expectedYear === (int)current_time('Y')) {
+      $sm = $this->get_sm_effective();
+      if ($this->sm_effective_is_current($sm)) {
+        if (abs((float)$fetched['floor'] - (float)$sm['valor']) > 0.011) {
+          $fetched = ['ok' => false, 'error' => 'minimum_wage_crosscheck_mismatch'];
+        }
+      }
+    }
+
+    if (!empty($fetched['ok'])) {
+      $payload = [
+        'ok' => true,
+        'status' => 'current',
+        'reference_year' => (int)$fetched['reference_year'],
+        'effective_from' => (string)$fetched['effective_from'],
+        'floor' => (float)$fetched['floor'],
+        'first_band_limit' => (float)$fetched['first_band_limit'],
+        'first_band_rate' => (float)$fetched['first_band_rate'],
+        'second_band_limit' => (float)$fetched['second_band_limit'],
+        'second_band_excess_rate' => (float)$fetched['second_band_excess_rate'],
+        'second_band_base' => (float)$fetched['second_band_base'],
+        'cap' => (float)$fetched['cap'],
+        'source_url' => (string)$fetched['source_url'],
+        'source' => 'official_auto',
+        'error' => null,
+        'fetched_at' => time(),
+        'meta' => [
+          'expected_reference_year' => $expectedYear,
+          'parse_rule' => $fetched['parse_rule'] ?? null,
+          'attempts' => $fetched['attempts'] ?? null,
+        ],
+      ];
+
+      update_option(self::SD_PARAMS_LAST_GOOD_OPTION, [
+        'ts' => time(),
+        'payload' => $payload,
+      ], false);
+
+      set_transient(self::SD_PARAMS_CACHE_KEY, $payload, $this->sd_params_ttl_success());
+      return $payload;
+    }
+
+    $lastGood = get_option(self::SD_PARAMS_LAST_GOOD_OPTION);
+    if (
+      $this->sd_params_last_good_is_fresh($lastGood)
+      && isset($lastGood['payload'])
+      && $this->sd_params_payload_shape_valid($lastGood['payload'])
+      && !empty($lastGood['payload']['ok'])
+      && (int)$lastGood['payload']['reference_year'] === $expectedYear
+    ) {
+      $payload = $lastGood['payload'];
+      $payload['source'] = 'last_good';
+      $payload['error'] = isset($fetched['error']) ? (string)$fetched['error'] : 'official_source_unavailable';
+      $payload['fetched_at'] = time();
+      set_transient(self::SD_PARAMS_CACHE_KEY, $payload, $this->sd_params_ttl_fallback());
+      return $payload;
+    }
+
+    $payload = [
+      'ok' => false,
+      'status' => 'unavailable',
+      'reference_year' => $expectedYear,
+      'effective_from' => null,
+      'floor' => null,
+      'first_band_limit' => null,
+      'first_band_rate' => null,
+      'second_band_limit' => null,
+      'second_band_excess_rate' => null,
+      'second_band_base' => null,
+      'cap' => null,
+      'source_url' => null,
+      'source' => 'none',
+      'error' => isset($fetched['error']) ? (string)$fetched['error'] : 'official_source_unavailable',
+      'fetched_at' => time(),
+      'meta' => [
+        'expected_reference_year' => $expectedYear,
+      ],
+    ];
+    set_transient(self::SD_PARAMS_CACHE_KEY, $payload, $this->sd_params_ttl_fallback());
+    return $payload;
+  }
+
+  public function sc_sd_parametros_json(): string {
+    $payload = $this->get_sd_params_payload(false);
+    $public = [
+      'status' => !empty($payload['ok']) ? 'current' : 'unavailable',
+      'reference_year' => isset($payload['reference_year']) ? (int)$payload['reference_year'] : null,
+      'effective_from' => $payload['effective_from'] ?? null,
+      'floor' => $payload['floor'] ?? null,
+      'first_band_limit' => $payload['first_band_limit'] ?? null,
+      'first_band_rate' => $payload['first_band_rate'] ?? null,
+      'second_band_limit' => $payload['second_band_limit'] ?? null,
+      'second_band_excess_rate' => $payload['second_band_excess_rate'] ?? null,
+      'second_band_base' => $payload['second_band_base'] ?? null,
+      'cap' => $payload['cap'] ?? null,
+      'source_url' => $payload['source_url'] ?? null,
+    ];
+
+    if (empty($payload['ok'])) {
+      $public['error'] = $payload['error'] ?? 'unavailable';
+    }
+
+    return wp_json_encode($public, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+  }
+
+  public function sc_sd_debug(): string {
+    if (!current_user_can('manage_options')) {
+      return '<em>Debug restrito ao administrador.</em>';
+    }
+
+    $payload = $this->get_sd_params_payload(false);
+    $out = [
+      'plugin_version_esperada' => '1.4.9',
+      'expected_reference_year' => $this->sd_expected_reference_year(),
+      'sd_params_payload' => $payload,
+      'sd_params_transient' => get_transient(self::SD_PARAMS_CACHE_KEY),
+      'sd_params_last_good' => get_option(self::SD_PARAMS_LAST_GOOD_OPTION),
+      'sslverify' => $this->sd_params_sslverify(),
+      'wp_http_block_external' => defined('WP_HTTP_BLOCK_EXTERNAL') ? WP_HTTP_BLOCK_EXTERNAL : '(não definido)',
+      'wp_accessible_hosts' => defined('WP_ACCESSIBLE_HOSTS') ? WP_ACCESSIBLE_HOSTS : '(não definido)',
+    ];
+
+    return '<pre style="white-space:pre-wrap;word-break:break-word;background:#111;color:#eee;padding:12px;border-radius:8px;font-size:12px;line-height:1.45;">'
+      . esc_html(print_r($out, true))
+      . '</pre>';
   }
 
   /* ===== Salário mínimo (auto híbrido) ===== */
@@ -408,7 +907,7 @@ final class DOBR_Plugin {
       'redirection' => 3,
       'sslverify'   => $this->sm_sslverify(),
       'headers'     => [
-        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.8; WordPress)',
+        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.9; WordPress)',
         'Accept'     => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Connection' => 'keep-alive',
       ],
@@ -778,7 +1277,7 @@ final class DOBR_Plugin {
     $payload = $this->get_sm_payload(false);
 
     $out = [
-      'plugin_version_esperada' => '1.4.8',
+      'plugin_version_esperada' => '1.4.9',
       'sm_payload' => $payload,
       'sm_transient' => get_transient(self::SM_CACHE_KEY),
       'sm_last_good_option' => get_option(self::SM_LAST_GOOD_OPTION),
@@ -851,7 +1350,7 @@ final class DOBR_Plugin {
       'redirection' => 3,
       'sslverify'   => $this->desemprego_sslverify(),
       'headers'     => [
-        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.8; WordPress)',
+        'User-Agent' => 'Mozilla/5.0 (compatible; DOBR/1.4.9; WordPress)',
         'Accept'     => 'application/json, text/plain, */*',
         'Connection' => 'keep-alive',
       ],
@@ -1137,7 +1636,7 @@ final class DOBR_Plugin {
     $payload = $this->get_desemprego_payload($top);
 
     $out = [
-      'plugin_version_esperada' => '1.4.8',
+      'plugin_version_esperada' => '1.4.9',
       'desemprego_payload' => $payload,
       'transient_payload' => get_transient($this->desemprego_cache_key($top)),
       'transient_payload_key' => $this->desemprego_cache_key($top),
@@ -1386,7 +1885,7 @@ final class DOBR_Plugin {
 
       <hr>
 
-      <h2>Status do Salário Mínimo (v1.4.8)</h2>
+      <h2>Status do Salário Mínimo (v1.4.9)</h2>
       <p><strong>Valor efetivo atual:</strong> <?php echo esc_html($smValor); ?></p>
       <p><strong>Vigência efetiva:</strong> <?php echo esc_html($smVig); ?></p>
       <p><strong>Origem:</strong> <code><?php echo esc_html($smSource); ?></code> (api_auto | last_good | history_auto | manual_settings | seed | none)</p>
