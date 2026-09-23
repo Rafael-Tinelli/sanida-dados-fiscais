@@ -91,9 +91,22 @@ jobs:
             -o ServerAliveInterval=30
             -o ServerAliveCountMax=6
           )
+          SCP_OPTS=(
+            -P "$SSH_PORT"
+            -i "$HOME/.ssh/id_ed25519"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o PreferredAuthentications=publickey
+            -o PasswordAuthentication=no
+            -o KbdInteractiveAuthentication=no
+            -o StrictHostKeyChecking=yes
+            -o UpdateHostKeys=no
+            -o ServerAliveInterval=30
+            -o ServerAliveCountMax=6
+          )
           RUNTIME="/home1/sanid210/dobr-deploy/$GITHUB_SHA"
           ssh "${SSH_OPTS[@]}" "$USER@$HOST" "mkdir -p '$RUNTIME'"
-          scp "${SSH_OPTS[@]}" "$SOURCE_FILE" "$USER@$HOST:$RUNTIME/dados-oficiais-br.php"
+          scp "${SCP_OPTS[@]}" "$SOURCE_FILE" "$USER@$HOST:$RUNTIME/dados-oficiais-br.php"
 
       - name: Deploy atomically and validate live shortcode
         shell: bash
