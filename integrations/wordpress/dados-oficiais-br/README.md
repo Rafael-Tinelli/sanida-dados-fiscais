@@ -4,10 +4,10 @@ Código versionado do plugin WordPress **Dados Oficiais BR**.
 
 ## Estado canônico
 
-- versão: **1.4.9**
+- versão: **1.4.10**
 - produção: `/home1/sanid210/public_html/blog/wp-content/plugins/dados-oficiais-br/dados-oficiais-br.php`
 - fonte versionada: `integrations/wordpress/dados-oficiais-br/dados-oficiais-br.php`
-- produção atualmente implantada permanece na versão anterior até o deploy controlado; a versão 1.4.9 adiciona o contrato evergreen do seguro-desemprego e só deve ser promovida após CI e validação.
+- produção atualmente implantada permanece na versão anterior até o deploy controlado; a versão 1.4.10 consolida o contrato evergreen do seguro-desemprego com seleção por vigência oficial e só deve ser promovida após CI e validação.
 
 Este diretório é deliberadamente separado de `consumers/wordpress/sanida-fiscais-auto.php`.
 O DOBR não integra o contrato `br.sanida.fiscal` nem as releases imutáveis de `releases/fiscal-v1`.
@@ -61,12 +61,15 @@ A tabela do trabalhador formal é descoberta automaticamente em fontes oficiais 
 5. extrai piso, limites das duas primeiras faixas, percentuais, parcela-base, teto e vigência;
 6. valida continuidade das faixas, referência da segunda faixa, limiar do teto e consistência da parcela-base;
 7. cruza o piso com o salário mínimo corrente quando ambos estão disponíveis;
-8. preserva `last_good` somente para a mesma competência esperada;
-9. falha fechado quando a nova competência deveria estar vigente mas ainda não foi encontrada/validada.
+8. avalia em paralelo a competência do ano corrente e a imediatamente anterior;
+9. escolhe a tabela mais nova cuja própria data oficial de vigência já tenha começado;
+10. não presume uma data fixa de troca anual;
+11. aceita `last_good` apenas por janela operacional curta e sem relabelar a competência;
+12. falha fechado se já houver evidência oficial da nova competência, mas sua estrutura não puder ser validada.
 
-A troca anual é automática. Até 10 de janeiro, a competência esperada continua sendo a do ano anterior; a partir de 11 de janeiro, o plugin exige a tabela do novo ano. Se a publicação oficial atrasar ou mudar estruturalmente, o shortcode retorna `status=unavailable` em vez de relabelar a tabela anterior.
+A troca anual é dirigida pela data de vigência publicada na própria fonte. Se uma nova tabela for publicada com vigência futura, a anterior permanece ativa até essa data; quando a nova vigência começa, ela passa a ser selecionada automaticamente. Não existe no código a suposição de que a troca sempre ocorra em 11 de janeiro.
 
-Nenhum valor anual da tabela do seguro-desemprego fica hardcoded no plugin.
+O parser aceita data de vigência em qualquer mês e taxas expressas como fator decimal ou percentual. Nenhum valor anual da tabela do seguro-desemprego fica hardcoded no plugin.
 
 ### Desemprego / PNAD Contínua
 
