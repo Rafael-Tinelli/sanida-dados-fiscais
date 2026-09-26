@@ -1,47 +1,47 @@
 {
   "schema_version": "2.2.0",
   "meta": {
-    "generated_at_utc": "2026-09-25T14:37:36Z",
+    "generated_at_utc": "2026-09-26T13:45:54Z",
     "sources": {
       "irrf": {
         "source_id": "RFB_IRRF_TABLE_CURRENT",
         "url": "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/tabelas/2026",
         "http_code": 200,
         "collection_status": "COLLECTED",
-        "snapshot_sha256": "5ed7bb19c2946e52c7a88a2c12025c9a40088bf11ed1e9a1cae20bc572bd0f81",
+        "snapshot_sha256": "3518438a94a7b74e2be144c7e4401173e674e5649219ebc909e9baccfaef4b7f",
         "candidate_sha256": "787ecdf33486305d7da8f0117c5943a563c68386593cbac415567e7ce6e8b10d",
         "parser_id": "rfb_irrf_table_v1",
         "parser_version": "1.1.0",
-        "observed_at_utc": "2026-09-25T14:37:36Z"
+        "observed_at_utc": "2026-09-26T13:45:54Z"
       },
       "inss": {
         "source_id": "INSS_TABLE_CURRENT",
         "url": "https://www.gov.br/inss/pt-br/direitos-e-deveres/inscricao-e-contribuicao/tabela-de-contribuicao-mensal",
         "http_code": 200,
         "collection_status": "COLLECTED",
-        "snapshot_sha256": "8170126220dbfe6988e4dbd2a77dbd66b6802fd89c447bc0dae2b327494f9aba",
+        "snapshot_sha256": "3ddbf6993e53da9054aaa63e2d964a8fea1576842df39341232cd5da609eacf9",
         "candidate_sha256": "1836a09ba4520d61e2d6c6677ee6b34fac640a4bdfc94aa243827272b5a63fc5",
         "parser_id": "inss_employee_table_v1",
         "parser_version": "1.1.0",
-        "observed_at_utc": "2026-09-25T14:37:36Z"
+        "observed_at_utc": "2026-09-26T13:45:54Z"
       },
       "taxas": {
         "origin": "local_file",
         "origin_ref": "taxas_bacen.json",
         "schema_version": "1.4.0",
-        "generated_at_utc": "2026-09-25T12:43:19Z",
+        "generated_at_utc": "2026-09-26T12:26:08Z",
         "source_meta": {
           "selic": {
             "source_id": "BCB_SELIC_META_SGS_432",
-            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?formato=json&dataInicial=25%2F08%2F2026&dataFinal=25%2F09%2F2026",
+            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?formato=json&dataInicial=26%2F08%2F2026&dataFinal=26%2F09%2F2026",
             "http_code": 200,
             "collection_status": "COLLECTED",
-            "snapshot_sha256": "881216b1607bdae7f5f54f28ff1a4b32ee0f47898a9ec71973886d4915691e33",
-            "candidate_sha256": "b35c162c4bf03f96db5d10247ed272e0b383bde1892616a6977aa104ea39733f",
+            "snapshot_sha256": "3344eb139677501a326a669e67f1d410ee42743b6a8a314ac1bb45ed757aef56",
+            "candidate_sha256": "1895b7a8eb546b3286f4021253accce22c12b9f5f75af46894b84cb794d6bd91",
             "parser_id": "bcb_selic_meta_sgs432_v1",
             "parser_version": "1.1.0",
-            "observed_at_utc": "2026-09-25T12:43:19Z",
-            "source_observation_date": "2026-09-25",
+            "observed_at_utc": "2026-09-26T12:26:08Z",
+            "source_observation_date": "2026-09-26",
             "series_code": 432,
             "source_value_pct": "13.75",
             "source_unit": "percent_per_year",
@@ -56,7 +56,7 @@
             "candidate_sha256": "56c4792dd6eb65a2e05098e71f528888e807966e48889a9818434682256cb663",
             "parser_id": "bcb_cdi_daily_sgs12_v1",
             "parser_version": "1.0.0",
-            "observed_at_utc": "2026-09-25T12:43:19Z",
+            "observed_at_utc": "2026-09-26T12:26:08Z",
             "source_observation_date": "2026-09-24",
             "series_code": 12,
             "source_value_pct": "0.050788",
