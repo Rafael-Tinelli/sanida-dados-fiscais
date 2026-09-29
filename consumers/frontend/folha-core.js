@@ -589,10 +589,41 @@
       if (!Number.isSafeInteger(value)) fail('binary_float_rejected', 'Entrada monetária deve permanecer decimal textual.');
       return String(value);
     }
-    let s = String(value).trim().replace(/R\$/gi, '').replace(/\s+/g, '');
-    if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
-    s = s.replace(/[^0-9+\-.]/g, '');
-    return DecimalValue.parse(s || '0', 'money_input').toString();
+
+    const raw = String(value).trim();
+    if (!raw) return '0';
+
+    const currencyMatch = /^R\$\s*/i.exec(raw);
+    const hasCurrency = Boolean(currencyMatch);
+    const s = hasCurrency ? raw.slice(currencyMatch[0].length) : raw;
+    if (!s || /\s/.test(s) || /R\$/i.test(s)) {
+      fail('decimal_format', 'Valor monetário inválido. Use números no formato 4.000,00 ou 4000.00.');
+    }
+
+    const brGrouped = /^[+-]?\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$/;
+    const brPlain = /^[+-]?\d+(?:,\d{1,2})?$/;
+    const canonical = /^[+-]?\d+(?:\.\d{1,2})?$/;
+
+    let normalized;
+    if (brGrouped.test(s)) {
+      normalized = s.replace(/\./g, '').replace(',', '.');
+    } else if (hasCurrency) {
+      if (!brPlain.test(s)) {
+        fail('decimal_format', 'Valor monetário inválido. Use números no formato R$ 4.000,00.');
+      }
+      normalized = s.replace(',', '.');
+    } else if (s.includes(',')) {
+      if (!brPlain.test(s)) {
+        fail('decimal_format', 'Valor monetário inválido. Use números no formato 4.000,00.');
+      }
+      normalized = s.replace(',', '.');
+    } else if (canonical.test(s)) {
+      normalized = s;
+    } else {
+      fail('decimal_format', 'Valor monetário inválido. Use números no formato 4.000,00 ou 4000.00.');
+    }
+
+    return DecimalValue.parse(normalized, 'money_input').toString();
   }
 
   function formatBrl(value) {
