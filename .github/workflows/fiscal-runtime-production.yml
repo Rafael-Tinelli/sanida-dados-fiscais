@@ -246,6 +246,63 @@ jobs:
               if not no_store:
                   blocks.append(f"cache_policy_missing:{item['target']}")
 
+          public_health = {"pages": {}, "fiscal": {}}
+          pages = {
+              "H26": "/financas/calculadoras/salario-liquido-clt/",
+              "H27": "/financas/calculadoras/decimo-terceiro/",
+              "H28": "/financas/calculadoras/ferias-clt/",
+              "H29": "/financas/calculadoras/rescisao-clt/",
+          }
+          for name, path in pages.items():
+              status, body, headers = fetch("https://sanida.com.br" + path)
+              public_health["pages"][name] = {
+                  "path": path,
+                  "http_status": status,
+                  "bytes": len(body),
+              }
+              if status != 200 or b"Fatal error" in body or b"Parse error" in body:
+                  blocks.append(f"public_page_unhealthy:{name}:{status}")
+
+          health_status, health_body, _ = fetch(
+              "https://sanida.com.br/blog/wp-json/sfa/v1/fiscal-health"
+          )
+          try:
+              health_payload = json.loads(health_body.decode("utf-8")) if health_status == 200 else {}
+          except json.JSONDecodeError:
+              health_payload = {}
+          public_health["fiscal"]["health"] = {
+              "http_status": health_status,
+              "status": health_payload.get("status"),
+              "release_id": health_payload.get("release_id"),
+          }
+          if health_status != 200 or health_payload.get("status") != "healthy":
+              blocks.append("fiscal_health_unhealthy")
+
+          release_status, release_body, _ = fetch(
+              "https://sanida.com.br/blog/wp-json/sfa/v1/fiscal-release"
+          )
+          try:
+              release_payload = json.loads(release_body.decode("utf-8")) if release_status == 200 else {}
+          except json.JSONDecodeError:
+              release_payload = {}
+          public_health["fiscal"]["release"] = {
+              "http_status": release_status,
+              "release_id": release_payload.get("release_id"),
+          }
+          if (
+              release_status != 200
+              or not release_payload.get("release_id")
+              or release_payload.get("release_id") != health_payload.get("release_id")
+          ):
+              blocks.append("fiscal_release_mismatch")
+
+          legacy_status, legacy_body, _ = fetch(
+              "https://sanida.com.br/blog/wp-json/sfa/v1/folha"
+          )
+          public_health["fiscal"]["legacy_folha"] = {"http_status": legacy_status}
+          if legacy_status != 410:
+              blocks.append(f"legacy_folha_not_410:{legacy_status}")
+
           evidence = {
               "schema_version": "1.0.0",
               "status": "PASS" if not blocks else "BLOCKED",
@@ -254,6 +311,7 @@ jobs:
               "assets_expected": len(RUNTIME_ASSETS),
               "assets_matching": sum(1 for row in rows if row["match"]),
               "assets": rows,
+              "public_health": public_health,
               "block_reasons": blocks,
           }
           Path("/tmp/fiscal-runtime-external.json").write_text(
