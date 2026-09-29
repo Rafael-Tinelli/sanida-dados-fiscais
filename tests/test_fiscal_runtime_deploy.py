@@ -196,8 +196,14 @@ def test_production_workflow_is_runtime_only_and_automatic_on_main() -> None:
     assert "deploy_fiscal_runtime_assets.py" in workflow
     assert "APPLIED_ORIGIN_HEALTHY_PENDING_EXTERNAL" in workflow
     assert "APPLIED_EXTERNALLY_HEALTHY" in workflow
-    assert "Cache-Control" in workflow
-    assert "no-store" in workflow
+    assert "probe-public" in workflow
+
+    runtime_script = (
+        runtime_deploy.ROOT / "scripts" / "deploy_fiscal_runtime_assets.py"
+    ).read_text(encoding="utf-8")
+    assert "Cache-Control" in runtime_script
+    assert "no-store" in runtime_script
+    assert "CF-Cache-Status" in runtime_script
 
     for forbidden in (
         "src/pages/",
