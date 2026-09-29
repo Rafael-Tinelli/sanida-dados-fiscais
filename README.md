@@ -235,7 +235,7 @@ A política de identidade e migração sem reescrita histórica está em `docs/e
 19. asset público com URL estável e cache de longa duração só pode ter os bytes substituídos quando o deploy também versionar a URL/cache-key ou invalidar explicitamente os URLs afetados e provar a entrega externa dos novos bytes.
 20. o runtime fiscal público H26–H29 possui allowlist de deployment própria e não pode alterar templates PHP, CSS, adapters DOM/UI ou qualquer outro arquivo de apresentação;
 21. merge em `main` que altere um arquivo da allowlist do runtime fiscal dispara publicação evergreen somente depois dos gates completos; o commit exato é a identidade autorizada da implantação e cada execução mantém journal/rollback próprios;
-22. os assets da allowlist fiscal são servidos com política explícita `no-store`; a implantação só termina em `APPLIED_EXTERNALLY_HEALTHY` quando os bytes canônicos públicos e essa política de cache forem observados externamente.
+22. os assets da allowlist fiscal são servidos com política explícita `no-store`; a implantação só termina em `APPLIED_EXTERNALLY_HEALTHY` quando os bytes canônicos e essa política forem comprovados pela rota pública `sanida.com.br` através da camada CDN, separadamente da verificação direta de filesystem/origem.
 
 ---
 
@@ -470,7 +470,7 @@ Com C7.5 concluído, a **Fase 7 e o remake estão formalmente concluídos**. O e
 68. Asset estático de URL estável com cache longo, como `max-age=31536000`, exige versionamento de URL/cache-key ou purga seletiva dos URLs alterados no deploy, seguida de prova externa de igualdade de bytes antes de declarar a implantação saudável.
 69. A operação evergreen pós-remake separa publicação de **release fiscal** de publicação de **runtime fiscal**: a primeira continua sujeita aos gates de promoção e `REVIEW_REQUIRED`; a segunda usa uma allowlist fechada de seis assets executáveis compartilhados.
 70. A allowlist de runtime fiscal é: `folha-core.js`, `salario-liquido-runtime.js`, `folha-thirteenth.js`, `decimo-terceiro-runtime.js`, `folha-vacation.js` e `folha-termination.js`. Ela não inclui adapters de UI, CSS ou templates PHP.
-71. Para essa allowlist, o merge aprovado em `main` é o evento de autorização operacional: o workflow reexecuta regressões/gates, implanta somente deltas, mantém backup exato e rollback, prova H26–H29/endpoints públicos e fecha apenas após igualdade de bytes externa.
+71. Para essa allowlist, o merge aprovado em `main` é o evento de autorização operacional: o workflow reexecuta regressões/gates, implanta somente deltas, mantém backup exato e rollback, prova H26–H29/endpoints pela rota pública/CDN e fecha apenas após igualdade dos bytes canônicos.
 72. Para evitar manutenção recorrente de cache dos runtimes fiscais, esses seis assets usam `Cache-Control: no-store`. A migração inicial pode exigir uma invalidação seletiva única de objetos de borda preexistentes; depois dela, novas versões não dependem de purga manual para substituir bytes antigos.
 
 ---
@@ -508,14 +508,16 @@ preflight + backup dos deltas + escrita atômica
       ↓
 APPLIED_ORIGIN_HEALTHY_PENDING_EXTERNAL
       ↓
-prova externa dos 6 assets + H26–H29 + endpoints fiscais
+prova pela rota pública/CDN dos 6 assets + H26–H29 + endpoints fiscais
       ↓
 APPLIED_EXTERNALLY_HEALTHY
 ```
 
-A implantação é fail-closed: qualquer drift, target inseguro, hash divergente, falha de teste, falha de SSH, página pública não saudável, endpoint fiscal inconsistente, byte público diferente ou ausência da política `no-store` impede o fechamento saudável. Falha após a primeira escrita aciona rollback dos targets modificados.
+A implantação é fail-closed: qualquer drift, target inseguro, hash divergente, falha de teste, falha de SSH, página pública não saudável, endpoint fiscal inconsistente, byte público diferente, resposta `CF-Cache-Status: HIT` para um runtime `no-store` ou ausência da política `no-store` impede o fechamento saudável. Falha após a primeira escrita aciona rollback dos targets modificados.
 
 Esse fluxo não publica releases fiscais e não altera frontend de apresentação. Mudanças estruturais de regra continuam obedecendo `REVIEW_REQUIRED` e revisão humana. Alterações de PHP/CSS/UI continuam sob responsabilidade do repositório de frontend.
+
+A sonda pública é executada no HostGator contra o hostname público `https://sanida.com.br`, portanto atravessa a camada Cloudflare e não lê os arquivos diretamente. Isso é deliberado: runners hospedados do GitHub são bloqueados pela política geográfica do site e retornam 403 por desenho. A prova exige HTTP 200 dos runtimes, SHA-256 idêntico ao commit autorizado, `no-store` e ausência de `CF-Cache-Status: HIT`; assim a política de segurança geográfica não precisa ser enfraquecida para manter a automação.
 
 ---
 
@@ -541,7 +543,7 @@ Uma fase só é `CONCLUÍDA` quando seus critérios objetivos e gates correspond
 - criado deployment automático em `main` com regressões, commit pinado, preflight, backup, escrita atômica, rollback e journal por execução;
 - separada a publicação do runtime da promoção de releases fiscais sujeitas a `REVIEW_REQUIRED`;
 - adotada política `no-store` somente para os runtimes fiscais públicos, evitando dependência recorrente de purge manual após a migração inicial;
-- fechamento de cada deployment passa a exigir prova externa dos bytes canônicos, H26–H29 e endpoints fiscais antes de `APPLIED_EXTERNALLY_HEALTHY`.
+- fechamento de cada deployment passa a exigir prova dos bytes canônicos pela rota pública/CDN, H26–H29 e endpoints fiscais antes de `APPLIED_EXTERNALLY_HEALTHY`.
 
 ### 2026-09-16 — C7.5 — validação pós-deploy e fechamento formal da Fase 7
 
