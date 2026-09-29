@@ -8,6 +8,34 @@ O fechamento C7.5 provou que bytes corretos na origem podem coexistir com bytes 
 
 O estado histórico `APPLIED_HEALTHY` do primeiro deployment permanece preservado como evidência do que o executor C7.4 registrou naquele momento. **Para manutenção futura, porém, esse nome não é estado final saudável.**
 
+## Caminho permanente do runtime fiscal H26–H29
+
+Após a extração do frontend, os assets puramente fiscais compartilhados continuam sob ownership deste repositório. Para eles existe um caminho evergreen separado do deployment visual:
+
+- `consumers/frontend/folha-core.js`;
+- `consumers/runtime/salario-liquido-runtime.js`;
+- `consumers/frontend/folha-thirteenth.js`;
+- `consumers/runtime/decimo-terceiro-runtime.js`;
+- `consumers/frontend/folha-vacation.js`;
+- `consumers/frontend/folha-termination.js`.
+
+Alteração aprovada em `main` nessa allowlist dispara `.github/workflows/fiscal-runtime-production.yml`. O workflow reexecuta regressões/gates antes de qualquer SSH, faz checkout remoto do commit exato, calcula o delta contra a origem, cria backup somente dos targets que mudarem, escreve atomicamente e mantém journal single-use por execução.
+
+O workflow não pode publicar templates PHP, CSS, adapters DOM/UI, releases fiscais ou regras de backend. Esses domínios permanecem separados.
+
+Para eliminar a necessidade recorrente de purge de cache, a própria publicação gerencia uma política restrita a esses seis runtimes em `financas/calculadoras/assets/.htaccess` com `Cache-Control: no-store`. Se objetos de borda anteriores ainda estiverem vivos na primeira ativação dessa política, uma purga seletiva única pode ser necessária. A partir da primeira prova pública com `no-store`, novas implantações não dependem de intervenção de cache.
+
+A execução permanece em `APPLIED_ORIGIN_HEALTHY_PENDING_EXTERNAL` até a sonda pública provar simultaneamente:
+
+- seis runtimes HTTP 200 e byte a byte iguais ao commit autorizado;
+- `Cache-Control` público contendo `no-store` para os seis runtimes;
+- H26, H27, H28 e H29 HTTP 200, sem erro PHP;
+- `/wp-json/sfa/v1/fiscal-health` saudável;
+- `/wp-json/sfa/v1/fiscal-release` coerente com o health;
+- `/wp-json/sfa/v1/folha` em 410.
+
+Somente então o journal é finalizado em `APPLIED_EXTERNALLY_HEALTHY`.
+
 ## Fluxo obrigatório para manutenção
 
 1. Gerar e autorizar o bundle corrente com os mesmos vínculos fail-closed de bundle, C7.3 e autorização single-use.
