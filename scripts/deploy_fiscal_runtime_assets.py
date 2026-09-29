@@ -10,6 +10,8 @@ import subprocess
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -466,6 +468,150 @@ def finalize(
     return final
 
 
+def probe_public(
+    *,
+    output: Path,
+    authorized_commit: str,
+    authorization_id: str,
+    base_url: str = "https://sanida.com.br",
+) -> dict:
+    if not authorized_commit or len(authorized_commit) != 40:
+        raise RuntimeDeploymentError("authorized commit must be a full 40-char SHA")
+
+    user_agent = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/153.0.0.0 Safari/537.36 Sanida-Runtime-QA/1.0"
+    )
+
+    def fetch(url: str) -> tuple[int, bytes, dict[str, str]]:
+        req = Request(url, headers={"User-Agent": user_agent})
+        try:
+            with urlopen(req, timeout=30) as response:
+                return (
+                    int(response.status),
+                    response.read(),
+                    {k.lower(): v for k, v in response.headers.items()},
+                )
+        except HTTPError as exc:
+            return (
+                int(exc.code),
+                exc.read(),
+                {k.lower(): v for k, v in exc.headers.items()},
+            )
+        except URLError as exc:
+            raise RuntimeDeploymentError(f"public request failed for {url}: {exc}") from exc
+
+    assets: list[dict] = []
+    blocks: list[str] = []
+    for item in RUNTIME_ASSETS:
+        expected = sha256_file(ROOT / item["source"])
+        status, body, headers = fetch(item["public_url"])
+        observed = sha256_bytes(body) if status == 200 else None
+        cache_control = str(headers.get("cache-control") or "")
+        cf_cache_status = str(headers.get("cf-cache-status") or "")
+        match = status == 200 and observed == expected
+        no_store = "no-store" in cache_control.lower()
+        edge_not_hit = cf_cache_status.upper() != "HIT"
+
+        assets.append(
+            {
+                "target": item["target"],
+                "public_url": item["public_url"],
+                "http_status": status,
+                "expected_sha256": expected,
+                "public_sha256": observed,
+                "match": match,
+                "cache_control": cache_control,
+                "cf_cache_status": cf_cache_status,
+                "cache_policy_active": no_store,
+                "edge_not_hit": edge_not_hit,
+            }
+        )
+
+        if not match:
+            blocks.append(f"public_asset_mismatch:{item['target']}")
+        if not no_store:
+            blocks.append(f"cache_policy_missing:{item['target']}")
+        if not edge_not_hit:
+            blocks.append(f"edge_cache_hit_for_no_store_asset:{item['target']}")
+
+    calc_base = "/" + "financas" + "/" + "calculadoras" + "/"
+    pages = {
+        "H26": calc_base + "salario-liquido-clt/",
+        "H27": calc_base + "decimo-terceiro/",
+        "H28": calc_base + "ferias-clt/",
+        "H29": calc_base + "rescisao-clt/",
+    }
+    public_health: dict = {"pages": {}, "fiscal": {}}
+    for name, path in pages.items():
+        status, body, _ = fetch(base_url.rstrip("/") + path)
+        public_health["pages"][name] = {
+            "path": path,
+            "http_status": status,
+            "bytes": len(body),
+        }
+        if status != 200 or b"Fatal error" in body or b"Parse error" in body:
+            blocks.append(f"public_page_unhealthy:{name}:{status}")
+
+    health_status, health_body, _ = fetch(
+        base_url.rstrip("/") + "/blog/wp-json/sfa/v1/fiscal-health"
+    )
+    try:
+        health_payload = json.loads(health_body.decode("utf-8")) if health_status == 200 else {}
+    except json.JSONDecodeError:
+        health_payload = {}
+    public_health["fiscal"]["health"] = {
+        "http_status": health_status,
+        "status": health_payload.get("status"),
+        "release_id": health_payload.get("release_id"),
+    }
+    if health_status != 200 or health_payload.get("status") != "healthy":
+        blocks.append("fiscal_health_unhealthy")
+
+    release_status, release_body, _ = fetch(
+        base_url.rstrip("/") + "/blog/wp-json/sfa/v1/fiscal-release"
+    )
+    try:
+        release_payload = json.loads(release_body.decode("utf-8")) if release_status == 200 else {}
+    except json.JSONDecodeError:
+        release_payload = {}
+    public_health["fiscal"]["release"] = {
+        "http_status": release_status,
+        "release_id": release_payload.get("release_id"),
+    }
+    if (
+        release_status != 200
+        or not release_payload.get("release_id")
+        or release_payload.get("release_id") != health_payload.get("release_id")
+    ):
+        blocks.append("fiscal_release_mismatch")
+
+    legacy_status, _, _ = fetch(
+        base_url.rstrip("/") + "/blog/wp-json/sfa/v1/folha"
+    )
+    public_health["fiscal"]["legacy_folha"] = {"http_status": legacy_status}
+    if legacy_status != 410:
+        blocks.append(f"legacy_folha_not_410:{legacy_status}")
+
+    evidence = {
+        "schema_version": "1.0.0",
+        "collector": "hostgator_public_cdn_path",
+        "status": "PASS" if not blocks else "BLOCKED",
+        "authorized_commit": authorized_commit,
+        "authorization_id": authorization_id,
+        "assets_expected": len(RUNTIME_ASSETS),
+        "assets_matching": sum(1 for row in assets if row["match"]),
+        "assets": assets,
+        "public_health": public_health,
+        "block_reasons": blocks,
+        "observed_at_utc": utcnow(),
+    }
+    output.parent.mkdir(parents=True, exist_ok=True)
+    write_json(output, evidence)
+    return evidence
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Evergreen deployment for Sanida fiscal runtime assets")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -482,6 +628,12 @@ def main() -> int:
     p_finalize.add_argument("--authorized-commit", required=True)
     p_finalize.add_argument("--authorization-id", required=True)
 
+    p_probe = sub.add_parser("probe-public")
+    p_probe.add_argument("--output", required=True, type=Path)
+    p_probe.add_argument("--authorized-commit", required=True)
+    p_probe.add_argument("--authorization-id", required=True)
+    p_probe.add_argument("--base-url", default="https://sanida.com.br")
+
     args = parser.parse_args()
     try:
         if args.command == "deploy":
@@ -491,6 +643,13 @@ def main() -> int:
                 authorized_commit=args.authorized_commit,
                 authorization_id=args.authorization_id,
                 verify_git_head=True,
+            )
+        elif args.command == "probe-public":
+            result = probe_public(
+                output=args.output,
+                authorized_commit=args.authorized_commit,
+                authorization_id=args.authorization_id,
+                base_url=args.base_url,
             )
         else:
             result = finalize(
