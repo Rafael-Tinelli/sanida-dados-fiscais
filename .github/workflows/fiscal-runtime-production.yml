@@ -247,11 +247,12 @@ jobs:
                   blocks.append(f"cache_policy_missing:{item['target']}")
 
           public_health = {"pages": {}, "fiscal": {}}
+          calc_base = "/" + "financas" + "/" + "calculadoras" + "/"
           pages = {
-              "H26": "/financas/calculadoras/salario-liquido-clt/",
-              "H27": "/financas/calculadoras/decimo-terceiro/",
-              "H28": "/financas/calculadoras/ferias-clt/",
-              "H29": "/financas/calculadoras/rescisao-clt/",
+              "H26": calc_base + "salario-liquido-clt/",
+              "H27": calc_base + "decimo-terceiro/",
+              "H28": calc_base + "ferias-clt/",
+              "H29": calc_base + "rescisao-clt/",
           }
           for name, path in pages.items():
               status, body, headers = fetch("https://sanida.com.br" + path)
