@@ -169,160 +169,93 @@ jobs:
           print("FISCAL_RUNTIME_ORIGIN_GATE=PASS")
           PY
 
-      - name: Prove canonical public runtime bytes and cache policy
-        shell: python
+      - name: Prove public runtime bytes through the production CDN path
+        shell: bash
         env:
+          HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          USER: ${{ secrets.V2_HOSTGATOR_USER }}
           AUTHORIZATION_ID: ${{ steps.deploy.outputs.authorization_id }}
-          PYTHONPATH: ${{ github.workspace }}
         run: |
-          import hashlib
+          set -euo pipefail
+          SSH_OPTS=(
+            -p "$SSH_PORT"
+            -i "$HOME/.ssh/id_ed25519"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o PreferredAuthentications=publickey
+            -o PasswordAuthentication=no
+            -o KbdInteractiveAuthentication=no
+            -o StrictHostKeyChecking=yes
+            -o UpdateHostKeys=no
+            -o ServerAliveInterval=30
+            -o ServerAliveCountMax=6
+          )
+
+          set +e
+          ssh "${SSH_OPTS[@]}" "$USER@$HOST" bash -s --             "$GITHUB_SHA"             "$GITHUB_RUN_ID"             "$GITHUB_RUN_ATTEMPT"             "$REPO_URL"             "$AUTHORIZATION_ID" <<'REMOTE' | tee /tmp/fiscal-runtime-public-probe.log
+          set -euo pipefail
+          COMMIT="$1"
+          RUN_ID="$2"
+          RUN_ATTEMPT="$3"
+          REPO_URL="$4"
+          AUTHORIZATION_ID="$5"
+
+          RUNTIME="$HOME/sanida-fiscal-runtime-public-probes/${RUN_ID}-${RUN_ATTEMPT}"
+          REPO="$RUNTIME/repo"
+          EVIDENCE="$RUNTIME/public-evidence.json"
+
+          test ! -e "$RUNTIME"
+          mkdir -p "$RUNTIME"
+          git clone --quiet "$REPO_URL" "$REPO"
+          git -C "$REPO" checkout --quiet --detach "$COMMIT"
+          test "$(git -C "$REPO" rev-parse HEAD)" = "$COMMIT"
+
+          PY="$(command -v python3.9 || command -v python3 || true)"
+          test -n "$PY"
+
+          set +e
+          "$PY" "$REPO/scripts/deploy_fiscal_runtime_assets.py" probe-public             --output "$EVIDENCE"             --authorized-commit "$COMMIT"             --authorization-id "$AUTHORIZATION_ID"             > "$RUNTIME/probe-output.json"
+          RC=$?
+          set -e
+
+          cat "$RUNTIME/probe-output.json"
+          if [ -f "$EVIDENCE" ]; then
+            echo "__SANIDA_RUNTIME_PUBLIC_EVIDENCE_BEGIN__"
+            base64 "$EVIDENCE" | tr -d '\n'
+            echo
+            echo "__SANIDA_RUNTIME_PUBLIC_EVIDENCE_END__"
+          fi
+          echo "PUBLIC_CDN_PROBE_RC=$RC"
+          exit "$RC"
+          REMOTE
+          SSH_RC=${PIPESTATUS[0]}
+          set -e
+
+          awk '/__SANIDA_RUNTIME_PUBLIC_EVIDENCE_BEGIN__/{flag=1;next}/__SANIDA_RUNTIME_PUBLIC_EVIDENCE_END__/{flag=0}flag'             /tmp/fiscal-runtime-public-probe.log             | tr -d '\n'             | base64 --decode > /tmp/fiscal-runtime-external.json 2>/dev/null || true
+
+          echo "SSH_PUBLIC_CDN_PROBE_RC=$SSH_RC"
+          test -s /tmp/fiscal-runtime-external.json
+
+          python - <<'PY'
           import json
-          import os
-          import time
           from pathlib import Path
-          from urllib.error import HTTPError, URLError
-          from urllib.request import Request, urlopen
-
-          from scripts.deploy_fiscal_runtime_assets import RUNTIME_ASSETS
-
-          commit = os.environ["GITHUB_SHA"]
-          ua = "Mozilla/5.0 Sanida-Fiscal-Runtime-External/1.0"
-          rows = []
-          blocks = []
-
-          def sha256(data):
-              return hashlib.sha256(data).hexdigest()
-
-          def fetch(url):
-              req = Request(
-                  url,
-                  headers={
-                      "User-Agent": ua,
-                      "Cache-Control": "no-cache",
-                      "Pragma": "no-cache",
-                  },
-              )
-              try:
-                  with urlopen(req, timeout=30) as response:
-                      return int(response.status), response.read(), {
-                          k.lower(): v for k, v in response.headers.items()
-                      }
-              except HTTPError as exc:
-                  return int(exc.code), exc.read(), {
-                      k.lower(): v for k, v in exc.headers.items()
-                  }
-              except URLError as exc:
-                  raise RuntimeError(f"external request failed: {url}: {exc}") from exc
-
-          for item in RUNTIME_ASSETS:
-              expected = sha256(Path(item["source"]).read_bytes())
-              canonical_status = None
-              canonical_body = b""
-              canonical_headers = {}
-              for attempt in range(3):
-                  canonical_status, canonical_body, canonical_headers = fetch(item["public_url"])
-                  if canonical_status == 200 and sha256(canonical_body) == expected:
-                      break
-                  time.sleep(5)
-
-              public_sha = sha256(canonical_body) if canonical_status == 200 else None
-              cache_control = canonical_headers.get("cache-control", "")
-              match = canonical_status == 200 and public_sha == expected
-              no_store = "no-store" in cache_control.lower()
-
-              row = {
-                  "target": item["target"],
-                  "public_url": item["public_url"],
-                  "http_status": canonical_status,
-                  "expected_sha256": expected,
-                  "public_sha256": public_sha,
-                  "match": match,
-                  "cache_control": cache_control,
-                  "cache_policy_active": no_store,
-              }
-              rows.append(row)
-
-              if not match:
-                  blocks.append(f"public_asset_mismatch:{item['target']}")
-              if not no_store:
-                  blocks.append(f"cache_policy_missing:{item['target']}")
-
-          public_health = {"pages": {}, "fiscal": {}}
-          calc_base = "/" + "financas" + "/" + "calculadoras" + "/"
-          pages = {
-              "H26": calc_base + "salario-liquido-clt/",
-              "H27": calc_base + "decimo-terceiro/",
-              "H28": calc_base + "ferias-clt/",
-              "H29": calc_base + "rescisao-clt/",
-          }
-          for name, path in pages.items():
-              status, body, headers = fetch("https://sanida.com.br" + path)
-              public_health["pages"][name] = {
-                  "path": path,
-                  "http_status": status,
-                  "bytes": len(body),
-              }
-              if status != 200 or b"Fatal error" in body or b"Parse error" in body:
-                  blocks.append(f"public_page_unhealthy:{name}:{status}")
-
-          health_status, health_body, _ = fetch(
-              "https://sanida.com.br/blog/wp-json/sfa/v1/fiscal-health"
+          d = json.loads(Path("/tmp/fiscal-runtime-external.json").read_text(encoding="utf-8"))
+          assert d.get("collector") == "hostgator_public_cdn_path"
+          print(
+              "PUBLIC_CDN_PROBE_STATUS="
+              + str(d.get("status"))
+              + " assets="
+              + str(d.get("assets_matching"))
+              + "/"
+              + str(d.get("assets_expected"))
           )
-          try:
-              health_payload = json.loads(health_body.decode("utf-8")) if health_status == 200 else {}
-          except json.JSONDecodeError:
-              health_payload = {}
-          public_health["fiscal"]["health"] = {
-              "http_status": health_status,
-              "status": health_payload.get("status"),
-              "release_id": health_payload.get("release_id"),
-          }
-          if health_status != 200 or health_payload.get("status") != "healthy":
-              blocks.append("fiscal_health_unhealthy")
+          if d.get("block_reasons"):
+              print("PUBLIC_CDN_PROBE_BLOCK_REASONS=" + json.dumps(d["block_reasons"]))
+          PY
 
-          release_status, release_body, _ = fetch(
-              "https://sanida.com.br/blog/wp-json/sfa/v1/fiscal-release"
-          )
-          try:
-              release_payload = json.loads(release_body.decode("utf-8")) if release_status == 200 else {}
-          except json.JSONDecodeError:
-              release_payload = {}
-          public_health["fiscal"]["release"] = {
-              "http_status": release_status,
-              "release_id": release_payload.get("release_id"),
-          }
-          if (
-              release_status != 200
-              or not release_payload.get("release_id")
-              or release_payload.get("release_id") != health_payload.get("release_id")
-          ):
-              blocks.append("fiscal_release_mismatch")
-
-          legacy_status, legacy_body, _ = fetch(
-              "https://sanida.com.br/blog/wp-json/sfa/v1/folha"
-          )
-          public_health["fiscal"]["legacy_folha"] = {"http_status": legacy_status}
-          if legacy_status != 410:
-              blocks.append(f"legacy_folha_not_410:{legacy_status}")
-
-          evidence = {
-              "schema_version": "1.0.0",
-              "status": "PASS" if not blocks else "BLOCKED",
-              "authorized_commit": commit,
-              "authorization_id": os.environ["AUTHORIZATION_ID"],
-              "assets_expected": len(RUNTIME_ASSETS),
-              "assets_matching": sum(1 for row in rows if row["match"]),
-              "assets": rows,
-              "public_health": public_health,
-              "block_reasons": blocks,
-          }
-          Path("/tmp/fiscal-runtime-external.json").write_text(
-              json.dumps(evidence, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-              encoding="utf-8",
-          )
-          print(json.dumps(evidence, ensure_ascii=False, sort_keys=True))
-          if blocks:
-              raise SystemExit(3)
+          if [ "$SSH_RC" -ne 0 ]; then
+            exit "$SSH_RC"
+          fi
 
       - name: Finalize runtime deployment journal
         shell: bash
