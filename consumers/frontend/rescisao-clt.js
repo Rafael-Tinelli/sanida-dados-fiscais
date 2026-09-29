@@ -38,7 +38,17 @@
   function requirePositiveMoneyInput(value, fieldName, label) {
     const raw = String(value === undefined || value === null ? '' : value).trim();
     if (!raw) fail('h29_required_money', (label || fieldName) + ' deve ser informado e ser maior que zero.');
-    const normalized = SFA.normalizeMoneyInput(raw);
+
+    let normalized;
+    try {
+      normalized = SFA.normalizeMoneyInput(raw);
+    } catch (error) {
+      if (error && (error.code === 'decimal_format' || error.code === 'decimal_type' || error.code === 'binary_float_rejected')) {
+        fail('h29_required_money', (label || fieldName) + ' deve ser um valor monetário válido e maior que zero.');
+      }
+      throw error;
+    }
+
     const amount = SFA.Decimal.parse(normalized, fieldName || 'money');
     if (amount.compare(ZERO) <= 0) {
       fail('h29_required_money', (label || fieldName) + ' deve ser maior que zero.');
