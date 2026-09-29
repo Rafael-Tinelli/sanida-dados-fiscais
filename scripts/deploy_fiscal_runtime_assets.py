@@ -160,7 +160,7 @@ def payload_rows() -> list[dict]:
     return rows
 
 
-def manifest_for(rows: list[dict], *, authorized_commit: str, authorization_id: string) -> dict:
+def manifest_for(rows: list[dict], *, authorized_commit: str, authorization_id: str) -> dict:
     manifest_rows = [
         {k: row[k] for k in ("kind", "source", "target", "public_url", "sha256", "size")}
         for row in rows
