@@ -5,7 +5,10 @@
 
 <IfModule mod_headers.c>
   <FilesMatch "^(folha-core|salario-liquido-runtime|folha-thirteenth|decimo-terceiro-runtime|folha-vacation|folha-termination)\.js$">
-    Header always set Cache-Control "no-store, max-age=0"
+    Header unset Cache-Control
+    Header unset Pragma
+    Header unset Expires
+    Header always set Cache-Control "no-store, max-age=0, must-revalidate"
     Header always set Pragma "no-cache"
     Header always set Expires "0"
   </FilesMatch>
