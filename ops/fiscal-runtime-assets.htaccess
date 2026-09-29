@@ -1,0 +1,12 @@
+# Managed by sanida-dados-fiscais.
+# Fiscal runtime assets are intentionally not stored by browser/edge caches.
+# This avoids stale code after an evergreen runtime deployment while keeping
+# frontend-owned CSS/UI assets under their own cache policy.
+
+<IfModule mod_headers.c>
+  <FilesMatch "^(folha-core|salario-liquido-runtime|folha-thirteenth|decimo-terceiro-runtime|folha-vacation|folha-termination)\.js$">
+    Header always set Cache-Control "no-store, max-age=0"
+    Header always set Pragma "no-cache"
+    Header always set Expires "0"
+  </FilesMatch>
+</IfModule>
