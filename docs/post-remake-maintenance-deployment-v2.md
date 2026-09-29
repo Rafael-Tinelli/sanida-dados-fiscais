@@ -25,7 +25,7 @@ O workflow não pode publicar templates PHP, CSS, adapters DOM/UI, releases fisc
 
 Para eliminar a necessidade recorrente de purge de cache, a própria publicação gerencia uma política restrita a esses seis runtimes em `financas/calculadoras/assets/.htaccess` com `Cache-Control: no-store`. Se objetos de borda anteriores ainda estiverem vivos na primeira ativação dessa política, uma purga seletiva única pode ser necessária. A partir da primeira prova pública com `no-store`, novas implantações não dependem de intervenção de cache.
 
-A execução permanece em `APPLIED_ORIGIN_HEALTHY_PENDING_EXTERNAL` até a sonda pública provar simultaneamente:
+A execução permanece em `APPLIED_ORIGIN_HEALTHY_PENDING_EXTERNAL` até a sonda da rota pública/CDN provar simultaneamente:
 
 - seis runtimes HTTP 200 e byte a byte iguais ao commit autorizado;
 - `Cache-Control` público contendo `no-store` para os seis runtimes;
@@ -35,6 +35,7 @@ A execução permanece em `APPLIED_ORIGIN_HEALTHY_PENDING_EXTERNAL` até a sonda
 - `/wp-json/sfa/v1/folha` em 410.
 
 Somente então o journal é finalizado em `APPLIED_EXTERNALLY_HEALTHY`.
+A sonda durável roda no HostGator contra o hostname público `sanida.com.br`, sem acesso direto aos bytes do target durante essa etapa. O tráfego atravessa Cloudflare e usa um User-Agent de navegador. Essa escolha preserva a regra geográfica que bloqueia runners hospedados do GitHub fora do Brasil; uma sonda direta desses runners retorna 403 por desenho e não deve ser transformada em exceção de firewall. Para os runtimes fiscais, a evidência também registra `CF-Cache-Status` e bloqueia `HIT` quando `no-store` deveria estar ativo.
 
 ## Fluxo obrigatório para manutenção
 
