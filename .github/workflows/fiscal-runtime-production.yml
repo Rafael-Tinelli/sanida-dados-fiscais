@@ -173,6 +173,7 @@ jobs:
         shell: python
         env:
           AUTHORIZATION_ID: ${{ steps.deploy.outputs.authorization_id }}
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           import hashlib
           import json
