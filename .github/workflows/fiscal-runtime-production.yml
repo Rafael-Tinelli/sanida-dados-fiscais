@@ -57,10 +57,12 @@ jobs:
           python scripts/validate_repository.py
           python scripts/validate_contract_v1.py
           python scripts/generate_contract_schema_v12.py --check
-          for file in             consumers/frontend/folha-core.js             consumers/runtime/salario-liquido-runtime.js             consumers/frontend/folha-thirteenth.js             consumers/runtime/decimo-terceiro-runtime.js             consumers/frontend/folha-vacation.js             consumers/frontend/folha-termination.js
-          do
-            node --check "$file"
-          done
+          python - <<'PY'
+          import subprocess
+          from scripts.deploy_fiscal_runtime_assets import RUNTIME_ASSETS
+          for item in RUNTIME_ASSETS:
+              subprocess.run(["node", "--check", item["source"]], check=True)
+          PY
           echo "FISCAL_RUNTIME_PREDEPLOY_GATE=PASS"
 
       - name: Verify HostGator credential contract
