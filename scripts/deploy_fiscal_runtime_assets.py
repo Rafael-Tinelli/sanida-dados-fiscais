@@ -306,6 +306,7 @@ def deploy(
         )
 
         applied: list[str] = []
+        post: list[dict] = []
         try:
             for row in changed_rows:
                 target = site_root / row["target"]
@@ -315,6 +316,22 @@ def deploy(
                 if sha256_file(target) != row["sha256"]:
                     raise RuntimeDeploymentError(f"post-write checksum mismatch: {row['target']}")
                 applied.append(row["target"])
+
+            # Aggregate origin verification belongs to the same transaction.
+            # Any mismatch after the first production write must roll back all
+            # changed targets instead of being mislabeled as a pre-write block.
+            for row in rows:
+                target = site_root / row["target"]
+                after = current_state(target)
+                if after["sha256"] != row["sha256"] or after["size"] != row["size"]:
+                    raise RuntimeDeploymentError(f"origin verification failed: {row['target']}")
+                post.append(
+                    {
+                        "target": row["target"],
+                        "sha256": after["sha256"],
+                        "size": after["size"],
+                    }
+                )
         except BaseException as exc:
             rollback_actions: list[str] = []
             for record in reversed(backup_records):
@@ -355,20 +372,6 @@ def deploy(
             }
             write_json(journal / "deployment-state.json", state)
             raise
-
-        post = []
-        for row in rows:
-            target = site_root / row["target"]
-            after = current_state(target)
-            if after["sha256"] != row["sha256"] or after["size"] != row["size"]:
-                raise RuntimeDeploymentError(f"origin verification failed: {row['target']}")
-            post.append(
-                {
-                    "target": row["target"],
-                    "sha256": after["sha256"],
-                    "size": after["size"],
-                }
-            )
 
         state = {
             "schema_version": "1.0.0",
