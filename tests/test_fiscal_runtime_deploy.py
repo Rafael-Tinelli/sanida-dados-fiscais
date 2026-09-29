@@ -201,9 +201,9 @@ def test_production_workflow_is_runtime_only_and_automatic_on_main() -> None:
     runtime_script = (
         runtime_deploy.ROOT / "scripts" / "deploy_fiscal_runtime_assets.py"
     ).read_text(encoding="utf-8")
-    assert "Cache-Control" in runtime_script
+    assert "cache-control" in runtime_script
     assert "no-store" in runtime_script
-    assert "CF-Cache-Status" in runtime_script
+    assert "cf-cache-status" in runtime_script
 
     for forbidden in (
         "src/pages/",
