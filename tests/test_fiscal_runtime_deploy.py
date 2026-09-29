@@ -207,3 +207,96 @@ def test_production_workflow_is_runtime_only_and_automatic_on_main() -> None:
         "Purge Everything",
     ):
         assert forbidden not in workflow
+
+class _FakeHttpResponse:
+    def __init__(self, status: int, body: bytes, headers: dict[str, str]):
+        self.status = status
+        self._body = body
+        self.headers = headers
+
+    def read(self) -> bytes:
+        return self._body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+
+def _public_probe_urlopen(*, hit_target: str | None = None):
+    runtime_by_url = {
+        item["public_url"]: item
+        for item in runtime_deploy.RUNTIME_ASSETS
+    }
+
+    def fake_urlopen(request, timeout=30):
+        url = request.full_url
+        if url in runtime_by_url:
+            item = runtime_by_url[url]
+            body = (runtime_deploy.ROOT / item["source"]).read_bytes()
+            cache_status = "HIT" if item["target"] == hit_target else "DYNAMIC"
+            return _FakeHttpResponse(
+                200,
+                body,
+                {
+                    "Cache-Control": "no-store, max-age=0, must-revalidate",
+                    "CF-Cache-Status": cache_status,
+                },
+            )
+        if url.endswith("/blog/wp-json/sfa/v1/fiscal-health"):
+            return _FakeHttpResponse(
+                200,
+                b'{"status":"healthy","release_id":"release-test"}',
+                {},
+            )
+        if url.endswith("/blog/wp-json/sfa/v1/fiscal-release"):
+            return _FakeHttpResponse(
+                200,
+                b'{"release_id":"release-test"}',
+                {},
+            )
+        if url.endswith("/blog/wp-json/sfa/v1/folha"):
+            return _FakeHttpResponse(410, b"", {})
+        if "/calculadoras/" in url:
+            return _FakeHttpResponse(200, b"<html>ok</html>", {})
+        raise AssertionError(f"unexpected probe URL: {url}")
+
+    return fake_urlopen
+
+
+def test_public_probe_proves_exact_bytes_no_store_and_health(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        runtime_deploy,
+        "urlopen",
+        _public_probe_urlopen(),
+    )
+    output = tmp_path / "public-evidence.json"
+    evidence = runtime_deploy.probe_public(
+        output=output,
+        authorized_commit="e" * 40,
+        authorization_id="runtime-probe-1",
+    )
+
+    assert evidence["status"] == "PASS"
+    assert evidence["collector"] == "hostgator_public_cdn_path"
+    assert evidence["assets_matching"] == len(runtime_deploy.RUNTIME_ASSETS)
+    assert evidence["block_reasons"] == []
+    assert output.is_file()
+
+
+def test_public_probe_blocks_edge_hit_for_no_store_runtime(tmp_path: Path, monkeypatch) -> None:
+    hit_target = runtime_deploy.RUNTIME_ASSETS[0]["target"]
+    monkeypatch.setattr(
+        runtime_deploy,
+        "urlopen",
+        _public_probe_urlopen(hit_target=hit_target),
+    )
+    evidence = runtime_deploy.probe_public(
+        output=tmp_path / "blocked-evidence.json",
+        authorized_commit="f" * 40,
+        authorization_id="runtime-probe-2",
+    )
+
+    assert evidence["status"] == "BLOCKED"
+    assert f"edge_cache_hit_for_no_store_asset:{hit_target}" in evidence["block_reasons"]
