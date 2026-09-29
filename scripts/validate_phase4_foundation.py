@@ -76,6 +76,7 @@ ALLOWED_WORKFLOWS = {
     "taxas-series.yml",
     "remake-ci.yml",
     "fiscal-release-v12.yml",
+    "fiscal-runtime-production.yml",
 }
 FORBIDDEN_SCRAPER_TOKENS = {
     "PINNED_INSS_URLS",

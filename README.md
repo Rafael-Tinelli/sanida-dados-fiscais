@@ -233,6 +233,9 @@ A política de identidade e migração sem reescrita histórica está em `docs/e
 17. bundle de implantação só pode conter arquivos gerenciados conhecidos; dependências externas precisam ser declaradas e rollback precisa restaurar os bytes pré-deploy;
 18. uma sucessora fiscal conhecida precisa permanecer conhecida entre requisições até que o próprio pacote da sucessora seja verificado; cache, 304 ou indisponibilidade posterior não podem ressuscitar silenciosamente a predecessora;
 19. asset público com URL estável e cache de longa duração só pode ter os bytes substituídos quando o deploy também versionar a URL/cache-key ou invalidar explicitamente os URLs afetados e provar a entrega externa dos novos bytes.
+20. o runtime fiscal público H26–H29 possui allowlist de deployment própria e não pode alterar templates PHP, CSS, adapters DOM/UI ou qualquer outro arquivo de apresentação;
+21. merge em `main` que altere um arquivo da allowlist do runtime fiscal dispara publicação evergreen somente depois dos gates completos; o commit exato é a identidade autorizada da implantação e cada execução mantém journal/rollback próprios;
+22. os assets da allowlist fiscal são servidos com política explícita `no-store`; a implantação só termina em `APPLIED_EXTERNALLY_HEALTHY` quando os bytes canônicos públicos e essa política de cache forem observados externamente.
 
 ---
 
@@ -465,6 +468,10 @@ Com C7.5 concluído, a **Fase 7 e o remake estão formalmente concluídos**. O e
 66. Implantação só é considerada concluída depois de `APPLIED_HEALTHY`, release correta, REST saudável, `/folha` 410, H26–H29 HTTP 200 e SHA imutável do journal final registrado.
 67. Validação de origem e validação de entrega pública são fronteiras distintas: o próprio HostGator não substitui uma sonda de cliente externo quando a camada Cloudflare interfere no caminho HostGator → hostname público.
 68. Asset estático de URL estável com cache longo, como `max-age=31536000`, exige versionamento de URL/cache-key ou purga seletiva dos URLs alterados no deploy, seguida de prova externa de igualdade de bytes antes de declarar a implantação saudável.
+69. A operação evergreen pós-remake separa publicação de **release fiscal** de publicação de **runtime fiscal**: a primeira continua sujeita aos gates de promoção e `REVIEW_REQUIRED`; a segunda usa uma allowlist fechada de seis assets executáveis compartilhados.
+70. A allowlist de runtime fiscal é: `folha-core.js`, `salario-liquido-runtime.js`, `folha-thirteenth.js`, `decimo-terceiro-runtime.js`, `folha-vacation.js` e `folha-termination.js`. Ela não inclui adapters de UI, CSS ou templates PHP.
+71. Para essa allowlist, o merge aprovado em `main` é o evento de autorização operacional: o workflow reexecuta regressões/gates, implanta somente deltas, mantém backup exato e rollback, prova H26–H29/endpoints públicos e fecha apenas após igualdade de bytes externa.
+72. Para evitar manutenção recorrente de cache dos runtimes fiscais, esses seis assets usam `Cache-Control: no-store`. A migração inicial pode exigir uma invalidação seletiva única de objetos de borda preexistentes; depois dela, novas versões não dependem de purga manual para substituir bytes antigos.
 
 ---
 
@@ -481,6 +488,34 @@ Novas mudanças fiscais, falhas de fonte, sucessoras de release e manutenção d
 Operação evergreen normal.
 
 O remake está formalmente concluído. Mudanças futuras devem entrar como manutenção, atualização fiscal governada ou nova evolução de produto, preservando os contratos, evidências e gates permanentes já estabelecidos.
+
+### 20.1. Publicação evergreen do runtime fiscal
+
+Os seis assets executáveis compartilhados de H26–H29 permanecem propriedade do `sanida-dados-fiscais` mesmo após a extração da camada visual para `sanida-financas-frontend`. A publicação deles é feita por `.github/workflows/fiscal-runtime-production.yml`.
+
+O fluxo permanente é:
+
+```text
+PR + Remake CI
+      ↓
+merge em main de alteração na allowlist fiscal
+      ↓
+regressões e gates completos novamente
+      ↓
+SSH pinado no HostGator
+      ↓
+preflight + backup dos deltas + escrita atômica
+      ↓
+APPLIED_ORIGIN_HEALTHY_PENDING_EXTERNAL
+      ↓
+prova externa dos 6 assets + H26–H29 + endpoints fiscais
+      ↓
+APPLIED_EXTERNALLY_HEALTHY
+```
+
+A implantação é fail-closed: qualquer drift, target inseguro, hash divergente, falha de teste, falha de SSH, página pública não saudável, endpoint fiscal inconsistente, byte público diferente ou ausência da política `no-store` impede o fechamento saudável. Falha após a primeira escrita aciona rollback dos targets modificados.
+
+Esse fluxo não publica releases fiscais e não altera frontend de apresentação. Mudanças estruturais de regra continuam obedecendo `REVIEW_REQUIRED` e revisão humana. Alterações de PHP/CSS/UI continuam sob responsabilidade do repositório de frontend.
 
 ---
 
@@ -499,6 +534,14 @@ Uma fase só é `CONCLUÍDA` quando seus critérios objetivos e gates correspond
 ---
 
 ## 22. Changelog do README
+
+### 2026-09-30 — operação evergreen do runtime fiscal
+
+- formalizada allowlist de seis runtimes fiscais compartilhados H26–H29;
+- criado deployment automático em `main` com regressões, commit pinado, preflight, backup, escrita atômica, rollback e journal por execução;
+- separada a publicação do runtime da promoção de releases fiscais sujeitas a `REVIEW_REQUIRED`;
+- adotada política `no-store` somente para os runtimes fiscais públicos, evitando dependência recorrente de purge manual após a migração inicial;
+- fechamento de cada deployment passa a exigir prova externa dos bytes canônicos, H26–H29 e endpoints fiscais antes de `APPLIED_EXTERNALLY_HEALTHY`.
 
 ### 2026-09-16 — C7.5 — validação pós-deploy e fechamento formal da Fase 7
 
