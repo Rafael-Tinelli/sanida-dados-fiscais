@@ -271,10 +271,24 @@
     if (!policy || policy.stage !== 'salary_balance_result') fail('termination_salary_rounding', 'Saldo salarial sem arredondamento no estágio correto.');
 
     const termination = dateParts(req.terminationDate, 'terminationDate');
+    const employment = req.employmentStart === undefined || req.employmentStart === null || req.employmentStart === ''
+      ? null
+      : dateParts(req.employmentStart, 'employmentStart');
     const days = integer(req.daysCountedThroughTermination, 'daysCountedThroughTermination');
     const calendarDays = daysInMonth(termination.year, termination.month);
-    if (days > termination.day || days > calendarDays) {
-      fail('termination_salary_days', 'Dias computados não podem superar o dia do desligamento.');
+    let maximumDays = termination.day;
+
+    if (employment) {
+      if (employment.iso > termination.iso) {
+        fail('termination_period', 'Admissão não pode ser posterior ao desligamento.');
+      }
+      if (employment.year === termination.year && employment.month === termination.month) {
+        maximumDays = termination.day - employment.day + 1;
+      }
+    }
+
+    if (days > maximumDays || days > calendarDays) {
+      fail('termination_salary_days', 'Dias computados não podem superar o intervalo do vínculo no mês do desligamento.');
     }
     const base = nonNegativeMoney(req.monthlyBaseSalary, 'monthlyBaseSalary');
     const amount = roundRatio(base, days, calendarDays, policy);
@@ -453,6 +467,7 @@
 
     const salary = resolved.decision.salary_balance ? calculateSalaryBalance(release, {
       targetDate: termination.iso,
+      employmentStart: employment.iso,
       terminationDate: termination.iso,
       monthlyBaseSalary: req.monthlyBaseSalary,
       daysCountedThroughTermination: req.daysCountedThroughTermination
