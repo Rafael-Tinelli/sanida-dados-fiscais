@@ -291,6 +291,7 @@ def calculate_salary_balance(
     days_counted_through_termination: int,
     payload: ProrationPayload,
     rounding_policy: RoundingPolicy,
+    employment_start: date | None = None,
 ) -> SalaryBalanceMemory:
     if payload.formula != "base_times_numerator_over_denominator":
         raise FiscalEngineError("unsupported salary balance formula")
@@ -306,9 +307,20 @@ def calculate_salary_balance(
         raise FiscalEngineError("days_counted_through_termination cannot be negative")
 
     calendar_days = monthrange(termination_date.year, termination_date.month)[1]
-    if days_counted_through_termination > termination_date.day:
+    maximum_days = termination_date.day
+    if employment_start is not None:
+        if employment_start > termination_date:
+            raise FiscalEngineError("employment_start cannot be after termination_date")
+        if (
+            employment_start.year == termination_date.year
+            and employment_start.month == termination_date.month
+        ):
+            maximum_days = termination_date.day - employment_start.day + 1
+
+    if days_counted_through_termination > maximum_days:
         raise FiscalEngineError(
-            "days_counted_through_termination cannot exceed the termination day number"
+            "days_counted_through_termination cannot exceed the employment interval "
+            "in the termination month"
         )
     if days_counted_through_termination > calendar_days:
         raise FiscalEngineError("salary balance numerator exceeds calendar month")
@@ -369,6 +381,7 @@ def calculate_h29_limited_estimate(
             days_counted_through_termination=days_counted_through_termination,
             payload=bundle.salary_proration,
             rounding_policy=bundle.salary_rounding,
+            employment_start=employment_start,
         )
 
     thirteenth_memory = None
