@@ -61,12 +61,12 @@ const april = calculate({ terminationDate: '2026-04-10', daysCountedThroughTermi
 const boundary14 = calculate({
   employmentStart: '2026-01-18',
   terminationDate: '2026-01-31',
-  daysCountedThroughTermination: 31
+  daysCountedThroughTermination: 14
 });
 const boundary15 = calculate({
   employmentStart: '2026-01-17',
   terminationDate: '2026-01-31',
-  daysCountedThroughTermination: 31
+  daysCountedThroughTermination: 15
 });
 
 let unsupportedReasonRejected = false;
