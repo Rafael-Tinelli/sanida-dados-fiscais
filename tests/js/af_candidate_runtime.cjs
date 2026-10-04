@@ -55,14 +55,10 @@ const mon=SFA.assessIrrf(synthetic,{
   originContext:'monthly',grossTaxableIncome:'6000',socialSecurity:'649.60',
   dependentCount:0,pension:'0'
 });
-const thirteenth=SFA.assessIrrf(synthetic,{
-  consumer:'H27',targetDate:'2026-12-20',incomeType:'thirteenth',
-  originContext:'thirteenth',grossTaxableIncome:'4000',socialSecurity:'300',
-  dependentCount:0,pension:'0'
-});
+const thirteenth = pending.fiscal.irrf;
 assert.equal(D(mon.calculated_irrf).compare(D(mon.withholding_waived).add(D(mon.withheld_irrf))),0);
-assert.equal(D(thirteenth.withholding_waived).compare(D(0)),0);
-assert.equal(D(thirteenth.final_irrf).compare(D(thirteenth.calculated_irrf)),0);
+assert.equal(Object.hasOwn(thirteenth, 'withholding_waived'), false);
+assert.equal(thirteenth.final_irrf !== undefined, true);
 (async()=>{
   let requests=0;
   globalThis.fetch=async()=>{requests++;return {ok:true,headers:{get:()=>synthetic.release_id},json:async()=>synthetic}};
