@@ -77,7 +77,19 @@ def main() -> int:
         )
         response.raise_for_status()
         pdf_bytes = response.content
-    _text, pages = validate_official_pdf(pdf_bytes)
+    try:
+        _text, pages = validate_official_pdf(pdf_bytes)
+    except ValueError:
+        if not args.from_file:
+            print("AF01_CAPTURE_BLOCKED " + json.dumps({
+                "http_status": response.status_code,
+                "content_type": response.headers.get("content-type", ""),
+                "received_bytes": len(response.content),
+                "response_sha256": sha256(response.content).hexdigest(),
+                "redirected_from_official": response.url != SOURCE_URL,
+                "requested_official_url": SOURCE_URL,
+            }, sort_keys=True), flush=True)
+        raise
     digest = sha256(pdf_bytes).hexdigest()
     path = output / (digest + ".pdf")
     if path.exists() and sha256(path.read_bytes()).hexdigest() != digest:

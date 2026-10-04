@@ -93,6 +93,18 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      - name: Build immutable published-to-AF01 semantic diff (never publishes)
+        run: python scripts/preview_af01_successor_diff.py --output .validation/af01-successor-preview.json
+
+      - name: Upload AF01 successor semantic review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: af01-successor-semantic-preview
+          path: .validation/af01-successor-preview.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Run real-browser calculator smoke
         run: |
           python scripts/run_calculators_browser_smoke.py
