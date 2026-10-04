@@ -12,6 +12,11 @@ from copy import deepcopy
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from sanida_fiscal.publication_v1 import FiscalReleaseStore
 from sanida_fiscal.release_assembler_v12 import _apply_structural_successor_overlays
