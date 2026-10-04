@@ -218,6 +218,17 @@
         "termination.vacation_entitlement"
       ],
       "notes": "Distingue pedido de demissão, acordo, dispensa sem justa causa, justa causa e rescisão indireta, com verbas correspondentes."
+    },
+    {
+      "source_id": "RFB_SCI_COSIT_8_2015",
+      "authority": "Receita Federal / Cosit, Solução de Consulta Interna nº 8/2015",
+      "role": "administrative_norm",
+      "url": "https://normas.receita.fazenda.gov.br/sijut2consulta/anexoOutros.action?idArquivoBinario=36769",
+      "machine_readability": "pdf_text",
+      "covers": [
+        "vacation.abono_constitutional_third.ir_incidence"
+      ],
+      "notes": "SCI 8/2015: CP incide sobre o terço constitucional integral de férias, inclusive parcela proporcional aos dias convertidos em abono; não confundir com adicional extra por liberalidade. Férias indenizadas excluídas; principal do abono não integra CP."
     }
   ]
 }

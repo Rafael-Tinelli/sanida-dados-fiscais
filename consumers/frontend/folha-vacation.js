@@ -240,10 +240,11 @@
     incidenceFlag(cashExemption, 'cash_allowance_principal', 'social_security', 'no');
     incidenceFlag(cashExemption, 'cash_allowance_principal', 'irrf', 'no');
     const cashThirdIncidence = select(release, 'vacation.abono_constitutional_third.ir_incidence', CASH, targetDate);
-    incidenceFlag(cashThirdIncidence, 'constitutional_third_on_cash_allowance', 'social_security', 'no');
+    incidenceFlag(cashThirdIncidence, 'constitutional_third_on_cash_allowance', 'social_security', 'yes');
     incidenceFlag(cashThirdIncidence, 'constitutional_third_on_cash_allowance', 'irrf', 'yes');
 
-    const socialSecurityBase = enjoyedPrincipal.add(enjoyedThird);
+    // Include the full statutory third once, even where one third of days is sold.
+    const socialSecurityBase = enjoyedPrincipal.add(enjoyedThird).add(cashThird);
     const inss = SFA.assessInss(release, {
       consumer: CONSUMER,
       context: ENJOYED,

@@ -68,6 +68,7 @@ PREFERRED_RULE_SOURCES = {
     "irrf.simplified_monthly_discount": RFB_SOURCE_ID,
     "irrf.reduction.2026": RFB_SOURCE_ID,
     "vacation.irrf.reduction.2026": "PLANALTO_LEI_15270_2025",
+    "vacation.abono_constitutional_third.ir_incidence": "RFB_SCI_COSIT_8_2015",
 }
 
 

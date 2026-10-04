@@ -43,6 +43,7 @@ EXTERNAL_EVIDENCE_PREFERENCES = {
     "irrf.simplified_monthly_discount": RFB_SOURCE_ID,
     "irrf.reduction.2026": RFB_SOURCE_ID,
     "vacation.irrf.reduction.2026": "PLANALTO_LEI_15270_2025",
+    "vacation.abono_constitutional_third.ir_incidence": "RFB_SCI_COSIT_8_2015",
 }
 
 
@@ -554,6 +555,30 @@ def _apply_structural_successor_overlays(rules: dict[str, dict[str, Any]]) -> No
     )
     remuneration["applies_to"] = (
         "vacation_remuneration_components_and_constitutional_third"
+    )
+
+    # AF01 / SCI Cosit 8/2015: this is the portion of the FULL statutory
+    # third corresponding to converted days, not an extraordinary additional
+    # payment. In current-contract vacation the full third bears CP and IRRF.
+    third = rules.get("vacation.abono_constitutional_third.ir_incidence")
+    if third is None:
+        raise ReleaseAssemblyError("vacation cash-third incidence rule missing")
+    profile = third.get("payload")
+    if not isinstance(profile, dict) or profile.get("type") != "incidence_profile":
+        raise ReleaseAssemblyError("vacation cash-third incidence profile missing")
+    components = profile.get("components")
+    rows = [
+        row for row in components if isinstance(row, dict)
+        and row.get("component") == "constitutional_third_on_cash_allowance"
+    ] if isinstance(components, list) else []
+    if len(rows) != 1:
+        raise ReleaseAssemblyError("vacation cash-third incidence component missing/duplicate")
+    rows[0]["social_security"] = "yes"
+    rows[0]["irrf"] = "yes"
+    third["description"] = (
+        "Parcela do terço constitucional integral atribuída aos dias convertidos "
+        "em abono: CP e IRRF no curso do contrato, conforme SCI Cosit 8/2015. "
+        "Não representa adicional extraordinário e não alcança férias indenizadas."
     )
 
 
