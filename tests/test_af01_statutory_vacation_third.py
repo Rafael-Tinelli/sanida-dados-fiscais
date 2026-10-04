@@ -1,4 +1,5 @@
 """AF01: full statutory vacation third enters CP even after partial conversion."""
+from copy import deepcopy
 from decimal import Decimal
 import json
 from pathlib import Path
@@ -42,9 +43,28 @@ def test_assembler_marks_third_yes_only_in_candidate_overlay():
     from sanida_fiscal.release_assembler_v12 import _apply_structural_successor_overlays
     # The published v1 example is intentionally immutable and CP=no.
     raw=json.loads(Path("contracts/examples/fiscal-contract-v1.example.json").read_text())
-    rules={r["rule_id"]:r for r in raw["rules"]}
+    rules={r["rule_id"]:deepcopy(r) for r in raw["rules"]}
     rules["technical.money_decimal_and_rounding"]={"rounding_policy":{}}
     _apply_structural_successor_overlays(rules)
     row=next(c for c in rules["vacation.abono_constitutional_third.ir_incidence"]["payload"]["components"] if c["component"]=="constitutional_third_on_cash_allowance")
     assert row["social_security"]=="yes" and row["irrf"]=="yes"
     assert next(r for r in raw["rules"] if r["rule_id"]=="vacation.abono_constitutional_third.ir_incidence")["payload"]["components"][0]["social_security"]=="no"
+
+def test_release_gate_requires_official_cosit_provenance():
+    from types import SimpleNamespace
+    from sanida_fiscal.publication_v1 import _assert_af01_source_evidence, PromotionBlockedError
+    from sanida_fiscal.types_v1 import IncidenceProfilePayload
+    from pytest import raises
+    profile=IncidenceProfilePayload.model_validate({
+        "type":"incidence_profile",
+        "components":[{"component":"constitutional_third_on_cash_allowance","irrf":"yes","social_security":"yes"}]
+    })
+    rule=SimpleNamespace(
+        rule_id="vacation.abono_constitutional_third.ir_incidence",
+        payload=profile,
+        provenance=[SimpleNamespace(source_id="RFB_SC_209_2021")]
+    )
+    with raises(PromotionBlockedError, match="RFB_SCI_COSIT_8_2015"):
+        _assert_af01_source_evidence(SimpleNamespace(rules=[rule]))
+    rule.provenance=[SimpleNamespace(source_id="RFB_SCI_COSIT_8_2015")]
+    _assert_af01_source_evidence(SimpleNamespace(rules=[rule]))

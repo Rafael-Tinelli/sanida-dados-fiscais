@@ -196,7 +196,7 @@ def verify_legacy_artifact_evidence(
         or original_meta.get("generated_at_utc") != taxas_meta.get("generated_at_utc")
         or original_taxas.get("schema_version") != taxas_meta.get("schema_version")
         or original_taxas.get("taxas") != artifact.get("taxas")):
-        raise ProductionEvidenceError("nested financial provenance differs from local taxas_bacen.json")
+        raise ProductionEvidenceError("financial provenance verification failed: nested metadata differs from local taxas_bacen.json")
     try:
         financial_verified = verify_preserved_financial_last_good_provenance(
             sources=financial_sources,
