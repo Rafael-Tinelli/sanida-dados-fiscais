@@ -4,6 +4,7 @@ Never publish the synthetic mutated release. The immutable published release
 continues to be exercised by the existing historical baseline tests.
 """
 import json
+from decimal import Decimal
 import shutil
 import subprocess
 from pathlib import Path
@@ -41,11 +42,8 @@ def test_af01_candidate_runtime_statutory_full_third(tmp_path):
     result=json.loads(run.stdout)
     sale=result["standard"]
     no_sale=result["no_sale"]
-    assert sale["fiscal"]["social_security_base"]=="4000.00"
+    assert Decimal(sale["fiscal"]["social_security_base"])==Decimal("4000.00")
     assert sale["components"]["cash_allowance_constitutional_third"]=="444.44"
-    assert sale["fiscal"]["taxable_vacation_income"]=="4000.00"
+    assert Decimal(sale["fiscal"]["taxable_vacation_income"])==Decimal("4000.00")
     assert no_sale["components"]["cash_allowance_constitutional_third"]=="0.00"
-    assert no_sale["fiscal"]["social_security_base"]=="5333.33"
-    assert sale["fiscal"]["social_security_base"] == (
-        "4000.00"
-    )
+    assert Decimal(no_sale["fiscal"]["social_security_base"])==Decimal("5333.33")

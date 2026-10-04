@@ -60,6 +60,9 @@ jobs:
         run: |
           python -m pytest -q tests
 
+      - name: Diagnose official BCB read-only transport (non-gating)
+        run: python scripts/diagnose_bcb_transport.py
+
       - name: Run real-browser calculator smoke
         run: |
           python scripts/run_calculators_browser_smoke.py
