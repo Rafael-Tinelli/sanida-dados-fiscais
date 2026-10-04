@@ -283,9 +283,13 @@
     const taxBase = taxableGross.sub(selectedDeduction).max(ZERO);
     const pre = SFA.executeProgressive(taxBase.toString(), table);
     const red = SFA.executeAffineReduction(taxableGross.toString(), pre.amount, reduction);
+    const calculated = SFA.Decimal.parse(red.final_tax, 'calculated_irrf');
+    // Vacation remuneration subject to annual adjustment: waiver <= BRL 10.
+    const waived = calculated.compare(SFA.Decimal.parse('10')) <= 0 ? calculated : ZERO;
+    const withheld = calculated.sub(waived);
 
     const totalGross = enjoyedPrincipal.add(enjoyedThird).add(cashPrincipal).add(cashThird);
-    const net = totalGross.sub(inssAmount).sub(SFA.Decimal.parse(red.final_tax)).sub(pension);
+    const net = totalGross.sub(inssAmount).sub(withheld).sub(pension);
     const audits = uniqueAudits([
       audit(enjoyedIncidence),
       audit(cashExemption),
@@ -310,7 +314,10 @@
         pre_reduction_irrf: pre.amount,
         reduction_input_income: taxableGross.toString(),
         reduction_amount: red.applied_reduction,
-        final_irrf: red.final_tax
+        calculated_irrf: calculated.toString(),
+        withholding_waived: waived.toString(),
+        withheld_irrf: withheld.toString(),
+        final_irrf: withheld.toString()
       }),
       pension: pension.toString(),
       net_vacation_payment: net.toString(),
