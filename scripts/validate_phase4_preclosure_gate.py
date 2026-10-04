@@ -90,7 +90,8 @@ def main() -> None:
     _require(
         "verify_preserved_financial_last_good_provenance" in production_evidence
         and 'original_meta.get("sources") != financial_sources' in production_evidence
-        and 'original_taxas.get("taxas") != artifact.get("taxas")' in production_evidence,
+        and '"embedded rates differ from archived candidates"' in production_evidence
+        and "verify_preserved_legacy_artifact_evidence" in production_evidence,
         "A01 production gate does not bind nested provenance and values to immutable local financial evidence",
     )
     financial_evidence = _read("sanida_fiscal/financial_evidence_v1.py")

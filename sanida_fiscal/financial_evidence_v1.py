@@ -206,9 +206,12 @@ def _verify_archived_financial_provenance(
         snapshot_path = str(matching[0].relative_to(snapshots))
         _verify_file_sha256(snapshots, snapshot_path, snapshot_sha, f"{source_id}.snapshot")
         candidate_path = CandidateStore.relative_path(source_id, candidate_sha)
-        payload = CandidateStore(candidates).read(
-            relative_path=candidate_path, expected_sha256=candidate_sha
-        )
+        try:
+            payload = CandidateStore(candidates).read(
+                relative_path=candidate_path, expected_sha256=candidate_sha
+            )
+        except (OSError, ValueError, RuntimeError) as exc:
+            raise FinancialEvidenceError(f"{source_id} archived candidate hash validation failed") from exc
         if payload.get("observation_type") != observation_type or payload.get("series_code") != series_code:
             raise FinancialEvidenceError(f"{source_id} archived candidate identity mismatch")
         if payload.get("observation_date") != meta.get("source_observation_date"):
@@ -220,6 +223,11 @@ def _verify_archived_financial_provenance(
             raise FinancialEvidenceError(f"{source_id} archived observation value invalid") from exc
         if not amount.is_finite() or amount != candidate_amount:
             raise FinancialEvidenceError(f"{source_id} archived observation value mismatch")
+        if key == "cdi":
+            from .financial_reference_v1 import annualize_cdi_daily_rate_pct
+            expected_annual = annualize_cdi_daily_rate_pct(str(candidate_amount))
+            if Decimal(str(meta.get("annualized_value_pct"))) != expected_annual:
+                raise FinancialEvidenceError(f"{source_id} archived annualized CDI mismatch")
         verified[source_id] = {
             "snapshot_sha256": snapshot_sha,
             "snapshot_path": snapshot_path,

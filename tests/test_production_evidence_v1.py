@@ -13,6 +13,7 @@ from sanida_fiscal.legacy_artifact_v1 import build_legacy_dados_fiscais
 from sanida_fiscal.production_evidence_v1 import (
     ProductionEvidenceError,
     verify_legacy_artifact_evidence,
+    verify_preserved_legacy_artifact_evidence,
 )
 from sanida_fiscal.source_catalog_v1 import run_registered_source_pipeline
 from sanida_fiscal.source_ids_v1 import INSS_SOURCE_ID, RFB_SOURCE_ID
@@ -248,4 +249,61 @@ def test_unknown_payroll_source_identity_is_rejected(tmp_path: Path):
         verify_legacy_artifact_evidence(
             artifact_path=artifact_path,
             runtime_root=runtime_root,
+        )
+
+
+def test_archived_payroll_survives_newer_rfb_and_inss_and_newer_local_rates(tmp_path):
+    runtime_root, artifact_path, *_ = _build_artifact(tmp_path)
+    newer = NOW + timedelta(hours=1)
+    _run_source(tmp_path, RFB_SOURCE_ID, RFB_FIXTURE, observed_at=newer)
+    _run_source(tmp_path, INSS_SOURCE_ID, INSS_FIXTURE, observed_at=newer)
+    local = tmp_path / "taxas_bacen.json"
+    newest = json.loads(local.read_text())
+    newest["meta"]["generated_at_utc"] = newer.isoformat().replace("+00:00", "Z")
+    for source in newest["meta"]["sources"].values():
+        source["observed_at_utc"] = newer.isoformat().replace("+00:00", "Z")
+    local.write_text(json.dumps(newest))
+    with pytest.raises(ProductionEvidenceError, match="observed_at"):
+        verify_legacy_artifact_evidence(
+            artifact_path=artifact_path, runtime_root=runtime_root
+        )
+    verified = verify_preserved_legacy_artifact_evidence(
+        artifact_path=artifact_path, runtime_root=runtime_root
+    )
+    assert set(verified) == {
+        RFB_SOURCE_ID, INSS_SOURCE_ID,
+        "BCB_SELIC_META_SGS_432", "BCB_CDI_DAILY_SGS_12",
+    }
+
+
+def test_archived_payroll_rejects_tampered_table_after_newer_collect(tmp_path):
+    runtime_root, artifact_path, *_ = _build_artifact(tmp_path)
+    _run_source(tmp_path, RFB_SOURCE_ID, RFB_FIXTURE, observed_at=NOW + timedelta(hours=1))
+    doc = json.loads(artifact_path.read_text())
+    doc["dep"] += 1
+    artifact_path.write_text(json.dumps(doc))
+    with pytest.raises(ProductionEvidenceError, match="archived payroll field"):
+        verify_preserved_legacy_artifact_evidence(
+            artifact_path=artifact_path, runtime_root=runtime_root
+        )
+
+
+def test_archived_payroll_rejects_candidate_corruption(tmp_path):
+    runtime_root, artifact_path, rfb, *_ = _build_artifact(tmp_path)
+    candidate = runtime_root / "candidates" / rfb.state.last_candidate_path
+    candidate.write_bytes(b"{}")
+    with pytest.raises(ProductionEvidenceError, match="candidate sha256 mismatch"):
+        verify_preserved_legacy_artifact_evidence(
+            artifact_path=artifact_path, runtime_root=runtime_root
+        )
+
+
+def test_archived_payroll_rejects_embedded_rates_tamper(tmp_path):
+    runtime_root, artifact_path, *_ = _build_artifact(tmp_path)
+    doc = json.loads(artifact_path.read_text())
+    doc["taxas"]["selic"] += 1
+    artifact_path.write_text(json.dumps(doc))
+    with pytest.raises(ProductionEvidenceError, match="financial provenance verification failed"):
+        verify_preserved_legacy_artifact_evidence(
+            artifact_path=artifact_path, runtime_root=runtime_root
         )
