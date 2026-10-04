@@ -77,6 +77,22 @@ jobs:
           print("Tracked last-good financial reference: ARCHIVED_EVIDENCE=PASS (no freshness claim)")
           PY
 
+      - name: Capture official AF01 PDF (review only; no publication)
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 91 }}
+        continue-on-error: true
+        run: |
+          python -m pip install 'pypdf>=6,<8'
+          python scripts/prepare_af01_official_evidence.py --output .validation/af01-official
+
+      - name: Upload verified AF01 source evidence for review
+        if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.number == 91 }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: af01-official-source-review
+          path: .validation/af01-official
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Run real-browser calculator smoke
         run: |
           python scripts/run_calculators_browser_smoke.py
