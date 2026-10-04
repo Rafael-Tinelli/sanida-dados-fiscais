@@ -1,6 +1,6 @@
 {
   "consecutive_parser_failures": 0,
-  "consecutive_source_failures": 1,
+  "consecutive_source_failures": 2,
   "etag": null,
   "last_candidate_path": "BCB_SELIC_META_SGS_432/1a/1ab767cfc8da3272281f3f25bc672538990b9ff5584c6d674c5ee909627e907e.json",
   "last_candidate_sha256": "1ab767cfc8da3272281f3f25bc672538990b9ff5584c6d674c5ee909627e907e",
@@ -9,7 +9,7 @@
   "last_collection_status": "SOURCE_UNAVAILABLE",
   "last_http_status": null,
   "last_modified": null,
-  "last_observed_at_utc": "2026-10-03T02:01:31Z",
+  "last_observed_at_utc": "2026-10-04T02:42:37Z",
   "last_parse_status": "PARSED",
   "last_parsed_at_utc": "2026-10-02T02:18:19Z",
   "last_parsed_snapshot_path": "BCB_SELIC_META_SGS_432/a0/a0cb4c45a28ab7d434e19cb3a84d16a9409f0b5da1d97325e808d4e9e1417f12.json",
@@ -22,5 +22,5 @@
   "parser_version": "1.0.0",
   "schema_version": "1.1.0",
   "source_id": "BCB_SELIC_META_SGS_432",
-  "source_url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?dataInicial=01%2F11%2F2016&dataFinal=02%2F10%2F2026&formato=json"
+  "source_url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?dataInicial=01%2F11%2F2016&dataFinal=03%2F10%2F2026&formato=json"
 }
