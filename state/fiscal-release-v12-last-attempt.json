@@ -1,5 +1,5 @@
 {
-  "attempted_at_utc": "2026-09-26T13:53:02.146962Z",
+  "attempted_at_utc": "2026-10-04T14:58:38.776064Z",
   "candidate_release_id": "candidate-v1-2",
   "changed_rules": [
     {
@@ -17,6 +17,20 @@
       "occurrence": 0,
       "previous_rule_version": "1.0.0",
       "rule_id": "inss.employee.progressive_table"
+    },
+    {
+      "candidate_rule_version": "1.0.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.0",
+      "rule_id": "irrf.deductions_by_income_type"
     },
     {
       "candidate_rule_version": "1.0.2",
@@ -211,6 +225,20 @@
       "rule_id": "thirteenth.inss.separate_assessment"
     },
     {
+      "candidate_rule_version": "1.0.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.0",
+      "rule_id": "thirteenth.irrf.exclusive_assessment"
+    },
+    {
       "candidate_rule_version": "1.0.3",
       "change_class": "SOURCE_REFRESH_NO_CHANGE",
       "changed_paths": [
@@ -352,6 +380,20 @@
       "rule_id": "vacation.irrf.reduction.2026"
     },
     {
+      "candidate_rule_version": "1.0.1",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE",
+      "changed_paths": [
+        "provenance[0].observed_at_utc",
+        "provenance[0].snapshot_path",
+        "provenance[0].snapshot_sha256",
+        "quality.last_validated_at_utc",
+        "rule_version"
+      ],
+      "occurrence": 0,
+      "previous_rule_version": "1.0.0",
+      "rule_id": "vacation.irrf.separate_assessment"
+    },
+    {
       "candidate_rule_version": "1.1.1",
       "change_class": "SOURCE_REFRESH_NO_CHANGE",
       "changed_paths": [
@@ -373,6 +415,7 @@
   "promotion_outcome": "REVIEW_REQUIRED",
   "publication_status": "REVIEW_REQUIRED",
   "reasons": [
+    "irrf.deductions_by_income_type: source refresh on structural rule requires human review",
     "termination.acquired_and_overdue_vacation: source refresh on structural rule requires human review",
     "termination.partial_output_scope: source refresh on structural rule requires human review",
     "termination.salary_balance: source refresh on structural rule requires human review",
@@ -382,6 +425,7 @@
     "thirteenth.accrual.twelfths: source refresh on structural rule requires human review",
     "thirteenth.advance: source refresh on structural rule requires human review",
     "thirteenth.inss.separate_assessment: source refresh on structural rule requires human review",
+    "thirteenth.irrf.exclusive_assessment: source refresh on structural rule requires human review",
     "thirteenth.irrf.reduction.2026: automatic promotion requires parser-backed hashed evidence",
     "thirteenth.reference_remuneration: source refresh on structural rule requires human review",
     "thirteenth.variable_remuneration: source refresh on structural rule requires human review",
@@ -392,9 +436,10 @@
     "vacation.entitlement_days_by_absences: source refresh on structural rule requires human review",
     "vacation.inss.enjoyed: source refresh on structural rule requires human review",
     "vacation.irrf.reduction.2026: automatic promotion requires parser-backed hashed evidence",
+    "vacation.irrf.separate_assessment: source refresh on structural rule requires human review",
     "vacation.remuneration_and_constitutional_third: source refresh on structural rule requires human review"
   ],
   "review_issue_action": "UPSERT_REQUIRED",
-  "review_key": "b7d1bab06fc2263ff67cf264cd426258ac53d4b8c9c944bf3673fb6abbe07950",
+  "review_key": "88dc3827965c95dcd1ba51022db078065b8b46b2afe9606c07ad57102ea3d3a7",
   "schema_version": "1.0.0"
 }
