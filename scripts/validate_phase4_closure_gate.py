@@ -56,10 +56,19 @@ def main() -> None:
         "verify_preserved_financial_last_good_provenance",
         "verify_preserved_financial_last_good_artifact_evidence",
         "require_current_parsed=True",
-        "require_current_parsed=False",
+        "_verify_archived_financial_provenance",
+        "verify_preserved_financial_last_good_provenance",
         "current parser state is PARSER_INCOMPATIBLE",
     ):
         _require(marker in evidence, f"A05 executable evidence marker missing: {marker}")
+
+    historical_tests = _read("tests/test_archived_financial_provenance.py")
+    for marker in (
+        "test_archived_reference_survives_newer_successful_state",
+        "test_archived_reference_rejects_tampered_snapshots",
+        "test_failed_next_day_bcb_probe_does_not_rewrite_proven_url",
+    ):
+        _require(marker in historical_tests, f"A05 immutable-history regression missing: {marker}")
 
     tests = _read("tests/test_financial_evidence_v1.py")
     for marker in (

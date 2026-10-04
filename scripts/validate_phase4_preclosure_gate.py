@@ -84,7 +84,21 @@ def main() -> None:
     )
 
     production_evidence = _read("sanida_fiscal/production_evidence_v1.py")
-    _require("verify_financial_source_provenance" in production_evidence, "A01 production gate does not verify nested financial provenance")
+    # A new financial reference still requires a current PARSED BCB candidate.
+    # A payroll bridge may consume the EXACT previously published local rates,
+    # but only after verifying immutable archived bytes/hash and numeric parity.
+    _require(
+        "verify_preserved_financial_last_good_provenance" in production_evidence
+        and 'original_meta.get("sources") != financial_sources' in production_evidence
+        and 'original_taxas.get("taxas") != artifact.get("taxas")' in production_evidence,
+        "A01 production gate does not bind nested provenance and values to immutable local financial evidence",
+    )
+    financial_evidence = _read("sanida_fiscal/financial_evidence_v1.py")
+    _require(
+        "_verify_archived_financial_provenance" in financial_evidence
+        and "_verify_file_sha256" in financial_evidence,
+        "A01 historical financial evidence is not validated by immutable content hashes",
+    )
     _require('taxas_meta.get("origin") != "local_file"' in production_evidence, "A01 production gate does not require local financial origin")
 
     financial_policy = _load_json("docs/phase4-financial-reference-policy-v1.json")
