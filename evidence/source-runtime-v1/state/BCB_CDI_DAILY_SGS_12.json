@@ -1,6 +1,6 @@
 {
   "consecutive_parser_failures": 0,
-  "consecutive_source_failures": 7,
+  "consecutive_source_failures": 8,
   "etag": "W/\"2a-iWdntqbRQgYLCp4e9VYsevVhZ2Y\"",
   "last_candidate_path": "BCB_CDI_DAILY_SGS_12/3a/3a7006f3742e10a8772b174e2846ae762013842419f87d59b2940f7992d265eb.json",
   "last_candidate_sha256": "3a7006f3742e10a8772b174e2846ae762013842419f87d59b2940f7992d265eb",
@@ -9,7 +9,7 @@
   "last_collection_status": "SOURCE_UNAVAILABLE",
   "last_http_status": null,
   "last_modified": null,
-  "last_observed_at_utc": "2026-10-03T23:10:15Z",
+  "last_observed_at_utc": "2026-10-04T02:44:45Z",
   "last_parse_status": "PARSED",
   "last_parsed_at_utc": "2026-10-02T19:16:08Z",
   "last_parsed_snapshot_path": "BCB_CDI_DAILY_SGS_12/28/2853a25ec005adb83ee033de6f022db737ad53adc91e91feb69439bc11ec3c4b.json",
