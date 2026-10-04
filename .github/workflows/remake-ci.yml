@@ -60,8 +60,22 @@ jobs:
         run: |
           python -m pytest -q tests
 
-      - name: Diagnose official BCB read-only transport (non-gating)
-        run: python scripts/diagnose_bcb_transport.py
+      - name: Verify tracked published last-good source evidence (read-only)
+        run: |
+          python scripts/validate_production_evidence_v1.py \
+            --artifact dados_fiscais.json \
+            --runtime-root evidence/source-runtime-v1 \
+            --preserved
+          python - <<'PY'
+          from pathlib import Path
+          from sanida_fiscal.financial_evidence_v1 import verify_preserved_financial_last_good_artifact_evidence
+          r=verify_preserved_financial_last_good_artifact_evidence(
+              artifact_path=Path("taxas_bacen.json"),
+              runtime_root=Path("evidence/source-runtime-v1"),
+          )
+          assert set(r)=={"BCB_SELIC_META_SGS_432","BCB_CDI_DAILY_SGS_12"}
+          print("Tracked last-good financial reference: ARCHIVED_EVIDENCE=PASS (no freshness claim)")
+          PY
 
       - name: Run real-browser calculator smoke
         run: |
