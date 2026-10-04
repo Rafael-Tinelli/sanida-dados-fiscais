@@ -6,7 +6,10 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .financial_evidence_v1 import FinancialEvidenceError, verify_financial_source_provenance
+from .financial_evidence_v1 import (
+    FinancialEvidenceError,
+    verify_preserved_financial_last_good_provenance,
+)
 from .source_ids_v1 import (
     INSS_SOURCE_ID,
     RFB_SOURCE_ID,
@@ -177,8 +180,25 @@ def verify_legacy_artifact_evidence(
     if not isinstance(financial_sources, dict):
         raise ProductionEvidenceError("dados_fiscais.json has no nested Selic/CDI provenance")
 
+    # The bridge may combine fresh payroll inputs with a previously verified
+    # rate artifact. Bind its nested metadata and values to that EXACT local
+    # immutable reference; newer BCB state cannot rewrite prior provenance.
+    original_taxas_path = artifact_path.parent / "taxas_bacen.json"
+    if not original_taxas_path.is_file():
+        raise ProductionEvidenceError("local taxas_bacen.json missing for embedded provenance check")
     try:
-        financial_verified = verify_financial_source_provenance(
+        original_taxas = json.loads(original_taxas_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ProductionEvidenceError("local taxas_bacen.json unreadable") from exc
+    original_meta = original_taxas.get("meta") if isinstance(original_taxas, dict) else None
+    if (not isinstance(original_meta, dict)
+        or original_meta.get("sources") != financial_sources
+        or original_meta.get("generated_at_utc") != taxas_meta.get("generated_at_utc")
+        or original_taxas.get("schema_version") != taxas_meta.get("schema_version")
+        or original_taxas.get("taxas") != artifact.get("taxas")):
+        raise ProductionEvidenceError("nested financial provenance differs from local taxas_bacen.json")
+    try:
+        financial_verified = verify_preserved_financial_last_good_provenance(
             sources=financial_sources,
             runtime_root=runtime_root,
         )
