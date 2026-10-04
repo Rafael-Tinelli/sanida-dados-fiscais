@@ -77,6 +77,9 @@ def _build_artifact(tmp_path: Path):
         cdi_run=cdi,
         generated_at_utc=NOW.isoformat().replace("+00:00", "Z"),
     )
+    (tmp_path / "taxas_bacen.json").write_text(
+        json.dumps(financial, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     financial_meta = financial["meta"]
     taxas_source_meta = {
         "origin": "local_file",
