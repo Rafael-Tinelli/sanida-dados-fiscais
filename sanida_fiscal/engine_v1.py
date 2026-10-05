@@ -159,7 +159,32 @@ class IrrfAssessmentMemory:
     pre_reduction_irrf: Decimal
     reduction_input_income: Decimal
     reduction_amount: Decimal
+    calculated_irrf: Decimal
+    withholding_waived: Decimal
+    withheld_irrf: Decimal
     final_irrf: Decimal
+
+
+def irrf_withholding_after_minimum(
+    calculated_irrf: DecimalInput, income_type: IrrfIncomeType
+) -> tuple[Decimal, Decimal]:
+    """Art. 67, Lei 9.430/1996: minimum monthly/vacation withholding waiver.
+
+    Do not apply to exclusively taxed thirteenth-salary assessments. Return
+    (waived_amount, effective_withholding) separately from calculated tax.
+    """
+    amount = as_decimal(calculated_irrf, name="calculated_irrf")
+    if amount < ZERO:
+        raise FiscalEngineError("calculated_irrf cannot be negative")
+    if not isinstance(income_type, IrrfIncomeType):
+        raise FiscalEngineError("income_type must be IrrfIncomeType")
+    waived = (
+        amount
+        if income_type in (IrrfIncomeType.MONTHLY, IrrfIncomeType.VACATION)
+        and amount <= Decimal("10.00")
+        else ZERO
+    )
+    return waived, amount - waived
 
 
 def _non_negative(value: DecimalInput, *, name: str) -> Decimal:
@@ -424,6 +449,9 @@ def assess_irrf_2026(
         rules.reduction_rounding,
     )
 
+    waived, withheld = irrf_withholding_after_minimum(
+        reduction_result.final_tax, assessment.income_type
+    )
     return IrrfAssessmentMemory(
         assessment=assessment,
         deduction_components=legal_deductions,
@@ -435,5 +463,8 @@ def assess_irrf_2026(
         pre_reduction_irrf=pre.amount,
         reduction_input_income=gross,
         reduction_amount=reduction_result.applied_reduction,
-        final_irrf=reduction_result.final_tax,
+        calculated_irrf=reduction_result.final_tax,
+        withholding_waived=waived,
+        withheld_irrf=withheld,
+        final_irrf=withheld,
     )
