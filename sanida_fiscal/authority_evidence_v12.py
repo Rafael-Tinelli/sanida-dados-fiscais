@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from io import BytesIO
 from datetime import datetime, timezone
 import json
 from pathlib import Path
 from typing import Any, Mapping
 
 import requests
+import unicodedata
+
+from bs4 import BeautifulSoup
+from pypdf import PdfReader
 
 from .inss_employee_v1 import (
     PARSER_ID as INSS_PARSER_ID,
@@ -68,6 +73,7 @@ PREFERRED_RULE_SOURCES = {
     "irrf.simplified_monthly_discount": RFB_SOURCE_ID,
     "irrf.reduction.2026": RFB_SOURCE_ID,
     "vacation.irrf.reduction.2026": "PLANALTO_LEI_15270_2025",
+    "vacation.abono_constitutional_third.ir_incidence": "RFB_SCI_COSIT_8_2015",
 }
 
 
@@ -204,6 +210,58 @@ def select_authority_sources(
             f"expected authority selection for 30 external rules, got {len(selected)}"
         )
     return selected
+
+
+
+def _normalize_identity_text(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value)
+    normalized = "".join(ch for ch in normalized if not unicodedata.combining(ch))
+    return " ".join(normalized.lower().split())
+
+
+def _snapshot_identity_text(*, body: bytes, media_type: str | None) -> str:
+    media = (media_type or "").lower()
+    if "pdf" in media or body.startswith(b"%PDF-"):
+        try:
+            reader = PdfReader(BytesIO(body), strict=True)
+            if reader.is_encrypted:
+                raise AuthorityEvidenceError("official PDF is encrypted")
+            extracted = " ".join(page.extract_text() or "" for page in reader.pages)
+        except AuthorityEvidenceError:
+            raise
+        except Exception as exc:
+            raise AuthorityEvidenceError(
+                f"official PDF text extraction failed: {type(exc).__name__}"
+            ) from exc
+        return _normalize_identity_text(extracted)
+    try:
+        decoded = body.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        raise AuthorityEvidenceError("authority snapshot is not UTF-8/PDF") from exc
+    if "html" in media or "<html" in decoded[:2048].lower():
+        decoded = BeautifulSoup(decoded, "html.parser").get_text(" ", strip=True)
+    return _normalize_identity_text(decoded)
+
+
+def _assert_source_identity(
+    *,
+    source_id: str,
+    registry_item: Mapping[str, Any],
+    body: bytes,
+    media_type: str | None,
+) -> None:
+    raw_markers = registry_item.get("identity_markers")
+    if not isinstance(raw_markers, list) or not raw_markers:
+        raise AuthorityEvidenceError(
+            f"{source_id}: registry has no identity_markers; authority cannot be homologated"
+        )
+    text = _snapshot_identity_text(body=body, media_type=media_type)
+    markers = [_normalize_identity_text(str(marker)) for marker in raw_markers]
+    missing = [marker for marker in markers if marker and marker not in text]
+    if missing:
+        raise AuthorityEvidenceError(
+            f"{source_id}: official response identity mismatch; missing markers={missing}"
+        )
 
 
 def _retrieval_method(snapshot_media_type: str | None) -> RetrievalMethod:
@@ -400,6 +458,16 @@ def collect_authority_evidence(
                 result.failure_kind.value if result.failure_kind else result.status.value
             )
             raise AuthorityEvidenceError(f"{source_id}: official source unavailable: {detail}")
+
+        registry_item = _registry_metadata(source_registry_path).get(source_id)
+        if registry_item is None:
+            raise AuthorityEvidenceError(f"{source_id}: registry metadata missing")
+        _assert_source_identity(
+            source_id=source_id,
+            registry_item=registry_item,
+            body=store.read(result.snapshot),
+            media_type=result.snapshot.media_type,
+        )
 
         parser_id = None
         parser_version = None
