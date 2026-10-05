@@ -465,12 +465,15 @@ def collect_authority_evidence(
         registry_item = _registry_metadata(source_registry_path).get(source_id)
         if registry_item is None:
             raise AuthorityEvidenceError(f"{source_id}: registry metadata missing")
-        _assert_source_identity(
-            source_id=source_id,
-            registry_item=registry_item,
-            body=store.read(result.snapshot),
-            media_type=result.snapshot.media_type,
-        )
+        try:
+            _assert_source_identity(
+                source_id=source_id,
+                registry_item=registry_item,
+                body=store.read(result.snapshot),
+                media_type=result.snapshot.media_type,
+            )
+        except AuthorityEvidenceError as exc:
+            raise AuthorityEvidenceError(f"{source_id}: {exc}") from exc
 
         parser_id = None
         parser_version = None
