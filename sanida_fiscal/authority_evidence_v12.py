@@ -369,9 +369,14 @@ def _normalize_visible_text(raw: bytes, media_type: str | None) -> str:
         if not decoded.strip():
             raise AuthorityEvidenceError("authority PDF has no extractable text")
     else:
-        decoded = raw.decode("utf-8", errors="replace")
-        if "<" in decoded and ">" in decoded:
-            decoded = BeautifulSoup(decoded, "html.parser").get_text(" ", strip=True)
+        # Let the HTML parser inspect raw bytes so official legacy pages
+        # (notably Planalto) can honor their declared/detected encoding before
+        # Unicode normalization. Decoding as UTF-8 first destroys material
+        # identity markers such as "Consolidação".
+        if b"<" in raw and b">" in raw:
+            decoded = BeautifulSoup(raw, "html.parser").get_text(" ", strip=True)
+        else:
+            decoded = raw.decode("utf-8", errors="replace")
     normalized = unicodedata.normalize("NFKD", decoded)
     normalized = "".join(ch for ch in normalized if not unicodedata.combining(ch))
     return re.sub(r"\s+", " ", normalized.lower()).strip()
