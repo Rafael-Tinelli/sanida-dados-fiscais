@@ -68,15 +68,15 @@ REQUIRED = {
     "requirements-sources.txt",
 }
 
-# Exact permanent workflow allowlist. Phase 5 adds the canonical fiscal-release
-# writer; unexpected debug/temporary workflows remain forbidden by this gate.
+# Exact permanent fiscal workflow allowlist. Public calculator deployment is
+# owned by sanida-financas-frontend; a fiscal-side HostGator workflow must not
+# be accepted again as a permanent workflow.
 ALLOWED_WORKFLOWS = {
     "main.yml",
     "taxas.yml",
     "taxas-series.yml",
     "remake-ci.yml",
     "fiscal-release-v12.yml",
-    "fiscal-runtime-production.yml",
 }
 FORBIDDEN_SCRAPER_TOKENS = {
     "PINNED_INSS_URLS",

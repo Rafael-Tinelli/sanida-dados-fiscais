@@ -56,16 +56,16 @@ REQUIRED_PHASE3_FILES = {
     "docs/phase3-closure-gate.md",
 }
 
-# Permanent repository workflows. This remains an exact allowlist so the Phase 3
-# hygiene gate still catches throwaway/debug workflows; Phase 5's fiscal release
-# workflow is a permanent production successor and therefore belongs here.
+# Permanent fiscal-repository workflows. This remains an exact allowlist so the
+# Phase 3 hygiene gate catches throwaway/debug workflows. Public calculator
+# frontend/runtime deployment was extracted to sanida-financas-frontend; the
+# historical fiscal-side deployment recipe must remain outside .github/workflows.
 ALLOWED_WORKFLOWS = {
     "main.yml",
     "taxas.yml",
     "taxas-series.yml",
     "remake-ci.yml",
     "fiscal-release-v12.yml",
-    "fiscal-runtime-production.yml",
 }
 
 

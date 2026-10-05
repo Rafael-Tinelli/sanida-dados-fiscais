@@ -186,13 +186,13 @@ def test_finalize_blocks_when_cache_policy_is_not_visible_externally(tmp_path: P
             authorization_id="runtime-test-4",
         )
 
-def test_production_workflow_is_runtime_only_and_automatic_on_main() -> None:
-    workflow = (
-        runtime_deploy.ROOT / ".github" / "workflows" / "fiscal-runtime-production.yml"
-    ).read_text(encoding="utf-8")
+def test_runtime_deploy_recipe_is_historical_and_frontend_owned() -> None:
+    active = runtime_deploy.ROOT / ".github" / "workflows" / "fiscal-runtime-production.yml"
+    archived = runtime_deploy.ROOT / "ops" / "workflows" / "fiscal-runtime-production.yml"
+    assert not active.exists()
+    workflow = archived.read_text(encoding="utf-8")
 
-    assert "branches: [main]" in workflow
-    assert "workflow_dispatch:" in workflow
+    assert "HISTORICAL / MANUAL REFERENCE ONLY" in workflow
     assert "deploy_fiscal_runtime_assets.py" in workflow
     assert "APPLIED_ORIGIN_HEALTHY_PENDING_EXTERNAL" in workflow
     assert "APPLIED_EXTERNALLY_HEALTHY" in workflow
@@ -211,6 +211,7 @@ def test_production_workflow_is_runtime_only_and_automatic_on_main() -> None:
         "src/assets/",
         "wp-content/plugins",
         "Purge Everything",
+        "consumers/candidates/",
     ):
         assert forbidden not in workflow
 
