@@ -378,21 +378,45 @@ def _merge_segment_payloads(
     start_date: date,
     end_date: date,
 ) -> dict[str, Any]:
-    expected_segments = financial_history_segments(start_date, end_date)
-    if len(runs) != len(expected_segments):
-        raise FinancialSeriesBoundaryError(f"{source_id}: segmented run count mismatch")
+    if not runs:
+        raise FinancialSeriesBoundaryError(f"{source_id}: no segmented history runs")
     observations: list[dict[str, Any]] = []
     seen_dates: set[str] = set()
-    for run, (seg_start, seg_end) in zip(runs, expected_segments):
+    expected_start = start_date
+    for index, run in enumerate(runs):
         payload = _require_payload(run, source_id)
-        if payload.get("start_date") != seg_start.isoformat() or payload.get("end_date") != seg_end.isoformat():
-            raise FinancialSeriesBoundaryError(f"{source_id}: segment payload boundary mismatch")
+        try:
+            seg_start = date.fromisoformat(str(payload.get("start_date")))
+            seg_end = date.fromisoformat(str(payload.get("end_date")))
+        except ValueError as exc:
+            raise FinancialSeriesBoundaryError(
+                f"{source_id}: segment {index} has invalid boundaries"
+            ) from exc
+        if seg_start != expected_start or seg_end < seg_start:
+            raise FinancialSeriesBoundaryError(
+                f"{source_id}: segment {index} is not contiguous"
+            )
+        if len(month_keys(seg_start, seg_end)) > 12:
+            raise FinancialSeriesBoundaryError(
+                f"{source_id}: segment {index} exceeds twelve calendar months"
+            )
+        if seg_end > end_date:
+            raise FinancialSeriesBoundaryError(
+                f"{source_id}: segment {index} exceeds requested history window"
+            )
+        expected_start = seg_end + timedelta(days=1)
         for item in list(payload.get("observations") or []):
             raw_date = item.get("date") if isinstance(item, dict) else None
             if not isinstance(raw_date, str) or raw_date in seen_dates:
-                raise FinancialSeriesBoundaryError(f"{source_id}: duplicate/invalid segmented observation date")
+                raise FinancialSeriesBoundaryError(
+                    f"{source_id}: duplicate/invalid segmented observation date"
+                )
             seen_dates.add(raw_date)
             observations.append(dict(item))
+    if expected_start != end_date + timedelta(days=1):
+        raise FinancialSeriesBoundaryError(
+            f"{source_id}: segmented history does not cover full requested window"
+        )
     observations.sort(key=lambda item: item["date"])
     return {
         "source_id": source_id,
