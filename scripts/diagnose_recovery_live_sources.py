@@ -13,16 +13,19 @@ if str(ROOT) not in sys.path:
 
 from sanida_fiscal.authority_evidence_v12 import collect_authority_evidence
 from sanida_fiscal.financial_series_v1 import (
+    CDI_SOURCE_ID,
     SELIC_SOURCE_ID,
+    build_financial_series_artifact_from_segments,
     financial_series_window,
     run_financial_history_source_segments,
+    validate_financial_series_artifact,
 )
 
 
 
 def main() -> int:
     now=datetime.now(timezone.utc).replace(microsecond=0)
-    report={"observed_at_utc":now.isoformat().replace("+00:00","Z"),"authority":{},"selic_history":{}}
+    report={"observed_at_utc":now.isoformat().replace("+00:00","Z"),"authority":{},"financial_history":{}}
     failures=[]
     with tempfile.TemporaryDirectory() as tmp:
         tmp_root=Path(tmp)
@@ -45,37 +48,64 @@ def main() -> int:
         try:
             as_of=now.astimezone(ZoneInfo("America/Sao_Paulo")).date()
             start,end=financial_series_window(as_of)
-            runs=run_financial_history_source_segments(
-                source_id=SELIC_SOURCE_ID,
-                observed_at_utc=now,
-                start_date=start,
-                end_date=end,
-                registry_path=ROOT/"docs/financial-source-registry-v1.json",
-                snapshot_root=tmp_root/"series/snapshots",
-                state_root=tmp_root/"series/state",
-                candidate_root=tmp_root/"series/candidates",
-                timeout_seconds=25.0,
-                max_attempts=2,
-                months_per_segment=12,
+            source_runs={}
+            source_report={}
+            for source_id,months_per_segment in (
+                (SELIC_SOURCE_ID,6),
+                (CDI_SOURCE_ID,12),
+            ):
+                runs=run_financial_history_source_segments(
+                    source_id=source_id,
+                    observed_at_utc=now,
+                    start_date=start,
+                    end_date=end,
+                    registry_path=ROOT/"docs/financial-source-registry-v1.json",
+                    snapshot_root=tmp_root/"series/snapshots",
+                    state_root=tmp_root/"series/state",
+                    candidate_root=tmp_root/"series/candidates",
+                    timeout_seconds=35.0,
+                    max_attempts=2,
+                    months_per_segment=months_per_segment,
+                )
+                source_runs[source_id]=runs
+                source_report[source_id]={
+                    "status":"PASS",
+                    "segment_months":months_per_segment,
+                    "segment_count":len(runs),
+                    "segments":[
+                        {
+                            "url":run.collection.source_url,
+                            "http_status":run.collection.http_status,
+                            "snapshot_sha256":run.candidate.snapshot_sha256 if run.candidate else None,
+                            "candidate_sha256":run.state.last_candidate_sha256,
+                        }
+                        for run in runs
+                    ],
+                }
+            artifact=build_financial_series_artifact_from_segments(
+                selic_runs=source_runs[SELIC_SOURCE_ID],
+                cdi_runs=source_runs[CDI_SOURCE_ID],
+                generated_at_utc=now.isoformat().replace("+00:00","Z"),
+                as_of_date=as_of,
             )
-            report["selic_history"]={
+            ok,errors=validate_financial_series_artifact(artifact,as_of_date=as_of)
+            if not ok:
+                raise RuntimeError(f"segmented artifact validation failed: {errors}")
+            report["financial_history"]={
                 "status":"PASS",
-                "segment_count":len(runs),
                 "start_date":start.isoformat(),
                 "end_date":end.isoformat(),
-                "segments":[
-                    {
-                        "url":run.collection.source_url,
-                        "http_status":run.collection.http_status,
-                        "snapshot_sha256":run.candidate.snapshot_sha256 if run.candidate else None,
-                        "candidate_sha256":run.state.last_candidate_sha256,
-                    }
-                    for run in runs
-                ],
+                "points":len(artifact["points"]),
+                "latest_month":artifact["points"][-1]["month"],
+                "sources":source_report,
             }
         except Exception as exc:
-            report["selic_history"]={"status":"FAIL","error_type":type(exc).__name__,"error":str(exc)}
-            failures.append("selic_history")
+            report["financial_history"]={
+                "status":"FAIL",
+                "error_type":type(exc).__name__,
+                "error":str(exc),
+            }
+            failures.append("financial_history")
 
     out=ROOT/".validation/recovery-live-sources.json"
     out.parent.mkdir(parents=True,exist_ok=True)
