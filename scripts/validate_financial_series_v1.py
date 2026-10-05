@@ -84,22 +84,29 @@ def main() -> int:
         if segments is not None:
             require(isinstance(segments, list) and segments, f"{source_id}: segments invalid")
             window = artifact["meta"]["window"]
-            expected_segments = financial_history_segments(
-                date.fromisoformat(window["start_date"]),
-                date.fromisoformat(window["end_date"]),
-            )
-            require(
-                len(segments) == len(expected_segments),
-                f"{source_id}: segment count mismatch",
-            )
-            for index, (segment, expected_window) in enumerate(zip(segments, expected_segments)):
+            requested_start = date.fromisoformat(window["start_date"])
+            requested_end = date.fromisoformat(window["end_date"])
+            expected_start = requested_start
+            for index, segment in enumerate(segments):
                 require(isinstance(segment, dict), f"{source_id}: segment {index} not object")
-                expected_start, expected_end = expected_window
+                try:
+                    segment_start = date.fromisoformat(str(segment.get("start_date")))
+                    segment_end = date.fromisoformat(str(segment.get("end_date")))
+                except ValueError:
+                    raise SystemExit(
+                        f"financial series validation failed: {source_id}: segment {index} invalid dates"
+                    )
                 require(
-                    segment.get("start_date") == expected_start.isoformat()
-                    and segment.get("end_date") == expected_end.isoformat(),
-                    f"{source_id}: segment {index} boundary mismatch",
+                    segment_start == expected_start and segment_end >= segment_start,
+                    f"{source_id}: segment {index} is not contiguous",
                 )
+                require(
+                    len(financial_history_segments(segment_start, segment_end, months_per_segment=12)) == 1,
+                    f"{source_id}: segment {index} exceeds twelve-month maximum",
+                )
+                expected_start = segment_end + __import__("datetime").timedelta(days=1)
+                expected_start_date, expected_end = segment_start, segment_end
+                expected_start, expected_end = expected_start_date, expected_end
                 candidate_rel = segment.get("candidate_path")
                 snapshot_rel = segment.get("snapshot_path")
                 candidate_sha = segment.get("candidate_sha256")
@@ -127,6 +134,10 @@ def main() -> int:
                     and payload.get("end_date") == expected_end.isoformat(),
                     f"{source_id}: segment {index} normalized payload mismatch",
                 )
+            require(
+                expected_start == requested_end + __import__("datetime").timedelta(days=1),
+                f"{source_id}: segmented provenance does not cover full window",
+            )
 
     print(
         "Financial historical series validation: PASS "
