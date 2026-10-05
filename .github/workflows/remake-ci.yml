@@ -64,6 +64,22 @@ jobs:
         run: |
           python scripts/run_calculators_browser_smoke.py
 
+      - name: Probe AF01 official SCI evidence (read-only)
+        if: ${{ github.head_ref == 'probe/af01-official-evidence-20261005' }}
+        id: af01_probe
+        continue-on-error: true
+        run: |
+          python scripts/prepare_af01_official_evidence.py --output /tmp/af01-official-evidence
+
+      - name: Upload AF01 official evidence probe
+        if: ${{ always() && github.head_ref == 'probe/af01-official-evidence-20261005' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: af01-official-evidence-${{ github.sha }}
+          path: /tmp/af01-official-evidence
+          if-no-files-found: warn
+          retention-days: 3
+
       - name: Diagnose recovery sources live (read-only)
         if: ${{ github.head_ref == 'fix/main-fiscal-recovery-20261005' }}
         continue-on-error: true
