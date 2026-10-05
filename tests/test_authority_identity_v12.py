@@ -227,3 +227,14 @@ def test_sci_api_fallback_persists_content_addressed_json_and_marks_api(monkeypa
     assert result.snapshot.relative_path.endswith(".json")
     assert store.read(result.snapshot) == raw
     assert _retrieval_method(result.snapshot.media_type) == RetrievalMethod.API
+
+
+def test_rfb_qa_irpf_2026_registry_uses_current_official_download_url():
+    source = _metadata("RFB_QA_IRPF_2026")
+    assert source["url"] == (
+        "https://www.gov.br/receitafederal/pt-br/centrais-de-conteudo/publicacoes/"
+        "perguntas-e-respostas/dirpf/p-r-irpf-2026-v1-00-2026-04-23.pdf/"
+        "@@download/file"
+    )
+    assert "2026-04-18" not in source["url"]
+    assert source["machine_readability"] == "pdf_text"

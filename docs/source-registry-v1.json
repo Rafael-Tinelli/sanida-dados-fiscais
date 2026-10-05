@@ -88,14 +88,14 @@
       "source_id": "RFB_QA_IRPF_2026",
       "authority": "Receita Federal",
       "role": "official_operational",
-      "url": "https://www.gov.br/receitafederal/pt-br/centrais-de-conteudo/publicacoes/perguntas-e-respostas/dirpf/p-r-irpf-2026-v1-0-2026-04-18.pdf",
+      "url": "https://www.gov.br/receitafederal/pt-br/centrais-de-conteudo/publicacoes/perguntas-e-respostas/dirpf/p-r-irpf-2026-v1-00-2026-04-23.pdf/@@download/file",
       "machine_readability": "pdf_text",
       "covers": [
         "vacation.irrf.separate_assessment",
         "vacation.indemnified.ir_exemption",
         "vacation.abono.ir_exemption"
       ],
-      "notes": "Pergunta 178: férias gozadas + terço são tributadas separadamente; férias não gozadas convertidas em pecúnia na extinção e abono do art. 143 têm hipóteses de não tributação. Identidade material exigida no PDF: título/ano e pergunta 178.",
+      "notes": "Perguntas e Respostas IRPF 2026, arquivo oficial atualmente servido pela Receita (conteúdo observado como versão 1.03 em 05/10/2026). Pergunta 178: férias + terço são tributadas separadamente; férias não gozadas convertidas em pecúnia na extinção e abono do art. 143 têm hipóteses de não tributação. Identidade material exigida no PDF: título/ano e pergunta 178.",
       "identity_marker_groups": [
         [
           "perguntas e respostas",
