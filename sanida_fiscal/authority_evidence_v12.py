@@ -237,12 +237,19 @@ def _snapshot_identity_text(*, body: bytes, media_type: str | None) -> str:
                 f"official PDF text extraction failed: {type(exc).__name__}"
             ) from exc
         return _normalize_identity_text(extracted)
+    looks_html = "html" in media or b"<html" in body[:4096].lower() or b"<!doctype" in body[:4096].lower()
+    if looks_html:
+        # Parse bytes directly so BeautifulSoup can honor/guess the official
+        # document charset (some Planalto pages are not UTF-8).
+        decoded = BeautifulSoup(body, "html.parser").get_text(" ", strip=True)
+        return _normalize_identity_text(decoded)
     try:
         decoded = body.decode("utf-8", errors="strict")
-    except UnicodeDecodeError as exc:
-        raise AuthorityEvidenceError("authority snapshot is not UTF-8/PDF") from exc
-    if "html" in media or "<html" in decoded[:2048].lower():
-        decoded = BeautifulSoup(decoded, "html.parser").get_text(" ", strip=True)
+    except UnicodeDecodeError:
+        try:
+            decoded = body.decode("latin-1", errors="strict")
+        except UnicodeDecodeError as exc:
+            raise AuthorityEvidenceError("authority snapshot has unsupported text encoding") from exc
     return _normalize_identity_text(decoded)
 
 
