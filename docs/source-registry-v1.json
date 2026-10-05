@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "status": "phase1_closed",
-  "as_of": "2026-09-19",
+  "as_of": "2026-10-05",
   "policy": {
     "official_sources_only_for_authority": true,
     "source_roles": [
@@ -10,7 +10,8 @@
       "official_operational",
       "official_reference_case"
     ],
-    "note": "Fonte privada pode auxiliar descoberta, mas não pode ser autoridade canônica de regra fiscal/trabalhista quando houver fonte oficial adequada."
+    "note": "Fonte privada pode auxiliar descoberta, mas não pode ser autoridade canônica de regra fiscal/trabalhista quando houver fonte oficial adequada.",
+    "identity_validation_required_for_authority": true
   },
   "sources": [
     {
@@ -62,7 +63,13 @@
         "irrf.simplified_monthly_discount",
         "irrf.reduction.2026"
       ],
-      "notes": "Versão anotada já incorpora alterações de 2025; art. 29 trata férias em apuração separada e o Anexo X contém a redução mensal a partir de 2026."
+      "notes": "Versão anotada já incorpora alterações de 2025; art. 29 trata férias em apuração separada e o Anexo X contém a redução mensal a partir de 2026.",
+      "identity_markers": [
+        "instrução normativa",
+        "1500",
+        "29 de outubro de 2014",
+        "imposto sobre a renda das pessoas físicas"
+      ]
     },
     {
       "source_id": "RFB_QA_IRPF_2026",
@@ -81,13 +88,20 @@
       "source_id": "RFB_SC_209_2021",
       "authority": "Receita Federal / Cosit",
       "role": "administrative_norm",
-      "url": "https://normas.receita.fazenda.gov.br/sijut2consulta/consulta.action?termoBusca=abono+pecuniario",
-      "machine_readability": "html_search_result",
+      "url": "https://normas.receita.fazenda.gov.br/sijut2consulta/anexoOutros.action?idArquivoBinario=64080",
+      "machine_readability": "pdf_text",
       "covers": [
         "vacation.abono.ir_exemption",
         "vacation.abono_constitutional_third.ir_incidence"
       ],
-      "notes": "Abono pecuniário do art. 143 não sofre IR; o terço constitucional incidente sobre o abono, pago durante o contrato, sofre IR."
+      "notes": "Íntegra oficial em PDF da SC Cosit nº 209/2021. O principal do abono do art. 143 não sofre IR; o terço constitucional incidente sobre o abono, pago durante o contrato, sofre IR.",
+      "identity_markers": [
+        "solução de consulta",
+        "209",
+        "16 de dezembro de 2021",
+        "abono pecuniário",
+        "terço constitucional"
+      ]
     },
     {
       "source_id": "RFB_CP_INCIDENCE_TABLE",
@@ -218,6 +232,24 @@
         "termination.vacation_entitlement"
       ],
       "notes": "Distingue pedido de demissão, acordo, dispensa sem justa causa, justa causa e rescisão indireta, com verbas correspondentes."
+    },
+    {
+      "source_id": "RFB_SCI_COSIT_8_2015",
+      "authority": "Receita Federal / Cosit",
+      "role": "administrative_norm",
+      "url": "https://normas.receita.fazenda.gov.br/sijut2consulta/anexoOutros.action?idArquivoBinario=36769",
+      "machine_readability": "pdf_text",
+      "covers": [
+        "vacation.abono_constitutional_third.ir_incidence"
+      ],
+      "identity_markers": [
+        "solução de consulta interna",
+        "8",
+        "2015",
+        "terço constitucional",
+        "contribuição previdenciária"
+      ],
+      "notes": "SCI Cosit nº 8/2015: contribuição previdenciária do segurado sobre o terço constitucional integral das férias gozadas, inclusive a fração proporcional aos dias convertidos em abono; distinguir férias indenizadas e adicionais extraordinários."
     }
   ]
 }
