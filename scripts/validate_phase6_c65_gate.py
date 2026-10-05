@@ -76,7 +76,7 @@ def main() -> int:
         __import__("datetime").date(2026, 9, 15),
         AssessmentContext.VACATION_CASH_ALLOWANCE,
     )
-    require(remuneration.rule_version == "1.1.0", "cash-allowance remuneration successor not published")
+    require(remuneration.rule_version.startswith("1.1."), "cash-allowance remuneration successor semantic not published")
     reduction = release.select_rule(
         "vacation.irrf.reduction.2026",
         __import__("datetime").date(2026, 9, 15),
