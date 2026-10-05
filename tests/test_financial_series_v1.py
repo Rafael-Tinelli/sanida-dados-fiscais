@@ -292,3 +292,46 @@ def test_segmented_history_fails_closed_when_any_chunk_is_unavailable(tmp_path: 
     second_start = financial_history_segments(start, end)[1][0]
     with pytest.raises(FinancialSeriesBoundaryError, match="history segment"):
         _segmented_runs(tmp_path, SELIC_SOURCE_ID, fail_start=second_start)
+
+
+def test_segmented_history_adaptively_splits_transient_large_window_failures(tmp_path: Path):
+    start, end = financial_series_window(AS_OF)
+    all_rows = json.loads(_raw_selic())
+
+    def handler(request: httpx.Request):
+        seg_start = datetime.strptime(request.url.params["dataInicial"], "%d/%m/%Y").date()
+        seg_end = datetime.strptime(request.url.params["dataFinal"], "%d/%m/%Y").date()
+        if len(month_keys(seg_start, seg_end)) > 3:
+            return httpx.Response(502, content=b"gateway")
+        selected = []
+        for row in all_rows:
+            observed = datetime.strptime(row["data"], "%d/%m/%Y").date()
+            if seg_start <= observed <= seg_end:
+                selected.append(row)
+        return httpx.Response(
+            200,
+            content=json.dumps(selected).encode("utf-8"),
+            headers={"content-type": "application/json"},
+        )
+
+    runs = run_financial_history_source_segments(
+        source_id=SELIC_SOURCE_ID,
+        observed_at_utc=OBSERVED,
+        start_date=start,
+        end_date=end,
+        registry_path=Path("docs/financial-source-registry-v1.json"),
+        snapshot_root=tmp_path / "snapshots",
+        state_root=tmp_path / "state",
+        candidate_root=tmp_path / "candidates",
+        transport=httpx.MockTransport(handler),
+        max_attempts=1,
+        months_per_segment=12,
+        min_months_per_segment=1,
+    )
+    assert len(runs) > 10
+    for run in runs:
+        payload = run.candidate.payload
+        assert len(month_keys(
+            date.fromisoformat(payload["start_date"]),
+            date.fromisoformat(payload["end_date"]),
+        )) <= 3
