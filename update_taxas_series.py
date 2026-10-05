@@ -23,7 +23,7 @@ FINANCIAL_SOURCE_REGISTRY = Path("docs/financial-source-registry-v1.json")
 SOURCE_RUNTIME_ROOT = Path(
     os.getenv("SFA_FINANCIAL_SERIES_RUNTIME_ROOT", "evidence/financial-series-v1").strip()
 )
-TIMEOUT = int(os.getenv("SFA_TIMEOUT", "25").strip())
+TIMEOUT = int(os.getenv("SFA_TIMEOUT", "35").strip())
 RETRIES = int(os.getenv("SFA_RETRIES", "3").strip())
 
 HEADERS = {
