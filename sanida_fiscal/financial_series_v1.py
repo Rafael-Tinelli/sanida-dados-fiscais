@@ -348,32 +348,46 @@ def _reusable_history_segment(
     ):
         return None
     try:
-        raw_candidate = CandidateStore(candidate_root).read(
-            relative_path=state.last_candidate_path,
-            expected_sha256=state.last_candidate_sha256,
+        # CandidateStore is intentionally payload-only and content-addressed.
+        # Do not pretend the stored JSON is a NormalizedSourceCandidate.
+        payload = dict(
+            CandidateStore(candidate_root).read(
+                relative_path=state.last_candidate_path,
+                expected_sha256=state.last_candidate_sha256,
+            )
         )
-        candidate = NormalizedSourceCandidate.model_validate(raw_candidate)
     except Exception:
         return None
-    if (
-        candidate.status != ParseStatus.PARSED
-        or candidate.source_id != source_id
-        or candidate.source_url != source_url
-        or candidate.parser_id != parser_id
-        or candidate.parser_version != parser_version
-        or candidate.snapshot_sha256 != state.last_parsed_snapshot_sha256
-        or candidate.snapshot_path != state.last_parsed_snapshot_path
-        or candidate.payload is None
-    ):
-        return None
+
     snapshot_path = Path(snapshot_root) / state.last_parsed_snapshot_path
     if not snapshot_path.is_file():
         return None
     body = snapshot_path.read_bytes()
     if sha256(body).hexdigest() != state.last_parsed_snapshot_sha256:
         return None
-    payload = dict(candidate.payload)
-    if payload.get("start_date") != start_date.isoformat() or payload.get("end_date") != end_date.isoformat():
+
+    # Reparse the immutable source bytes and require semantic equality with the
+    # content-addressed candidate before reusing a closed segment.
+    try:
+        if source_id == SELIC_SOURCE_ID:
+            reparsed = parse_bcb_selic_history_snapshot(
+                body, start_date=start_date, end_date=end_date
+            )
+        elif source_id == CDI_SOURCE_ID:
+            reparsed = parse_bcb_cdi_history_snapshot(
+                body, start_date=start_date, end_date=end_date
+            )
+        else:
+            return None
+    except Exception:
+        return None
+    if reparsed != payload:
+        return None
+    if (
+        payload.get("source_id") != source_id
+        or payload.get("start_date") != start_date.isoformat()
+        or payload.get("end_date") != end_date.isoformat()
+    ):
         return None
     return payload, {
         "source_id": source_id,
