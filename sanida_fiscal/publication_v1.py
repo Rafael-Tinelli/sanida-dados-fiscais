@@ -144,6 +144,32 @@ def reconcile_transition_change_classes(
     return parse_fiscal_contract(data)
 
 
+def _assert_af01_source_evidence(candidate) -> None:
+    """A CP=yes successor requires the actual SCI Cosit 8/2015 provenance.
+
+    Historical CP=no releases remain readable and immutable. A new candidate
+    cannot acquire CP=yes through a mere code overlay citing an older IR-only
+    authority and an arbitrary human approval string.
+    """
+    for rule in candidate.rules:
+        if rule.rule_id != "vacation.abono_constitutional_third.ir_incidence":
+            continue
+        payload = rule.payload
+        components = getattr(payload, "components", [])
+        if any(
+            component.component.value == "constitutional_third_on_cash_allowance"
+            and component.social_security.value == "yes"
+            for component in components
+        ):
+            if not any(
+                evidence.source_id == "RFB_SCI_COSIT_8_2015"
+                for evidence in rule.provenance
+            ):
+                raise PromotionBlockedError(
+                    "AF01 CP=yes requires official RFB_SCI_COSIT_8_2015 evidence"
+                )
+
+
 def prepare_published_release(
     *,
     previous: FiscalContractV1 | None,
@@ -165,6 +191,7 @@ def prepare_published_release(
         raise PublicationError("publication input must be CANDIDATE")
 
     assert_release_inventory_complete(candidate, coverage)
+    _assert_af01_source_evidence(candidate)
 
     if previous is None:
         if candidate.supersedes_release_id is not None:

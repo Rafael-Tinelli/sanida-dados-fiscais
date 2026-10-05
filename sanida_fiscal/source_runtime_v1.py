@@ -196,7 +196,8 @@ def run_source_pipeline(
     if collection.status == CollectionStatus.SOURCE_UNAVAILABLE:
         state = SourcePipelineState(
             source_id=source.source_id,
-            source_url=source.url,
+            # Keep the last verified provenance URL when the attempted probe fails.
+            source_url=previous.source_url if previous else source.url,
             last_observed_at_utc=observed_at_utc,
             last_collection_status=collection.status,
             last_http_status=collection.http_status,
