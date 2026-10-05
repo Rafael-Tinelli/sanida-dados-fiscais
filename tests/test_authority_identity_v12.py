@@ -100,3 +100,16 @@ def test_material_html_identity_contract_accepts_expected_official_markers(sourc
         body=html.encode("utf-8"),
         media_type="text/html",
     )
+
+
+def test_planalto_latin1_identity_bytes_are_decoded_before_validation():
+    html = (
+        '<html><head><meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"></head>'
+        '<body>DECRETO-LEI Nº 5.452. Aprova a Consolidação das Leis do Trabalho.</body></html>'
+    ).encode("iso-8859-1")
+    _validate_authority_identity(
+        source_id="PLANALTO_CLT",
+        metadata=_metadata("PLANALTO_CLT"),
+        body=html,
+        media_type="text/html",
+    )
