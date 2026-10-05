@@ -150,13 +150,20 @@
     });
   }
 
-  function incidenceFlag(selected, component, field, expected) {
+  function incidenceValue(selected, component, field) {
     const payload = selected.rule.payload;
     if (!payload || payload.type !== 'incidence_profile' || !Array.isArray(payload.components)) {
       fail('vacation_incidence_payload', 'Perfil de incidência incompatível em ' + selected.rule.rule_id + '.');
     }
     const row = payload.components.find(function (item) { return item.component === component; });
-    if (!row || row[field] !== expected) {
+    if (!row || (row[field] !== 'yes' && row[field] !== 'no')) {
+      fail('vacation_incidence_mismatch', 'Incidência inesperada para ' + component + '/' + field + '.');
+    }
+    return row[field];
+  }
+
+  function incidenceFlag(selected, component, field, expected) {
+    if (incidenceValue(selected, component, field) !== expected) {
       fail('vacation_incidence_mismatch', 'Incidência inesperada para ' + component + '/' + field + '.');
     }
   }
@@ -240,10 +247,15 @@
     incidenceFlag(cashExemption, 'cash_allowance_principal', 'social_security', 'no');
     incidenceFlag(cashExemption, 'cash_allowance_principal', 'irrf', 'no');
     const cashThirdIncidence = select(release, 'vacation.abono_constitutional_third.ir_incidence', CASH, targetDate);
-    incidenceFlag(cashThirdIncidence, 'constitutional_third_on_cash_allowance', 'social_security', 'no');
+    const cashThirdSocialSecurity = incidenceValue(
+      cashThirdIncidence,
+      'constitutional_third_on_cash_allowance',
+      'social_security'
+    );
     incidenceFlag(cashThirdIncidence, 'constitutional_third_on_cash_allowance', 'irrf', 'yes');
 
-    const socialSecurityBase = enjoyedPrincipal.add(enjoyedThird);
+    let socialSecurityBase = enjoyedPrincipal.add(enjoyedThird);
+    if (cashThirdSocialSecurity === 'yes') socialSecurityBase = socialSecurityBase.add(cashThird);
     const inss = SFA.assessInss(release, {
       consumer: CONSUMER,
       context: ENJOYED,
