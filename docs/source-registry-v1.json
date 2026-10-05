@@ -111,20 +111,22 @@
       "source_id": "RFB_SC_209_2021",
       "authority": "Receita Federal / Cosit",
       "role": "administrative_norm",
-      "url": "https://normas.receita.fazenda.gov.br/sijut2consulta/consulta.action?termoBusca=abono+pecuniario",
-      "machine_readability": "html_search_result",
+      "url": "https://normas.receita.fazenda.gov.br/sijut2consulta/anexoOutros.action?idArquivoBinario=64080",
+      "machine_readability": "pdf_text",
       "covers": [
         "vacation.abono.ir_exemption",
         "vacation.abono_constitutional_third.ir_incidence"
       ],
-      "notes": "Abono pecuniário do art. 143 não sofre IR; o terço constitucional incidente sobre o abono, pago durante o contrato, sofre IR.",
+      "notes": "Íntegra oficial em PDF da SC Cosit nº 209/2021. O principal do abono do art. 143 não sofre IR; o terço constitucional incidente sobre o abono, pago durante o contrato, sofre IR.",
       "identity_marker_groups": [
         [
+          "solucao de consulta",
           "209",
           "2021"
         ],
         [
-          "abono pecuniario"
+          "abono pecuniario",
+          "terco constitucional"
         ]
       ]
     },
