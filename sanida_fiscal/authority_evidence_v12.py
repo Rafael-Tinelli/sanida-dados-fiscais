@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from io import BytesIO
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -10,6 +11,7 @@ import unicodedata
 
 import requests
 from bs4 import BeautifulSoup
+from pypdf import PdfReader
 
 from .inss_employee_v1 import (
     PARSER_ID as INSS_PARSER_ID,
@@ -70,6 +72,10 @@ PREFERRED_RULE_SOURCES = {
     "irrf.dependent_deduction": RFB_SOURCE_ID,
     "irrf.simplified_monthly_discount": RFB_SOURCE_ID,
     "irrf.reduction.2026": RFB_SOURCE_ID,
+    "irrf.deductions_by_income_type": "ESOCIAL_TABLES_S13_NT07_2026",
+    "thirteenth.irrf.exclusive_assessment": "ESOCIAL_TABLES_S13_NT07_2026",
+    "vacation.irrf.separate_assessment": "RFB_QA_IRPF_2026",
+    "vacation.abono.ir_exemption": "RFB_QA_IRPF_2026",
     "vacation.irrf.reduction.2026": "PLANALTO_LEI_15270_2025",
     "vacation.abono_constitutional_third.ir_incidence": "RFB_SCI_COSIT_8_2015",
 }
@@ -350,14 +356,22 @@ def _collect_authority_source(
 
 
 def _normalize_visible_text(raw: bytes, media_type: str | None) -> str:
-    """Normalize source text for identity checks, never for semantic extraction."""
-    if "pdf" in (media_type or "").lower():
-        # PDF identity is validated by dedicated source-specific tooling before
-        # it may be promoted into the canonical authority bundle.
-        return ""
-    decoded = raw.decode("utf-8", errors="replace")
-    if "<" in decoded and ">" in decoded:
-        decoded = BeautifulSoup(decoded, "html.parser").get_text(" ", strip=True)
+    """Normalize visible source text solely for identity checks."""
+    media = (media_type or "").lower()
+    if "pdf" in media or raw.startswith(b"%PDF-"):
+        try:
+            reader = PdfReader(BytesIO(raw), strict=True)
+        except Exception as exc:
+            raise AuthorityEvidenceError("authority PDF cannot be parsed") from exc
+        if reader.is_encrypted:
+            raise AuthorityEvidenceError("authority PDF is encrypted")
+        decoded = " ".join(page.extract_text() or "" for page in reader.pages)
+        if not decoded.strip():
+            raise AuthorityEvidenceError("authority PDF has no extractable text")
+    else:
+        decoded = raw.decode("utf-8", errors="replace")
+        if "<" in decoded and ">" in decoded:
+            decoded = BeautifulSoup(decoded, "html.parser").get_text(" ", strip=True)
     normalized = unicodedata.normalize("NFKD", decoded)
     normalized = "".join(ch for ch in normalized if not unicodedata.combining(ch))
     return re.sub(r"\s+", " ", normalized.lower()).strip()
