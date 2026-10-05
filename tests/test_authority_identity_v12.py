@@ -1,15 +1,21 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
 from sanida_fiscal.authority_evidence_v12 import (
     AuthorityEvidenceError,
+    _collect_sci_cosit_8_2015_from_official_api,
+    _retrieval_method,
     _validate_authority_identity,
+    _validate_sci_cosit_8_2015_api_payload,
     select_authority_sources,
 )
+from sanida_fiscal.sources_v1 import RetryPolicy, SnapshotStore, SourceSpec
+from sanida_fiscal.types_v1 import RetrievalMethod
 
 
 REGISTRY = Path("docs/source-registry-v1.json")
@@ -113,3 +119,111 @@ def test_planalto_latin1_identity_bytes_are_decoded_before_validation():
         body=html,
         media_type="text/html",
     )
+
+
+
+def _sci_api_payload(*, id_ato=65843, numero="8", ano="2015", sigla="SCI", orgao="Cosit"):
+    return {
+        "quantidadeTotal": 1,
+        "atos": [
+            {
+                "idAto": id_ato,
+                "numeroAto": numero,
+                "anoAto": ano,
+                "dataAto": "12/06/2015",
+                "dataPublicacao": "06/07/2015",
+                "tipoAto": {
+                    "idTipoAto": 75,
+                    "nomeTipoAto": "Solução de Consulta Interna",
+                    "siglaTipoAto": sigla,
+                },
+                "orgaos": [
+                    {
+                        "idOrgao": 111,
+                        "siglaOrgao": orgao,
+                        "nomeOrgao": "Coordenação-Geral de Tributação",
+                    }
+                ],
+                "ementa": (
+                    "Contribuição previdenciária incide sobre o valor integral do "
+                    "terço constitucional de férias, mesmo quando houver conversão "
+                    "de parte do período de férias em abono pecuniário. Férias "
+                    "indenizadas permanecem fora da hipótese descrita. Para o imposto "
+                    "sobre a renda, o valor do adicional constitucional, inclusive "
+                    "o incidente sobre abono pecuniário, são tributados pelo imposto "
+                    "sobre a renda."
+                ),
+            }
+        ],
+    }
+
+
+def test_sci_8_official_api_record_proves_exact_material_identity():
+    raw = json.dumps(_sci_api_payload(), ensure_ascii=False).encode("utf-8")
+    _validate_sci_cosit_8_2015_api_payload(raw)
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        {"idAto": 99999},
+        {"numeroAto": "9"},
+        {"anoAto": "2016"},
+        {"siglaTipoAto": "SC"},
+        {"siglaOrgao": "Disit"},
+    ],
+)
+def test_sci_8_official_api_record_rejects_wrong_identity(mutation):
+    payload = _sci_api_payload()
+    row = payload["atos"][0]
+    if "siglaTipoAto" in mutation:
+        row["tipoAto"]["siglaTipoAto"] = mutation["siglaTipoAto"]
+    elif "siglaOrgao" in mutation:
+        row["orgaos"][0]["siglaOrgao"] = mutation["siglaOrgao"]
+        row["orgaos"][0]["nomeOrgao"] = "Divisão de Tributação"
+    else:
+        row.update(mutation)
+    raw = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    with pytest.raises(AuthorityEvidenceError, match="did not identify exactly one"):
+        _validate_sci_cosit_8_2015_api_payload(raw)
+
+
+def test_sci_8_official_api_record_rejects_incomplete_legal_ementa():
+    payload = _sci_api_payload()
+    payload["atos"][0]["ementa"] = "Solução de Consulta Interna 8/2015 sobre férias."
+    raw = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    with pytest.raises(AuthorityEvidenceError, match="lacks mandatory legal markers"):
+        _validate_sci_cosit_8_2015_api_payload(raw)
+
+
+
+def test_sci_api_fallback_persists_content_addressed_json_and_marks_api(monkeypatch, tmp_path):
+    raw = json.dumps(_sci_api_payload(), ensure_ascii=False).encode("utf-8")
+
+    class Response:
+        status_code = 200
+        content = raw
+        headers = {"content-type": "application/json; charset=utf-8"}
+        url = "https://normas.receita.fazenda.gov.br/api/indexacao/ato/pesquisar"
+
+    monkeypatch.setattr(
+        "sanida_fiscal.authority_evidence_v12.requests.post",
+        lambda *args, **kwargs: Response(),
+    )
+    source = SourceSpec(
+        source_id="RFB_SCI_COSIT_8_2015",
+        url="https://normas.receita.fazenda.gov.br/sijut2consulta/anexoOutros.action?idArquivoBinario=36769",
+        role="administrative_norm",
+        machine_readability="pdf_text",
+    )
+    store = SnapshotStore(tmp_path)
+    result = _collect_sci_cosit_8_2015_from_official_api(
+        source=source,
+        store=store,
+        observed_at_utc=datetime(2026, 10, 5, tzinfo=timezone.utc),
+        retry_policy=RetryPolicy(max_attempts=1, timeout_seconds=1),
+    )
+    assert result.snapshot is not None
+    assert result.snapshot.relative_path.endswith(".json")
+    assert store.read(result.snapshot) == raw
+    assert _retrieval_method(result.snapshot.media_type) == RetrievalMethod.API

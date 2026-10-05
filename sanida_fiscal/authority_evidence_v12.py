@@ -47,6 +47,20 @@ class AuthorityEvidenceError(RuntimeError):
 
 
 PLANALTO_CLT_SOURCE_ID = "PLANALTO_CLT"
+RFB_SCI_COSIT_8_2015_SOURCE_ID = "RFB_SCI_COSIT_8_2015"
+RFB_NORMAS_API_SEARCH_URL = (
+    "https://normas.receita.fazenda.gov.br/api/indexacao/ato/pesquisar"
+)
+RFB_SCI_COSIT_8_2015_ATO_ID = 65843
+RFB_SCI_COSIT_8_2015_REQUIRED_MARKERS = (
+    "contribuicao previdenciaria incide sobre o valor integral do terco constitucional de ferias",
+    "conversao de parte do periodo de ferias em abono pecuniario",
+    "ferias indenizadas",
+    "o valor do adicional constitucional",
+    "inclusive o incidente sobre abono pecuniario",
+    "tributados pelo imposto sobre a renda",
+)
+
 
 
 # Parameter parsers are deliberately limited to Phase 4's known source structures.
@@ -220,6 +234,8 @@ def _retrieval_method(snapshot_media_type: str | None) -> RetrievalMethod:
     media = (snapshot_media_type or "").lower()
     if "pdf" in media:
         return RetrievalMethod.HTTP_PDF
+    if "json" in media:
+        return RetrievalMethod.API
     return RetrievalMethod.HTTP_HTML
 
 
@@ -423,6 +439,191 @@ def _validate_authority_identity(
         )
 
 
+
+def _normalized_legal_text(value: str) -> str:
+    visible = BeautifulSoup(value, "html.parser").get_text(" ", strip=True)
+    normalized = unicodedata.normalize("NFKD", visible)
+    normalized = "".join(ch for ch in normalized if not unicodedata.combining(ch))
+    return re.sub(r"\s+", " ", normalized.lower()).strip()
+
+
+def _validate_sci_cosit_8_2015_api_payload(raw: bytes) -> None:
+    """Prove the exact SCI 8/2015 identity from the current official Normas API."""
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise AuthorityEvidenceError(
+            "RFB_SCI_COSIT_8_2015: official API did not return valid JSON"
+        ) from exc
+    if not isinstance(payload, dict) or not isinstance(payload.get("atos"), list):
+        raise AuthorityEvidenceError(
+            "RFB_SCI_COSIT_8_2015: official API response has no atos list"
+        )
+
+    matches = []
+    for item in payload["atos"]:
+        if not isinstance(item, dict):
+            continue
+        tipo = item.get("tipoAto") if isinstance(item.get("tipoAto"), dict) else {}
+        orgaos = item.get("orgaos") if isinstance(item.get("orgaos"), list) else []
+        has_cosit = any(
+            isinstance(orgao, dict)
+            and (
+                str(orgao.get("siglaOrgao", "")).strip().lower() == "cosit"
+                or "coordenacao-geral de tributacao"
+                in _normalized_legal_text(str(orgao.get("nomeOrgao", "")))
+            )
+            for orgao in orgaos
+        )
+        if (
+            item.get("idAto") == RFB_SCI_COSIT_8_2015_ATO_ID
+            and str(item.get("numeroAto", "")).strip() == "8"
+            and str(item.get("anoAto", "")).strip() == "2015"
+            and str(item.get("dataAto", "")).strip() == "12/06/2015"
+            and str(item.get("dataPublicacao", "")).strip() == "06/07/2015"
+            and str(tipo.get("siglaTipoAto", "")).strip().upper() == "SCI"
+            and _normalized_legal_text(str(tipo.get("nomeTipoAto", "")))
+                == "solucao de consulta interna"
+            and has_cosit
+        ):
+            matches.append(item)
+
+    if len(matches) != 1:
+        raise AuthorityEvidenceError(
+            "RFB_SCI_COSIT_8_2015: official API did not identify exactly one "
+            f"SCI 8/2015 Cosit record; matches={len(matches)}"
+        )
+
+    ementa = _normalized_legal_text(str(matches[0].get("ementa", "")))
+    missing = [
+        marker
+        for marker in RFB_SCI_COSIT_8_2015_REQUIRED_MARKERS
+        if marker not in ementa
+    ]
+    if missing:
+        raise AuthorityEvidenceError(
+            "RFB_SCI_COSIT_8_2015: official API record lacks mandatory legal "
+            f"markers: {missing}"
+        )
+
+
+def _collect_sci_cosit_8_2015_from_official_api(
+    *,
+    source: SourceSpec,
+    store: SnapshotStore,
+    observed_at_utc: datetime,
+    retry_policy: RetryPolicy,
+) -> CollectionResult:
+    """Fallback from the retired binary URL to Receita's current official API."""
+    body = {
+        "tipoData": "dataPublicacao",
+        "dataInicio": "",
+        "dataFim": "",
+        "anoAto": "2015",
+        "numeroAto": "8",
+        "apenasAtosVigentes": False,
+        "apenasAtosInternos": False,
+        "publicado": True,
+        "internet": True,
+        "orgaosSelecionados": "",
+        "tiposAtosSelecionados": "",
+        "refino": {},
+        "paginacaoPaginaAtual": 1,
+        "paginacaoQuantidadePorPagina": 50,
+        "skipAggregations": False,
+        "ordenacaoColuna": "",
+        "ordenacaoDirecao": "",
+        "tipoPesquisa": "formulario",
+        "termo": "",
+    }
+    api_source = SourceSpec(
+        source_id=source.source_id,
+        url=RFB_NORMAS_API_SEARCH_URL,
+        role=source.role,
+        machine_readability="api",
+    )
+    last_kind = FailureKind.NETWORK_ERROR
+    last_detail: str | None = None
+    last_status: int | None = None
+
+    for attempt in range(1, retry_policy.max_attempts + 1):
+        try:
+            response = requests.post(
+                RFB_NORMAS_API_SEARCH_URL,
+                json=body,
+                headers={
+                    "Accept": "application/json, text/plain, */*",
+                    "Content-Type": "application/json; charset=UTF-8",
+                    "User-Agent": AUTHORITY_HEADERS["User-Agent"],
+                },
+                timeout=retry_policy.timeout_seconds,
+                allow_redirects=True,
+            )
+            last_status = response.status_code
+            if 200 <= response.status_code < 300:
+                _validate_sci_cosit_8_2015_api_payload(response.content)
+                snapshot = store.persist(
+                    source=api_source,
+                    observed_at_utc=observed_at_utc,
+                    body=response.content,
+                    media_type=response.headers.get("content-type")
+                    or "application/json",
+                    suffix=".json",
+                )
+                return CollectionResult(
+                    source_id=source.source_id,
+                    source_url=RFB_NORMAS_API_SEARCH_URL,
+                    observed_at_utc=observed_at_utc,
+                    status=CollectionStatus.COLLECTED,
+                    attempts=attempt,
+                    http_status=response.status_code,
+                    etag=response.headers.get("etag"),
+                    last_modified=response.headers.get("last-modified"),
+                    snapshot=snapshot,
+                )
+            if response.status_code == 429 or 500 <= response.status_code < 600:
+                last_kind = FailureKind.HTTP_SERVER_ERROR
+                last_detail = f"http_{response.status_code}"
+                if attempt < retry_policy.max_attempts:
+                    continue
+            else:
+                return CollectionResult(
+                    source_id=source.source_id,
+                    source_url=RFB_NORMAS_API_SEARCH_URL,
+                    observed_at_utc=observed_at_utc,
+                    status=CollectionStatus.SOURCE_UNAVAILABLE,
+                    attempts=attempt,
+                    http_status=response.status_code,
+                    failure_kind=FailureKind.HTTP_CLIENT_ERROR,
+                    error_detail=f"http_{response.status_code}",
+                )
+        except AuthorityEvidenceError:
+            raise
+        except requests.Timeout as exc:
+            last_kind = FailureKind.TIMEOUT
+            last_detail = type(exc).__name__
+            if attempt < retry_policy.max_attempts:
+                continue
+        except requests.RequestException as exc:
+            last_kind = FailureKind.NETWORK_ERROR
+            last_detail = type(exc).__name__
+            if attempt < retry_policy.max_attempts:
+                continue
+
+        return CollectionResult(
+            source_id=source.source_id,
+            source_url=RFB_NORMAS_API_SEARCH_URL,
+            observed_at_utc=observed_at_utc,
+            status=CollectionStatus.SOURCE_UNAVAILABLE,
+            attempts=attempt,
+            http_status=last_status,
+            failure_kind=last_kind,
+            error_detail=last_detail,
+        )
+
+    raise AssertionError("SCI Cosit official API collector loop ended unexpectedly")
+
+
 def collect_authority_evidence(
     *,
     source_registry_path: Path,
@@ -481,12 +682,33 @@ def collect_authority_evidence(
             raise AuthorityEvidenceError(f"{source_id}: official source unavailable: {detail}")
 
         raw_body = store.read(result.snapshot)
-        _validate_authority_identity(
-            source_id=source_id,
-            metadata=registry_metadata.get(source_id, {}),
-            body=raw_body,
-            media_type=result.snapshot.media_type,
-        )
+        try:
+            _validate_authority_identity(
+                source_id=source_id,
+                metadata=registry_metadata.get(source_id, {}),
+                body=raw_body,
+                media_type=result.snapshot.media_type,
+            )
+        except AuthorityEvidenceError:
+            if source_id != RFB_SCI_COSIT_8_2015_SOURCE_ID:
+                raise
+            result = _collect_sci_cosit_8_2015_from_official_api(
+                source=source,
+                store=store,
+                observed_at_utc=observed_at_utc,
+                retry_policy=policy,
+            )
+            if result.status != CollectionStatus.COLLECTED or result.snapshot is None:
+                detail = result.error_detail or (
+                    result.failure_kind.value
+                    if result.failure_kind
+                    else result.status.value
+                )
+                raise AuthorityEvidenceError(
+                    f"{source_id}: official API fallback unavailable: {detail}"
+                )
+            raw_body = store.read(result.snapshot)
+            _validate_sci_cosit_8_2015_api_payload(raw_body)
 
         parser_id = None
         parser_version = None
