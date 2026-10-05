@@ -30,5 +30,8 @@ def test_frontend_vacation_runtime_is_contract_driven_across_af01_promotion():
     assert "cashThirdSocialSecurity" in frontend
     assert "incidenceValue(" in frontend
     assert "socialSecurityBase = socialSecurityBase.add(cashThird)" in frontend
-    assert "'social_security', 'no'" not in frontend
+    assert (
+        "incidenceFlag(cashThirdIncidence, 'constitutional_third_on_cash_allowance', "
+        "'social_security', 'no')" not in frontend
+    )
     assert "'social_security', 'yes'" in candidate
