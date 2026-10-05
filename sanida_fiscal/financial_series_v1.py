@@ -279,11 +279,14 @@ def run_financial_history_source_segments(
     transport: httpx.BaseTransport | None = None,
     headers: dict[str, str] | None = None,
     months_per_segment: int = 12,
+    min_months_per_segment: int = 1,
 ) -> list[SourcePipelineRun]:
+    """Collect bounded history, recursively shrinking only failed windows."""
+    if min_months_per_segment < 1 or min_months_per_segment > months_per_segment:
+        raise ValueError("min_months_per_segment must be within 1..months_per_segment")
     runs: list[SourcePipelineRun] = []
-    for segment_start, segment_end in financial_history_segments(
-        start_date, end_date, months_per_segment=months_per_segment
-    ):
+
+    def collect_window(segment_start: date, segment_end: date) -> None:
         run = run_financial_history_source_pipeline(
             source_id=source_id,
             observed_at_utc=observed_at_utc,
@@ -298,13 +301,58 @@ def run_financial_history_source_segments(
             transport=transport,
             headers=headers,
         )
-        if run.candidate is None or run.candidate.status != ParseStatus.PARSED:
+        if run.candidate is not None and run.candidate.status == ParseStatus.PARSED:
+            runs.append(run)
+            return
+
+        month_count = len(month_keys(segment_start, segment_end))
+        if month_count <= min_months_per_segment:
             detail = run.state.last_source_error or run.state.last_parser_error or "not_parsed"
             raise FinancialSeriesBoundaryError(
                 f"{source_id}: history segment {segment_start.isoformat()}.."
                 f"{segment_end.isoformat()} failed closed: {detail}"
             )
-        runs.append(run)
+
+        # Retry the failed range in smaller contiguous windows. Successful
+        # sibling ranges are kept immutable; no partial artifact is emitted
+        # unless the entire requested interval eventually validates.
+        child_months = max(min_months_per_segment, month_count // 2)
+        children = financial_history_segments(
+            segment_start,
+            segment_end,
+            months_per_segment=child_months,
+        )
+        if len(children) < 2:
+            child_months = max(min_months_per_segment, month_count - 1)
+            children = financial_history_segments(
+                segment_start,
+                segment_end,
+                months_per_segment=child_months,
+            )
+        if len(children) < 2:
+            detail = run.state.last_source_error or run.state.last_parser_error or "not_parsed"
+            raise FinancialSeriesBoundaryError(
+                f"{source_id}: cannot subdivide failed history segment "
+                f"{segment_start.isoformat()}..{segment_end.isoformat()}: {detail}"
+            )
+        for child_start, child_end in children:
+            collect_window(child_start, child_end)
+
+    for segment_start, segment_end in financial_history_segments(
+        start_date, end_date, months_per_segment=months_per_segment
+    ):
+        collect_window(segment_start, segment_end)
+
+    # Recursive subdivision appends children in chronological order; prove
+    # total coverage before returning any runs to an artifact builder.
+    merged = _merge_segment_payloads(
+        runs,
+        source_id=source_id,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    if not merged.get("observations"):
+        raise FinancialSeriesBoundaryError(f"{source_id}: segmented history is empty")
     return runs
 
 
