@@ -302,3 +302,55 @@ def test_second_daily_run_reuses_closed_segments_and_fetches_only_current_chunk(
     assert second.meta["segment_count"] == 10
     assert sum(bool(x["reused_immutable_segment"]) for x in second.meta["segments"]) == 9
     assert second.payload == first.payload
+
+
+def test_chunked_history_adaptively_subdivides_failed_large_windows(tmp_path: Path):
+    rows = json.loads(_raw_selic())
+    calls: list[tuple[date, date]] = []
+
+    def handler(request: httpx.Request):
+        seg_start = datetime.strptime(request.url.params["dataInicial"], "%d/%m/%Y").date()
+        seg_end = datetime.strptime(request.url.params["dataFinal"], "%d/%m/%Y").date()
+        calls.append((seg_start, seg_end))
+        if len(month_keys(seg_start, seg_end)) > 3:
+            return httpx.Response(502, content=b"gateway")
+        selected = []
+        for row in rows:
+            observed = datetime.strptime(row["data"], "%d/%m/%Y").date()
+            if seg_start <= observed <= seg_end:
+                selected.append(row)
+        return httpx.Response(
+            200,
+            content=json.dumps(selected).encode("utf-8"),
+            headers={"content-type": "application/json"},
+        )
+
+    start, end = financial_series_window(AS_OF)
+    bundle = run_financial_history_source_pipeline_chunked(
+        source_id=SELIC_SOURCE_ID,
+        observed_at_utc=OBSERVED,
+        start_date=start,
+        end_date=end,
+        registry_path=Path("docs/financial-source-registry-v1.json"),
+        snapshot_root=tmp_path / "snapshots",
+        state_root=tmp_path / "state",
+        candidate_root=tmp_path / "candidates",
+        max_attempts=1,
+        transport=httpx.MockTransport(handler),
+        months_per_chunk=12,
+    )
+
+    assert len(calls) > 10
+    assert bundle.meta["segment_count"] > 10
+    assert all(
+        len(
+            month_keys(
+                date.fromisoformat(segment["start_date"]),
+                date.fromisoformat(segment["end_date"]),
+            )
+        ) <= 3
+        for segment in bundle.meta["segments"]
+    )
+    assert bundle.payload["start_date"] == start.isoformat()
+    assert bundle.payload["end_date"] == end.isoformat()
+    assert len(bundle.payload["observations"]) == FINANCIAL_SERIES_MONTHS
