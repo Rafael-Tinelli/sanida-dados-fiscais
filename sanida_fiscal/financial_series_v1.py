@@ -86,7 +86,7 @@ def financial_history_segments(
     for index, (seg_start, seg_end) in enumerate(segments):
         if index and seg_start != segments[index - 1][1] + timedelta(days=1):
             raise FinancialSeriesBoundaryError("history segments are not contiguous")
-        if len(month_keys(seg_start, seg_end)) > months_per_segment + 1:
+        if len(month_keys(seg_start, seg_end)) > months_per_segment:
             raise FinancialSeriesBoundaryError("history segment exceeds bounded month window")
     return segments
 
