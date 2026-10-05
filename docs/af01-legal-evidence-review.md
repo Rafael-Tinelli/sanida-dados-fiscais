@@ -13,7 +13,7 @@
 - Não confundir fração do terço constitucional obrigatório com adicional extraordinário concedido pelo empregador.
 - Apuração isolada do INSS de férias não substitui o fechamento por competência da folha.
 
-**Ponto de revisão obrigatória antes de produção:** conferir classificação e incidência de eventos eSocial vigentes, especialmente rubricas 1017 e 1023, contra o entendimento da SCI. Uma rubrica agregada não justifica incluir o principal isento nem duplicar a parcela do terço. Qualquer divergência normativa atual deve bloquear promoção automática.
+**Reconciliação eSocial (05/10/2026):** a Tabela 03 vigente do eSocial S-1.3/NT 07/2026 classifica a natureza 1017 como terço constitucional de férias e a natureza 1023 como abono pecuniário, cuja descrição agrega o adicional constitucional. O leiaute S-1010, porém, trata `natRubr` e `codIncCP` como campos distintos. Portanto, a natureza agregada 1023 é classificação operacional e não autoridade material para afastar a incidência definida pela SCI Cosit nº 8/2015. O motor deve continuar separando internamente o principal do abono (CP/IR não) da fração do terço constitucional legal (CP/IR sim), sem duplicar o terço. Se uma integração de folha não conseguir representar essa separação de modo verificável, deve bloquear a adaptação em vez de sobrescrever a regra fiscal.
 
 **Critérios de homologação material:** o arquivo obtido deve ser PDF verdadeiro a partir da URL oficial, conter o cabeçalho SCI nº 8/2015 e as teses de CP e IR na íntegra, ter hash SHA-256 dos bytes originais e snapshot imutável verificável. Texto indexado de buscador ou resposta HTML sem PDF não satisfazem esta etapa.
 
