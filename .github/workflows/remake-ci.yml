@@ -99,6 +99,122 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
+      - name: Probe current Normas API for SCI Cosit 8/2015
+        run: |
+          python - <<'PY'
+          from hashlib import sha256
+          import json
+          from pathlib import Path
+          import requests
+
+          root = Path("/tmp/af01-api-probe")
+          root.mkdir(parents=True, exist_ok=True)
+          base = "https://normas.receita.fazenda.gov.br/api"
+          session = requests.Session()
+          session.headers.update({
+              "User-Agent": "SanidaLegalEvidenceForensic/1.2",
+              "Accept": "application/json, text/plain, */*",
+          })
+
+          report = {"gets": {}, "searches": []}
+
+          for name, path in (("tipos", "/tipoAto/ativo"), ("orgaos", "/orgao/ativo")):
+              resp = session.get(base + path, timeout=(8, 30))
+              entry = {
+                  "url": resp.url,
+                  "status": resp.status_code,
+                  "content_type": resp.headers.get("content-type", ""),
+                  "bytes": len(resp.content),
+                  "sha256": sha256(resp.content).hexdigest(),
+                  "text": resp.text[:200000],
+              }
+              report["gets"][name] = entry
+              (root / f"{name}.response").write_bytes(resp.content)
+
+          common = {
+              "tipoData": "dataPublicacao",
+              "dataInicio": "",
+              "dataFim": "",
+              "anoAto": "",
+              "numeroAto": "",
+              "apenasAtosVigentes": False,
+              "apenasAtosInternos": False,
+              "publicado": True,
+              "internet": True,
+              "orgaosSelecionados": "",
+              "tiposAtosSelecionados": "",
+              "refino": {},
+              "paginacaoPaginaAtual": 1,
+              "paginacaoQuantidadePorPagina": 50,
+              "skipAggregations": False,
+              "ordenacaoColuna": "",
+              "ordenacaoDirecao": "",
+          }
+          variants = [
+              ("texto_longo", dict(common, tipoPesquisa="relevancia", termo='"Solução de Consulta Interna" Cosit 8 2015')),
+              ("texto_curto", dict(common, tipoPesquisa="relevancia", termo='"Solução de Consulta Interna" "8/2015"')),
+              ("numero_ano", dict(common, tipoPesquisa="formulario", termo="", numeroAto="8", anoAto="2015")),
+              ("terco", dict(common, tipoPesquisa="relevancia", termo='"terço constitucional de férias"')),
+          ]
+
+          endpoint = base + "/indexacao/ato/pesquisar"
+          for name, body in variants:
+              resp = session.post(
+                  endpoint,
+                  data=json.dumps(body, ensure_ascii=False),
+                  headers={"Content-Type": "application/json; charset=UTF-8"},
+                  timeout=(8, 45),
+              )
+              raw = resp.content
+              (root / f"{name}.response").write_bytes(raw)
+              parsed = None
+              try:
+                  parsed = resp.json()
+              except Exception:
+                  pass
+              entry = {
+                  "name": name,
+                  "request": body,
+                  "url": resp.url,
+                  "status": resp.status_code,
+                  "content_type": resp.headers.get("content-type", ""),
+                  "bytes": len(raw),
+                  "sha256": sha256(raw).hexdigest(),
+                  "json": parsed,
+                  "text_prefix": resp.text[:4000] if parsed is None else None,
+              }
+              report["searches"].append(entry)
+
+          (root / "api-probe.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
+          summary = []
+          for item in report["searches"]:
+              data = item["json"]
+              atos = data.get("atos", []) if isinstance(data, dict) else []
+              summary.append({
+                  "name": item["name"],
+                  "status": item["status"],
+                  "total": data.get("quantidadeTotal") if isinstance(data, dict) else None,
+                  "sufixo": data.get("sufixoUrlVisualizacaoAtoSequencial") if isinstance(data, dict) else None,
+                  "atos": [{
+                      "idAto": a.get("idAto"),
+                      "numeroAto": a.get("numeroAto"),
+                      "tipoAto": a.get("tipoAto"),
+                      "dataAto": a.get("dataAto"),
+                      "ementa": a.get("ementa"),
+                      "urlVisualizacao": a.get("urlVisualizacao"),
+                  } for a in atos[:20]],
+              })
+          print("AF01_API_PROBE " + json.dumps(summary, ensure_ascii=False, sort_keys=True))
+          PY
+
+      - name: Upload Normas API probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: af01-api-probe-${{ github.sha }}
+          path: /tmp/af01-api-probe
+          if-no-files-found: error
+          retention-days: 3
+
   validate:
     if: ${{ github.head_ref != 'probe/af01-official-evidence-20261005' }}
     runs-on: ubuntu-latest
