@@ -80,6 +80,59 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
 
+      - name: Preserve blocked AF01 response for forensic inspection
+        if: ${{ always() && github.head_ref == 'probe/af01-official-evidence-20261005' }}
+        run: |
+          python - <<'PY'
+          from hashlib import sha256
+          import json
+          from pathlib import Path
+          from urllib.parse import urljoin
+          import requests
+          from bs4 import BeautifulSoup
+
+          url = "https://normas.receita.fazenda.gov.br/sijut2consulta/anexoOutros.action?idArquivoBinario=36769"
+          response = requests.get(
+              url,
+              headers={"Accept": "application/pdf,text/html;q=0.9,*/*;q=0.8", "User-Agent": "SanidaLegalEvidenceForensic/1.0"},
+              timeout=(8, 20),
+              allow_redirects=True,
+          )
+          root = Path("/tmp/af01-forensic")
+          root.mkdir(parents=True, exist_ok=True)
+          (root / "response.bin").write_bytes(response.content)
+          meta = {
+              "status": response.status_code,
+              "content_type": response.headers.get("content-type", ""),
+              "final_url": response.url,
+              "bytes": len(response.content),
+              "sha256": sha256(response.content).hexdigest(),
+              "headers": dict(response.headers),
+          }
+          (root / "response-meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n")
+          soup = BeautifulSoup(response.content, "html.parser")
+          found = []
+          for tag in soup.find_all(True):
+              for attr in ("href", "src", "action", "data", "value"):
+                  value = tag.get(attr)
+                  if not isinstance(value, str):
+                      continue
+                  low = value.lower()
+                  if any(token in low for token in ("pdf", "arquivo", "download", "anexo", "binario", "36769")):
+                      found.append({"tag": tag.name, "attr": attr, "value": value, "absolute": urljoin(response.url, value)})
+          (root / "candidate-links.json").write_text(json.dumps(found, ensure_ascii=False, indent=2) + "\n")
+          print("AF01_FORENSIC " + json.dumps({"meta": meta, "candidate_links": found[:30]}, ensure_ascii=False, sort_keys=True))
+          PY
+
+      - name: Upload blocked AF01 forensic response
+        if: ${{ always() && github.head_ref == 'probe/af01-official-evidence-20261005' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: af01-blocked-response-${{ github.sha }}
+          path: /tmp/af01-forensic
+          if-no-files-found: error
+          retention-days: 3
+
       - name: Diagnose recovery sources live (read-only)
         if: ${{ github.head_ref == 'fix/main-fiscal-recovery-20261005' }}
         continue-on-error: true
