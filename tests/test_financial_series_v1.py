@@ -289,3 +289,16 @@ def test_chunked_history_segment_states_are_isolated(tmp_path: Path):
         payload = json.loads(state.read_text())
         assert payload["source_url"] == segment["url"]
         assert payload["last_candidate_sha256"] == segment["candidate_sha256"]
+
+
+def test_second_daily_run_reuses_closed_segments_and_fetches_only_current_chunk(tmp_path: Path):
+    rows = json.loads(_raw_selic())
+    first, first_calls = _chunked_run(tmp_path, SELIC_SOURCE_ID, rows)
+    second, second_calls = _chunked_run(tmp_path, SELIC_SOURCE_ID, rows)
+    assert len(first_calls) == 10
+    assert len(second_calls) == 1
+    assert first.meta["reused_segment_count"] == 0
+    assert second.meta["reused_segment_count"] == 9
+    assert second.meta["segment_count"] == 10
+    assert sum(bool(x["reused_immutable_segment"]) for x in second.meta["segments"]) == 9
+    assert second.payload == first.payload
