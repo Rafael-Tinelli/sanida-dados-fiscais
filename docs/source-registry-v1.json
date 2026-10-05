@@ -244,12 +244,17 @@
         "irrf.income_type",
         "irrf.deductions_by_income_type",
         "termination.reason_scope",
-        "vacation.tax_components"
+        "vacation.tax_components",
+        "vacation.abono_pecuniario",
+        "vacation.abono_constitutional_third.ir_incidence"
       ],
-      "notes": "Tabela 19 codifica motivos de desligamento; Tabela 21 separa mensal, 13º e férias para base, retenção e deduções de IR.",
+      "notes": "Tabela 03 classifica as naturezas 1017 (terço constitucional) e 1023 (abono pecuniário, descrição agregando o adicional constitucional); o leiaute S-1010 trata natRubr e codIncCP como campos distintos. A classificação operacional da rubrica não substitui a autoridade jurídico-tributária para decidir incidência. Tabela 19 codifica motivos de desligamento; Tabela 21 separa mensal, 13º e férias para base, retenção e deduções de IR.",
       "identity_marker_groups": [
         [
           "esocial"
+        ],
+        [
+          "tabela 03"
         ],
         [
           "tabela 19"
@@ -282,19 +287,6 @@
           "desligamento"
         ]
       ]
-    },
-    {
-      "source_id": "ESOCIAL_SIMPLIFIED_ABONO_2026",
-      "authority": "eSocial",
-      "role": "official_operational",
-      "url": "https://www.gov.br/esocial/pt-br/documentacao-tecnica/manuais/manual-do-esocial-segurado-especial-versao-05-02-2026-versao-completa.pdf",
-      "machine_readability": "pdf_text",
-      "covers": [
-        "vacation.abono.ir_exemption",
-        "vacation.abono_constitutional_third.ir_incidence",
-        "vacation.abono.cp_exemption"
-      ],
-      "notes": "Rubrica de abono: sem CP/IR/FGTS; rubrica do terço sobre abono: sem CP, com IR, sem FGTS."
     },
     {
       "source_id": "MTE_TERMINATION_FAQ",

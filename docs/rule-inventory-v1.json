@@ -338,7 +338,7 @@
       "source_ids": [
         "RFB_QA_IRPF_2026",
         "RFB_SC_209_2021",
-        "ESOCIAL_SIMPLIFIED_ABONO_2026"
+        "ESOCIAL_TABLES_S13_NT07_2026"
       ],
       "phase1_status": "closed",
       "current_state": "implemented_only_if_component_split_is_correct",
@@ -355,7 +355,7 @@
       "source_ids": [
         "RFB_SCI_COSIT_8_2015",
         "RFB_SC_209_2021",
-        "ESOCIAL_SIMPLIFIED_ABONO_2026"
+        "ESOCIAL_TABLES_S13_NT07_2026"
       ],
       "phase1_status": "closed",
       "current_state": "new_P0_defect",

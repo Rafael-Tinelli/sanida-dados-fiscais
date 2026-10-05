@@ -50,10 +50,10 @@ def test_assembler_marks_third_yes_only_in_candidate_overlay():
     assert row["social_security"]=="yes" and row["irrf"]=="yes"
     assert next(r for r in raw["rules"] if r["rule_id"]=="vacation.abono_constitutional_third.ir_incidence")["payload"]["components"][0]["social_security"]=="no"
 
-def test_release_gate_requires_official_cosit_provenance():
+def test_release_gate_requires_material_official_cosit_snapshot():
     from types import SimpleNamespace
     from sanida_fiscal.publication_v1 import _assert_af01_source_evidence, PromotionBlockedError
-    from sanida_fiscal.types_v1 import IncidenceProfilePayload
+    from sanida_fiscal.types_v1 import IncidenceProfilePayload, SourceObservationStatus
     from pytest import raises
     profile=IncidenceProfilePayload.model_validate({
         "type":"incidence_profile",
@@ -62,9 +62,57 @@ def test_release_gate_requires_official_cosit_provenance():
     rule=SimpleNamespace(
         rule_id="vacation.abono_constitutional_third.ir_incidence",
         payload=profile,
-        provenance=[SimpleNamespace(source_id="RFB_SC_209_2021")]
+        provenance=[SimpleNamespace(
+            source_id="RFB_SC_209_2021",
+            status=SourceObservationStatus.AVAILABLE,
+            snapshot_sha256="a"*64,
+            snapshot_path="snapshots/sc-209.pdf",
+        )]
     )
     with raises(PromotionBlockedError, match="RFB_SCI_COSIT_8_2015"):
         _assert_af01_source_evidence(SimpleNamespace(rules=[rule]))
-    rule.provenance=[SimpleNamespace(source_id="RFB_SCI_COSIT_8_2015")]
+
+    for evidence in (
+        SimpleNamespace(
+            source_id="RFB_SCI_COSIT_8_2015",
+            status=SourceObservationStatus.UNAVAILABLE,
+            snapshot_sha256=None,
+            snapshot_path=None,
+        ),
+        SimpleNamespace(
+            source_id="RFB_SCI_COSIT_8_2015",
+            status=SourceObservationStatus.AVAILABLE,
+            snapshot_sha256=None,
+            snapshot_path=None,
+        ),
+        SimpleNamespace(
+            source_id="RFB_SCI_COSIT_8_2015",
+            status=SourceObservationStatus.AVAILABLE,
+            snapshot_sha256="b"*64,
+            snapshot_path=None,
+        ),
+    ):
+        rule.provenance=[evidence]
+        with raises(PromotionBlockedError, match="immutable snapshot"):
+            _assert_af01_source_evidence(SimpleNamespace(rules=[rule]))
+
+    rule.provenance=[SimpleNamespace(
+        source_id="RFB_SCI_COSIT_8_2015",
+        status=SourceObservationStatus.AVAILABLE,
+        snapshot_sha256="c"*64,
+        snapshot_path="snapshots/authority/rfb-sci-cosit-8-2015.pdf",
+    )]
     _assert_af01_source_evidence(SimpleNamespace(rules=[rule]))
+
+
+def test_esocial_simplified_abono_source_cannot_remain_authority():
+    registry=json.loads(Path("docs/source-registry-v1.json").read_text())
+    inventory=json.loads(Path("docs/rule-inventory-v1.json").read_text())
+    assert not any(x["source_id"] == "ESOCIAL_SIMPLIFIED_ABONO_2026" for x in registry["sources"])
+    for rule_id in (
+        "vacation.abono.ir_exemption",
+        "vacation.abono_constitutional_third.ir_incidence",
+    ):
+        rule=next(x for x in inventory["rules"] if x["rule_id"] == rule_id)
+        assert "ESOCIAL_SIMPLIFIED_ABONO_2026" not in rule["source_ids"]
+        assert "ESOCIAL_TABLES_S13_NT07_2026" in rule["source_ids"]

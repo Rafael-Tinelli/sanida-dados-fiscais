@@ -89,7 +89,7 @@ def test_canonical_selection_excludes_broken_normas_spa_sources():
         ),
         (
             "ESOCIAL_TABLES_S13_NT07_2026",
-            "<html><body>eSocial — Tabela 19 — Tabela 21</body></html>",
+            "<html><body>eSocial — Tabela 03 — Tabela 19 — Tabela 21</body></html>",
         ),
     ],
 )

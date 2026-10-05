@@ -476,7 +476,7 @@
           "retrieval_method": "manual"
         },
         {
-          "source_id": "ESOCIAL_SIMPLIFIED_ABONO_2026",
+          "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
           "role": "official_operational",
           "observed_at_utc": "2026-09-13T12:00:00Z",
           "status": "AVAILABLE",

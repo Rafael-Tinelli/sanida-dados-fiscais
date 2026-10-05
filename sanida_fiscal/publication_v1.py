@@ -10,7 +10,7 @@ from typing import Any, Mapping
 from .contract_v1 import FiscalContractV1
 from .contract_v1_2 import parse_fiscal_contract
 from .semantic_diff_v1 import ContractDiffV1, PromotionOutcome, assess_promotion
-from .types_v1 import ChangeClass, ContractStatus, ReleaseApprovalMode
+from .types_v1 import ChangeClass, ContractStatus, ReleaseApprovalMode, SourceObservationStatus
 
 
 RELEASE_STORE_SCHEMA_VERSION = "1.0.0"
@@ -163,10 +163,14 @@ def _assert_af01_source_evidence(candidate) -> None:
         ):
             if not any(
                 evidence.source_id == "RFB_SCI_COSIT_8_2015"
+                and evidence.status == SourceObservationStatus.AVAILABLE
+                and bool(evidence.snapshot_sha256)
+                and bool(evidence.snapshot_path)
                 for evidence in rule.provenance
             ):
                 raise PromotionBlockedError(
-                    "AF01 CP=yes requires official RFB_SCI_COSIT_8_2015 evidence"
+                    "AF01 CP=yes requires material RFB_SCI_COSIT_8_2015 evidence "
+                    "(AVAILABLE immutable snapshot with SHA-256 and snapshot path)"
                 )
 
 
