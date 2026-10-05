@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 import json
 from pathlib import Path
@@ -15,11 +15,14 @@ from sanida_fiscal.financial_series_v1 import (
     SELIC_SOURCE_ID,
     FinancialSeriesBoundaryError,
     build_financial_series_artifact,
+    build_financial_series_artifact_from_segments,
+    financial_history_segments,
     financial_series_window,
     month_keys,
     parse_bcb_cdi_history_snapshot,
     parse_bcb_selic_history_snapshot,
     run_financial_history_source_pipeline,
+    run_financial_history_source_segments,
     shift_months,
     validate_financial_series_artifact,
 )
@@ -207,3 +210,128 @@ def test_stale_latest_cdi_history_fails_closed(tmp_path: Path):
             generated_at_utc="2026-09-19T20:00:00Z",
             as_of_date=AS_OF,
         )
+
+
+def _segmented_handler(source_id: str, *, fail_start: date | None = None):
+    all_rows = json.loads(_raw_selic() if source_id == SELIC_SOURCE_ID else _raw_cdi())
+
+    def handler(request: httpx.Request):
+        start = datetime.strptime(request.url.params["dataInicial"], "%d/%m/%Y").date()
+        end = datetime.strptime(request.url.params["dataFinal"], "%d/%m/%Y").date()
+        assert start <= end
+        assert len(month_keys(start, end)) <= 12
+        if fail_start is not None and start == fail_start:
+            return httpx.Response(503, content=b"temporary unavailable")
+        selected = []
+        for row in all_rows:
+            observed = datetime.strptime(row["data"], "%d/%m/%Y").date()
+            if start <= observed <= end:
+                selected.append(row)
+        return httpx.Response(
+            200,
+            content=json.dumps(selected).encode("utf-8"),
+            headers={"content-type": "application/json"},
+        )
+
+    return handler
+
+
+def _segmented_runs(tmp_path: Path, source_id: str, *, fail_start: date | None = None):
+    start, end = financial_series_window(AS_OF)
+    return run_financial_history_source_segments(
+        source_id=source_id,
+        observed_at_utc=OBSERVED,
+        start_date=start,
+        end_date=end,
+        registry_path=Path("docs/financial-source-registry-v1.json"),
+        snapshot_root=tmp_path / "snapshots",
+        state_root=tmp_path / "state",
+        candidate_root=tmp_path / "candidates",
+        transport=httpx.MockTransport(_segmented_handler(source_id, fail_start=fail_start)),
+        max_attempts=1,
+    )
+
+
+def test_history_segments_are_contiguous_and_bounded_to_twelve_months():
+    start, end = financial_series_window(AS_OF)
+    segments = financial_history_segments(start, end)
+    assert len(segments) == 10
+    assert segments[0][0] == start
+    assert segments[-1][1] == end
+    for index, (seg_start, seg_end) in enumerate(segments):
+        assert len(month_keys(seg_start, seg_end)) <= 12
+        if index:
+            assert seg_start == segments[index - 1][1] + timedelta(days=1)
+
+
+def test_segmented_history_builds_same_public_120_month_semantics(tmp_path: Path):
+    selic = _segmented_runs(tmp_path, SELIC_SOURCE_ID)
+    cdi = _segmented_runs(tmp_path, CDI_SOURCE_ID)
+    artifact = build_financial_series_artifact_from_segments(
+        selic_runs=selic,
+        cdi_runs=cdi,
+        generated_at_utc="2026-09-19T20:00:00Z",
+        as_of_date=AS_OF,
+    )
+    assert artifact["schema_version"] == FINANCIAL_SERIES_SCHEMA_VERSION
+    assert len(artifact["points"]) == 120
+    assert artifact["points"][0]["month"] == "2016-10"
+    assert artifact["points"][-1]["month"] == "2026-09"
+    for label in ("selic", "cdi"):
+        meta = artifact["meta"]["sources"][label]
+        assert meta["collection_mode"] == "segmented_bounded_windows_v1"
+        assert meta["segment_count"] == 10
+        assert len(meta["segments"]) == 10
+        assert all(row["snapshot_sha256"] and row["candidate_sha256"] for row in meta["segments"])
+    ok, errors = validate_financial_series_artifact(artifact, as_of_date=AS_OF)
+    assert ok, errors
+
+
+def test_segmented_history_fails_closed_when_any_chunk_is_unavailable(tmp_path: Path):
+    start, end = financial_series_window(AS_OF)
+    second_start = financial_history_segments(start, end)[1][0]
+    with pytest.raises(FinancialSeriesBoundaryError, match="history segment"):
+        _segmented_runs(tmp_path, SELIC_SOURCE_ID, fail_start=second_start)
+
+
+def test_segmented_history_adaptively_splits_transient_large_window_failures(tmp_path: Path):
+    start, end = financial_series_window(AS_OF)
+    all_rows = json.loads(_raw_selic())
+
+    def handler(request: httpx.Request):
+        seg_start = datetime.strptime(request.url.params["dataInicial"], "%d/%m/%Y").date()
+        seg_end = datetime.strptime(request.url.params["dataFinal"], "%d/%m/%Y").date()
+        if len(month_keys(seg_start, seg_end)) > 3:
+            return httpx.Response(502, content=b"gateway")
+        selected = []
+        for row in all_rows:
+            observed = datetime.strptime(row["data"], "%d/%m/%Y").date()
+            if seg_start <= observed <= seg_end:
+                selected.append(row)
+        return httpx.Response(
+            200,
+            content=json.dumps(selected).encode("utf-8"),
+            headers={"content-type": "application/json"},
+        )
+
+    runs = run_financial_history_source_segments(
+        source_id=SELIC_SOURCE_ID,
+        observed_at_utc=OBSERVED,
+        start_date=start,
+        end_date=end,
+        registry_path=Path("docs/financial-source-registry-v1.json"),
+        snapshot_root=tmp_path / "snapshots",
+        state_root=tmp_path / "state",
+        candidate_root=tmp_path / "candidates",
+        transport=httpx.MockTransport(handler),
+        max_attempts=1,
+        months_per_segment=12,
+        min_months_per_segment=1,
+    )
+    assert len(runs) > 10
+    for run in runs:
+        payload = run.candidate.payload
+        assert len(month_keys(
+            date.fromisoformat(payload["start_date"]),
+            date.fromisoformat(payload["end_date"]),
+        )) <= 3

@@ -201,6 +201,7 @@ def test_rounding_successor_is_structural_and_review_required() -> None:
         ("technical.money_decimal_and_rounding", "STRUCTURAL_CHANGE"),
         ("vacation.abono_pecuniario", "STRUCTURAL_CHANGE"),
         ("vacation.remuneration_and_constitutional_third", "STRUCTURAL_CHANGE"),
+        ("vacation.abono_constitutional_third.ir_incidence", "STRUCTURAL_CHANGE"),
     }
 
 

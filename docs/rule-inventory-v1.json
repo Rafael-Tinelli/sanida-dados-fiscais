@@ -353,12 +353,13 @@
       "rule_class": "structural_rule",
       "applies_to": "constitutional_third_on_cash_allowance",
       "source_ids": [
+        "RFB_SCI_COSIT_8_2015",
         "RFB_SC_209_2021",
         "ESOCIAL_SIMPLIFIED_ABONO_2026"
       ],
       "phase1_status": "closed",
       "current_state": "new_P0_defect",
-      "decision": "O terço constitucional incidente sobre o abono pecuniário pago no curso do contrato sofre IR, embora não sofra contribuição previdenciária no tratamento operacional oficial consultado. H28 atual não pode colocar `abono + 1/3` inteiro fora do IR.",
+      "decision": "Na conversão parcial durante o contrato, a parcela do terço constitucional integral proporcional aos dias convertidos integra CP e IRRF; o principal do abono não integra CP/IRRF. O terço de férias indenizadas permanece sem CP. Não confundir esta fração do terço legal com eventual adicional extraordinário por liberalidade (rubrica operacional própria). Base do INSS inclui terço dos dias gozados + terço legal proporcional aos dias convertidos, sem duplicidade.",
       "auto_publish": "never_structural"
     },
     {
@@ -564,6 +565,13 @@
     "employment_basis": "monthly_or_fortnightly_employee",
     "contract_type": "indefinite_term_only",
     "supported_esocial_reasons": {
+      "33": {
+        "label": "mutual_agreement_art_484A",
+        "salary_balance": true,
+        "thirteenth_proportional": true,
+        "vacation_proportional": true,
+        "acquired_or_overdue_vacation": true
+      },
       "01": {
         "label": "just_cause_by_employer",
         "salary_balance": true,
@@ -580,13 +588,6 @@
       },
       "07": {
         "label": "resignation_by_employee",
-        "salary_balance": true,
-        "thirteenth_proportional": true,
-        "vacation_proportional": true,
-        "acquired_or_overdue_vacation": true
-      },
-      "33": {
-        "label": "mutual_agreement_art_484A",
         "salary_balance": true,
         "thirteenth_proportional": true,
         "vacation_proportional": true,

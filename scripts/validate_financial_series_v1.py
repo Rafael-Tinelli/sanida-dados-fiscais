@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import date
+from datetime import date, timedelta
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT))
 from sanida_fiscal.financial_series_v1 import (
     CDI_SOURCE_ID,
     SELIC_SOURCE_ID,
+    financial_history_segments,
     validate_financial_series_artifact,
 )
 
@@ -78,6 +79,65 @@ def main() -> int:
             sha256(snapshot_path.read_bytes()).hexdigest() == meta["snapshot_sha256"],
             f"{source_id}: snapshot bytes hash mismatch",
         )
+
+        segments = meta.get("segments")
+        if segments is not None:
+            require(isinstance(segments, list) and segments, f"{source_id}: segments invalid")
+            window = artifact["meta"]["window"]
+            requested_start = date.fromisoformat(window["start_date"])
+            requested_end = date.fromisoformat(window["end_date"])
+            expected_start = requested_start
+            for index, segment in enumerate(segments):
+                require(isinstance(segment, dict), f"{source_id}: segment {index} not object")
+                try:
+                    segment_start = date.fromisoformat(str(segment.get("start_date")))
+                    segment_end = date.fromisoformat(str(segment.get("end_date")))
+                except ValueError:
+                    raise SystemExit(
+                        f"financial series validation failed: {source_id}: segment {index} invalid dates"
+                    )
+                require(
+                    segment_start == expected_start and segment_end >= segment_start,
+                    f"{source_id}: segment {index} is not contiguous",
+                )
+                require(
+                    len(financial_history_segments(segment_start, segment_end, months_per_segment=12)) == 1,
+                    f"{source_id}: segment {index} exceeds twelve-month maximum",
+                )
+                payload_start, payload_end = segment_start, segment_end
+                next_expected_start = segment_end + timedelta(days=1)
+                candidate_rel = segment.get("candidate_path")
+                snapshot_rel = segment.get("snapshot_path")
+                candidate_sha = segment.get("candidate_sha256")
+                snapshot_sha = segment.get("snapshot_sha256")
+                require(
+                    all(isinstance(value, str) for value in (candidate_rel, snapshot_rel, candidate_sha, snapshot_sha)),
+                    f"{source_id}: segment {index} provenance missing",
+                )
+                candidate_file = runtime_root / "candidates" / candidate_rel
+                snapshot_file = runtime_root / "snapshots" / snapshot_rel
+                require(candidate_file.is_file(), f"{source_id}: segment {index} candidate missing")
+                require(snapshot_file.is_file(), f"{source_id}: segment {index} snapshot missing")
+                require(
+                    sha256(candidate_file.read_bytes()).hexdigest() == candidate_sha,
+                    f"{source_id}: segment {index} candidate hash mismatch",
+                )
+                require(
+                    sha256(snapshot_file.read_bytes()).hexdigest() == snapshot_sha,
+                    f"{source_id}: segment {index} snapshot hash mismatch",
+                )
+                payload = json.loads(candidate_file.read_text(encoding="utf-8"))
+                require(
+                    payload.get("source_id") == source_id
+                    and payload.get("start_date") == payload_start.isoformat()
+                    and payload.get("end_date") == payload_end.isoformat(),
+                    f"{source_id}: segment {index} normalized payload mismatch",
+                )
+                expected_start = next_expected_start
+            require(
+                expected_start == requested_end + timedelta(days=1),
+                f"{source_id}: segmented provenance does not cover full window",
+            )
 
     print(
         "Financial historical series validation: PASS "

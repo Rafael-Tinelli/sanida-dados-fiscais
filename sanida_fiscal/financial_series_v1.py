@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 from typing import Any, Mapping
@@ -61,6 +61,34 @@ def shift_months(value: date, delta: int) -> date:
 def financial_series_window(as_of_date: date) -> tuple[date, date]:
     start = shift_months(month_start(as_of_date), -(FINANCIAL_SERIES_MONTHS - 1))
     return start, as_of_date
+
+
+def financial_history_segments(
+    start_date: date,
+    end_date: date,
+    *,
+    months_per_segment: int = 12,
+) -> list[tuple[date, date]]:
+    """Split a long SGS window into contiguous bounded month ranges."""
+    if start_date > end_date:
+        raise ValueError("start_date cannot be after end_date")
+    if months_per_segment < 1 or months_per_segment > 12:
+        raise ValueError("months_per_segment must be within 1..12")
+    segments: list[tuple[date, date]] = []
+    current = start_date
+    while current <= end_date:
+        next_boundary = shift_months(month_start(current), months_per_segment)
+        segment_end = min(end_date, next_boundary - timedelta(days=1))
+        if segment_end < current:
+            raise FinancialSeriesBoundaryError("invalid segmented history boundary")
+        segments.append((current, segment_end))
+        current = segment_end + timedelta(days=1)
+    for index, (seg_start, seg_end) in enumerate(segments):
+        if index and seg_start != segments[index - 1][1] + timedelta(days=1):
+            raise FinancialSeriesBoundaryError("history segments are not contiguous")
+        if len(month_keys(seg_start, seg_end)) > months_per_segment:
+            raise FinancialSeriesBoundaryError("history segment exceeds bounded month window")
+    return segments
 
 
 def month_keys(start_date: date, end_date: date) -> list[str]:
@@ -236,6 +264,98 @@ def run_financial_history_source_pipeline(
     )
 
 
+def run_financial_history_source_segments(
+    *,
+    source_id: str,
+    observed_at_utc: datetime,
+    start_date: date,
+    end_date: date,
+    registry_path: Path = Path("docs/financial-source-registry-v1.json"),
+    snapshot_root: Path = Path(".financial-series-runtime/snapshots"),
+    state_root: Path = Path(".financial-series-runtime/state"),
+    candidate_root: Path = Path(".financial-series-runtime/candidates"),
+    timeout_seconds: float = 25.0,
+    max_attempts: int = 3,
+    transport: httpx.BaseTransport | None = None,
+    headers: dict[str, str] | None = None,
+    months_per_segment: int = 12,
+    min_months_per_segment: int = 1,
+) -> list[SourcePipelineRun]:
+    """Collect bounded history, recursively shrinking only failed windows."""
+    if min_months_per_segment < 1 or min_months_per_segment > months_per_segment:
+        raise ValueError("min_months_per_segment must be within 1..months_per_segment")
+    runs: list[SourcePipelineRun] = []
+
+    def collect_window(segment_start: date, segment_end: date) -> None:
+        run = run_financial_history_source_pipeline(
+            source_id=source_id,
+            observed_at_utc=observed_at_utc,
+            start_date=segment_start,
+            end_date=segment_end,
+            registry_path=registry_path,
+            snapshot_root=snapshot_root,
+            state_root=state_root,
+            candidate_root=candidate_root,
+            timeout_seconds=timeout_seconds,
+            max_attempts=max_attempts,
+            transport=transport,
+            headers=headers,
+        )
+        if run.candidate is not None and run.candidate.status == ParseStatus.PARSED:
+            runs.append(run)
+            return
+
+        month_count = len(month_keys(segment_start, segment_end))
+        if month_count <= min_months_per_segment:
+            detail = run.state.last_source_error or run.state.last_parser_error or "not_parsed"
+            raise FinancialSeriesBoundaryError(
+                f"{source_id}: history segment {segment_start.isoformat()}.."
+                f"{segment_end.isoformat()} failed closed: {detail}"
+            )
+
+        # Retry the failed range in smaller contiguous windows. Successful
+        # sibling ranges are kept immutable; no partial artifact is emitted
+        # unless the entire requested interval eventually validates.
+        child_months = max(min_months_per_segment, month_count // 2)
+        children = financial_history_segments(
+            segment_start,
+            segment_end,
+            months_per_segment=child_months,
+        )
+        if len(children) < 2:
+            child_months = max(min_months_per_segment, month_count - 1)
+            children = financial_history_segments(
+                segment_start,
+                segment_end,
+                months_per_segment=child_months,
+            )
+        if len(children) < 2:
+            detail = run.state.last_source_error or run.state.last_parser_error or "not_parsed"
+            raise FinancialSeriesBoundaryError(
+                f"{source_id}: cannot subdivide failed history segment "
+                f"{segment_start.isoformat()}..{segment_end.isoformat()}: {detail}"
+            )
+        for child_start, child_end in children:
+            collect_window(child_start, child_end)
+
+    for segment_start, segment_end in financial_history_segments(
+        start_date, end_date, months_per_segment=months_per_segment
+    ):
+        collect_window(segment_start, segment_end)
+
+    # Recursive subdivision appends children in chronological order; prove
+    # total coverage before returning any runs to an artifact builder.
+    merged = _merge_segment_payloads(
+        runs,
+        source_id=source_id,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    if not merged.get("observations"):
+        raise FinancialSeriesBoundaryError(f"{source_id}: segmented history is empty")
+    return runs
+
+
 def _require_payload(run: SourcePipelineRun, source_id: str) -> dict[str, Any]:
     if run.collection.source_id != source_id:
         raise FinancialSeriesBoundaryError(
@@ -299,6 +419,87 @@ def _cdi_month_return_pct(
     )
 
 
+def _merge_segment_payloads(
+    runs: list[SourcePipelineRun],
+    *,
+    source_id: str,
+    start_date: date,
+    end_date: date,
+) -> dict[str, Any]:
+    if not runs:
+        raise FinancialSeriesBoundaryError(f"{source_id}: no segmented history runs")
+    observations: list[dict[str, Any]] = []
+    seen_dates: set[str] = set()
+    expected_start = start_date
+    for index, run in enumerate(runs):
+        payload = _require_payload(run, source_id)
+        try:
+            seg_start = date.fromisoformat(str(payload.get("start_date")))
+            seg_end = date.fromisoformat(str(payload.get("end_date")))
+        except ValueError as exc:
+            raise FinancialSeriesBoundaryError(
+                f"{source_id}: segment {index} has invalid boundaries"
+            ) from exc
+        if seg_start != expected_start or seg_end < seg_start:
+            raise FinancialSeriesBoundaryError(
+                f"{source_id}: segment {index} is not contiguous"
+            )
+        if len(month_keys(seg_start, seg_end)) > 12:
+            raise FinancialSeriesBoundaryError(
+                f"{source_id}: segment {index} exceeds twelve calendar months"
+            )
+        if seg_end > end_date:
+            raise FinancialSeriesBoundaryError(
+                f"{source_id}: segment {index} exceeds requested history window"
+            )
+        expected_start = seg_end + timedelta(days=1)
+        for item in list(payload.get("observations") or []):
+            raw_date = item.get("date") if isinstance(item, dict) else None
+            if not isinstance(raw_date, str) or raw_date in seen_dates:
+                raise FinancialSeriesBoundaryError(
+                    f"{source_id}: duplicate/invalid segmented observation date"
+                )
+            seen_dates.add(raw_date)
+            observations.append(dict(item))
+    if expected_start != end_date + timedelta(days=1):
+        raise FinancialSeriesBoundaryError(
+            f"{source_id}: segmented history does not cover full requested window"
+        )
+    observations.sort(key=lambda item: item["date"])
+    return {
+        "source_id": source_id,
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "observations": observations,
+    }
+
+
+def _segmented_source_meta(
+    runs: list[SourcePipelineRun],
+    *,
+    source_id: str,
+    merged_payload: Mapping[str, Any],
+) -> dict[str, Any]:
+    if not runs:
+        raise FinancialSeriesBoundaryError(f"{source_id}: no history segments")
+    segment_meta: list[dict[str, Any]] = []
+    for run in runs:
+        payload = _require_payload(run, source_id)
+        meta = _source_meta(run, payload)
+        meta["start_date"] = payload["start_date"]
+        meta["end_date"] = payload["end_date"]
+        segment_meta.append(meta)
+    top = dict(segment_meta[-1])
+    top.update({
+        "source_id": source_id,
+        "collection_mode": "segmented_bounded_windows_v1",
+        "segment_count": len(segment_meta),
+        "observation_count": len(merged_payload.get("observations") or []),
+        "segments": segment_meta,
+    })
+    return top
+
+
 def _source_meta(run: SourcePipelineRun, payload: Mapping[str, Any]) -> dict[str, Any]:
     candidate = run.candidate
     if candidate is None or candidate.status != ParseStatus.PARSED:
@@ -311,10 +512,138 @@ def _source_meta(run: SourcePipelineRun, payload: Mapping[str, Any]) -> dict[str
         "http_code": run.collection.http_status,
         "snapshot_sha256": candidate.snapshot_sha256,
         "candidate_sha256": run.state.last_candidate_sha256,
+        "snapshot_path": candidate.snapshot_path,
+        "candidate_path": run.state.last_candidate_path,
         "parser_id": candidate.parser_id,
         "parser_version": candidate.parser_version,
         "observed_at_utc": candidate.observed_at_utc.isoformat().replace("+00:00", "Z"),
         "observation_count": len(payload.get("observations") or []),
+    }
+
+
+def build_financial_series_artifact_from_segments(
+    *,
+    selic_runs: list[SourcePipelineRun],
+    cdi_runs: list[SourcePipelineRun],
+    generated_at_utc: str,
+    as_of_date: date,
+) -> dict[str, Any]:
+    try:
+        generated_at = datetime.fromisoformat(generated_at_utc.replace("Z", "+00:00"))
+    except (AttributeError, ValueError) as exc:
+        raise FinancialSeriesBoundaryError("generated_at_utc is not ISO-8601") from exc
+    if generated_at.tzinfo is None or generated_at.utcoffset() != timezone.utc.utcoffset(generated_at):
+        raise FinancialSeriesBoundaryError("generated_at_utc must be UTC")
+
+    start_date, end_date = financial_series_window(as_of_date)
+    expected_months = month_keys(start_date, end_date)
+    selic = _merge_segment_payloads(
+        selic_runs, source_id=SELIC_SOURCE_ID, start_date=start_date, end_date=end_date
+    )
+    cdi = _merge_segment_payloads(
+        cdi_runs, source_id=CDI_SOURCE_ID, start_date=start_date, end_date=end_date
+    )
+    return _build_financial_series_from_payloads(
+        selic=selic,
+        cdi=cdi,
+        selic_meta=_segmented_source_meta(
+            selic_runs, source_id=SELIC_SOURCE_ID, merged_payload=selic
+        ),
+        cdi_meta=_segmented_source_meta(
+            cdi_runs, source_id=CDI_SOURCE_ID, merged_payload=cdi
+        ),
+        generated_at_utc=generated_at_utc,
+        as_of_date=as_of_date,
+        expected_months=expected_months,
+    )
+
+
+def _build_financial_series_from_payloads(
+    *,
+    selic: Mapping[str, Any],
+    cdi: Mapping[str, Any],
+    selic_meta: Mapping[str, Any],
+    cdi_meta: Mapping[str, Any],
+    generated_at_utc: str,
+    as_of_date: date,
+    expected_months: list[str],
+) -> dict[str, Any]:
+    start_date, end_date = financial_series_window(as_of_date)
+    if len(expected_months) != FINANCIAL_SERIES_MONTHS:
+        raise FinancialSeriesBoundaryError("history window is not exactly 120 calendar months")
+    for payload, source_id in ((selic, SELIC_SOURCE_ID), (cdi, CDI_SOURCE_ID)):
+        if payload.get("source_id") != source_id:
+            raise FinancialSeriesBoundaryError(f"{source_id}: payload source_id mismatch")
+        if payload.get("start_date") != start_date.isoformat():
+            raise FinancialSeriesBoundaryError(f"{source_id}: history start_date mismatch")
+        if payload.get("end_date") != end_date.isoformat():
+            raise FinancialSeriesBoundaryError(f"{source_id}: history end_date mismatch")
+
+    selic_groups = _group_by_month(list(selic.get("observations") or []), value_key="annual_rate_pct")
+    cdi_groups = _group_by_month(list(cdi.get("observations") or []), value_key="daily_rate_pct")
+    missing_selic = [month for month in expected_months if month not in selic_groups]
+    missing_cdi = [month for month in expected_months if month not in cdi_groups]
+    if missing_selic:
+        raise FinancialSeriesBoundaryError(f"Selic history missing calendar months: {missing_selic}")
+    if missing_cdi:
+        raise FinancialSeriesBoundaryError(f"CDI history missing calendar months: {missing_cdi}")
+
+    current_month = as_of_date.strftime("%Y-%m")
+    points: list[dict[str, Any]] = []
+    for month in expected_months:
+        selic_last = max(selic_groups[month], key=lambda item: item[0])
+        cdi_month = sorted(cdi_groups[month], key=lambda item: item[0])
+        cdi_last = cdi_month[-1]
+        selic_value = selic_last[1]
+        if selic_value < 0 or selic_value > Decimal("60"):
+            raise FinancialSeriesBoundaryError("Selic history rate outside accepted range")
+        cdi_annualized = annualize_cdi_daily_rate_pct(cdi_last[2])
+        cdi_month_return = _cdi_month_return_pct(cdi_month)
+        points.append({
+            "month": month,
+            "month_complete": month < current_month,
+            "selic_observation_date": selic_last[0].isoformat(),
+            "selic_annual_rate_pct": float(selic_value),
+            "cdi_observation_date": cdi_last[0].isoformat(),
+            "cdi_daily_rate_pct": float(cdi_last[1]),
+            "cdi_annualized_rate_pct": float(cdi_annualized),
+            "cdi_month_return_pct": float(cdi_month_return),
+            "cdi_observation_count": len(cdi_month),
+        })
+
+    latest = points[-1]
+    cdi_latest_date = date.fromisoformat(latest["cdi_observation_date"])
+    cdi_age_days = (as_of_date - cdi_latest_date).days
+    if cdi_age_days < 0:
+        raise FinancialSeriesBoundaryError("latest CDI history observation is in the future")
+    if cdi_age_days > CDI_MAX_OBSERVATION_AGE_DAYS:
+        raise FinancialSeriesBoundaryError(
+            f"latest CDI history observation is stale: age_days={cdi_age_days}"
+        )
+    return {
+        "schema_version": FINANCIAL_SERIES_SCHEMA_VERSION,
+        "meta": {
+            "generated_at_utc": generated_at_utc,
+            "timezone": "America/Sao_Paulo",
+            "window": {
+                "months": FINANCIAL_SERIES_MONTHS,
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+            },
+            "methodology": {
+                "selic_monthly": "last_SGS_432_observation_in_calendar_month_percent_per_year",
+                "cdi_monthly_level": "last_SGS_12_daily_observation_in_calendar_month_annualized_by_compounding_252_business_days",
+                "cdi_monthly_return": "compound_all_SGS_12_daily_percent_observations_in_calendar_month",
+                "current_month": "month_to_date_and_marked_incomplete",
+                "source_collection": "segmented_bounded_windows_v1",
+            },
+            "sources": {"selic": dict(selic_meta), "cdi": dict(cdi_meta)},
+            "latest_cdi_observation_age_calendar_days": cdi_age_days,
+            "max_latest_cdi_observation_age_calendar_days": CDI_MAX_OBSERVATION_AGE_DAYS,
+            "errors": [],
+            "warnings": [],
+        },
+        "points": points,
     }
 
 
@@ -334,105 +663,17 @@ def build_financial_series_artifact(
 
     start_date, end_date = financial_series_window(as_of_date)
     expected_months = month_keys(start_date, end_date)
-    if len(expected_months) != FINANCIAL_SERIES_MONTHS:
-        raise FinancialSeriesBoundaryError("history window is not exactly 120 calendar months")
-
     selic = _require_payload(selic_run, SELIC_SOURCE_ID)
     cdi = _require_payload(cdi_run, CDI_SOURCE_ID)
-
-    for payload, source_id in ((selic, SELIC_SOURCE_ID), (cdi, CDI_SOURCE_ID)):
-        if payload.get("source_id") != source_id:
-            raise FinancialSeriesBoundaryError(f"{source_id}: payload source_id mismatch")
-        if payload.get("start_date") != start_date.isoformat():
-            raise FinancialSeriesBoundaryError(f"{source_id}: history start_date mismatch")
-        if payload.get("end_date") != end_date.isoformat():
-            raise FinancialSeriesBoundaryError(f"{source_id}: history end_date mismatch")
-
-    selic_groups = _group_by_month(
-        list(selic.get("observations") or []),
-        value_key="annual_rate_pct",
+    return _build_financial_series_from_payloads(
+        selic=selic,
+        cdi=cdi,
+        selic_meta=_source_meta(selic_run, selic),
+        cdi_meta=_source_meta(cdi_run, cdi),
+        generated_at_utc=generated_at_utc,
+        as_of_date=as_of_date,
+        expected_months=expected_months,
     )
-    cdi_groups = _group_by_month(
-        list(cdi.get("observations") or []),
-        value_key="daily_rate_pct",
-    )
-
-    missing_selic = [month for month in expected_months if month not in selic_groups]
-    missing_cdi = [month for month in expected_months if month not in cdi_groups]
-    if missing_selic:
-        raise FinancialSeriesBoundaryError(
-            f"Selic history missing calendar months: {missing_selic}"
-        )
-    if missing_cdi:
-        raise FinancialSeriesBoundaryError(
-            f"CDI history missing calendar months: {missing_cdi}"
-        )
-
-    current_month = as_of_date.strftime("%Y-%m")
-    points: list[dict[str, Any]] = []
-    for month in expected_months:
-        selic_last = max(selic_groups[month], key=lambda item: item[0])
-        cdi_month = sorted(cdi_groups[month], key=lambda item: item[0])
-        cdi_last = cdi_month[-1]
-
-        selic_value = selic_last[1]
-        if selic_value < 0 or selic_value > Decimal("60"):
-            raise FinancialSeriesBoundaryError("Selic history rate outside accepted range")
-
-        cdi_annualized = annualize_cdi_daily_rate_pct(cdi_last[2])
-        cdi_month_return = _cdi_month_return_pct(cdi_month)
-
-        points.append(
-            {
-                "month": month,
-                "month_complete": month < current_month,
-                "selic_observation_date": selic_last[0].isoformat(),
-                "selic_annual_rate_pct": float(selic_value),
-                "cdi_observation_date": cdi_last[0].isoformat(),
-                "cdi_daily_rate_pct": float(cdi_last[1]),
-                "cdi_annualized_rate_pct": float(cdi_annualized),
-                "cdi_month_return_pct": float(cdi_month_return),
-                "cdi_observation_count": len(cdi_month),
-            }
-        )
-
-    latest = points[-1]
-    cdi_latest_date = date.fromisoformat(latest["cdi_observation_date"])
-    cdi_age_days = (as_of_date - cdi_latest_date).days
-    if cdi_age_days < 0:
-        raise FinancialSeriesBoundaryError("latest CDI history observation is in the future")
-    if cdi_age_days > CDI_MAX_OBSERVATION_AGE_DAYS:
-        raise FinancialSeriesBoundaryError(
-            f"latest CDI history observation is stale: age_days={cdi_age_days}"
-        )
-
-    return {
-        "schema_version": FINANCIAL_SERIES_SCHEMA_VERSION,
-        "meta": {
-            "generated_at_utc": generated_at_utc,
-            "timezone": "America/Sao_Paulo",
-            "window": {
-                "months": FINANCIAL_SERIES_MONTHS,
-                "start_date": start_date.isoformat(),
-                "end_date": end_date.isoformat(),
-            },
-            "methodology": {
-                "selic_monthly": "last_SGS_432_observation_in_calendar_month_percent_per_year",
-                "cdi_monthly_level": "last_SGS_12_daily_observation_in_calendar_month_annualized_by_compounding_252_business_days",
-                "cdi_monthly_return": "compound_all_SGS_12_daily_percent_observations_in_calendar_month",
-                "current_month": "month_to_date_and_marked_incomplete",
-            },
-            "sources": {
-                "selic": _source_meta(selic_run, selic),
-                "cdi": _source_meta(cdi_run, cdi),
-            },
-            "latest_cdi_observation_age_calendar_days": cdi_age_days,
-            "max_latest_cdi_observation_age_calendar_days": CDI_MAX_OBSERVATION_AGE_DAYS,
-            "errors": [],
-            "warnings": [],
-        },
-        "points": points,
-    }
 
 
 def validate_financial_series_artifact(

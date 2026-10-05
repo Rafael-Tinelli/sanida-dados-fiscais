@@ -328,9 +328,9 @@ def resolve_cash_allowance_tax_treatment(
 
     if principal.irrf != Incidence.NO or principal.social_security != Incidence.NO:
         raise FiscalEngineError("cash allowance principal must be IRRF=no and CP=no")
-    if third.irrf != Incidence.YES or third.social_security != Incidence.NO:
+    if third.irrf != Incidence.YES or third.social_security not in (Incidence.NO, Incidence.YES):
         raise FiscalEngineError(
-            "constitutional third on cash allowance must be IRRF=yes and CP=no"
+            "constitutional third on cash allowance must be IRRF=yes with explicit CP incidence"
         )
 
     return VacationCashAllowanceTaxTreatment(

@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "decision_id": "financial_reference.historical_series_policy",
   "status": "active",
-  "as_of": "2026-09-19",
+  "as_of": "2026-10-05",
   "scope": {
     "artifact": "taxas_bacen_series.json",
     "window_months": 120,
@@ -39,7 +39,9 @@
     "stale_latest_cdi": "hard_fail",
     "source_unavailable": "preserve_existing_artifact_bytes",
     "static_fallback_allowed": false,
-    "relabel_prior_history_as_current": false
+    "relabel_prior_history_as_current": false,
+    "segment_unavailable": "hard_fail_preserve_existing_artifact_bytes",
+    "partial_segment_merge_allowed": false
   },
   "public_use": {
     "suitable_for": [
@@ -50,5 +52,12 @@
     ],
     "not_a_claim_that_investment_returns_equal_benchmark": true,
     "raw_daily_points_not_exposed_in_public_artifact": true
+  },
+  "collection": {
+    "mode": "segmented_bounded_windows_v1",
+    "months_per_segment": 12,
+    "segments_must_be_contiguous": true,
+    "every_segment_snapshot_and_candidate_sha256_required": true,
+    "public_points_contract_unchanged": true
   }
 }

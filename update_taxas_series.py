@@ -11,9 +11,9 @@ from sanida_fiscal.financial_series_v1 import (
     FINANCIAL_SERIES_TIMEZONE,
     SELIC_SOURCE_ID,
     FinancialSeriesBoundaryError,
-    build_financial_series_artifact,
+    build_financial_series_artifact_from_segments,
     financial_series_window,
-    run_financial_history_source_pipeline,
+    run_financial_history_source_segments,
     validate_financial_series_artifact,
 )
 
@@ -23,7 +23,7 @@ FINANCIAL_SOURCE_REGISTRY = Path("docs/financial-source-registry-v1.json")
 SOURCE_RUNTIME_ROOT = Path(
     os.getenv("SFA_FINANCIAL_SERIES_RUNTIME_ROOT", "evidence/financial-series-v1").strip()
 )
-TIMEOUT = int(os.getenv("SFA_TIMEOUT", "25").strip())
+TIMEOUT = int(os.getenv("SFA_TIMEOUT", "35").strip())
 RETRIES = int(os.getenv("SFA_RETRIES", "3").strip())
 
 HEADERS = {
@@ -54,7 +54,7 @@ def main() -> None:
     try:
         runs = {}
         for source_id in (SELIC_SOURCE_ID, CDI_SOURCE_ID):
-            runs[source_id] = run_financial_history_source_pipeline(
+            runs[source_id] = run_financial_history_source_segments(
                 source_id=source_id,
                 observed_at_utc=observed_at_utc,
                 start_date=start_date,
@@ -66,11 +66,12 @@ def main() -> None:
                 timeout_seconds=float(TIMEOUT),
                 max_attempts=RETRIES,
                 headers=HEADERS,
+                months_per_segment=12,
             )
 
-        artifact = build_financial_series_artifact(
-            selic_run=runs[SELIC_SOURCE_ID],
-            cdi_run=runs[CDI_SOURCE_ID],
+        artifact = build_financial_series_artifact_from_segments(
+            selic_runs=runs[SELIC_SOURCE_ID],
+            cdi_runs=runs[CDI_SOURCE_ID],
             generated_at_utc=observed_at_utc.isoformat().replace("+00:00", "Z"),
             as_of_date=as_of_date,
         )
@@ -86,7 +87,7 @@ def main() -> None:
         write_json_atomic(artifact)
         print(
             "OK: taxas_bacen_series.json atualizado "
-            f"({start_date.isoformat()}..{end_date.isoformat()}, 120 meses)."
+            f"({start_date.isoformat()}..{end_date.isoformat()}, 120 meses; coleta segmentada)."
         )
     except Exception as exc:
         print(

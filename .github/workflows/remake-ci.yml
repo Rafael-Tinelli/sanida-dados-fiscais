@@ -64,6 +64,22 @@ jobs:
         run: |
           python scripts/run_calculators_browser_smoke.py
 
+      - name: Diagnose recovery sources live (read-only)
+        if: ${{ github.head_ref == 'fix/fiscal-main-recovery-20261005' }}
+        continue-on-error: true
+        run: |
+          python scripts/diagnose_recovery_live_sources.py
+
+      - name: Upload recovery source diagnosis
+        if: ${{ always() && github.head_ref == 'fix/fiscal-main-recovery-20261005' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: fiscal-recovery-live-sources-${{ github.sha }}
+          path: .validation/recovery-live-sources.json
+          if-no-files-found: warn
+          retention-days: 7
+
+
       - name: Validate Phase 3 closure gate
         run: |
           python scripts/validate_phase3_gate.py

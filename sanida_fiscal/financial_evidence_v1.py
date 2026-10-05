@@ -162,6 +162,81 @@ def verify_financial_source_provenance(
     )
 
 
+def _verify_archived_financial_provenance(
+    *, sources: Mapping[str, Any], runtime_root: Path
+) -> dict[str, dict[str, str]]:
+    """Audit an already-published artifact against immutable stored bytes.
+
+    The current operational state can advance after a different successful run;
+    neither its latest timestamp nor its current URL can retroactively rewrite
+    the provenance embedded in a previously published financial artifact.
+    This path is NOT authorized for producing a fresh financial artifact.
+    """
+    from decimal import Decimal, InvalidOperation
+
+    if not isinstance(sources, Mapping):
+        raise FinancialEvidenceError("financial source provenance must be an object")
+    runtime_root = Path(runtime_root)
+    snapshots = runtime_root / "snapshots"
+    candidates = runtime_root / "candidates"
+    expected = {
+        "selic": ("BCB_SELIC_META_SGS_432", 432, "bcb_selic_meta_sgs432", "annual_rate_pct"),
+        "cdi": ("BCB_CDI_DAILY_SGS_12", 12, "bcb_cdi_daily_sgs12", "daily_rate_pct"),
+    }
+    verified: dict[str, dict[str, str]] = {}
+    for key, (source_id, series_code, observation_type, value_field) in expected.items():
+        meta = sources.get(key)
+        if not isinstance(meta, Mapping) or meta.get("source_id") != source_id:
+            raise FinancialEvidenceError(f"{key} source_id mismatch")
+        url = meta.get("url")
+        if not isinstance(url, str) or not url.startswith(
+            f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.{series_code}/dados"
+        ):
+            raise FinancialEvidenceError(f"{source_id} archived source URL is not the official SGS endpoint")
+        _parse_utc(meta.get("observed_at_utc"), f"{source_id}.observed_at_utc")
+        snapshot_sha, candidate_sha = meta.get("snapshot_sha256"), meta.get("candidate_sha256")
+        if not isinstance(snapshot_sha, str) or len(snapshot_sha) != 64:
+            raise FinancialEvidenceError(f"{source_id} archived snapshot hash invalid")
+        if not isinstance(candidate_sha, str) or len(candidate_sha) != 64:
+            raise FinancialEvidenceError(f"{source_id} archived candidate hash invalid")
+        snapshot_dir = snapshots / source_id / snapshot_sha[:2]
+        matching = sorted(snapshot_dir.glob(f"{snapshot_sha}.*"))
+        if len(matching) != 1:
+            raise FinancialEvidenceError(f"{source_id} archived snapshot is missing or ambiguous")
+        snapshot_path = str(matching[0].relative_to(snapshots))
+        _verify_file_sha256(snapshots, snapshot_path, snapshot_sha, f"{source_id}.snapshot")
+        candidate_path = CandidateStore.relative_path(source_id, candidate_sha)
+        try:
+            payload = CandidateStore(candidates).read(
+                relative_path=candidate_path, expected_sha256=candidate_sha
+            )
+        except (OSError, ValueError, RuntimeError) as exc:
+            raise FinancialEvidenceError(f"{source_id} archived candidate hash validation failed") from exc
+        if payload.get("observation_type") != observation_type or payload.get("series_code") != series_code:
+            raise FinancialEvidenceError(f"{source_id} archived candidate identity mismatch")
+        if payload.get("observation_date") != meta.get("source_observation_date"):
+            raise FinancialEvidenceError(f"{source_id} archived observation date mismatch")
+        try:
+            amount = Decimal(str(meta.get("source_value_pct")))
+            candidate_amount = Decimal(str(payload.get(value_field)))
+        except InvalidOperation as exc:
+            raise FinancialEvidenceError(f"{source_id} archived observation value invalid") from exc
+        if not amount.is_finite() or amount != candidate_amount:
+            raise FinancialEvidenceError(f"{source_id} archived observation value mismatch")
+        if key == "cdi":
+            from .financial_reference_v1 import annualize_cdi_daily_rate_pct
+            expected_annual = annualize_cdi_daily_rate_pct(str(candidate_amount))
+            if Decimal(str(meta.get("annualized_value_pct"))) != expected_annual:
+                raise FinancialEvidenceError(f"{source_id} archived annualized CDI mismatch")
+        verified[source_id] = {
+            "snapshot_sha256": snapshot_sha,
+            "snapshot_path": snapshot_path,
+            "candidate_sha256": candidate_sha,
+            "candidate_path": candidate_path,
+        }
+    return verified
+
+
 def verify_preserved_financial_last_good_provenance(
     *,
     sources: Mapping[str, Any],
@@ -173,11 +248,7 @@ def verify_preserved_financial_last_good_provenance(
     evidence unauditable. Passing this verifier is *not* permission to regenerate
     ``taxas_bacen.json`` or embed the values in a fresh ``dados_fiscais.json``.
     """
-    return _verify_financial_source_provenance(
-        sources=sources,
-        runtime_root=runtime_root,
-        require_current_parsed=False,
-    )
+    return _verify_archived_financial_provenance(sources=sources, runtime_root=runtime_root)
 
 
 def _read_financial_artifact_sources(artifact_path: Path) -> Mapping[str, Any]:
