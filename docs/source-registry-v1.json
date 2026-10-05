@@ -95,7 +95,17 @@
         "vacation.indemnified.ir_exemption",
         "vacation.abono.ir_exemption"
       ],
-      "notes": "Pergunta 178: férias gozadas + terço são tributadas separadamente; férias não gozadas convertidas em pecúnia na extinção e abono do art. 143 têm hipóteses de não tributação."
+      "notes": "Pergunta 178: férias gozadas + terço são tributadas separadamente; férias não gozadas convertidas em pecúnia na extinção e abono do art. 143 têm hipóteses de não tributação. Identidade material exigida no PDF: título/ano e pergunta 178.",
+      "identity_marker_groups": [
+        [
+          "perguntas e respostas",
+          "2026"
+        ],
+        [
+          "ferias",
+          "178"
+        ]
+      ]
     },
     {
       "source_id": "RFB_SC_209_2021",
@@ -307,7 +317,7 @@
       "covers": [
         "vacation.abono_constitutional_third.ir_incidence"
       ],
-      "notes": "SCI 8/2015: CP incide sobre o terço constitucional integral de férias, inclusive parcela proporcional aos dias convertidos em abono; não confundir com adicional extra por liberalidade. Férias indenizadas excluídas; principal do abono não integra CP.",
+      "notes": "SCI 8/2015: CP incide sobre o terço constitucional integral de férias, inclusive parcela proporcional aos dias convertidos em abono; não confundir com adicional extra por liberalidade. Férias indenizadas excluídas; principal do abono não integra CP. Se o endpoint devolver HTML/SPA em vez do PDF da SCI, a coleta deve falhar fechada.",
       "identity_marker_groups": [
         [
           "solucao de consulta interna",
