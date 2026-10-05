@@ -1,7 +1,7 @@
 {
   "schema_version": "2.2.0",
   "meta": {
-    "generated_at_utc": "2026-10-05T18:31:44Z",
+    "generated_at_utc": "2026-10-05T20:26:16Z",
     "sources": {
       "irrf": {
         "source_id": "RFB_IRRF_TABLE_CURRENT",
@@ -12,7 +12,7 @@
         "candidate_sha256": "787ecdf33486305d7da8f0117c5943a563c68386593cbac415567e7ce6e8b10d",
         "parser_id": "rfb_irrf_table_v1",
         "parser_version": "1.1.0",
-        "observed_at_utc": "2026-10-05T18:31:44Z"
+        "observed_at_utc": "2026-10-05T20:26:16Z"
       },
       "inss": {
         "source_id": "INSS_TABLE_CURRENT",
@@ -23,7 +23,7 @@
         "candidate_sha256": "1836a09ba4520d61e2d6c6677ee6b34fac640a4bdfc94aa243827272b5a63fc5",
         "parser_id": "inss_employee_table_v1",
         "parser_version": "1.1.0",
-        "observed_at_utc": "2026-10-05T18:31:44Z"
+        "observed_at_utc": "2026-10-05T20:26:16Z"
       },
       "taxas": {
         "origin": "local_file",
