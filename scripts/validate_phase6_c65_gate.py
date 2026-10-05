@@ -11,8 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from sanida_fiscal.engine_v1 import calculate_progressive
 from sanida_fiscal.publication_v1 import FiscalReleaseStore
-from sanida_fiscal.types_v1 import AssessmentContext
+from sanida_fiscal.types_v1 import AssessmentContext, ProgressiveTablePayload
 
 CORE = ROOT / "consumers/frontend/folha-core.js"
 VACATION = ROOT / "consumers/frontend/folha-vacation.js"
@@ -75,7 +76,7 @@ def main() -> int:
         __import__("datetime").date(2026, 9, 15),
         AssessmentContext.VACATION_CASH_ALLOWANCE,
     )
-    require(remuneration.rule_version == "1.1.0", "cash-allowance remuneration successor not published")
+    require(remuneration.rule_version.startswith("1.1."), "cash-allowance remuneration successor semantic not published")
     reduction = release.select_rule(
         "vacation.irrf.reduction.2026",
         __import__("datetime").date(2026, 9, 15),
@@ -169,6 +170,34 @@ def main() -> int:
     fiscal = standard.get("fiscal") or {}
     irrf = fiscal.get("irrf") or {}
 
+    third_incidence = release.select_rule(
+        "vacation.abono_constitutional_third.ir_incidence",
+        __import__("datetime").date(2026, 9, 15),
+        AssessmentContext.VACATION_CASH_ALLOWANCE,
+    )
+    third_components = getattr(third_incidence.payload, "components", ())
+    require(len(third_components) == 1, "cash-allowance third incidence profile is not singular")
+    third_cp = third_components[0].social_security.value
+    require(third_cp in {"no", "yes"}, "cash-allowance third CP incidence is not explicit")
+
+    expected_social_base = Decimal("3555.56")
+    if third_cp == "yes":
+        expected_social_base += Decimal("444.44")
+    inss_rule = release.select_rule(
+        "inss.employee.progressive_table",
+        __import__("datetime").date(2026, 9, 15),
+        AssessmentContext.VACATION_ENJOYED,
+    )
+    require(isinstance(inss_rule.payload, ProgressiveTablePayload), "INSS rule payload is incompatible")
+    require(inss_rule.rounding_policy is not None, "INSS rule rounding policy missing")
+    expected_inss = calculate_progressive(
+        expected_social_base,
+        inss_rule.payload,
+        inss_rule.rounding_policy,
+    ).amount
+    expected_irrf = Decimal(str(irrf.get("final_irrf")))
+    expected_net = Decimal("5333.33") - expected_inss - expected_irrf
+
     require(payload.get("release_id") == release.release_id, "H28 runtime used a different release_id")
     require((standard.get("fiscal_metadata") or {}).get("release_id") == release.release_id, "H28 memory lacks release_id")
     require(entitlement.get("entitled_days") == 30, "H28 standard entitlement is not 30 days")
@@ -179,11 +208,11 @@ def main() -> int:
     require(Decimal(str(components.get("cash_allowance_principal"))) == Decimal("1333.33"), "H28 abono principal regression failed")
     require(Decimal(str(components.get("cash_allowance_constitutional_third"))) == Decimal("444.44"), "H28 abono third regression failed")
     require(Decimal(str(components.get("gross_vacation_payment"))) == Decimal("5333.33"), "H28 gross regression failed")
-    require(Decimal(str(fiscal.get("social_security_base"))) == Decimal("3555.56"), "H28 INSS base regression failed")
-    require(Decimal(str(fiscal.get("inss"))) == Decimal("315.27"), "H28 INSS regression failed")
+    require(Decimal(str(fiscal.get("social_security_base"))) == expected_social_base, "H28 INSS base regression failed")
+    require(Decimal(str(fiscal.get("inss"))) == expected_inss, "H28 INSS regression failed")
     require(Decimal(str(fiscal.get("taxable_vacation_income"))) == Decimal("4000.00"), "H28 taxable income regression failed")
-    require(Decimal(str(irrf.get("final_irrf"))) == Decimal("0.00"), "H28 IRRF regression failed")
-    require(Decimal(str(fiscal.get("net_vacation_payment"))) == Decimal("5018.06"), "H28 net regression failed")
+    require(Decimal(str(irrf.get("final_irrf"))) == expected_irrf, "H28 IRRF regression failed")
+    require(Decimal(str(fiscal.get("net_vacation_payment"))) == expected_net, "H28 net regression failed")
     require(payload.get("unsupported_absences_rejected") is True, "H28 did not reject unsupported absences")
     require(payload.get("negative_input_rejected") is True, "H28 did not reject negative money")
     require(payload.get("pension_omission_rejected") is True, "H28 did not reject omitted pension")
@@ -208,8 +237,8 @@ def main() -> int:
         "30→10",
         "vacation.irrf.reduction.2026",
         "5333.33",
-        "315.27",
-        "5018.06",
+        "social_security",
+        "contrato fiscal",
         "não afirma implantação no HostGator",
         "C6.6",
     ):

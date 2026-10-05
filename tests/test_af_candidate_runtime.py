@@ -24,9 +24,14 @@ def test_af_candidate_runtime_isolated_from_published_release():
     assert result["fixture"]=="SYNTHETIC_DO_NOT_PUBLISH"
 
 
-def test_candidate_runtimes_do_not_overwrite_published_legacy_js():
-    old=(ROOT/"consumers/frontend/folha-vacation.js").read_text()
-    new=(ROOT/"consumers/candidates/af01/folha-vacation.js").read_text()
-    assert "'social_security', 'no'" in old
-    assert "'social_security', 'yes'" in new
-    assert old!=new
+def test_frontend_vacation_runtime_is_contract_driven_across_af01_promotion():
+    frontend=(ROOT/"consumers/frontend/folha-vacation.js").read_text()
+    candidate=(ROOT/"consumers/candidates/af01/folha-vacation.js").read_text()
+    assert "cashThirdSocialSecurity" in frontend
+    assert "incidenceValue(" in frontend
+    assert "socialSecurityBase = socialSecurityBase.add(cashThird)" in frontend
+    assert (
+        "incidenceFlag(cashThirdIncidence, 'constitutional_third_on_cash_allowance', "
+        "'social_security', 'no')" not in frontend
+    )
+    assert "'social_security', 'yes'" in candidate

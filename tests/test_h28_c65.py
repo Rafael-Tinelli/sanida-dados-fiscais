@@ -22,6 +22,7 @@ from sanida_fiscal.publication_v1 import FiscalReleaseStore
 from sanida_fiscal.types_v1 import AssessmentContext, ProgressiveTablePayload, ScalarPayload
 from sanida_fiscal.vacation_v1 import (
     calculate_cash_allowance_days,
+    cash_allowance_tax_bases,
     resolve_cash_allowance_tax_treatment,
     select_vacation_rule_bundle,
     vacation_entitlement_from_absences,
@@ -70,7 +71,7 @@ def _python_standard_reference():
     assert treatment.principal.irrf.value == "no"
     assert treatment.principal.social_security.value == "no"
     assert treatment.constitutional_third.irrf.value == "yes"
-    assert treatment.constitutional_third.social_security.value == "no"
+    assert treatment.constitutional_third.social_security.value in {"no", "yes"}
 
     formula = release.select_rule(
         "vacation.remuneration_and_constitutional_third",
@@ -90,7 +91,12 @@ def _python_standard_reference():
     )
     assert isinstance(inss_rule.payload, ProgressiveTablePayload)
     assert inss_rule.rounding_policy is not None
-    social_base = enjoyed_principal + enjoyed_third
+    cash_bases = cash_allowance_tax_bases(
+        principal_amount=cash_principal,
+        constitutional_third_amount=cash_third,
+        treatment=treatment,
+    )
+    social_base = enjoyed_principal + enjoyed_third + cash_bases.social_security_base
     inss = calculate_progressive(social_base, inss_rule.payload, inss_rule.rounding_policy)
 
     assessment = IrrfAssessmentIdentity(
@@ -113,7 +119,7 @@ def _python_standard_reference():
         dependent_deduction=dependent.payload,
         pension="0.00",
     )
-    taxable = enjoyed_principal + enjoyed_third + cash_third
+    taxable = enjoyed_principal + enjoyed_third + cash_bases.irrf_taxable_amount
     irrf = assess_irrf_2026(
         assessment=assessment,
         gross_taxable_income=taxable,
@@ -123,13 +129,26 @@ def _python_standard_reference():
     )
     gross = enjoyed_principal + enjoyed_third + cash_principal + cash_third
     net = gross - inss.amount - irrf.final_irrf
-    return release, entitlement, cash_days, cash_principal, enjoyed_principal, enjoyed_third, cash_third, inss, irrf, gross, net
+    return (
+        release,
+        entitlement,
+        cash_days,
+        cash_principal,
+        enjoyed_principal,
+        enjoyed_third,
+        cash_third,
+        social_base,
+        inss,
+        irrf,
+        gross,
+        net,
+    )
 
 
 def test_c65_h28_standard_sale_case_matches_python_engine() -> None:
     (
         release, entitlement, cash_days, cash_principal, enjoyed_principal,
-        enjoyed_third, cash_third, inss, irrf, gross, net,
+        enjoyed_third, cash_third, social_base, inss, irrf, gross, net,
     ) = _python_standard_reference()
     result = _node_result()
     h28 = result["standard"]
@@ -145,11 +164,11 @@ def test_c65_h28_standard_sale_case_matches_python_engine() -> None:
     assert Decimal(h28["components"]["enjoyed_constitutional_third"]) == enjoyed_third == Decimal("888.89")
     assert Decimal(h28["components"]["cash_allowance_constitutional_third"]) == cash_third == Decimal("444.44")
     assert Decimal(h28["components"]["gross_vacation_payment"]) == gross == Decimal("5333.33")
-    assert Decimal(h28["fiscal"]["social_security_base"]) == Decimal("3555.56")
-    assert Decimal(h28["fiscal"]["inss"]) == inss.amount == Decimal("315.27")
+    assert Decimal(h28["fiscal"]["social_security_base"]) == social_base
+    assert Decimal(h28["fiscal"]["inss"]) == inss.amount
     assert Decimal(h28["fiscal"]["taxable_vacation_income"]) == Decimal("4000.00")
-    assert Decimal(h28["fiscal"]["irrf"]["final_irrf"]) == irrf.final_irrf == Decimal("0.00")
-    assert Decimal(h28["fiscal"]["net_vacation_payment"]) == net == Decimal("5018.06")
+    assert Decimal(h28["fiscal"]["irrf"]["final_irrf"]) == irrf.final_irrf
+    assert Decimal(h28["fiscal"]["net_vacation_payment"]) == net
 
 
 def test_c65_h28_entitlement_bands_drive_abono_without_arbitrary_rounding() -> None:

@@ -36,11 +36,20 @@ def test_fiscal_runtime_hostgator_sync_is_archived_not_active():
     assert "Fiscal Runtime Production Sync" in text
 
 
-def test_af_engine_repairs_are_present_without_promoting_release():
+def test_af_engine_repairs_are_present_with_explicit_canonical_release_pointer():
     engine=(ROOT/"sanida_fiscal/engine_v1.py").read_text(encoding="utf-8")
     assembler=(ROOT/"sanida_fiscal/release_assembler_v12.py").read_text(encoding="utf-8")
     assert "withholding_waived" in engine
     assert "withheld_irrf" in engine
     assert "RFB_SCI_COSIT_8_2015" in assembler
     current=json.loads((ROOT/"releases/fiscal-v1/current.json").read_text(encoding="utf-8"))
-    assert current["release_id"]=="fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e"
+    artifact=ROOT/"releases/fiscal-v1"/current["artifact"]
+    assert artifact.is_file()
+    release=json.loads(artifact.read_text(encoding="utf-8"))
+    assert release["release_id"]==current["release_id"]
+    af01=next(
+        rule for rule in release["rules"]
+        if rule["rule_id"]=="vacation.abono_constitutional_third.ir_incidence"
+    )
+    cp=af01["payload"]["components"][0]["social_security"]
+    assert cp in {"no", "yes"}

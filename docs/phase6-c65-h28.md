@@ -76,6 +76,17 @@ Esses dois componentes formam a base previdenciária usada pela tabela progressi
 
 Portanto o terço do abono não é silenciosamente agrupado com a isenção do principal.
 
+### Atualização AF01 — incidência previdenciária dirigida pelo contrato fiscal
+
+A revisão AF01 posterior a C6.5 corrige a incidência previdenciária da parcela do terço constitucional atribuída aos dias convertidos em abono. O runtime não fixa mais esse resultado em código: ele lê explicitamente `payload.components[].social_security` da release canônica.
+
+Isso preserva compatibilidade de rollback:
+
+- release histórica C6.5 com `social_security = no`: base previdenciária do caso de referência = `3555.56`;
+- sucessora AF01 com `social_security = yes`: o terço do abono (`444.44`) é incluído uma única vez e a base previdenciária passa a `4000.00`.
+
+No caso de referência de R$ 4.000,00, com a sucessora AF01, o INSS calculado pela tabela progressiva é `368.60` e o líquido, mantido IRRF final zero, é `4964.73`. O principal do abono permanece fora da base previdenciária e do IRRF.
+
 ## 5. IRRF de férias é uma avaliação separada
 
 O fluxo executado por H28 é:
