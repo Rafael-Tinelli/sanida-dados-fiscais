@@ -1,46 +1,25 @@
-# Deployments de manutenção após o remake — health em duas etapas
+# Deployments de manutenção após o remake — registro histórico e ownership atual
 
-Este documento rege **deployments futuros de manutenção** dos arquivos gerenciados das calculadoras H26–H29. Ele não reescreve nem invalida o registro histórico C7.4/C7.5 concluído em 16/09/2026.
+> **Status operacional: SUPERADO PARA NOVOS DEPLOYS.** Este documento preserva o desenho e as garantias do fluxo fiscal-side utilizado após C7.5. A partir da extração definitiva do frontend, nenhum workflow ativo de `sanida-dados-fiscais` publica H26–H29 no HostGator. O recipe correspondente permanece arquivado em `ops/workflows/fiscal-runtime-production.yml` para auditoria, testes isolados e reconstrução histórica.
 
-## Por que existe
+## Ownership vigente
 
-O fechamento C7.5 provou que bytes corretos na origem podem coexistir com bytes antigos no Cloudflare quando URLs estáveis possuem cache longo. Por isso, `HTTP 200`, REST saudável e igualdade de bytes no HostGator não são suficientes para declarar a entrega pública final saudável.
+- `sanida-dados-fiscais`: regras, releases, motores fiscais, evidências oficiais, testes semânticos e artefatos imutáveis.
+- `sanida-financas-frontend`: integração dos motores aprovados, adapters/templates, bundle, preflight, backup/rollback, implantação e prova pública/CDN.
+- uma alteração de motor fiscal somente se torna implantável depois de ser pinada pelo commit/release exato no cutover do frontend e passar os testes cruzados.
+- merge na `main` fiscal não é autorização operacional de escrita no HostGator.
 
-O estado histórico `APPLIED_HEALTHY` do primeiro deployment permanece preservado como evidência do que o executor C7.4 registrou naquele momento. **Para manutenção futura, porém, esse nome não é estado final saudável.**
+## Garantias históricas preservadas
 
-## Caminho permanente do runtime fiscal H26–H29
+O fechamento C7.5 demonstrou que saúde da origem e entrega pública são fronteiras distintas, especialmente com Cloudflare. Permanecem válidos como requisitos do cutover atual: igualdade byte a byte, política de cache compatível, backup/rollback, health fiscal, H26–H29 sem erro e prova externa antes de declarar `APPLIED_EXTERNALLY_HEALTHY`.
 
-Após a extração do frontend, os assets puramente fiscais compartilhados continuam sob ownership deste repositório. Para eles existe um caminho evergreen separado do deployment visual:
-
-- `consumers/frontend/folha-core.js`;
-- `consumers/runtime/salario-liquido-runtime.js`;
-- `consumers/frontend/folha-thirteenth.js`;
-- `consumers/runtime/decimo-terceiro-runtime.js`;
-- `consumers/frontend/folha-vacation.js`;
-- `consumers/frontend/folha-termination.js`.
-
-Alteração aprovada em `main` nessa allowlist dispara `.github/workflows/fiscal-runtime-production.yml`. O workflow reexecuta regressões/gates antes de qualquer SSH, faz checkout remoto do commit exato, calcula o delta contra a origem, cria backup somente dos targets que mudarem, escreve atomicamente e mantém journal single-use por execução.
-
-O workflow não pode publicar templates PHP, CSS, adapters DOM/UI, releases fiscais ou regras de backend. Esses domínios permanecem separados.
-
-Para eliminar a necessidade recorrente de purge de cache, a própria publicação gerencia uma política restrita a esses seis runtimes em `financas/calculadoras/assets/.htaccess` com `Cache-Control: no-store`. Se objetos de borda anteriores ainda estiverem vivos na primeira ativação dessa política, uma purga seletiva única pode ser necessária. A partir da primeira prova pública com `no-store`, novas implantações não dependem de intervenção de cache.
-
-A execução permanece em `APPLIED_ORIGIN_HEALTHY_PENDING_EXTERNAL` até a sonda da rota pública/CDN provar simultaneamente:
-
-- seis runtimes HTTP 200 e byte a byte iguais ao commit autorizado;
-- `Cache-Control` público contendo `no-store` para os seis runtimes;
-- H26, H27, H28 e H29 HTTP 200, sem erro PHP;
-- `/wp-json/sfa/v1/fiscal-health` saudável;
-- `/wp-json/sfa/v1/fiscal-release` coerente com o health;
-- `/wp-json/sfa/v1/folha` em 410.
-
-Somente então o journal é finalizado em `APPLIED_EXTERNALLY_HEALTHY`.
-A sonda durável roda no HostGator contra o hostname público `sanida.com.br`, sem acesso direto aos bytes do target durante essa etapa. O tráfego atravessa Cloudflare e usa um User-Agent de navegador. Essa escolha preserva a regra geográfica que bloqueia runners hospedados do GitHub fora do Brasil; uma sonda direta desses runners retorna 403 por desenho e não deve ser transformada em exceção de firewall. Para os runtimes fiscais, a evidência também registra `CF-Cache-Status` e bloqueia `HIT` quando `no-store` deveria estar ativo.
+O script `scripts/deploy_fiscal_runtime_assets.py`, a política `ops/fiscal-runtime-assets.htaccess` e o workflow arquivado documentam o mecanismo anterior. Eles não podem ser reativados em `.github/workflows/` deste repositório sem reabrir formalmente a decisão de arquitetura e os gates de extração do frontend.
 
 ## Fluxo obrigatório para manutenção
 
-1. Gerar e autorizar o bundle corrente com os mesmos vínculos fail-closed de bundle, C7.3 e autorização single-use.
-2. Executar `scripts/run_phase7_c74_controlled_deploy_v2.py`, informando também o commit autorizado com `--authorized-commit`.
+
+1. No `sanida-financas-frontend`, reconstruir o bundle corrente pinando o commit/release fiscal aprovado e manter os mesmos vínculos fail-closed de bundle, preflight e autorização.
+2. Executar o cutover controlado pelo fluxo de frontend; os scripts históricos deste repositório podem ser usados somente para auditoria/reprodução isolada, não como caminho ativo de produção.
 3. Se escrita, verificação local, dependências e health de origem/REST passarem, o estado persistido deve ser:
 
    `APPLIED_ORIGIN_HEALTHY_PENDING_EXTERNAL`
@@ -64,4 +43,4 @@ A sonda durável roda no HostGator contra o hostname público `sanida.com.br`, s
 
 ## Relação com o CI
 
-O bundle atual continua sendo validado por C7.1 e pelas simulações correntes. O gate C7.4 histórico valida a integridade do evento passado por referências cruzadas imutáveis. Assim, uma correção legítima posterior em arquivos gerenciados não torna impossível manter o CI verde e, ao mesmo tempo, não falsifica a evidência do deployment anterior.
+O `Remake CI` fiscal valida regras, motores, evidências e contratos; não publica o frontend. O CI do `sanida-financas-frontend` valida a integração e o bundle de implantação. Os gates C7.4/C7.5 históricos continuam servindo como evidência imutável do evento passado e não devem ser reinterpretados como autorização automática para novos deploys.
