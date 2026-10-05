@@ -58,3 +58,37 @@ def test_marker_contract_is_fail_closed_when_malformed():
             body=b"<html><body>ok</body></html>",
             media_type="text/html",
         )
+
+
+def test_identity_markers_accept_at_least_one_existing_official_html_snapshot_per_protected_source():
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    protected = [
+        item for item in registry["sources"]
+        if item.get("identity_marker_groups")
+        and item.get("machine_readability") != "pdf_text"
+    ]
+    assert protected
+    for metadata in protected:
+        source_id = metadata["source_id"]
+        root = Path("evidence/fiscal-authority-v1") / source_id
+        snapshots = sorted(
+            p for p in root.rglob("*")
+            if p.is_file() and p.suffix.lower() in {".html", ".htm", ".txt"}
+        )
+        # Some newly registered authorities may not have a historical snapshot
+        # yet; they remain fail-closed at collection time.
+        if not snapshots:
+            continue
+        accepted = []
+        for snapshot in snapshots:
+            try:
+                _validate_authority_identity(
+                    source_id=source_id,
+                    metadata=metadata,
+                    body=snapshot.read_bytes(),
+                    media_type="text/html",
+                )
+            except AuthorityEvidenceError:
+                continue
+            accepted.append(snapshot)
+        assert accepted, f"{source_id}: no existing official snapshot satisfies identity markers"
