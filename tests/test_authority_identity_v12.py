@@ -51,3 +51,16 @@ def test_sc209_uses_direct_official_pdf_not_search_page():
     assert row["url"].endswith("idArquivoBinario=64080")
     assert row["machine_readability"]=="pdf_text"
     assert {"209","abono pecuniário","terço constitucional"} <= set(row["identity_markers"])
+
+
+def test_planalto_latin1_html_identity_is_accepted_from_raw_bytes():
+    body=(
+        "<html><body>CONSOLIDAÇÃO DAS LEIS DO TRABALHO "
+        "DECRETO-LEI N.º 5.452</body></html>"
+    ).encode("latin-1")
+    _assert_source_identity(
+        source_id="PLANALTO_CLT",
+        registry_item=BY_ID["PLANALTO_CLT"],
+        body=body,
+        media_type="text/html; charset=iso-8859-1",
+    )
