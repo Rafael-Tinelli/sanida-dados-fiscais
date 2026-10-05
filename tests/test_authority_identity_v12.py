@@ -8,6 +8,7 @@ import pytest
 from sanida_fiscal.authority_evidence_v12 import (
     AuthorityEvidenceError,
     _validate_authority_identity,
+    _validate_sci_cosit_8_2015_api_payload,
     select_authority_sources,
 )
 
@@ -113,3 +114,78 @@ def test_planalto_latin1_identity_bytes_are_decoded_before_validation():
         body=html,
         media_type="text/html",
     )
+
+
+
+def _sci_api_payload(*, id_ato=65843, numero="8", ano="2015", sigla="SCI", orgao="Cosit"):
+    return {
+        "quantidadeTotal": 1,
+        "atos": [
+            {
+                "idAto": id_ato,
+                "numeroAto": numero,
+                "anoAto": ano,
+                "dataAto": "12/06/2015",
+                "dataPublicacao": "06/07/2015",
+                "tipoAto": {
+                    "idTipoAto": 75,
+                    "nomeTipoAto": "Solução de Consulta Interna",
+                    "siglaTipoAto": sigla,
+                },
+                "orgaos": [
+                    {
+                        "idOrgao": 111,
+                        "siglaOrgao": orgao,
+                        "nomeOrgao": "Coordenação-Geral de Tributação",
+                    }
+                ],
+                "ementa": (
+                    "Contribuição previdenciária incide sobre o valor integral do "
+                    "terço constitucional de férias, mesmo quando houver conversão "
+                    "de parte do período de férias em abono pecuniário. Férias "
+                    "indenizadas permanecem fora da hipótese descrita. Para o imposto "
+                    "sobre a renda, o valor do adicional constitucional, inclusive "
+                    "o incidente sobre abono pecuniário, é tributado pelo imposto "
+                    "sobre a renda."
+                ),
+            }
+        ],
+    }
+
+
+def test_sci_8_official_api_record_proves_exact_material_identity():
+    raw = json.dumps(_sci_api_payload(), ensure_ascii=False).encode("utf-8")
+    _validate_sci_cosit_8_2015_api_payload(raw)
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        {"idAto": 99999},
+        {"numeroAto": "9"},
+        {"anoAto": "2016"},
+        {"siglaTipoAto": "SC"},
+        {"siglaOrgao": "Disit"},
+    ],
+)
+def test_sci_8_official_api_record_rejects_wrong_identity(mutation):
+    payload = _sci_api_payload()
+    row = payload["atos"][0]
+    if "siglaTipoAto" in mutation:
+        row["tipoAto"]["siglaTipoAto"] = mutation["siglaTipoAto"]
+    elif "siglaOrgao" in mutation:
+        row["orgaos"][0]["siglaOrgao"] = mutation["siglaOrgao"]
+        row["orgaos"][0]["nomeOrgao"] = "Divisão de Tributação"
+    else:
+        row.update(mutation)
+    raw = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    with pytest.raises(AuthorityEvidenceError, match="did not identify exactly one"):
+        _validate_sci_cosit_8_2015_api_payload(raw)
+
+
+def test_sci_8_official_api_record_rejects_incomplete_legal_ementa():
+    payload = _sci_api_payload()
+    payload["atos"][0]["ementa"] = "Solução de Consulta Interna 8/2015 sobre férias."
+    raw = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    with pytest.raises(AuthorityEvidenceError, match="lacks mandatory legal markers"):
+        _validate_sci_cosit_8_2015_api_payload(raw)
