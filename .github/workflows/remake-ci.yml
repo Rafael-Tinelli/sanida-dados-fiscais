@@ -14,7 +14,91 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  af01_portal_forensics:
+    if: ${{ github.head_ref == 'probe/af01-official-evidence-20261005' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install forensic dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Capture Normas portal shell and JavaScript bundles
+        run: |
+          python - <<'PY'
+          from hashlib import sha256
+          import json
+          from pathlib import Path
+          import re
+          from urllib.parse import urljoin
+          import requests
+          from bs4 import BeautifulSoup
+
+          root = Path("/tmp/af01-portal-forensics")
+          root.mkdir(parents=True, exist_ok=True)
+          old_url = "https://normas.receita.fazenda.gov.br/sijut2consulta/anexoOutros.action?idArquivoBinario=36769"
+          session = requests.Session()
+          session.headers.update({"User-Agent": "SanidaLegalEvidenceForensic/1.1"})
+          response = session.get(old_url, timeout=(8, 20), allow_redirects=True)
+          response.raise_for_status()
+          (root / "portal-shell.html").write_bytes(response.content)
+          soup = BeautifulSoup(response.content, "html.parser")
+          scripts = [urljoin(response.url, tag.get("src")) for tag in soup.find_all("script") if tag.get("src")]
+          report = {
+              "portal": {
+                  "url": response.url,
+                  "status": response.status_code,
+                  "content_type": response.headers.get("content-type", ""),
+                  "bytes": len(response.content),
+                  "sha256": sha256(response.content).hexdigest(),
+              },
+              "scripts": [],
+              "candidate_strings": [],
+          }
+          needles = ("api", "anexo", "arquivo", "binario", "download", "document", "consulta", "norma", "sijut")
+          seen = set()
+          for index, script_url in enumerate(scripts, 1):
+              js = session.get(script_url, timeout=(8, 30), allow_redirects=True)
+              js.raise_for_status()
+              name = script_url.rsplit("/", 1)[-1] or f"script-{index}.js"
+              path = root / name
+              path.write_bytes(js.content)
+              report["scripts"].append({
+                  "url": js.url,
+                  "content_type": js.headers.get("content-type", ""),
+                  "bytes": len(js.content),
+                  "sha256": sha256(js.content).hexdigest(),
+                  "filename": name,
+              })
+              text = js.text
+              for match in re.finditer(r'[^"\'\s]{0,100}(?:api|anexo|arquivo|binario|download|document|consulta|norma|sijut)[^"\'\s]{0,160}', text, flags=re.I):
+                  value = match.group(0)
+                  key = value[:300]
+                  if key not in seen:
+                      seen.add(key)
+                      report["candidate_strings"].append(key)
+          (root / "forensic-report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
+          print("AF01_PORTAL_FORENSICS " + json.dumps({
+              "portal": report["portal"],
+              "scripts": report["scripts"],
+              "candidate_count": len(report["candidate_strings"]),
+              "candidate_sample": report["candidate_strings"][:50],
+          }, ensure_ascii=False, sort_keys=True))
+          PY
+
+      - name: Upload Normas portal forensics
+        uses: actions/upload-artifact@v4
+        with:
+          name: af01-portal-forensics-${{ github.sha }}
+          path: /tmp/af01-portal-forensics
+          if-no-files-found: error
+          retention-days: 3
+
   validate:
+    if: ${{ github.head_ref != 'probe/af01-official-evidence-20261005' }}
     runs-on: ubuntu-latest
 
     steps:
