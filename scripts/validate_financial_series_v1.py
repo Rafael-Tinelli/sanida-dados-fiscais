@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import date
+from datetime import date, timedelta
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -104,9 +104,8 @@ def main() -> int:
                     len(financial_history_segments(segment_start, segment_end, months_per_segment=12)) == 1,
                     f"{source_id}: segment {index} exceeds twelve-month maximum",
                 )
-                expected_start = segment_end + __import__("datetime").timedelta(days=1)
-                expected_start_date, expected_end = segment_start, segment_end
-                expected_start, expected_end = expected_start_date, expected_end
+                payload_start, payload_end = segment_start, segment_end
+                next_expected_start = segment_end + timedelta(days=1)
                 candidate_rel = segment.get("candidate_path")
                 snapshot_rel = segment.get("snapshot_path")
                 candidate_sha = segment.get("candidate_sha256")
@@ -130,12 +129,13 @@ def main() -> int:
                 payload = json.loads(candidate_file.read_text(encoding="utf-8"))
                 require(
                     payload.get("source_id") == source_id
-                    and payload.get("start_date") == expected_start.isoformat()
-                    and payload.get("end_date") == expected_end.isoformat(),
+                    and payload.get("start_date") == payload_start.isoformat()
+                    and payload.get("end_date") == payload_end.isoformat(),
                     f"{source_id}: segment {index} normalized payload mismatch",
                 )
+                expected_start = next_expected_start
             require(
-                expected_start == requested_end + __import__("datetime").timedelta(days=1),
+                expected_start == requested_end + timedelta(days=1),
                 f"{source_id}: segmented provenance does not cover full window",
             )
 
