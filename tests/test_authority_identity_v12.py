@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
 from sanida_fiscal.authority_evidence_v12 import (
     AuthorityEvidenceError,
+    _collect_sci_cosit_8_2015_from_official_api,
+    _retrieval_method,
     _validate_authority_identity,
     _validate_sci_cosit_8_2015_api_payload,
     select_authority_sources,
 )
+from sanida_fiscal.sources_v1 import RetryPolicy, SnapshotStore, SourceSpec
+from sanida_fiscal.types_v1 import RetrievalMethod
 
 
 REGISTRY = Path("docs/source-registry-v1.json")
@@ -189,3 +194,36 @@ def test_sci_8_official_api_record_rejects_incomplete_legal_ementa():
     raw = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     with pytest.raises(AuthorityEvidenceError, match="lacks mandatory legal markers"):
         _validate_sci_cosit_8_2015_api_payload(raw)
+
+
+
+def test_sci_api_fallback_persists_content_addressed_json_and_marks_api(monkeypatch, tmp_path):
+    raw = json.dumps(_sci_api_payload(), ensure_ascii=False).encode("utf-8")
+
+    class Response:
+        status_code = 200
+        content = raw
+        headers = {"content-type": "application/json; charset=utf-8"}
+        url = "https://normas.receita.fazenda.gov.br/api/indexacao/ato/pesquisar"
+
+    monkeypatch.setattr(
+        "sanida_fiscal.authority_evidence_v12.requests.post",
+        lambda *args, **kwargs: Response(),
+    )
+    source = SourceSpec(
+        source_id="RFB_SCI_COSIT_8_2015",
+        url="https://normas.receita.fazenda.gov.br/sijut2consulta/anexoOutros.action?idArquivoBinario=36769",
+        role="administrative_norm",
+        machine_readability="pdf_text",
+    )
+    store = SnapshotStore(tmp_path)
+    result = _collect_sci_cosit_8_2015_from_official_api(
+        source=source,
+        store=store,
+        observed_at_utc=datetime(2026, 10, 5, tzinfo=timezone.utc),
+        retry_policy=RetryPolicy(max_attempts=1, timeout_seconds=1),
+    )
+    assert result.snapshot is not None
+    assert result.snapshot.relative_path.endswith(".json")
+    assert store.read(result.snapshot) == raw
+    assert _retrieval_method(result.snapshot.media_type) == RetrievalMethod.API
