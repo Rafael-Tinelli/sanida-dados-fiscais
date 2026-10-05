@@ -233,9 +233,9 @@ A política de identidade e migração sem reescrita histórica está em `docs/e
 17. bundle de implantação só pode conter arquivos gerenciados conhecidos; dependências externas precisam ser declaradas e rollback precisa restaurar os bytes pré-deploy;
 18. uma sucessora fiscal conhecida precisa permanecer conhecida entre requisições até que o próprio pacote da sucessora seja verificado; cache, 304 ou indisponibilidade posterior não podem ressuscitar silenciosamente a predecessora;
 19. asset público com URL estável e cache de longa duração só pode ter os bytes substituídos quando o deploy também versionar a URL/cache-key ou invalidar explicitamente os URLs afetados e provar a entrega externa dos novos bytes.
-20. o runtime fiscal público H26–H29 possui allowlist de deployment própria e não pode alterar templates PHP, CSS, adapters DOM/UI ou qualquer outro arquivo de apresentação;
-21. merge em `main` que altere um arquivo da allowlist do runtime fiscal dispara publicação evergreen somente depois dos gates completos; o commit exato é a identidade autorizada da implantação e cada execução mantém journal/rollback próprios;
-22. os assets da allowlist fiscal são servidos com política explícita `no-store`; a implantação só termina em `APPLIED_EXTERNALLY_HEALTHY` quando os bytes canônicos e essa política forem comprovados pela rota pública `sanida.com.br` através da camada CDN, separadamente da verificação direta de filesystem/origem.
+20. os motores fiscais compartilhados de H26–H29 podem continuar versionados neste repositório, mas o repo fiscal não possui mais workflow ativo de publicação do frontend público;
+21. alteração aprovada de runtime fiscal precisa ser entregue ao `sanida-financas-frontend`, pinada pelo cutover correspondente e validada junto aos adapters/templates antes de qualquer escrita no HostGator;
+22. a prova pública de bytes, cache e saúde continua obrigatória no cutover do frontend; `APPLIED_EXTERNALLY_HEALTHY` não pode ser inferido por merge na `main` fiscal nem por validação apenas de origem.
 
 ---
 
@@ -468,10 +468,10 @@ Com C7.5 concluído, a **Fase 7 e o remake estão formalmente concluídos**. O e
 66. Implantação só é considerada concluída depois de `APPLIED_HEALTHY`, release correta, REST saudável, `/folha` 410, H26–H29 HTTP 200 e SHA imutável do journal final registrado.
 67. Validação de origem e validação de entrega pública são fronteiras distintas: o próprio HostGator não substitui uma sonda de cliente externo quando a camada Cloudflare interfere no caminho HostGator → hostname público.
 68. Asset estático de URL estável com cache longo, como `max-age=31536000`, exige versionamento de URL/cache-key ou purga seletiva dos URLs alterados no deploy, seguida de prova externa de igualdade de bytes antes de declarar a implantação saudável.
-69. A operação evergreen pós-remake separa publicação de **release fiscal** de publicação de **runtime fiscal**: a primeira continua sujeita aos gates de promoção e `REVIEW_REQUIRED`; a segunda usa uma allowlist fechada de seis assets executáveis compartilhados.
-70. A allowlist de runtime fiscal é: `folha-core.js`, `salario-liquido-runtime.js`, `folha-thirteenth.js`, `decimo-terceiro-runtime.js`, `folha-vacation.js` e `folha-termination.js`. Ela não inclui adapters de UI, CSS ou templates PHP.
-71. Para essa allowlist, o merge aprovado em `main` é o evento de autorização operacional: o workflow reexecuta regressões/gates, implanta somente deltas, mantém backup exato e rollback, prova H26–H29/endpoints pela rota pública/CDN e fecha apenas após igualdade dos bytes canônicos.
-72. Para evitar manutenção recorrente de cache dos runtimes fiscais, esses seis assets usam `Cache-Control: no-store`. A migração inicial pode exigir uma invalidação seletiva única de objetos de borda preexistentes; depois dela, novas versões não dependem de purga manual para substituir bytes antigos.
+69. A operação evergreen pós-remake separa **autoridade fiscal** de **implantação do frontend**: releases e motores fiscais permanecem governados neste repositório, enquanto a entrega pública H26–H29 é propriedade do `sanida-financas-frontend`.
+70. Os seis motores compartilhados continuam sendo `folha-core.js`, `salario-liquido-runtime.js`, `folha-thirteenth.js`, `decimo-terceiro-runtime.js`, `folha-vacation.js` e `folha-termination.js`; adapters, CSS e templates continuam fora do domínio fiscal.
+71. Merge na `main` fiscal não autoriza nem dispara deploy público. O commit fiscal aprovado é uma entrada versionada do cutover no repositório de frontend, que deve provar compatibilidade, backup/rollback e entrega externa antes de qualquer promoção operacional.
+72. A política `no-store` e a igualdade de bytes permanecem invariantes de entrega pública, mas sua aplicação e comprovação pertencem ao fluxo de cutover do frontend.
 
 ---
 
@@ -489,35 +489,33 @@ Operação evergreen normal.
 
 O remake está formalmente concluído. Mudanças futuras devem entrar como manutenção, atualização fiscal governada ou nova evolução de produto, preservando os contratos, evidências e gates permanentes já estabelecidos.
 
-### 20.1. Publicação evergreen do runtime fiscal
+### 20.1. Handoff evergreen do runtime fiscal ao frontend
 
-Os seis assets executáveis compartilhados de H26–H29 permanecem propriedade do `sanida-dados-fiscais` mesmo após a extração da camada visual para `sanida-financas-frontend`. A publicação deles é feita por `.github/workflows/fiscal-runtime-production.yml`.
+Os seis motores compartilhados de H26–H29 permanecem versionados e testados como código fiscal neste repositório, porém **não são mais publicados por workflow ativo daqui**. O workflow histórico de HostGator foi arquivado em `ops/workflows/fiscal-runtime-production.yml` exclusivamente como evidência e referência operacional.
 
-O fluxo permanente é:
+O fluxo vigente é:
 
 ```text
-PR + Remake CI
+PR fiscal + Remake CI
       ↓
-merge em main de alteração na allowlist fiscal
+merge em main da alteração fiscal aprovada
       ↓
-regressões e gates completos novamente
+commit/release fiscal imutável identificado
       ↓
-SSH pinado no HostGator
+pin explícito no sanida-financas-frontend
       ↓
-preflight + backup dos deltas + escrita atômica
+CI cruzado de runtime + adapters/templates + bundle
       ↓
-APPLIED_ORIGIN_HEALTHY_PENDING_EXTERNAL
+preflight/backup/rollback do cutover frontend
       ↓
-prova pela rota pública/CDN dos 6 assets + H26–H29 + endpoints fiscais
+prova de origem e prova pública/CDN
       ↓
 APPLIED_EXTERNALLY_HEALTHY
 ```
 
-A implantação é fail-closed: qualquer drift, target inseguro, hash divergente, falha de teste, falha de SSH, página pública não saudável, endpoint fiscal inconsistente, byte público diferente, resposta `CF-Cache-Status: HIT` para um runtime `no-store` ou ausência da política `no-store` impede o fechamento saudável. Falha após a primeira escrita aciona rollback dos targets modificados.
+Nenhum merge na `main` deste repositório executa SSH, escreve no HostGator ou prova entrega pública. A ferramenta `scripts/deploy_fiscal_runtime_assets.py` e o recipe arquivado continuam disponíveis para auditoria histórica e testes isolados, mas não constituem caminho ativo de produção.
 
-Esse fluxo não publica releases fiscais e não altera frontend de apresentação. Mudanças estruturais de regra continuam obedecendo `REVIEW_REQUIRED` e revisão humana. Alterações de PHP/CSS/UI continuam sob responsabilidade do repositório de frontend.
-
-A sonda pública é executada no HostGator contra o hostname público `https://sanida.com.br`, portanto atravessa a camada Cloudflare e não lê os arquivos diretamente. Isso é deliberado: runners hospedados do GitHub são bloqueados pela política geográfica do site e retornam 403 por desenho. A prova exige HTTP 200 dos runtimes, SHA-256 idêntico ao commit autorizado, `no-store` e ausência de `CF-Cache-Status: HIT`; assim a política de segurança geográfica não precisa ser enfraquecida para manter a automação.
+Mudanças estruturais de regra continuam obedecendo `REVIEW_REQUIRED` e revisão humana. O frontend só pode consumir uma release/runtime fiscal depois que a autoridade correspondente estiver aprovada e o cutover conjunto tiver sido reconstruído com hashes exatos.
 
 ---
 
@@ -536,6 +534,14 @@ Uma fase só é `CONCLUÍDA` quando seus critérios objetivos e gates correspond
 ---
 
 ## 22. Changelog do README
+
+### 2026-10-05 — extração definitiva do deploy público
+
+- removido o workflow ativo de deployment do runtime público do repositório fiscal;
+- recipe anterior arquivado em `ops/workflows/` somente como evidência histórica/manual;
+- engines/contratos/evidências continuam sob autoridade fiscal, mas o deploy H26–H29 passa pelo `sanida-financas-frontend`;
+- merge na `main` fiscal deixa de ser evento de autorização de escrita no HostGator.
+
 
 ### 2026-09-30 — operação evergreen do runtime fiscal
 
