@@ -51,7 +51,7 @@ def main() -> int:
             source_runs={}
             source_report={}
             for source_id,months_per_segment in (
-                (SELIC_SOURCE_ID,6),
+                (SELIC_SOURCE_ID,12),
                 (CDI_SOURCE_ID,12),
             ):
                 runs=run_financial_history_source_segments(
@@ -64,8 +64,9 @@ def main() -> int:
                     state_root=tmp_root/"series/state",
                     candidate_root=tmp_root/"series/candidates",
                     timeout_seconds=35.0,
-                    max_attempts=2,
+                    max_attempts=3,
                     months_per_segment=months_per_segment,
+                    min_months_per_segment=1,
                 )
                 source_runs[source_id]=runs
                 source_report[source_id]={
