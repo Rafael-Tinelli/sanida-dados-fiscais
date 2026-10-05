@@ -9,7 +9,10 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from sanida_fiscal.production_evidence_v1 import verify_legacy_artifact_evidence
+from sanida_fiscal.production_evidence_v1 import (
+    verify_legacy_artifact_evidence,
+    verify_preserved_legacy_artifact_evidence,
+)
 
 
 def main() -> int:
@@ -22,14 +25,24 @@ def main() -> int:
         type=Path,
         default=Path("evidence/source-runtime-v1"),
     )
+    parser.add_argument(
+        "--preserved",
+        action="store_true",
+        help="Verify immutable evidence for the held previous artifact; never infer fresh collection.",
+    )
     args = parser.parse_args()
 
-    verified = verify_legacy_artifact_evidence(
+    validator = (
+        verify_preserved_legacy_artifact_evidence
+        if args.preserved else verify_legacy_artifact_evidence
+    )
+    verified = validator(
         artifact_path=args.artifact,
         runtime_root=args.runtime_root,
     )
     print(
-        "Production source evidence: PASS\n"
+        ("Preserved historical source evidence: PASS (not a new collection)\\n"
+         if args.preserved else "Production source evidence: PASS\\n")
         + json.dumps(verified, ensure_ascii=False, indent=2, sort_keys=True)
     )
     return 0
