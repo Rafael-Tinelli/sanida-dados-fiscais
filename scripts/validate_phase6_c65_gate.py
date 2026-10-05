@@ -11,8 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from sanida_fiscal.engine_v1 import calculate_progressive
 from sanida_fiscal.publication_v1 import FiscalReleaseStore
-from sanida_fiscal.types_v1 import AssessmentContext
+from sanida_fiscal.types_v1 import AssessmentContext, ProgressiveTablePayload
 
 CORE = ROOT / "consumers/frontend/folha-core.js"
 VACATION = ROOT / "consumers/frontend/folha-vacation.js"
