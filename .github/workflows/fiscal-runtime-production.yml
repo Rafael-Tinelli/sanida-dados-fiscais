@@ -4,10 +4,10 @@ on:
   push:
     branches: [main]
     paths:
-      - 'consumers/**/folha-core.js'
-      - 'consumers/**/folha-thirteenth.js'
-      - 'consumers/**/folha-vacation.js'
-      - 'consumers/**/folha-termination.js'
+      - 'consumers/frontend/folha-core.js'
+      - 'consumers/frontend/folha-thirteenth.js'
+      - 'consumers/frontend/folha-vacation.js'
+      - 'consumers/frontend/folha-termination.js'
       - 'consumers/runtime/salario-liquido-runtime.js'
       - 'consumers/runtime/decimo-terceiro-runtime.js'
       - 'scripts/deploy_fiscal_runtime_assets.py'
