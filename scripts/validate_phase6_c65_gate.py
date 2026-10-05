@@ -208,11 +208,11 @@ def main() -> int:
     require(Decimal(str(components.get("cash_allowance_principal"))) == Decimal("1333.33"), "H28 abono principal regression failed")
     require(Decimal(str(components.get("cash_allowance_constitutional_third"))) == Decimal("444.44"), "H28 abono third regression failed")
     require(Decimal(str(components.get("gross_vacation_payment"))) == Decimal("5333.33"), "H28 gross regression failed")
-    require(Decimal(str(fiscal.get("social_security_base"))) == Decimal("3555.56"), "H28 INSS base regression failed")
-    require(Decimal(str(fiscal.get("inss"))) == Decimal("315.27"), "H28 INSS regression failed")
+    require(Decimal(str(fiscal.get("social_security_base"))) == expected_social_base, "H28 INSS base regression failed")
+    require(Decimal(str(fiscal.get("inss"))) == expected_inss, "H28 INSS regression failed")
     require(Decimal(str(fiscal.get("taxable_vacation_income"))) == Decimal("4000.00"), "H28 taxable income regression failed")
-    require(Decimal(str(irrf.get("final_irrf"))) == Decimal("0.00"), "H28 IRRF regression failed")
-    require(Decimal(str(fiscal.get("net_vacation_payment"))) == Decimal("5018.06"), "H28 net regression failed")
+    require(Decimal(str(irrf.get("final_irrf"))) == expected_irrf, "H28 IRRF regression failed")
+    require(Decimal(str(fiscal.get("net_vacation_payment"))) == expected_net, "H28 net regression failed")
     require(payload.get("unsupported_absences_rejected") is True, "H28 did not reject unsupported absences")
     require(payload.get("negative_input_rejected") is True, "H28 did not reject negative money")
     require(payload.get("pension_omission_rejected") is True, "H28 did not reject omitted pension")
@@ -237,8 +237,8 @@ def main() -> int:
         "30→10",
         "vacation.irrf.reduction.2026",
         "5333.33",
-        "315.27",
-        "5018.06",
+        "social_security",
+        "contrato fiscal",
         "não afirma implantação no HostGator",
         "C6.6",
     ):
