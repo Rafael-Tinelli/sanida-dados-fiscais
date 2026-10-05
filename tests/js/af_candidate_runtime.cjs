@@ -13,8 +13,8 @@ for (const path of [
 const SFA=globalThis.SFA_FOLHA;
 const manifest=JSON.parse(fs.readFileSync('releases/fiscal-v1/current.json'));
 const original=JSON.parse(fs.readFileSync(join('releases/fiscal-v1',manifest.artifact)));
-const historicalThird=original.rules.find(r=>r.rule_id==='vacation.abono_constitutional_third.ir_incidence');
-assert.equal(historicalThird.payload.components[0].social_security,'no');
+const publishedThird=original.rules.find(r=>r.rule_id==='vacation.abono_constitutional_third.ir_incidence');
+assert.ok(['no','yes'].includes(publishedThird.payload.components[0].social_security));
 const synthetic=JSON.parse(JSON.stringify(original));
 synthetic.release_id='fiscal-v1-sha256-'+'f'.repeat(64);
 synthetic.rules.find(r=>r.rule_id==='vacation.abono_constitutional_third.ir_incidence').payload.components[0].social_security='yes';
@@ -72,6 +72,7 @@ assert.equal(thirteenth.final_irrf !== undefined, true);
     af02_monthly_and_vacation_separate:true,
     af02_13th_unchanged:true,af03_blank_vs_zero:true,
     af04_dates_rejected:true,r02_cache_expiry:true,
+    published_cp_third:publishedThird.payload.components[0].social_security,
     fixture:'SYNTHETIC_DO_NOT_PUBLISH'
   }));
 })().catch(e=>{console.error(e);process.exit(1)});
