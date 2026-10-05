@@ -74,6 +74,9 @@ PREFERRED_RULE_SOURCES = {
     "irrf.reduction.2026": RFB_SOURCE_ID,
     "vacation.irrf.reduction.2026": "PLANALTO_LEI_15270_2025",
     "vacation.abono_constitutional_third.ir_incidence": "RFB_SCI_COSIT_8_2015",
+    "irrf.deductions_by_income_type": "ESOCIAL_TABLES_S13_NT07_2026",
+    "thirteenth.irrf.exclusive_assessment": "ESOCIAL_TABLES_S13_NT07_2026",
+    "vacation.irrf.separate_assessment": "RFB_QA_IRPF_2026",
 }
 
 
