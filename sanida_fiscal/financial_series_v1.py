@@ -341,6 +341,7 @@ def _reusable_history_segment(
         or state.last_parse_status != ParseStatus.PARSED
         or state.last_successful_parser_id != parser_id
         or state.last_successful_parser_version != parser_version
+        or state.last_parsed_at_utc is None
         or not state.last_candidate_sha256
         or not state.last_candidate_path
         or not state.last_parsed_snapshot_sha256
