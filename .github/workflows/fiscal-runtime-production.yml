@@ -10,9 +10,6 @@ on:
       - 'consumers/frontend/folha-termination.js'
       - 'consumers/runtime/salario-liquido-runtime.js'
       - 'consumers/runtime/decimo-terceiro-runtime.js'
-      - 'scripts/deploy_fiscal_runtime_assets.py'
-      - 'ops/fiscal-runtime-assets.htaccess'
-      - '.github/workflows/fiscal-runtime-production.yml'
   workflow_dispatch:
 
 permissions:
