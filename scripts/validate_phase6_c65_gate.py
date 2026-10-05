@@ -170,6 +170,34 @@ def main() -> int:
     fiscal = standard.get("fiscal") or {}
     irrf = fiscal.get("irrf") or {}
 
+    third_incidence = release.select_rule(
+        "vacation.abono_constitutional_third.ir_incidence",
+        __import__("datetime").date(2026, 9, 15),
+        AssessmentContext.VACATION_CASH_ALLOWANCE,
+    )
+    third_components = getattr(third_incidence.payload, "components", ())
+    require(len(third_components) == 1, "cash-allowance third incidence profile is not singular")
+    third_cp = third_components[0].social_security.value
+    require(third_cp in {"no", "yes"}, "cash-allowance third CP incidence is not explicit")
+
+    expected_social_base = Decimal("3555.56")
+    if third_cp == "yes":
+        expected_social_base += Decimal("444.44")
+    inss_rule = release.select_rule(
+        "inss.employee.progressive_table",
+        __import__("datetime").date(2026, 9, 15),
+        AssessmentContext.VACATION_ENJOYED,
+    )
+    require(isinstance(inss_rule.payload, ProgressiveTablePayload), "INSS rule payload is incompatible")
+    require(inss_rule.rounding_policy is not None, "INSS rule rounding policy missing")
+    expected_inss = calculate_progressive(
+        expected_social_base,
+        inss_rule.payload,
+        inss_rule.rounding_policy,
+    ).amount
+    expected_irrf = Decimal(str(irrf.get("final_irrf")))
+    expected_net = Decimal("5333.33") - expected_inss - expected_irrf
+
     require(payload.get("release_id") == release.release_id, "H28 runtime used a different release_id")
     require((standard.get("fiscal_metadata") or {}).get("release_id") == release.release_id, "H28 memory lacks release_id")
     require(entitlement.get("entitled_days") == 30, "H28 standard entitlement is not 30 days")
