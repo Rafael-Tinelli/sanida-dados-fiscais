@@ -40,7 +40,7 @@ def test_sc_209_identity_requires_number_year_and_subject():
     valid = b"""
     <html><body>
       Receita Federal - Solucao de Consulta Cosit 209 de 2021.
-      Tratamento tributario do abono pecuniario de ferias.
+      Tratamento tributario do abono pecuniario de ferias e do terco constitucional.
     </body></html>
     """
     _validate_authority_identity(
