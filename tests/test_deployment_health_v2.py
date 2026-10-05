@@ -105,4 +105,4 @@ def test_post_remake_operational_surface_enforces_two_stage_health() -> None:
     assert "finalize_external_health" in finalize
     assert "APPLIED_EXTERNALLY_HEALTHY" in doc
     assert "APPLIED_ORIGIN_HEALTHY_PENDING_EXTERNAL" in doc
-    assert "não é estado final saudável" in doc
+    assert "não prova entrega pública final" in doc
