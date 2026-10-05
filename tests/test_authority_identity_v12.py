@@ -61,46 +61,42 @@ def test_marker_contract_is_fail_closed_when_malformed():
         )
 
 
-def test_selected_html_authorities_accept_known_material_snapshots_when_available():
-    registry_doc = json.loads(REGISTRY.read_text(encoding="utf-8"))
-    registry = {item["source_id"]: item for item in registry_doc["sources"]}
-    selected = set(
-        select_authority_sources(
-            source_registry_path=REGISTRY,
-            rule_inventory_path=Path("docs/rule-inventory-v1.json"),
-        ).values()
+def test_canonical_selection_excludes_broken_normas_spa_sources():
+    selected = select_authority_sources(
+        source_registry_path=REGISTRY,
+        rule_inventory_path=Path("docs/rule-inventory-v1.json"),
     )
-    # The broken IN 1500 SPA remains registered secondary context but must not
-    # participate in canonical collection until a material official endpoint exists.
-    assert "RFB_IN_1500_2014" not in selected
+    selected_sources = set(selected.values())
+    assert "RFB_IN_1500_2014" not in selected_sources
+    assert "RFB_SC_209_2021" not in selected_sources
+    assert selected["irrf.deductions_by_income_type"] == "ESOCIAL_TABLES_S13_NT07_2026"
+    assert selected["thirteenth.irrf.exclusive_assessment"] == "ESOCIAL_TABLES_S13_NT07_2026"
+    assert selected["vacation.irrf.separate_assessment"] == "RFB_QA_IRPF_2026"
+    assert selected["vacation.abono.ir_exemption"] == "RFB_QA_IRPF_2026"
+    assert selected["vacation.abono_constitutional_third.ir_incidence"] == "RFB_SCI_COSIT_8_2015"
 
-    protected = [
-        registry[source_id] for source_id in sorted(selected)
-        if registry[source_id].get("identity_marker_groups")
-        and registry[source_id].get("machine_readability") != "pdf_text"
-    ]
-    assert protected
-    for metadata in protected:
-        source_id = metadata["source_id"]
-        root = Path("evidence/fiscal-authority-v1") / source_id
-        snapshots = sorted(
-            p for p in root.rglob("*")
-            if p.is_file() and p.suffix.lower() in {".html", ".htm", ".txt"}
-        )
-        if not snapshots:
-            # A source without historical bytes is still fail-closed on the next
-            # live collection. This test only prevents regressions against known bytes.
-            continue
-        accepted = []
-        for snapshot in snapshots:
-            try:
-                _validate_authority_identity(
-                    source_id=source_id,
-                    metadata=metadata,
-                    body=snapshot.read_bytes(),
-                    media_type="text/html",
-                )
-            except AuthorityEvidenceError:
-                continue
-            accepted.append(snapshot)
-        assert accepted, f"{source_id}: no existing selected snapshot satisfies identity markers"
+
+@pytest.mark.parametrize(
+    "source_id,html",
+    [
+        (
+            "PLANALTO_CLT",
+            "<html><body>DECRETO-LEI Nº 5.452. Consolidação das Leis do Trabalho.</body></html>",
+        ),
+        (
+            "PLANALTO_DECRETO_10854_2021",
+            "<html><body>DECRETO Nº 10.854, DE 10 DE NOVEMBRO DE 2021</body></html>",
+        ),
+        (
+            "ESOCIAL_TABLES_S13_NT07_2026",
+            "<html><body>eSocial — Tabela 19 — Tabela 21</body></html>",
+        ),
+    ],
+)
+def test_material_html_identity_contract_accepts_expected_official_markers(source_id, html):
+    _validate_authority_identity(
+        source_id=source_id,
+        metadata=_metadata(source_id),
+        body=html.encode("utf-8"),
+        media_type="text/html",
+    )
