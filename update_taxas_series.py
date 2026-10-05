@@ -11,9 +11,9 @@ from sanida_fiscal.financial_series_v1 import (
     FINANCIAL_SERIES_TIMEZONE,
     SELIC_SOURCE_ID,
     FinancialSeriesBoundaryError,
-    build_financial_series_artifact,
+    build_financial_series_artifact_chunked,
     financial_series_window,
-    run_financial_history_source_pipeline,
+    run_financial_history_source_pipeline_chunked,
     validate_financial_series_artifact,
 )
 
@@ -25,6 +25,7 @@ SOURCE_RUNTIME_ROOT = Path(
 )
 TIMEOUT = int(os.getenv("SFA_TIMEOUT", "25").strip())
 RETRIES = int(os.getenv("SFA_RETRIES", "3").strip())
+CHUNK_MONTHS = int(os.getenv("SFA_HISTORY_CHUNK_MONTHS", "12").strip())
 
 HEADERS = {
     "User-Agent": "SanidaFiscaisBot/4.0 (+https://sanida.com.br)",
@@ -52,9 +53,9 @@ def main() -> None:
     start_date, end_date = financial_series_window(as_of_date)
 
     try:
-        runs = {}
+        bundles = {}
         for source_id in (SELIC_SOURCE_ID, CDI_SOURCE_ID):
-            runs[source_id] = run_financial_history_source_pipeline(
+            bundles[source_id] = run_financial_history_source_pipeline_chunked(
                 source_id=source_id,
                 observed_at_utc=observed_at_utc,
                 start_date=start_date,
@@ -66,11 +67,12 @@ def main() -> None:
                 timeout_seconds=float(TIMEOUT),
                 max_attempts=RETRIES,
                 headers=HEADERS,
+                months_per_chunk=CHUNK_MONTHS,
             )
 
-        artifact = build_financial_series_artifact(
-            selic_run=runs[SELIC_SOURCE_ID],
-            cdi_run=runs[CDI_SOURCE_ID],
+        artifact = build_financial_series_artifact_chunked(
+            selic_bundle=bundles[SELIC_SOURCE_ID],
+            cdi_bundle=bundles[CDI_SOURCE_ID],
             generated_at_utc=observed_at_utc.isoformat().replace("+00:00", "Z"),
             as_of_date=as_of_date,
         )

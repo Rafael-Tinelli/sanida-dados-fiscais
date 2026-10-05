@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date, datetime, timezone
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from hashlib import sha256
 from pathlib import Path
 from typing import Any, Mapping
 from urllib.parse import urlencode
@@ -16,6 +18,7 @@ from .financial_reference_v1 import _parse_sgs_observations, annualize_cdi_daily
 from .source_runtime_v1 import CandidateStore, SourcePipelineRun, SourceStateStore, run_source_pipeline
 from .sources_v1 import (
     HttpCollectorV1,
+    NormalizedSourceCandidate,
     ParseStatus,
     ParserIncompatibleError,
     RetryPolicy,
@@ -236,6 +239,345 @@ def run_financial_history_source_pipeline(
     )
 
 
+@dataclass(frozen=True)
+class FinancialHistoryBundle:
+    source_id: str
+    payload: dict[str, Any]
+    meta: dict[str, Any]
+
+
+def financial_history_chunks(
+    start_date: date,
+    end_date: date,
+    *,
+    months_per_chunk: int = 12,
+) -> list[tuple[date, date]]:
+    """Split a long SGS history window into bounded, non-overlapping requests."""
+    if months_per_chunk < 1 or months_per_chunk > 24:
+        raise ValueError("months_per_chunk must be between 1 and 24")
+    if start_date > end_date:
+        raise ValueError("start_date cannot be after end_date")
+    chunks: list[tuple[date, date]] = []
+    current = start_date
+    while current <= end_date:
+        first_month = month_start(current)
+        next_start = shift_months(first_month, months_per_chunk)
+        chunk_end = min(end_date, next_start - timedelta(days=1))
+        chunks.append((current, chunk_end))
+        current = chunk_end + timedelta(days=1)
+    return chunks
+
+
+def _merge_history_payloads(
+    *,
+    source_id: str,
+    start_date: date,
+    end_date: date,
+    payloads: list[Mapping[str, Any]],
+    value_key: str,
+    series_code: int,
+    unit: str,
+) -> dict[str, Any]:
+    observations: dict[str, dict[str, str]] = {}
+    expected_start = start_date
+    for payload in payloads:
+        if payload.get("source_id") != source_id:
+            raise FinancialSeriesBoundaryError(f"{source_id}: chunk source_id mismatch")
+        chunk_start = date.fromisoformat(str(payload.get("start_date")))
+        chunk_end = date.fromisoformat(str(payload.get("end_date")))
+        if chunk_start != expected_start:
+            raise FinancialSeriesBoundaryError(
+                f"{source_id}: non-contiguous history chunks at {expected_start.isoformat()}"
+            )
+        if chunk_end < chunk_start or chunk_end > end_date:
+            raise FinancialSeriesBoundaryError(f"{source_id}: invalid history chunk boundary")
+        for item in payload.get("observations") or []:
+            if not isinstance(item, Mapping):
+                raise FinancialSeriesBoundaryError(f"{source_id}: malformed history observation")
+            day = str(item.get("date"))
+            if day in observations:
+                raise FinancialSeriesBoundaryError(f"{source_id}: duplicate history observation {day}")
+            canonical = item.get(value_key)
+            if not isinstance(canonical, str):
+                raise FinancialSeriesBoundaryError(f"{source_id}: history value missing for {day}")
+            observations[day] = {"date": day, value_key: canonical}
+        expected_start = chunk_end + timedelta(days=1)
+    if expected_start != end_date + timedelta(days=1):
+        raise FinancialSeriesBoundaryError(f"{source_id}: history chunks do not cover requested end")
+    ordered = [observations[key] for key in sorted(observations)]
+    if not ordered:
+        raise FinancialSeriesBoundaryError(f"{source_id}: merged history is empty")
+    result: dict[str, Any] = {
+        "observation_type": "bcb_financial_history",
+        "source_id": source_id,
+        "series_code": series_code,
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "unit": unit,
+        "observations": ordered,
+    }
+    if source_id == CDI_SOURCE_ID:
+        result["annualization_basis_business_days"] = 252
+    return result
+
+
+def _reusable_history_segment(
+    *,
+    source_id: str,
+    source_url: str,
+    parser_id: str,
+    parser_version: str,
+    state_root: Path,
+    candidate_root: Path,
+    snapshot_root: Path,
+    start_date: date,
+    end_date: date,
+) -> tuple[dict[str, Any], dict[str, Any]] | None:
+    """Load one completed immutable segment without touching the network."""
+    state = SourceStateStore(state_root).load(source_id)
+    if (
+        state is None
+        or state.source_url != source_url
+        or state.last_parse_status != ParseStatus.PARSED
+        or state.last_successful_parser_id != parser_id
+        or state.last_successful_parser_version != parser_version
+        or state.last_parsed_at_utc is None
+        or not state.last_candidate_sha256
+        or not state.last_candidate_path
+        or not state.last_parsed_snapshot_sha256
+        or not state.last_parsed_snapshot_path
+    ):
+        return None
+    try:
+        # CandidateStore is intentionally payload-only and content-addressed.
+        # Do not pretend the stored JSON is a NormalizedSourceCandidate.
+        payload = dict(
+            CandidateStore(candidate_root).read(
+                relative_path=state.last_candidate_path,
+                expected_sha256=state.last_candidate_sha256,
+            )
+        )
+    except Exception:
+        return None
+
+    snapshot_path = Path(snapshot_root) / state.last_parsed_snapshot_path
+    if not snapshot_path.is_file():
+        return None
+    body = snapshot_path.read_bytes()
+    if sha256(body).hexdigest() != state.last_parsed_snapshot_sha256:
+        return None
+
+    # Reparse the immutable source bytes and require semantic equality with the
+    # content-addressed candidate before reusing a closed segment.
+    try:
+        if source_id == SELIC_SOURCE_ID:
+            reparsed = parse_bcb_selic_history_snapshot(
+                body, start_date=start_date, end_date=end_date
+            )
+        elif source_id == CDI_SOURCE_ID:
+            reparsed = parse_bcb_cdi_history_snapshot(
+                body, start_date=start_date, end_date=end_date
+            )
+        else:
+            return None
+    except Exception:
+        return None
+    if reparsed != payload:
+        return None
+    if (
+        payload.get("source_id") != source_id
+        or payload.get("start_date") != start_date.isoformat()
+        or payload.get("end_date") != end_date.isoformat()
+    ):
+        return None
+    return payload, {
+        "source_id": source_id,
+        "url": source_url,
+        "http_code": state.last_http_status,
+        "snapshot_sha256": state.last_parsed_snapshot_sha256,
+        "candidate_sha256": state.last_candidate_sha256,
+        "parser_id": parser_id,
+        "parser_version": parser_version,
+        "observed_at_utc": state.last_parsed_at_utc.isoformat().replace("+00:00", "Z"),
+        "observation_count": len(payload.get("observations") or []),
+        "candidate_path": state.last_candidate_path,
+        "snapshot_path": state.last_parsed_snapshot_path,
+        "reused_immutable_segment": True,
+    }
+
+
+def run_financial_history_source_pipeline_chunked(
+    *,
+    source_id: str,
+    observed_at_utc: datetime,
+    start_date: date,
+    end_date: date,
+    registry_path: Path = Path("docs/financial-source-registry-v1.json"),
+    snapshot_root: Path = Path(".financial-series-runtime/snapshots"),
+    state_root: Path = Path(".financial-series-runtime/state"),
+    candidate_root: Path = Path(".financial-series-runtime/candidates"),
+    timeout_seconds: float = 25.0,
+    max_attempts: int = 3,
+    transport: httpx.BaseTransport | None = None,
+    headers: dict[str, str] | None = None,
+    months_per_chunk: int = 12,
+) -> FinancialHistoryBundle:
+    registry = load_source_registry(registry_path)
+    if source_id not in registry:
+        raise FinancialSeriesBoundaryError(f"unknown financial source_id: {source_id}")
+    base_source = registry[source_id]
+    if source_id == SELIC_SOURCE_ID:
+        parser_id, parser_version = SELIC_HISTORY_PARSER_ID, SELIC_HISTORY_PARSER_VERSION
+    elif source_id == CDI_SOURCE_ID:
+        parser_id, parser_version = CDI_HISTORY_PARSER_ID, CDI_HISTORY_PARSER_VERSION
+    else:
+        raise FinancialSeriesBoundaryError(f"unsupported financial history source_id: {source_id}")
+
+    chunks = financial_history_chunks(start_date, end_date, months_per_chunk=months_per_chunk)
+    payloads: list[Mapping[str, Any]] = []
+    segments: list[dict[str, Any]] = []
+    current_month = month_start(end_date)
+    reused_count = 0
+
+    def collect_segment(segment_start: date, segment_end: date) -> None:
+        nonlocal reused_count
+
+        key = f"{segment_start.isoformat()}_{segment_end.isoformat()}"
+        segment_state_root = state_root / "segments" / key
+        source_url = _history_url(base_source, segment_start, segment_end)
+        reusable = None
+        if segment_end < current_month:
+            reusable = _reusable_history_segment(
+                source_id=source_id,
+                source_url=source_url,
+                parser_id=parser_id,
+                parser_version=parser_version,
+                state_root=segment_state_root,
+                candidate_root=candidate_root,
+                snapshot_root=snapshot_root,
+                start_date=segment_start,
+                end_date=segment_end,
+            )
+
+        if reusable is not None:
+            payload, meta = reusable
+            reused_count += 1
+        else:
+            run = run_financial_history_source_pipeline(
+                source_id=source_id,
+                observed_at_utc=observed_at_utc,
+                start_date=segment_start,
+                end_date=segment_end,
+                registry_path=registry_path,
+                snapshot_root=snapshot_root,
+                state_root=segment_state_root,
+                candidate_root=candidate_root,
+                timeout_seconds=timeout_seconds,
+                max_attempts=max_attempts,
+                transport=transport,
+                headers=headers,
+            )
+            if run.candidate is None or run.candidate.status != ParseStatus.PARSED:
+                month_count = len(month_keys(segment_start, segment_end))
+                if month_count <= 1:
+                    detail = (
+                        run.state.last_source_error
+                        or run.state.last_parser_error
+                        or "not_parsed"
+                    )
+                    raise FinancialSeriesBoundaryError(
+                        f"{source_id}: history segment "
+                        f"{segment_start.isoformat()}..{segment_end.isoformat()} "
+                        f"failed closed: {detail}"
+                    )
+
+                child_months = max(1, month_count // 2)
+                children = financial_history_chunks(
+                    segment_start,
+                    segment_end,
+                    months_per_chunk=child_months,
+                )
+                if len(children) < 2:
+                    child_months = max(1, month_count - 1)
+                    children = financial_history_chunks(
+                        segment_start,
+                        segment_end,
+                        months_per_chunk=child_months,
+                    )
+                if len(children) < 2:
+                    detail = (
+                        run.state.last_source_error
+                        or run.state.last_parser_error
+                        or "not_parsed"
+                    )
+                    raise FinancialSeriesBoundaryError(
+                        f"{source_id}: cannot subdivide failed history segment "
+                        f"{segment_start.isoformat()}..{segment_end.isoformat()}: {detail}"
+                    )
+                for child_start, child_end in children:
+                    collect_segment(child_start, child_end)
+                return
+
+            payload = _require_payload(run, source_id)
+            meta = _source_meta(run, payload)
+            meta.update(
+                {
+                    "candidate_path": run.state.last_candidate_path,
+                    "snapshot_path": run.candidate.snapshot_path if run.candidate else None,
+                    "reused_immutable_segment": False,
+                }
+            )
+
+        payloads.append(payload)
+        meta.update(
+            {
+                "start_date": segment_start.isoformat(),
+                "end_date": segment_end.isoformat(),
+            }
+        )
+        segments.append(meta)
+
+    for chunk_start, chunk_end in chunks:
+        collect_segment(chunk_start, chunk_end)
+
+    if source_id == SELIC_SOURCE_ID:
+        merged = _merge_history_payloads(
+            source_id=source_id,
+            start_date=start_date,
+            end_date=end_date,
+            payloads=payloads,
+            value_key="annual_rate_pct",
+            series_code=432,
+            unit="percent_per_year",
+        )
+    else:
+        merged = _merge_history_payloads(
+            source_id=source_id,
+            start_date=start_date,
+            end_date=end_date,
+            payloads=payloads,
+            value_key="daily_rate_pct",
+            series_code=12,
+            unit="percent_per_business_day",
+        )
+
+    return FinancialHistoryBundle(
+        source_id=source_id,
+        payload=merged,
+        meta={
+            "source_id": source_id,
+            "collection_mode": f"chunked_{months_per_chunk}_months_v1",
+            "parser_id": parser_id,
+            "parser_version": parser_version,
+            "observed_at_utc": observed_at_utc.isoformat().replace("+00:00", "Z"),
+            "observation_count": len(merged["observations"]),
+            "segment_count": len(segments),
+            "reused_segment_count": reused_count,
+            "segments": segments,
+        },
+    )
+
+
 def _require_payload(run: SourcePipelineRun, source_id: str) -> dict[str, Any]:
     if run.collection.source_id != source_id:
         raise FinancialSeriesBoundaryError(
@@ -318,10 +660,12 @@ def _source_meta(run: SourcePipelineRun, payload: Mapping[str, Any]) -> dict[str
     }
 
 
-def build_financial_series_artifact(
+def _build_financial_series_artifact_from_payloads(
     *,
-    selic_run: SourcePipelineRun,
-    cdi_run: SourcePipelineRun,
+    selic: Mapping[str, Any],
+    cdi: Mapping[str, Any],
+    selic_meta: Mapping[str, Any],
+    cdi_meta: Mapping[str, Any],
     generated_at_utc: str,
     as_of_date: date,
 ) -> dict[str, Any]:
@@ -336,9 +680,6 @@ def build_financial_series_artifact(
     expected_months = month_keys(start_date, end_date)
     if len(expected_months) != FINANCIAL_SERIES_MONTHS:
         raise FinancialSeriesBoundaryError("history window is not exactly 120 calendar months")
-
-    selic = _require_payload(selic_run, SELIC_SOURCE_ID)
-    cdi = _require_payload(cdi_run, CDI_SOURCE_ID)
 
     for payload, source_id in ((selic, SELIC_SOURCE_ID), (cdi, CDI_SOURCE_ID)):
         if payload.get("source_id") != source_id:
@@ -421,10 +762,11 @@ def build_financial_series_artifact(
                 "cdi_monthly_level": "last_SGS_12_daily_observation_in_calendar_month_annualized_by_compounding_252_business_days",
                 "cdi_monthly_return": "compound_all_SGS_12_daily_percent_observations_in_calendar_month",
                 "current_month": "month_to_date_and_marked_incomplete",
+                "source_collection": "bounded_chunks_with_immutable_segment_evidence",
             },
             "sources": {
-                "selic": _source_meta(selic_run, selic),
-                "cdi": _source_meta(cdi_run, cdi),
+                "selic": dict(selic_meta),
+                "cdi": dict(cdi_meta),
             },
             "latest_cdi_observation_age_calendar_days": cdi_age_days,
             "max_latest_cdi_observation_age_calendar_days": CDI_MAX_OBSERVATION_AGE_DAYS,
@@ -433,6 +775,44 @@ def build_financial_series_artifact(
         },
         "points": points,
     }
+
+
+def build_financial_series_artifact(
+    *,
+    selic_run: SourcePipelineRun,
+    cdi_run: SourcePipelineRun,
+    generated_at_utc: str,
+    as_of_date: date,
+) -> dict[str, Any]:
+    selic = _require_payload(selic_run, SELIC_SOURCE_ID)
+    cdi = _require_payload(cdi_run, CDI_SOURCE_ID)
+    return _build_financial_series_artifact_from_payloads(
+        selic=selic,
+        cdi=cdi,
+        selic_meta=_source_meta(selic_run, selic),
+        cdi_meta=_source_meta(cdi_run, cdi),
+        generated_at_utc=generated_at_utc,
+        as_of_date=as_of_date,
+    )
+
+
+def build_financial_series_artifact_chunked(
+    *,
+    selic_bundle: FinancialHistoryBundle,
+    cdi_bundle: FinancialHistoryBundle,
+    generated_at_utc: str,
+    as_of_date: date,
+) -> dict[str, Any]:
+    if selic_bundle.source_id != SELIC_SOURCE_ID or cdi_bundle.source_id != CDI_SOURCE_ID:
+        raise FinancialSeriesBoundaryError("chunked bundle source identity mismatch")
+    return _build_financial_series_artifact_from_payloads(
+        selic=selic_bundle.payload,
+        cdi=cdi_bundle.payload,
+        selic_meta=selic_bundle.meta,
+        cdi_meta=cdi_bundle.meta,
+        generated_at_utc=generated_at_utc,
+        as_of_date=as_of_date,
+    )
 
 
 def validate_financial_series_artifact(

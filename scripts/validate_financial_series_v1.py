@@ -44,40 +44,79 @@ def main() -> int:
     sources = artifact["meta"]["sources"]
     for label, source_id in (("selic", SELIC_SOURCE_ID), ("cdi", CDI_SOURCE_ID)):
         meta = sources[label]
+        segments = meta.get("segments")
+        if isinstance(segments, list) and segments:
+            previous_end = None
+            for index, segment in enumerate(segments):
+                start = segment.get("start_date")
+                end = segment.get("end_date")
+                require(isinstance(start, str) and isinstance(end, str), f"{source_id}: segment boundary missing")
+                if previous_end is not None:
+                    require(
+                        date.fromisoformat(start).toordinal() == date.fromisoformat(previous_end).toordinal() + 1,
+                        f"{source_id}: non-contiguous segment boundary",
+                    )
+                previous_end = end
+                key = f"{start}_{end}"
+                state_path = runtime_root / "state" / "segments" / key / f"{safe_source_id(source_id)}.json"
+                require(state_path.is_file(), f"{source_id}: segment state missing: {key}")
+                state = json.loads(state_path.read_text(encoding="utf-8"))
+                require(state.get("source_id") == source_id, f"{source_id}: segment state source_id mismatch")
+                require(state.get("source_url") == segment.get("url"), f"{source_id}: segment source_url mismatch")
+                require(state.get("last_parse_status") == "PARSED", f"{source_id}: segment parse not PARSED")
+                require(
+                    state.get("last_candidate_sha256") == segment.get("candidate_sha256"),
+                    f"{source_id}: segment candidate fingerprint mismatch",
+                )
+                require(
+                    state.get("last_parsed_snapshot_sha256") == segment.get("snapshot_sha256"),
+                    f"{source_id}: segment snapshot fingerprint mismatch",
+                )
+                candidate_rel = segment.get("candidate_path")
+                snapshot_rel = segment.get("snapshot_path")
+                require(isinstance(candidate_rel, str), f"{source_id}: segment candidate path missing")
+                require(isinstance(snapshot_rel, str), f"{source_id}: segment snapshot path missing")
+                candidate_path = runtime_root / "candidates" / candidate_rel
+                snapshot_path = runtime_root / "snapshots" / snapshot_rel
+                require(candidate_path.is_file(), f"{source_id}: segment candidate file missing")
+                require(snapshot_path.is_file(), f"{source_id}: segment snapshot file missing")
+                require(
+                    sha256(candidate_path.read_bytes()).hexdigest() == segment["candidate_sha256"],
+                    f"{source_id}: segment candidate bytes hash mismatch",
+                )
+                require(
+                    sha256(snapshot_path.read_bytes()).hexdigest() == segment["snapshot_sha256"],
+                    f"{source_id}: segment snapshot bytes hash mismatch",
+                )
+            require(
+                segments[0]["start_date"] == artifact["meta"]["window"]["start_date"],
+                f"{source_id}: first segment does not start at artifact window",
+            )
+            require(
+                segments[-1]["end_date"] == artifact["meta"]["window"]["end_date"],
+                f"{source_id}: last segment does not end at artifact window",
+            )
+            continue
+
+        # Backward-compatible validation for the pre-chunked artifact format.
         state_path = runtime_root / "state" / f"{safe_source_id(source_id)}.json"
         require(state_path.is_file(), f"{source_id}: state missing")
         state = json.loads(state_path.read_text(encoding="utf-8"))
-
         require(state.get("source_id") == source_id, f"{source_id}: state source_id mismatch")
         require(state.get("source_url") == meta.get("url"), f"{source_id}: source_url mismatch")
         require(state.get("last_parse_status") == "PARSED", f"{source_id}: last parse not PARSED")
-        require(
-            state.get("last_candidate_sha256") == meta.get("candidate_sha256"),
-            f"{source_id}: candidate fingerprint mismatch",
-        )
-        require(
-            state.get("last_parsed_snapshot_sha256") == meta.get("snapshot_sha256"),
-            f"{source_id}: snapshot fingerprint mismatch",
-        )
-
+        require(state.get("last_candidate_sha256") == meta.get("candidate_sha256"), f"{source_id}: candidate fingerprint mismatch")
+        require(state.get("last_parsed_snapshot_sha256") == meta.get("snapshot_sha256"), f"{source_id}: snapshot fingerprint mismatch")
         candidate_rel = state.get("last_candidate_path")
         snapshot_rel = state.get("last_parsed_snapshot_path")
         require(isinstance(candidate_rel, str), f"{source_id}: candidate path missing")
         require(isinstance(snapshot_rel, str), f"{source_id}: snapshot path missing")
-
         candidate_path = runtime_root / "candidates" / candidate_rel
         snapshot_path = runtime_root / "snapshots" / snapshot_rel
         require(candidate_path.is_file(), f"{source_id}: candidate file missing")
         require(snapshot_path.is_file(), f"{source_id}: snapshot file missing")
-
-        require(
-            sha256(candidate_path.read_bytes()).hexdigest() == meta["candidate_sha256"],
-            f"{source_id}: candidate bytes hash mismatch",
-        )
-        require(
-            sha256(snapshot_path.read_bytes()).hexdigest() == meta["snapshot_sha256"],
-            f"{source_id}: snapshot bytes hash mismatch",
-        )
+        require(sha256(candidate_path.read_bytes()).hexdigest() == meta["candidate_sha256"], f"{source_id}: candidate bytes hash mismatch")
+        require(sha256(snapshot_path.read_bytes()).hexdigest() == meta["snapshot_sha256"], f"{source_id}: snapshot bytes hash mismatch")
 
     print(
         "Financial historical series validation: PASS "

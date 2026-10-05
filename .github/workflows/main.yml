@@ -40,9 +40,14 @@ jobs:
         shell: bash
         run: |
           set +e
-          python scraper.py
-          code=$?
+          python scraper.py | tee /tmp/sanida-scraper.log
+          code=${PIPESTATUS[0]}
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if grep -q '^WARN: coleta/bridge falhou; mantendo last-good' /tmp/sanida-scraper.log; then
+            echo "artifact_state=preserved" >> "$GITHUB_OUTPUT"
+          else
+            echo "artifact_state=updated_or_error" >> "$GITHUB_OUTPUT"
+          fi
           exit 0
 
       - name: Validate persisted source evidence
@@ -51,9 +56,16 @@ jobs:
         run: |
           set +e
           if [ "${{ steps.scraper.outputs.exit_code }}" = "0" ]; then
-            python scripts/validate_production_evidence_v1.py \
-              --artifact dados_fiscais.json \
-              --runtime-root "$SFA_SOURCE_RUNTIME_ROOT"
+            if [ "${{ steps.scraper.outputs.artifact_state }}" = "preserved" ]; then
+              python scripts/validate_production_evidence_v1.py \
+                --artifact dados_fiscais.json \
+                --runtime-root "$SFA_SOURCE_RUNTIME_ROOT" \
+                --preserved
+            else
+              python scripts/validate_production_evidence_v1.py \
+                --artifact dados_fiscais.json \
+                --runtime-root "$SFA_SOURCE_RUNTIME_ROOT"
+            fi
             code=$?
           else
             echo "Skipping artifact provenance validation because scraper failed."
@@ -69,7 +81,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           if [ "${{ steps.scraper.outputs.exit_code }}" = "0" ] && \
-             [ "${{ steps.evidence.outputs.exit_code }}" = "0" ]; then
+             [ "${{ steps.evidence.outputs.exit_code }}" = "0" ] && \
+             [ "${{ steps.scraper.outputs.artifact_state }}" != "preserved" ]; then
             git add dados_fiscais.json "$SFA_SOURCE_RUNTIME_ROOT"
             commit_message="chore(data): atualizar dados fiscais e evidências de fonte"
           else
@@ -101,4 +114,9 @@ jobs:
             echo "production evidence validation failed with exit code ${{ steps.evidence.outputs.exit_code }}"
             exit 1
           fi
-          echo "Production artifact and durable source evidence are consistent."
+          if [ "${{ steps.scraper.outputs.artifact_state }}" = "preserved" ]; then
+            echo "::warning::No new payroll artifact: preserved historical evidence validated; source update blocked."
+            echo "LAST_GOOD_PRESERVED=PASS; NEW_ARTIFACT=BLOCKED"
+          else
+            echo "Production artifact and durable source evidence are consistent."
+          fi

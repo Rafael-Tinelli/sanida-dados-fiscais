@@ -26,6 +26,7 @@ jobs:
       contents: write
     env:
       SFA_FINANCIAL_SERIES_RUNTIME_ROOT: evidence/financial-series-v1
+      SFA_HISTORY_CHUNK_MONTHS: 12
 
     steps:
       - name: Checkout

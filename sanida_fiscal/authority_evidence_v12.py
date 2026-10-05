@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from io import BytesIO
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import re
 from typing import Any, Mapping
+import unicodedata
 
 import requests
+from bs4 import BeautifulSoup
+from pypdf import PdfReader
 
 from .inss_employee_v1 import (
     PARSER_ID as INSS_PARSER_ID,
@@ -67,7 +72,12 @@ PREFERRED_RULE_SOURCES = {
     "irrf.dependent_deduction": RFB_SOURCE_ID,
     "irrf.simplified_monthly_discount": RFB_SOURCE_ID,
     "irrf.reduction.2026": RFB_SOURCE_ID,
+    "irrf.deductions_by_income_type": "ESOCIAL_TABLES_S13_NT07_2026",
+    "thirteenth.irrf.exclusive_assessment": "ESOCIAL_TABLES_S13_NT07_2026",
+    "vacation.irrf.separate_assessment": "RFB_QA_IRPF_2026",
+    "vacation.abono.ir_exemption": "RFB_QA_IRPF_2026",
     "vacation.irrf.reduction.2026": "PLANALTO_LEI_15270_2025",
+    "vacation.abono_constitutional_third.ir_incidence": "RFB_SCI_COSIT_8_2015",
 }
 
 
@@ -345,6 +355,74 @@ def _collect_authority_source(
     )
 
 
+def _normalize_visible_text(raw: bytes, media_type: str | None) -> str:
+    """Normalize visible source text solely for identity checks."""
+    media = (media_type or "").lower()
+    if "pdf" in media or raw.startswith(b"%PDF-"):
+        try:
+            reader = PdfReader(BytesIO(raw), strict=True)
+        except Exception as exc:
+            raise AuthorityEvidenceError("authority PDF cannot be parsed") from exc
+        if reader.is_encrypted:
+            raise AuthorityEvidenceError("authority PDF is encrypted")
+        decoded = " ".join(page.extract_text() or "" for page in reader.pages)
+        if not decoded.strip():
+            raise AuthorityEvidenceError("authority PDF has no extractable text")
+    else:
+        # Let the HTML parser inspect raw bytes so official legacy pages
+        # (notably Planalto) can honor their declared/detected encoding before
+        # Unicode normalization. Decoding as UTF-8 first destroys material
+        # identity markers such as "Consolidação".
+        if b"<" in raw and b">" in raw:
+            decoded = BeautifulSoup(raw, "html.parser").get_text(" ", strip=True)
+        else:
+            decoded = raw.decode("utf-8", errors="replace")
+    normalized = unicodedata.normalize("NFKD", decoded)
+    normalized = "".join(ch for ch in normalized if not unicodedata.combining(ch))
+    return re.sub(r"\s+", " ", normalized.lower()).strip()
+
+
+def _validate_authority_identity(
+    *,
+    source_id: str,
+    metadata: Mapping[str, Any],
+    body: bytes,
+    media_type: str | None,
+) -> None:
+    """Reject successful HTTP responses that do not identify the requested norm.
+
+    The registry stores groups of mandatory markers. Every group must have all
+    of its tokens in the normalized visible text. This specifically prevents a
+    generic SPA/bootstrap page from being stamped as two different legal norms.
+    """
+    groups = metadata.get("identity_marker_groups")
+    if groups is None:
+        return
+    if not isinstance(groups, list) or not groups:
+        raise AuthorityEvidenceError(f"{source_id}: invalid identity marker contract")
+    text = _normalize_visible_text(body, media_type)
+    if not text:
+        raise AuthorityEvidenceError(
+            f"{source_id}: source identity cannot be verified from retrieved media"
+        )
+    missing_groups: list[list[str]] = []
+    for group in groups:
+        if not isinstance(group, list) or not group or not all(isinstance(x, str) and x for x in group):
+            raise AuthorityEvidenceError(f"{source_id}: malformed identity marker group")
+        normalized_group = []
+        for token in group:
+            t = unicodedata.normalize("NFKD", token)
+            t = "".join(ch for ch in t if not unicodedata.combining(ch)).lower()
+            normalized_group.append(t)
+        if not all(token in text for token in normalized_group):
+            missing_groups.append(group)
+    if missing_groups:
+        raise AuthorityEvidenceError(
+            f"{source_id}: HTTP response does not prove source identity; "
+            f"missing_marker_groups={missing_groups}"
+        )
+
+
 def collect_authority_evidence(
     *,
     source_registry_path: Path,
@@ -364,6 +442,7 @@ def collect_authority_evidence(
         rule_inventory_path=rule_inventory_path,
     )
     registry = load_source_registry(source_registry_path)
+    registry_metadata = _registry_metadata(source_registry_path)
     required_source_ids = sorted(set(selected.values()) | set(PARSER_BINDINGS))
 
     policy = retry_policy or RetryPolicy(max_attempts=3, timeout_seconds=30.0)
@@ -400,6 +479,14 @@ def collect_authority_evidence(
                 result.failure_kind.value if result.failure_kind else result.status.value
             )
             raise AuthorityEvidenceError(f"{source_id}: official source unavailable: {detail}")
+
+        raw_body = store.read(result.snapshot)
+        _validate_authority_identity(
+            source_id=source_id,
+            metadata=registry_metadata.get(source_id, {}),
+            body=raw_body,
+            media_type=result.snapshot.media_type,
+        )
 
         parser_id = None
         parser_version = None

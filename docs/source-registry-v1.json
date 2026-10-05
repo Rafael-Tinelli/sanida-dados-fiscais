@@ -10,7 +10,8 @@
       "official_operational",
       "official_reference_case"
     ],
-    "note": "Fonte privada pode auxiliar descoberta, mas não pode ser autoridade canônica de regra fiscal/trabalhista quando houver fonte oficial adequada."
+    "note": "Fonte privada pode auxiliar descoberta, mas não pode ser autoridade canônica de regra fiscal/trabalhista quando houver fonte oficial adequada.",
+    "content_identity_required_for_registered_markers": true
   },
   "sources": [
     {
@@ -23,7 +24,16 @@
         "irrf.reduction.2026",
         "thirteenth.irrf.reduction.2026"
       ],
-      "notes": "Institui a redução do IR a partir de janeiro/2026 para rendimentos tributáveis sujeitos à incidência mensal e determina sua aplicação ao IR exclusivo do 13º."
+      "notes": "Institui a redução do IR a partir de janeiro/2026 para rendimentos tributáveis sujeitos à incidência mensal e determina sua aplicação ao IR exclusivo do 13º.",
+      "identity_marker_groups": [
+        [
+          "lei",
+          "15.270"
+        ],
+        [
+          "2025"
+        ]
+      ]
     },
     {
       "source_id": "RFB_IRRF_TABLE_CURRENT",
@@ -62,7 +72,17 @@
         "irrf.simplified_monthly_discount",
         "irrf.reduction.2026"
       ],
-      "notes": "Versão anotada já incorpora alterações de 2025; art. 29 trata férias em apuração separada e o Anexo X contém a redução mensal a partir de 2026."
+      "notes": "Versão anotada já incorpora alterações de 2025; art. 29 trata férias em apuração separada e o Anexo X contém a redução mensal a partir de 2026.",
+      "identity_marker_groups": [
+        [
+          "instrucao normativa",
+          "1.500"
+        ],
+        [
+          "ferias",
+          "imposto sobre a renda"
+        ]
+      ]
     },
     {
       "source_id": "RFB_QA_IRPF_2026",
@@ -75,19 +95,40 @@
         "vacation.indemnified.ir_exemption",
         "vacation.abono.ir_exemption"
       ],
-      "notes": "Pergunta 178: férias gozadas + terço são tributadas separadamente; férias não gozadas convertidas em pecúnia na extinção e abono do art. 143 têm hipóteses de não tributação."
+      "notes": "Pergunta 178: férias gozadas + terço são tributadas separadamente; férias não gozadas convertidas em pecúnia na extinção e abono do art. 143 têm hipóteses de não tributação. Identidade material exigida no PDF: título/ano e pergunta 178.",
+      "identity_marker_groups": [
+        [
+          "perguntas e respostas",
+          "2026"
+        ],
+        [
+          "ferias",
+          "178"
+        ]
+      ]
     },
     {
       "source_id": "RFB_SC_209_2021",
       "authority": "Receita Federal / Cosit",
       "role": "administrative_norm",
-      "url": "https://normas.receita.fazenda.gov.br/sijut2consulta/consulta.action?termoBusca=abono+pecuniario",
-      "machine_readability": "html_search_result",
+      "url": "https://normas.receita.fazenda.gov.br/sijut2consulta/anexoOutros.action?idArquivoBinario=64080",
+      "machine_readability": "pdf_text",
       "covers": [
         "vacation.abono.ir_exemption",
         "vacation.abono_constitutional_third.ir_incidence"
       ],
-      "notes": "Abono pecuniário do art. 143 não sofre IR; o terço constitucional incidente sobre o abono, pago durante o contrato, sofre IR."
+      "notes": "Íntegra oficial em PDF da SC Cosit nº 209/2021. O principal do abono do art. 143 não sofre IR; o terço constitucional incidente sobre o abono, pago durante o contrato, sofre IR.",
+      "identity_marker_groups": [
+        [
+          "solucao de consulta",
+          "209",
+          "2021"
+        ],
+        [
+          "abono pecuniario",
+          "terco constitucional"
+        ]
+      ]
     },
     {
       "source_id": "RFB_CP_INCIDENCE_TABLE",
@@ -100,7 +141,17 @@
         "vacation.indemnified.cp_exemption",
         "vacation.abono.cp_exemption"
       ],
-      "notes": "Distingue férias gozadas, férias indenizadas e abono pecuniário para contribuição previdenciária."
+      "notes": "Distingue férias gozadas, férias indenizadas e abono pecuniário para contribuição previdenciária.",
+      "identity_marker_groups": [
+        [
+          "tabela",
+          "incidencia",
+          "contribuicao"
+        ],
+        [
+          "ferias"
+        ]
+      ]
     },
     {
       "source_id": "INSS_TABLE_CURRENT",
@@ -126,7 +177,16 @@
         "vacation.abono_pecuniario",
         "termination.vacation_entitlement"
       ],
-      "notes": "Arts. 129–147: direito, duração, concessão, abono e efeitos da cessação do contrato."
+      "notes": "Arts. 129–147: direito, duração, concessão, abono e efeitos da cessação do contrato.",
+      "identity_marker_groups": [
+        [
+          "consolidacao das leis do trabalho"
+        ],
+        [
+          "decreto-lei",
+          "5.452"
+        ]
+      ]
     },
     {
       "source_id": "PLANALTO_LEI_4090_1962",
@@ -163,7 +223,16 @@
         "thirteenth.advance",
         "termination.thirteenth_proportional"
       ],
-      "notes": "Arts. 76–82: remuneração de dezembro, variáveis, adiantamento, admissão durante o ano e extinção do contrato."
+      "notes": "Arts. 76–82: remuneração de dezembro, variáveis, adiantamento, admissão durante o ano e extinção do contrato.",
+      "identity_marker_groups": [
+        [
+          "decreto",
+          "10.854"
+        ],
+        [
+          "2021"
+        ]
+      ]
     },
     {
       "source_id": "ESOCIAL_TABLES_S13_NT07_2026",
@@ -177,7 +246,18 @@
         "termination.reason_scope",
         "vacation.tax_components"
       ],
-      "notes": "Tabela 19 codifica motivos de desligamento; Tabela 21 separa mensal, 13º e férias para base, retenção e deduções de IR."
+      "notes": "Tabela 19 codifica motivos de desligamento; Tabela 21 separa mensal, 13º e férias para base, retenção e deduções de IR.",
+      "identity_marker_groups": [
+        [
+          "esocial"
+        ],
+        [
+          "tabela 19"
+        ],
+        [
+          "tabela 21"
+        ]
+      ]
     },
     {
       "source_id": "ESOCIAL_WEB_MEI_2026",
@@ -190,7 +270,18 @@
         "termination.reason_scope",
         "termination.thirteenth_proportional"
       ],
-      "notes": "No módulo simplificado, mensalistas/quinzenalistas usam salário-base / dias totais do mês × dia do desligamento; motivo é entrada obrigatória."
+      "notes": "No módulo simplificado, mensalistas/quinzenalistas usam salário-base / dias totais do mês × dia do desligamento; motivo é entrada obrigatória.",
+      "identity_marker_groups": [
+        [
+          "esocial"
+        ],
+        [
+          "mei"
+        ],
+        [
+          "desligamento"
+        ]
+      ]
     },
     {
       "source_id": "ESOCIAL_SIMPLIFIED_ABONO_2026",
@@ -218,6 +309,28 @@
         "termination.vacation_entitlement"
       ],
       "notes": "Distingue pedido de demissão, acordo, dispensa sem justa causa, justa causa e rescisão indireta, com verbas correspondentes."
+    },
+    {
+      "source_id": "RFB_SCI_COSIT_8_2015",
+      "authority": "Receita Federal / Cosit, Solução de Consulta Interna nº 8/2015",
+      "role": "administrative_norm",
+      "url": "https://normas.receita.fazenda.gov.br/sijut2consulta/anexoOutros.action?idArquivoBinario=36769",
+      "machine_readability": "pdf_text",
+      "covers": [
+        "vacation.abono_constitutional_third.ir_incidence"
+      ],
+      "notes": "SCI 8/2015: CP incide sobre o terço constitucional integral de férias, inclusive parcela proporcional aos dias convertidos em abono; não confundir com adicional extra por liberalidade. Férias indenizadas excluídas; principal do abono não integra CP. Se o endpoint devolver HTML/SPA em vez do PDF da SCI, a coleta deve falhar fechada.",
+      "identity_marker_groups": [
+        [
+          "solucao de consulta interna",
+          "8",
+          "2015"
+        ],
+        [
+          "terco constitucional",
+          "abono pecuniario"
+        ]
+      ]
     }
   ]
 }

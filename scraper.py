@@ -5,13 +5,17 @@ from decimal import Decimal, InvalidOperation
 import json
 import os
 from pathlib import Path
+from zoneinfo import ZoneInfo
 from typing import Any, Dict, List, Optional, Tuple
 
 from sanida_fiscal.financial_artifact_v1 import FINANCIAL_ARTIFACT_SCHEMA_VERSION
 from sanida_fiscal.financial_evidence_v1 import (
     FinancialEvidenceError,
     verify_financial_artifact_evidence,
+    verify_preserved_financial_last_good_artifact_evidence,
 )
+from sanida_fiscal.source_runtime_v1 import SourceStateStore
+from sanida_fiscal.sources_v1 import ParseStatus
 from sanida_fiscal.legacy_artifact_v1 import (
     LegacyArtifactBoundaryError,
     build_legacy_dados_fiscais,
@@ -158,6 +162,7 @@ def load_taxas_payload(
     *,
     runtime_root: Path = SOURCE_RUNTIME_ROOT,
     artifact_path: Path = Path(TAXAS_FILE_LOCAL),
+    as_of_date: dt.date | None = None,
 ) -> Tuple[Dict[str, Any], str, str]:
     """Load only the local, evidence-gated Phase 4 financial artifact.
 
@@ -176,11 +181,35 @@ def load_taxas_payload(
         raise RuntimeError(f"taxas local incompatível com Phase 4: {errs_local}")
 
     try:
-        verify_financial_artifact_evidence(
-            artifact_path=artifact_path,
-            runtime_root=Path(runtime_root),
-        )
-    except FinancialEvidenceError as exc:
+        # Prefer exact current-state provenance when this is the latest artifact.
+        # The same immutable artifact remains valid for a payroll bridge if BCB
+        # has been re-observed since publication, provided it is still fresh.
+        try:
+            verify_financial_artifact_evidence(
+                artifact_path=artifact_path,
+                runtime_root=Path(runtime_root),
+            )
+        except FinancialEvidenceError:
+            state_store = SourceStateStore(Path(runtime_root) / "state")
+            for source_id in ("BCB_SELIC_META_SGS_432", "BCB_CDI_DAILY_SGS_12"):
+                state = state_store.load(source_id)
+                if state is None or state.last_parse_status != ParseStatus.PARSED:
+                    raise FinancialEvidenceError(
+                        f"{source_id} current parser state blocks archived financial consumption"
+                    )
+            verify_preserved_financial_last_good_artifact_evidence(
+                artifact_path=artifact_path, runtime_root=Path(runtime_root)
+            )
+        if as_of_date is not None:
+            from datetime import date
+            meta = local["meta"]["sources"]["cdi"]
+            observation = date.fromisoformat(str(meta["source_observation_date"]))
+            age = (as_of_date - observation).days
+            if age < 0 or age > 7:
+                raise FinancialEvidenceError(
+                    f"archived CDI observation not current enough: age_days={age} max=7"
+                )
+    except (FinancialEvidenceError, KeyError, TypeError, ValueError) as exc:
         raise RuntimeError(f"taxas sem evidência financeira válida: {exc}") from exc
 
     return local, "local_file", TAXAS_FILE_LOCAL
@@ -315,7 +344,9 @@ def main():
         payroll_runs = None
 
     try:
-        taxas_doc, taxas_origin, taxas_ref = load_taxas_payload()
+        taxas_doc, taxas_origin, taxas_ref = load_taxas_payload(
+            as_of_date=observed_at_utc.astimezone(ZoneInfo("America/Sao_Paulo")).date()
+        )
         taxas_meta = taxas_doc.get("meta", {}) if isinstance(taxas_doc.get("meta"), dict) else {}
         taxas_sources = taxas_meta.get("sources", {}) if isinstance(taxas_meta.get("sources"), dict) else {}
         taxas_source_meta = {

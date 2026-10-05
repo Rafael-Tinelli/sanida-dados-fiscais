@@ -15,11 +15,14 @@ from sanida_fiscal.financial_series_v1 import (
     SELIC_SOURCE_ID,
     FinancialSeriesBoundaryError,
     build_financial_series_artifact,
+    build_financial_series_artifact_chunked,
+    financial_history_chunks,
     financial_series_window,
     month_keys,
     parse_bcb_cdi_history_snapshot,
     parse_bcb_selic_history_snapshot,
     run_financial_history_source_pipeline,
+    run_financial_history_source_pipeline_chunked,
     shift_months,
     validate_financial_series_artifact,
 )
@@ -207,3 +210,147 @@ def test_stale_latest_cdi_history_fails_closed(tmp_path: Path):
             generated_at_utc="2026-09-19T20:00:00Z",
             as_of_date=AS_OF,
         )
+
+
+def test_history_window_is_split_into_ten_bounded_12_month_chunks():
+    start, end = financial_series_window(AS_OF)
+    chunks = financial_history_chunks(start, end, months_per_chunk=12)
+    assert len(chunks) == 10
+    assert chunks[0] == (date(2016, 10, 1), date(2017, 9, 30))
+    assert chunks[-1] == (date(2025, 10, 1), AS_OF)
+    for (chunk_start, chunk_end), next_chunk in zip(chunks, chunks[1:]):
+        assert (chunk_end - chunk_start).days <= 366
+        assert next_chunk[0].toordinal() == chunk_end.toordinal() + 1
+
+
+def _chunked_run(tmp_path: Path, source_id: str, all_rows: list[dict]):
+    calls: list[tuple[date, date]] = []
+
+    def handler(request: httpx.Request):
+        start = datetime.strptime(request.url.params["dataInicial"], "%d/%m/%Y").date()
+        end = datetime.strptime(request.url.params["dataFinal"], "%d/%m/%Y").date()
+        calls.append((start, end))
+        assert (end - start).days <= 366
+        selected = [
+            row for row in all_rows
+            if start <= datetime.strptime(row["data"], "%d/%m/%Y").date() <= end
+        ]
+        return httpx.Response(
+            200,
+            content=json.dumps(selected).encode("utf-8"),
+            headers={"content-type": "application/json"},
+        )
+
+    start, end = financial_series_window(AS_OF)
+    bundle = run_financial_history_source_pipeline_chunked(
+        source_id=source_id,
+        observed_at_utc=OBSERVED,
+        start_date=start,
+        end_date=end,
+        registry_path=Path("docs/financial-source-registry-v1.json"),
+        snapshot_root=tmp_path / "snapshots",
+        state_root=tmp_path / "state",
+        candidate_root=tmp_path / "candidates",
+        transport=httpx.MockTransport(handler),
+        months_per_chunk=12,
+    )
+    return bundle, calls
+
+
+def test_chunked_history_builds_same_120_month_contract_without_long_request(tmp_path: Path):
+    selic_rows = json.loads(_raw_selic())
+    cdi_rows = json.loads(_raw_cdi())
+    selic, selic_calls = _chunked_run(tmp_path, SELIC_SOURCE_ID, selic_rows)
+    cdi, cdi_calls = _chunked_run(tmp_path, CDI_SOURCE_ID, cdi_rows)
+    assert len(selic_calls) == len(cdi_calls) == 10
+    assert len(selic.meta["segments"]) == len(cdi.meta["segments"]) == 10
+
+    artifact = build_financial_series_artifact_chunked(
+        selic_bundle=selic,
+        cdi_bundle=cdi,
+        generated_at_utc="2026-09-19T20:00:00Z",
+        as_of_date=AS_OF,
+    )
+    ok, errors = validate_financial_series_artifact(artifact, as_of_date=AS_OF)
+    assert ok, errors
+    assert len(artifact["points"]) == 120
+    assert artifact["meta"]["sources"]["selic"]["collection_mode"] == "chunked_12_months_v1"
+    assert artifact["meta"]["sources"]["cdi"]["collection_mode"] == "chunked_12_months_v1"
+    assert artifact["meta"]["methodology"]["source_collection"] == "bounded_chunks_with_immutable_segment_evidence"
+
+
+def test_chunked_history_segment_states_are_isolated(tmp_path: Path):
+    bundle, calls = _chunked_run(tmp_path, SELIC_SOURCE_ID, json.loads(_raw_selic()))
+    assert len(calls) == 10
+    for segment in bundle.meta["segments"]:
+        key = f'{segment["start_date"]}_{segment["end_date"]}'
+        state = tmp_path / "state" / "segments" / key / f"{SELIC_SOURCE_ID}.json"
+        assert state.is_file()
+        payload = json.loads(state.read_text())
+        assert payload["source_url"] == segment["url"]
+        assert payload["last_candidate_sha256"] == segment["candidate_sha256"]
+
+
+def test_second_daily_run_reuses_closed_segments_and_fetches_only_current_chunk(tmp_path: Path):
+    rows = json.loads(_raw_selic())
+    first, first_calls = _chunked_run(tmp_path, SELIC_SOURCE_ID, rows)
+    second, second_calls = _chunked_run(tmp_path, SELIC_SOURCE_ID, rows)
+    assert len(first_calls) == 10
+    assert len(second_calls) == 1
+    assert first.meta["reused_segment_count"] == 0
+    assert second.meta["reused_segment_count"] == 9
+    assert second.meta["segment_count"] == 10
+    assert sum(bool(x["reused_immutable_segment"]) for x in second.meta["segments"]) == 9
+    assert second.payload == first.payload
+
+
+def test_chunked_history_adaptively_subdivides_failed_large_windows(tmp_path: Path):
+    rows = json.loads(_raw_selic())
+    calls: list[tuple[date, date]] = []
+
+    def handler(request: httpx.Request):
+        seg_start = datetime.strptime(request.url.params["dataInicial"], "%d/%m/%Y").date()
+        seg_end = datetime.strptime(request.url.params["dataFinal"], "%d/%m/%Y").date()
+        calls.append((seg_start, seg_end))
+        if len(month_keys(seg_start, seg_end)) > 3:
+            return httpx.Response(502, content=b"gateway")
+        selected = []
+        for row in rows:
+            observed = datetime.strptime(row["data"], "%d/%m/%Y").date()
+            if seg_start <= observed <= seg_end:
+                selected.append(row)
+        return httpx.Response(
+            200,
+            content=json.dumps(selected).encode("utf-8"),
+            headers={"content-type": "application/json"},
+        )
+
+    start, end = financial_series_window(AS_OF)
+    bundle = run_financial_history_source_pipeline_chunked(
+        source_id=SELIC_SOURCE_ID,
+        observed_at_utc=OBSERVED,
+        start_date=start,
+        end_date=end,
+        registry_path=Path("docs/financial-source-registry-v1.json"),
+        snapshot_root=tmp_path / "snapshots",
+        state_root=tmp_path / "state",
+        candidate_root=tmp_path / "candidates",
+        max_attempts=1,
+        transport=httpx.MockTransport(handler),
+        months_per_chunk=12,
+    )
+
+    assert len(calls) > 10
+    assert bundle.meta["segment_count"] > 10
+    assert all(
+        len(
+            month_keys(
+                date.fromisoformat(segment["start_date"]),
+                date.fromisoformat(segment["end_date"]),
+            )
+        ) <= 3
+        for segment in bundle.meta["segments"]
+    )
+    assert bundle.payload["start_date"] == start.isoformat()
+    assert bundle.payload["end_date"] == end.isoformat()
+    assert len(bundle.payload["observations"]) == FINANCIAL_SERIES_MONTHS
