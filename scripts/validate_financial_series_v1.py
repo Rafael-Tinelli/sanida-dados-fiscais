@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT))
 from sanida_fiscal.financial_series_v1 import (
     CDI_SOURCE_ID,
     SELIC_SOURCE_ID,
+    financial_history_segments,
     validate_financial_series_artifact,
 )
 
@@ -78,6 +79,54 @@ def main() -> int:
             sha256(snapshot_path.read_bytes()).hexdigest() == meta["snapshot_sha256"],
             f"{source_id}: snapshot bytes hash mismatch",
         )
+
+        segments = meta.get("segments")
+        if segments is not None:
+            require(isinstance(segments, list) and segments, f"{source_id}: segments invalid")
+            window = artifact["meta"]["window"]
+            expected_segments = financial_history_segments(
+                date.fromisoformat(window["start_date"]),
+                date.fromisoformat(window["end_date"]),
+            )
+            require(
+                len(segments) == len(expected_segments),
+                f"{source_id}: segment count mismatch",
+            )
+            for index, (segment, expected_window) in enumerate(zip(segments, expected_segments)):
+                require(isinstance(segment, dict), f"{source_id}: segment {index} not object")
+                expected_start, expected_end = expected_window
+                require(
+                    segment.get("start_date") == expected_start.isoformat()
+                    and segment.get("end_date") == expected_end.isoformat(),
+                    f"{source_id}: segment {index} boundary mismatch",
+                )
+                candidate_rel = segment.get("candidate_path")
+                snapshot_rel = segment.get("snapshot_path")
+                candidate_sha = segment.get("candidate_sha256")
+                snapshot_sha = segment.get("snapshot_sha256")
+                require(
+                    all(isinstance(value, str) for value in (candidate_rel, snapshot_rel, candidate_sha, snapshot_sha)),
+                    f"{source_id}: segment {index} provenance missing",
+                )
+                candidate_file = runtime_root / "candidates" / candidate_rel
+                snapshot_file = runtime_root / "snapshots" / snapshot_rel
+                require(candidate_file.is_file(), f"{source_id}: segment {index} candidate missing")
+                require(snapshot_file.is_file(), f"{source_id}: segment {index} snapshot missing")
+                require(
+                    sha256(candidate_file.read_bytes()).hexdigest() == candidate_sha,
+                    f"{source_id}: segment {index} candidate hash mismatch",
+                )
+                require(
+                    sha256(snapshot_file.read_bytes()).hexdigest() == snapshot_sha,
+                    f"{source_id}: segment {index} snapshot hash mismatch",
+                )
+                payload = json.loads(candidate_file.read_text(encoding="utf-8"))
+                require(
+                    payload.get("source_id") == source_id
+                    and payload.get("start_date") == expected_start.isoformat()
+                    and payload.get("end_date") == expected_end.isoformat(),
+                    f"{source_id}: segment {index} normalized payload mismatch",
+                )
 
     print(
         "Financial historical series validation: PASS "
