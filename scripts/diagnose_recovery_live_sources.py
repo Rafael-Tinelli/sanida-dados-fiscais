@@ -3,8 +3,13 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import sys
 import tempfile
 from zoneinfo import ZoneInfo
+
+ROOT=Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0,str(ROOT))
 
 from sanida_fiscal.authority_evidence_v12 import collect_authority_evidence
 from sanida_fiscal.financial_series_v1 import (
@@ -13,7 +18,6 @@ from sanida_fiscal.financial_series_v1 import (
     run_financial_history_source_segments,
 )
 
-ROOT=Path(__file__).resolve().parents[1]
 
 
 def main() -> int:
