@@ -8,6 +8,7 @@ import pytest
 from sanida_fiscal.authority_evidence_v12 import (
     AuthorityEvidenceError,
     _validate_authority_identity,
+    select_authority_sources,
 )
 
 
@@ -60,12 +61,23 @@ def test_marker_contract_is_fail_closed_when_malformed():
         )
 
 
-def test_identity_markers_accept_at_least_one_existing_official_html_snapshot_per_protected_source():
-    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+def test_selected_html_authorities_accept_known_material_snapshots_when_available():
+    registry_doc = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    registry = {item["source_id"]: item for item in registry_doc["sources"]}
+    selected = set(
+        select_authority_sources(
+            source_registry_path=REGISTRY,
+            rule_inventory_path=Path("docs/rule-inventory-v1.json"),
+        ).values()
+    )
+    # The broken IN 1500 SPA remains registered secondary context but must not
+    # participate in canonical collection until a material official endpoint exists.
+    assert "RFB_IN_1500_2014" not in selected
+
     protected = [
-        item for item in registry["sources"]
-        if item.get("identity_marker_groups")
-        and item.get("machine_readability") != "pdf_text"
+        registry[source_id] for source_id in sorted(selected)
+        if registry[source_id].get("identity_marker_groups")
+        and registry[source_id].get("machine_readability") != "pdf_text"
     ]
     assert protected
     for metadata in protected:
@@ -75,9 +87,9 @@ def test_identity_markers_accept_at_least_one_existing_official_html_snapshot_pe
             p for p in root.rglob("*")
             if p.is_file() and p.suffix.lower() in {".html", ".htm", ".txt"}
         )
-        # Some newly registered authorities may not have a historical snapshot
-        # yet; they remain fail-closed at collection time.
         if not snapshots:
+            # A source without historical bytes is still fail-closed on the next
+            # live collection. This test only prevents regressions against known bytes.
             continue
         accepted = []
         for snapshot in snapshots:
@@ -91,4 +103,4 @@ def test_identity_markers_accept_at_least_one_existing_official_html_snapshot_pe
             except AuthorityEvidenceError:
                 continue
             accepted.append(snapshot)
-        assert accepted, f"{source_id}: no existing official snapshot satisfies identity markers"
+        assert accepted, f"{source_id}: no existing selected snapshot satisfies identity markers"
