@@ -145,7 +145,7 @@ def _sci_api_payload(*, id_ato=65843, numero="8", ano="2015", sigla="SCI", orgao
                     "de parte do período de férias em abono pecuniário. Férias "
                     "indenizadas permanecem fora da hipótese descrita. Para o imposto "
                     "sobre a renda, o valor do adicional constitucional, inclusive "
-                    "o incidente sobre abono pecuniário, é tributado pelo imposto "
+                    "o incidente sobre abono pecuniário, são tributados pelo imposto "
                     "sobre a renda."
                 ),
             }
