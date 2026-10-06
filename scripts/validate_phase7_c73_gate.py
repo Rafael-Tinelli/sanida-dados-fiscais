@@ -130,7 +130,11 @@ def main() -> int:
     require(bundle_record.get("sha256") == EXPECTED_REMOTE_BUNDLE_MANIFEST_SHA256, "remote bundle manifest SHA drift")
     require(bool(re.fullmatch(r"[0-9a-f]{64}", str(host_evidence.get("sha256") or ""))), "remote evidence SHA malformed")
     require(bool(re.fullmatch(r"[0-9a-f]{64}", str(bundle_record.get("sha256") or ""))), "remote bundle SHA malformed")
-    require(evidence_record.get("release_id") == release.release_id, "remote preflight release binding drift")
+    historical_release_id = (readiness.get("remote_evidence") or {}).get("release_id")
+    require(
+        evidence_record.get("release_id") == historical_release_id,
+        "remote preflight historical release binding drift",
+    )
     preflight_record = evidence_record.get("preflight") or {}
     require(preflight_record.get("status") == "PASS", "recorded remote preflight not PASS")
     require(preflight_record.get("technical_go_no_go") == "GO", "recorded remote preflight not GO")
@@ -299,7 +303,7 @@ def main() -> int:
 
     print(
         "Phase 7 C7.3 closure gate: PASS "
-        f"(release={release.release_id}, managed=32, dependencies=11, remote_preflight=PASS_VALIDATED, planned_directories=4, health=verified, directory_rollback=verified, technical_go_no_go=GO, deployment_authorized=false, production_deployed=false)"
+        f"(current_release={release.release_id}, historical_preflight_release={historical_release_id}, managed=32, dependencies=11, remote_preflight=PASS_VALIDATED, planned_directories=4, health=verified, directory_rollback=verified, technical_go_no_go=GO, deployment_authorized=false, production_deployed=false)"
     )
     return 0
 

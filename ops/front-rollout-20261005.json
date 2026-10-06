@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0.0",
+  "scope": "front_successor_rollout_preparation",
+  "status": "BUNDLE_BUILD_REQUESTED",
+  "created_on": "2026-10-05",
+  "source_main_sha": "53b943fb8636bab8b9d444bb4e4e1c96435e4fa3",
+  "fiscal_release_id": "fiscal-v1-sha256-a720ba6ccf9683371c0bc8e6dad868f4267ba42bac00935c7efbc2c5cbeea648",
+  "supersedes_production_release_id": "fiscal-v1-sha256-a741aa7873950d029a5c6b1c929727267125424013f09c69137b7e80b294153e",
+  "target_consumers": [
+    "H26",
+    "H27",
+    "H28",
+    "H29"
+  ],
+  "production_mutation_authorized": false,
+  "purpose": "Trigger a deterministic Remake CI build of the existing 32-file C7.1 deployment bundle against the newly promoted canonical fiscal release, before any HostGator preflight or deployment."
+}

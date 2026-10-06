@@ -180,3 +180,12 @@ def test_c73_health_endpoint_states_against_real_current_release() -> None:
     assert unavailable["status"] == 503
     assert unavailable["health"]["status"] == "unavailable"
     assert unavailable["health"]["ready"] is False
+
+
+def test_c73_historical_remote_preflight_is_not_rebound_to_future_current_release() -> None:
+    readiness = json.loads((ROOT / "state/phase7-c73-readiness.json").read_text(encoding="utf-8"))
+    record = json.loads((ROOT / "docs/phase7-c73-remote-preflight-validation-record.json").read_text(encoding="utf-8"))
+    current = json.loads((STORE / "current.json").read_text(encoding="utf-8"))
+    historical = readiness["remote_evidence"]["release_id"]
+    assert record["release_id"] == historical
+    assert current["release_id"] != historical
