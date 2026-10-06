@@ -157,14 +157,7 @@ jobs:
           set -e
 
           test -s "$EVIDENCE"
-          "$PY" - "$EVIDENCE" <<'PYDIAG'
-import json, sys
-d=json.load(open(sys.argv[1], encoding="utf-8"))
-print("PREFLIGHT_STATUS="+str(d.get("status")))
-print("PREFLIGHT_GO_NO_GO="+str(d.get("technical_go_no_go")))
-print("PREFLIGHT_BLOCK_REASONS="+json.dumps(d.get("block_reasons") or [], ensure_ascii=False, separators=(",",":")))
-print("PREFLIGHT_SUMMARY="+json.dumps(d.get("summary") or {}, ensure_ascii=False, separators=(",",":")))
-PYDIAG
+          "$PY" -c 'import json,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); print("PREFLIGHT_STATUS="+str(d.get("status"))); print("PREFLIGHT_GO_NO_GO="+str(d.get("technical_go_no_go"))); print("PREFLIGHT_BLOCK_REASONS="+json.dumps(d.get("block_reasons") or [],ensure_ascii=False,separators=(",",":"))); print("PREFLIGHT_SUMMARY="+json.dumps(d.get("summary") or {},ensure_ascii=False,separators=(",",":")))' "$EVIDENCE"
 
           echo "REMOTE_COMMIT=$COMMIT"
           echo "BUNDLE_MANIFEST_SHA256=$(sha256sum "$BUNDLE/bundle-manifest.json" | awk '{print $1}')"
