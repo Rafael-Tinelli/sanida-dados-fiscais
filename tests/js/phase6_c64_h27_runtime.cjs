@@ -113,14 +113,7 @@ const reportedAdvanceMatrix = {
   aboveGross: manualCase(5, { reportedAdvance: '2000.00', previousMonthSalary: '' })
 };
 
-const pendingAdvance = SFA.H27.calculate(release, {
-  targetDate, referenceYear: 2026, salary: '4000.00', variables: '0.00',
-  accrualMode: 'manual', twelfths: 12, dependentCount: 0, pension: '0.00',
-  reportedAdvance: '', previousMonthSalary: '', advancePaymentDate: '',
-  admissionInYear: false, estimateNet: true
-});
-
-let missingAdvanceSalaryRejected = false;
+let missingAdvanceReferenceRejected = false;
 try {
   SFA.H27.calculate(release, {
     targetDate, referenceYear: 2026, salary: '4000.00', variables: '0.00',
@@ -129,19 +122,7 @@ try {
     admissionInYear: false, estimateNet: true
   });
 } catch (error) {
-  missingAdvanceSalaryRejected = Boolean(error && error.code === 'h27_advance_salary_required');
-}
-
-let missingAdvanceDateRejected = false;
-try {
-  SFA.H27.calculate(release, {
-    targetDate, referenceYear: 2026, salary: '4000.00', variables: '0.00',
-    accrualMode: 'manual', twelfths: 12, dependentCount: 0, pension: '0.00',
-    reportedAdvance: '', previousMonthSalary: '4000.00', advancePaymentDate: '',
-    admissionInYear: false, estimateNet: true
-  });
-} catch (error) {
-  missingAdvanceDateRejected = Boolean(error && error.code === 'h27_advance_date_required');
+  missingAdvanceReferenceRejected = Boolean(error && error.code === 'thirteenth_advance_reference_required');
 }
 
 let negativeInputRejected = false;
@@ -176,9 +157,7 @@ process.stdout.write(JSON.stringify({
   admission_unsupported: admissionUnsupported,
   settlement_matrix: settlementMatrix,
   reported_advance_matrix: reportedAdvanceMatrix,
-  pending_advance: pendingAdvance,
-  missing_advance_salary_rejected: missingAdvanceSalaryRejected,
-  missing_advance_date_rejected: missingAdvanceDateRejected,
+  missing_advance_reference_rejected: missingAdvanceReferenceRejected,
   negative_input_rejected: negativeInputRejected,
   technical_rounding_rejected: technicalRoundingRejected
 }));
