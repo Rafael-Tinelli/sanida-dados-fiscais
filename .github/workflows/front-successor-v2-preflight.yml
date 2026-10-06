@@ -147,17 +147,25 @@ jobs:
           export PYTHONPATH="$PYDEPS:$REPO"
 
           "$PY" scripts/build_phase7_c71_bundle_v2.py --output-dir "$BUNDLE"
+          set +e
           "$PY" scripts/run_phase7_v2_host_preflight.py \
             --bundle-manifest "$BUNDLE/bundle-manifest.json" \
             --site-root "$SITE_ROOT" \
             --wordpress-plugin-dir "$PLUGIN_ROOT" \
             --evidence-out "$EVIDENCE" >/dev/null
-          "$PY" scripts/validate_phase7_v2_remote_evidence.py \
-            --evidence "$EVIDENCE" \
-            --bundle-manifest "$BUNDLE/bundle-manifest.json"
+          PREFLIGHT_RC=$?
+          set -e
 
-          echo "REMOTE_USER=$(id -un)"
-          echo "REMOTE_HOME=$HOME"
+          test -s "$EVIDENCE"
+          "$PY" - "$EVIDENCE" <<'PYDIAG'
+import json, sys
+d=json.load(open(sys.argv[1], encoding="utf-8"))
+print("PREFLIGHT_STATUS="+str(d.get("status")))
+print("PREFLIGHT_GO_NO_GO="+str(d.get("technical_go_no_go")))
+print("PREFLIGHT_BLOCK_REASONS="+json.dumps(d.get("block_reasons") or [], ensure_ascii=False, separators=(",",":")))
+print("PREFLIGHT_SUMMARY="+json.dumps(d.get("summary") or {}, ensure_ascii=False, separators=(",",":")))
+PYDIAG
+
           echo "REMOTE_COMMIT=$COMMIT"
           echo "BUNDLE_MANIFEST_SHA256=$(sha256sum "$BUNDLE/bundle-manifest.json" | awk '{print $1}')"
           echo "PREFLIGHT_EVIDENCE_SHA256=$(sha256sum "$EVIDENCE" | awk '{print $1}')"
@@ -165,6 +173,15 @@ jobs:
           base64 "$EVIDENCE" | tr -d '\n'
           echo
           echo "__SANIDA_EVIDENCE_END__"
+
+          if [ "$PREFLIGHT_RC" -ne 0 ]; then
+            echo "HOSTGATOR_V2_PREFLIGHT=BLOCKED"
+            exit "$PREFLIGHT_RC"
+          fi
+
+          "$PY" scripts/validate_phase7_v2_remote_evidence.py \
+            --evidence "$EVIDENCE" \
+            --bundle-manifest "$BUNDLE/bundle-manifest.json"
           echo "HOSTGATOR_V2_PREFLIGHT=PASS"
           REMOTE
 
