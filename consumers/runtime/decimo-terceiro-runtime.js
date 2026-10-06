@@ -154,7 +154,18 @@
     if (reportedAdvanceRaw !== '') {
       const reported = money(reportedAdvanceRaw, 'reported_advance');
       advance = Object.freeze({ status: 'REPORTED', amount: reported.toString(), source: 'reported_by_user', reason: null });
+    } else if (params.previousMonthSalary === undefined || params.previousMonthSalary === null ||
+               String(params.previousMonthSalary).trim() === '') {
+      if (params.advancePaymentDate !== undefined && params.advancePaymentDate !== null &&
+          String(params.advancePaymentDate).trim() !== '') {
+        h27Error('h27_advance_salary_required', 'Informe também o salário anterior ou apague a data do adiantamento.');
+      }
+      advance = Object.freeze({ status: 'PENDING', amount: null, source: null, reason: 'advance_not_informed' });
     } else {
+      if (params.advancePaymentDate === undefined || params.advancePaymentDate === null ||
+          String(params.advancePaymentDate).trim() === '') {
+        h27Error('h27_advance_date_required', 'Informe a data do adiantamento padrão ou apague o salário anterior.');
+      }
       const admissionInYear = accrualMode === 'dates'
         ? yearOf(SFA.normalizeDate(params.employmentStart, 'employmentStart')) === referenceYear
         : params.admissionInYear === true;
