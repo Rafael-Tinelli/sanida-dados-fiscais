@@ -46,6 +46,19 @@ jobs:
           python scripts/validate_phase7_c71_v2_gate.py
           python -m pytest -q tests/test_phase7_c71_v2.py tests/test_phase7_v2_remote_preflight.py
 
+      - name: Capture public H27 stylesheet evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://sanida.com.br/financas/calculadoras/assets/calculadora-decimo-terceiro-ui.css?v=2.1.0"
+          curl --fail --silent --show-error --location --retry 2 --connect-timeout 15 --max-time 45 \
+            --dump-header /tmp/h27-edge.headers \
+            --output /tmp/h27-edge.css \
+            "$url"
+          test -s /tmp/h27-edge.css
+          echo "H27_EDGE_CSS_SHA256=$(sha256sum /tmp/h27-edge.css | awk '{print $1}')"
+          echo "H27_EDGE_CSS_BYTES=$(wc -c < /tmp/h27-edge.css | tr -d ' ')"
+
       - name: Verify HostGator credential contract
         shell: bash
         env:
@@ -195,6 +208,17 @@ jobs:
           name: front-v2-hostgator-preflight-${{ github.sha }}
           path: /tmp/front-v2-preflight.json
           if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload public H27 stylesheet evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: front-v2-h27-edge-css-${{ github.sha }}
+          path: |
+            /tmp/h27-edge.css
+            /tmp/h27-edge.headers
+          if-no-files-found: warn
           retention-days: 30
 
       - name: Remove ephemeral SSH key
