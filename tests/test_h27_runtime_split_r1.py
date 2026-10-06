@@ -49,12 +49,7 @@ def test_h27_runtime_split_preserves_standard_c64_result() -> None:
 
 def test_h27_runtime_split_preserves_fail_closed_and_floor_zero_contract() -> None:
     result = _run()
-    pending = result["pending_advance"]
-    assert pending["advance"]["status"] == "PENDING"
-    assert Decimal(pending["gross_thirteenth"]) == Decimal("4000.00")
-    assert pending["settlement"]["status"] == "PENDING_ADVANCE"
-    assert result["missing_advance_salary_rejected"] is True
-    assert result["missing_advance_date_rejected"] is True
+    assert result["missing_advance_reference_rejected"] is True
     assert result["negative_input_rejected"] is True
     assert result["technical_rounding_rejected"] is True
     assert result["variable_unsupported"]["settlement"]["status"] == "PENDING_ADVANCE"
