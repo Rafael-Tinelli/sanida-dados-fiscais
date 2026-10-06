@@ -122,7 +122,9 @@ try {
     admissionInYear: false, estimateNet: true
   });
 } catch (error) {
-  missingAdvanceReferenceRejected = Boolean(error && error.code === 'thirteenth_advance_reference_required');
+  missingAdvanceReferenceRejected = Boolean(
+    error && ['thirteenth_advance_reference_required', 'h27_advance_salary_required'].includes(error.code)
+  );
 }
 
 let negativeInputRejected = false;
