@@ -30,11 +30,19 @@ _NOISE_ONLY_PATHS = frozenset({
 })
 
 
+_CONTENT_CORE_SOURCES = frozenset({
+    "MTE_TERMINATION_FAQ",
+    "RFB_IRRF_TABLE_CURRENT",
+    "RFB_CP_INCIDENCE_TABLE",
+})
+
+
 def _material_html_fingerprint(body: bytes, source_id: str) -> str | None:
-    if source_id == "MTE_TERMINATION_FAQ":
-        # The Plone portal duplicates its global navigation outside the article.
-        # Require this exact official article container: never fall back to the
-        # whole page when its identity/structure is no longer recognizable.
+    if source_id in _CONTENT_CORE_SOURCES:
+        # On these audited gov.br Plone pages, fiscal content is inside
+        # #content-core. Global navigation includes unrelated news and links
+        # (e.g., CNIR) which must not create a fiscal publication.
+        # Require the official article container, fail closed if missing.
         soup = BeautifulSoup(body, "html.parser")
         matches = soup.select("#content-core")
         if len(matches) != 1:
