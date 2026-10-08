@@ -1,7 +1,7 @@
 {
   "command": "python -m pytest -q tests",
-  "exit_code": 0,
+  "exit_code": 1,
   "schema_version": "1.0.0",
-  "status": "PASS",
-  "summary": "........................................................................ [ 13%]\n........................................................................ [ 27%]\n........................................................................ [ 40%]\n........................................................................ [ 54%]\n........................................................................ [ 68%]\n........................................................................ [ 81%]\n........................................................................ [ 95%]\n.........................                                                [100%]\n529 passed in 19.49s"
+  "status": "FAIL",
+  "summary": "tests/test_fiscal_109_presentation_noise.py:23: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_fiscal_109_presentation_noise.py::test_issue_109_is_verified_transport_noise_without_release - AssertionError: assert '96415528f583...b4bc63d551037' == '79fe2476621a...0852b75dc1c14'\n  - 79fe2476621a293163e876d5be8356a40def06511e1b3d0bee80852b75dc1c14\n  + 96415528f583833d0cd4b5fa04daee0da3c1a34d0800de9e416b4bc63d551037\nFAILED tests/test_fiscal_109_presentation_noise.py::test_material_change_in_a_fiscal_parameter_is_never_suppressed - AssertionError: assert '96415528f583...b4bc63d551037' == '79fe2476621a...0852b75dc1c14'\n  - 79fe2476621a293163e876d5be8356a40def06511e1b3d0bee80852b75dc1c14\n  + 96415528f583833d0cd4b5fa04daee0da3c1a34d0800de9e416b4bc63d551037\nFAILED tests/test_fiscal_109_presentation_noise.py::test_changed_parser_identity_is_never_suppressed - AssertionError: assert '96415528f583...b4bc63d551037' == '79fe2476621a...0852b75dc1c14'\n  - 79fe2476621a293163e876d5be8356a40def06511e1b3d0bee80852b75dc1c14\n  + 96415528f583833d0cd4b5fa04daee0da3c1a34d0800de9e416b4bc63d551037\n3 failed, 530 passed in 16.45s"
 }
