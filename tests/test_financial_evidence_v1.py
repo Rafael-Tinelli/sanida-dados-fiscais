@@ -121,6 +121,49 @@ def test_A05_parser_incompatible_preserves_last_good_but_blocks_new_consumption(
         )
 
 
+def test_preserved_financial_snapshot_duplicate_extensions_require_valid_hashes(tmp_path: Path):
+    """Legacy SGS content-type drift may store identical bytes as JSON and HTML."""
+    runtime_root, artifact_path, _selic, cdi = _materialize(tmp_path)
+    json_snapshot = runtime_root / "snapshots" / cdi.state.last_parsed_snapshot_path
+    assert json_snapshot.suffix == ".json"
+    html_alias = json_snapshot.with_suffix(".html")
+    html_alias.write_bytes(json_snapshot.read_bytes())
+
+    verified = verify_preserved_financial_last_good_artifact_evidence(
+        artifact_path=artifact_path, runtime_root=runtime_root,
+    )
+    assert verified["BCB_CDI_DAILY_SGS_12"]["snapshot_path"].endswith(".json")
+
+    # A matching filename is never enough: both aliases must validate.
+    html_alias.write_bytes(b"corrupted")
+    with pytest.raises(FinancialEvidenceError, match="sha256 mismatch"):
+        verify_preserved_financial_last_good_artifact_evidence(
+            artifact_path=artifact_path, runtime_root=runtime_root,
+        )
+
+
+def test_preserved_financial_rejects_unexpected_duplicate_snapshot_suffix(tmp_path: Path):
+    runtime_root, artifact_path, _selic, cdi = _materialize(tmp_path)
+    original = runtime_root / "snapshots" / cdi.state.last_parsed_snapshot_path
+    original.with_suffix(".txt").write_bytes(original.read_bytes())
+    with pytest.raises(FinancialEvidenceError, match="missing or ambiguous"):
+        verify_preserved_financial_last_good_artifact_evidence(
+            artifact_path=artifact_path, runtime_root=runtime_root,
+        )
+
+
+def test_tracked_historical_dados_fiscais_evidence_remains_verifiable():
+    """Regression for actual scheduled-run failure 37809685443."""
+    from sanida_fiscal.production_evidence_v1 import verify_preserved_legacy_artifact_evidence
+
+    verified = verify_preserved_legacy_artifact_evidence(
+        artifact_path=Path("dados_fiscais.json"),
+        runtime_root=Path("evidence/source-runtime-v1"),
+    )
+    assert "BCB_CDI_DAILY_SGS_12" in verified
+    assert "BCB_SELIC_META_SGS_432" in verified
+
+
 def test_taxas_workflow_requires_durable_evidence_gate():
     text = Path(".github/workflows/taxas.yml").read_text(encoding="utf-8")
     assert "SFA_SOURCE_RUNTIME_ROOT: evidence/source-runtime-v1" in text
