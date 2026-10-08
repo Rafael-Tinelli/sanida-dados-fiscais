@@ -1,0 +1,337 @@
+{
+  "case": "issue_111",
+  "review_key": "96415528f583833d0cd4b5fa04daee0da3c1a34d0800de9e416b4bc63d551037",
+  "created_at_utc": "2026-10-08T14:01:25.941630Z",
+  "previous_release_id": "fiscal-v1-sha256-a720ba6ccf9683371c0bc8e6dad868f4267ba42bac00935c7efbc2c5cbeea648",
+  "expected_reasons": 16,
+  "rules": [
+    {
+      "rule_id": "irrf.dependent_deduction",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "parser_id": "rfb_irrf_table_v1",
+          "parser_version": "1.1.0",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_IRRF_TABLE_CURRENT/c0/c097f81cff409c05d692c52b79cabe443d6e4eb02020b29a4d1584020710831c.html",
+          "snapshot_sha256": "c097f81cff409c05d692c52b79cabe443d6e4eb02020b29a4d1584020710831c",
+          "source_id": "RFB_IRRF_TABLE_CURRENT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "irrf.monthly.progressive_table",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "parser_id": "rfb_irrf_table_v1",
+          "parser_version": "1.1.0",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_IRRF_TABLE_CURRENT/c0/c097f81cff409c05d692c52b79cabe443d6e4eb02020b29a4d1584020710831c.html",
+          "snapshot_sha256": "c097f81cff409c05d692c52b79cabe443d6e4eb02020b29a4d1584020710831c",
+          "source_id": "RFB_IRRF_TABLE_CURRENT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "irrf.reduction.2026",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "parser_id": "rfb_irrf_table_v1",
+          "parser_version": "1.1.0",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_IRRF_TABLE_CURRENT/c0/c097f81cff409c05d692c52b79cabe443d6e4eb02020b29a4d1584020710831c.html",
+          "snapshot_sha256": "c097f81cff409c05d692c52b79cabe443d6e4eb02020b29a4d1584020710831c",
+          "source_id": "RFB_IRRF_TABLE_CURRENT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "irrf.simplified_monthly_discount",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "parser_id": "rfb_irrf_table_v1",
+          "parser_version": "1.1.0",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_IRRF_TABLE_CURRENT/c0/c097f81cff409c05d692c52b79cabe443d6e4eb02020b29a4d1584020710831c.html",
+          "snapshot_sha256": "c097f81cff409c05d692c52b79cabe443d6e4eb02020b29a4d1584020710831c",
+          "source_id": "RFB_IRRF_TABLE_CURRENT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "termination.acquired_and_overdue_vacation",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_CLT/fa/fa5fb5f966f45077a1b43e4e567b745545fbb6d4f891c2fe0d06124d15a0c860.html",
+          "snapshot_sha256": "fa5fb5f966f45077a1b43e4e567b745545fbb6d4f891c2fe0d06124d15a0c860",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.4",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "termination.partial_output_scope",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "MTE_TERMINATION_FAQ/ef/ef7a349987a55aea54a8c1ed990e52b003b1fa579dc4313a3c8b98e442a046d1.html",
+          "snapshot_sha256": "ef7a349987a55aea54a8c1ed990e52b003b1fa579dc4313a3c8b98e442a046d1",
+          "source_id": "MTE_TERMINATION_FAQ",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "termination.salary_balance",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "ESOCIAL_WEB_MEI_2026/5f/5ff2f677b30d979ccea268a4471220c31a318685d52d51b641ca97b89b85b8f9.html",
+          "snapshot_sha256": "5ff2f677b30d979ccea268a4471220c31a318685d52d51b641ca97b89b85b8f9",
+          "source_id": "ESOCIAL_WEB_MEI_2026",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "termination.thirteenth_proportional",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/c4/c482a6c5c0a9924caed9e87c88199e4bea3aa7ae81e06bf2bb27107850f739c4.html",
+          "snapshot_sha256": "c482a6c5c0a9924caed9e87c88199e4bea3aa7ae81e06bf2bb27107850f739c4",
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.4",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "termination.vacation_proportional",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_CLT/fa/fa5fb5f966f45077a1b43e4e567b745545fbb6d4f891c2fe0d06124d15a0c860.html",
+          "snapshot_sha256": "fa5fb5f966f45077a1b43e4e567b745545fbb6d4f891c2fe0d06124d15a0c860",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.4",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "thirteenth.accrual.twelfths",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/c4/c482a6c5c0a9924caed9e87c88199e4bea3aa7ae81e06bf2bb27107850f739c4.html",
+          "snapshot_sha256": "c482a6c5c0a9924caed9e87c88199e4bea3aa7ae81e06bf2bb27107850f739c4",
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.4",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "thirteenth.advance",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/c4/c482a6c5c0a9924caed9e87c88199e4bea3aa7ae81e06bf2bb27107850f739c4.html",
+          "snapshot_sha256": "c482a6c5c0a9924caed9e87c88199e4bea3aa7ae81e06bf2bb27107850f739c4",
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.4",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "thirteenth.irrf.reduction.2026",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_LEI_15270_2025/b2/b2568d346db55f9536884665a80c0f0cc4a10cbea2f317238ba23e173c5a2689.html",
+          "snapshot_sha256": "b2568d346db55f9536884665a80c0f0cc4a10cbea2f317238ba23e173c5a2689",
+          "source_id": "PLANALTO_LEI_15270_2025",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.4",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "thirteenth.reference_remuneration",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/c4/c482a6c5c0a9924caed9e87c88199e4bea3aa7ae81e06bf2bb27107850f739c4.html",
+          "snapshot_sha256": "c482a6c5c0a9924caed9e87c88199e4bea3aa7ae81e06bf2bb27107850f739c4",
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.4",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "thirteenth.variable_remuneration",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_DECRETO_10854_2021/c4/c482a6c5c0a9924caed9e87c88199e4bea3aa7ae81e06bf2bb27107850f739c4.html",
+          "snapshot_sha256": "c482a6c5c0a9924caed9e87c88199e4bea3aa7ae81e06bf2bb27107850f739c4",
+          "source_id": "PLANALTO_DECRETO_10854_2021",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.4",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "vacation.abono_pecuniario",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_CLT/fa/fa5fb5f966f45077a1b43e4e567b745545fbb6d4f891c2fe0d06124d15a0c860.html",
+          "snapshot_sha256": "fa5fb5f966f45077a1b43e4e567b745545fbb6d4f891c2fe0d06124d15a0c860",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.1.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "vacation.acquisition_period",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_CLT/fa/fa5fb5f966f45077a1b43e4e567b745545fbb6d4f891c2fe0d06124d15a0c860.html",
+          "snapshot_sha256": "fa5fb5f966f45077a1b43e4e567b745545fbb6d4f891c2fe0d06124d15a0c860",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.1.4",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "vacation.entitlement_days_by_absences",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_CLT/fa/fa5fb5f966f45077a1b43e4e567b745545fbb6d4f891c2fe0d06124d15a0c860.html",
+          "snapshot_sha256": "fa5fb5f966f45077a1b43e4e567b745545fbb6d4f891c2fe0d06124d15a0c860",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.4",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "vacation.inss.enjoyed",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "retrieval_method": "http_html",
+          "role": "official_operational",
+          "snapshot_path": "RFB_CP_INCIDENCE_TABLE/79/7920398387cdf37168655b77c23ff3a4f2f815667f91bc7ce4b01d40d671fde0.html",
+          "snapshot_sha256": "7920398387cdf37168655b77c23ff3a4f2f815667f91bc7ce4b01d40d671fde0",
+          "source_id": "RFB_CP_INCIDENCE_TABLE",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.3",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "vacation.irrf.reduction.2026",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_LEI_15270_2025/b2/b2568d346db55f9536884665a80c0f0cc4a10cbea2f317238ba23e173c5a2689.html",
+          "snapshot_sha256": "b2568d346db55f9536884665a80c0f0cc4a10cbea2f317238ba23e173c5a2689",
+          "source_id": "PLANALTO_LEI_15270_2025",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.0.4",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    },
+    {
+      "rule_id": "vacation.remuneration_and_constitutional_third",
+      "evidence_after": [
+        {
+          "observed_at_utc": "2026-10-08T14:01:25.941630Z",
+          "retrieval_method": "http_html",
+          "role": "normative_primary",
+          "snapshot_path": "PLANALTO_CLT/fa/fa5fb5f966f45077a1b43e4e567b745545fbb6d4f891c2fe0d06124d15a0c860.html",
+          "snapshot_sha256": "fa5fb5f966f45077a1b43e4e567b745545fbb6d4f891c2fe0d06124d15a0c860",
+          "source_id": "PLANALTO_CLT",
+          "status": "AVAILABLE"
+        }
+      ],
+      "candidate_rule_version": "1.1.2",
+      "change_class": "SOURCE_REFRESH_NO_CHANGE"
+    }
+  ]
+}
