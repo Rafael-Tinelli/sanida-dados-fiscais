@@ -4,6 +4,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+from bs4 import BeautifulSoup
+
 from sanida_fiscal.contract_v1_2 import FiscalContractV12
 from sanida_fiscal.presentation_noise_v1 import (
     _material_html_fingerprint,
@@ -14,13 +17,17 @@ from sanida_fiscal.semantic_diff_v1 import PromotionOutcome, assess_promotion
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "evidence/fiscal-authority-v1"
 RELEASE = ROOT / "releases/fiscal-v1/releases/fiscal-v1-sha256-a720ba6ccf9683371c0bc8e6dad868f4267ba42bac00935c7efbc2c5cbeea648.json"
-REVIEW = ROOT / "state/fiscal-release-v12-review.json"
+REVIEW = ROOT / "tests/fixtures/fiscal_review_109_noise.json"
+REVIEW_111 = ROOT / "tests/fixtures/fiscal_review_111_noise.json"
 
 
-def _issue_109_contracts():
+def _archived_case(review_path: Path):
     original = json.loads(RELEASE.read_text(encoding="utf-8"))
-    packet = json.loads(REVIEW.read_text(encoding="utf-8"))
-    assert packet["review_key"] == "79fe2476621a293163e876d5be8356a40def06511e1b3d0bee80852b75dc1c14"
+    packet = json.loads(review_path.read_text(encoding="utf-8"))
+    assert packet["review_key"] in {
+        "79fe2476621a293163e876d5be8356a40def06511e1b3d0bee80852b75dc1c14",
+        "96415528f583833d0cd4b5fa04daee0da3c1a34d0800de9e416b4bc63d551037",
+    }
 
     previous = FiscalContractV12.model_validate(original)
     next_data = previous.model_dump(mode="json", exclude_none=True)
@@ -43,11 +50,21 @@ def _issue_109_contracts():
     return previous, candidate, assessment, packet
 
 
-def test_issue_109_is_verified_transport_noise_without_release() -> None:
-    previous, candidate, assessment, packet = _issue_109_contracts()
+def _issue_109_contracts():
+    return _archived_case(REVIEW)
+
+
+@pytest.mark.parametrize(
+    ("source", "expected_rules", "expected_reasons"),
+    [(REVIEW, 16, 15), (REVIEW_111, 20, 16)],
+)
+def test_review_is_verified_transport_noise_without_release(
+    source: Path, expected_rules: int, expected_reasons: int
+) -> None:
+    previous, candidate, assessment, packet = _archived_case(source)
     assert assessment.outcome == PromotionOutcome.REVIEW_REQUIRED
-    assert len([r for r in assessment.diff.rule_diffs if r.changed]) == 16
-    assert len(packet["reasons"]) == 15
+    assert len([r for r in assessment.diff.rule_diffs if r.changed]) == expected_rules
+    assert packet["expected_reasons"] == expected_reasons
     assert is_presentation_only_refresh(
         previous=previous,
         candidate=candidate,
@@ -99,3 +116,26 @@ def test_changed_parser_identity_is_never_suppressed() -> None:
         assessment=assessment,
         authority_snapshot_root=EVIDENCE,
     )
+
+
+@pytest.mark.parametrize(
+    ("source_id", "old_hash", "new_hash"),
+    [
+        ("RFB_IRRF_TABLE_CURRENT", "3518438a94a7b74e2be144c7e4401173e674e5649219ebc909e9baccfaef4b7f", "c097f81cff409c05d692c52b79cabe443d6e4eb02020b29a4d1584020710831c"),
+        ("RFB_CP_INCIDENCE_TABLE", "b8ad0e5da5079ca78b9e78bddef029be65abdc2c22b55f91845d3bd5683830be", "7920398387cdf37168655b77c23ff3a4f2f815667f91bc7ce4b01d40d671fde0"),
+    ],
+)
+def test_rfb_cnir_navigation_noise_is_not_a_legal_change(
+    source_id: str, old_hash: str, new_hash: str
+) -> None:
+    folder = EVIDENCE / source_id
+    old = (folder / old_hash[:2] / (old_hash + ".html")).read_bytes()
+    new = (folder / new_hash[:2] / (new_hash + ".html")).read_bytes()
+    fingerprint = _material_html_fingerprint(old, source_id)
+    assert fingerprint is not None
+    assert fingerprint == _material_html_fingerprint(new, source_id)
+    soup = BeautifulSoup(new, "html.parser")
+    article = soup.select_one("#content-core")
+    assert article is not None
+    article.append("Alteração material simulada da regra fiscal para teste.")
+    assert fingerprint != _material_html_fingerprint(str(soup).encode("utf-8"), source_id)
