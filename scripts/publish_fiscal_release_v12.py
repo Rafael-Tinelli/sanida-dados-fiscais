@@ -38,6 +38,7 @@ from sanida_fiscal.review_evidence_identity_v1 import (
     build_review_identity_candidate,
 )
 from sanida_fiscal.semantic_diff_v1 import PromotionOutcome, assess_promotion
+from sanida_fiscal.presentation_noise_v1 import is_presentation_only_refresh
 
 
 TEMPLATE = ROOT / "contracts/examples/fiscal-contract-v1.example.json"
@@ -239,6 +240,47 @@ def main() -> int:
         candidate=candidate,
         assessment=assessment,
     )
+
+    # A website may rotate its anti-bot scripts or portal navigation without
+    # changing any legal content. Preserve the current published release rather
+    # than bumping rule versions or asking a human to approve transport noise.
+    # Explicit owner approvals still use the original fail-closed publication gate.
+    if (
+        args.human_approval_reference is None
+        and args.expected_review_key is None
+        and is_presentation_only_refresh(
+            previous=previous,
+            candidate=candidate,
+            assessment=assessment,
+            authority_snapshot_root=AUTHORITY_EVIDENCE_ROOT,
+        )
+    ):
+        existing = _load_optional(STATE_PATH)
+        if not (
+            existing is not None
+            and existing.get("publication_status") == "NO_PUBLISH_REQUIRED"
+            and existing.get("previous_release_id") == previous.release_id
+        ):
+            _write_state({
+                "schema_version": "1.0.0",
+                "attempted_at_utc": _utc_text(now),
+                "contract_schema_version": candidate.schema_version,
+                "previous_release_id": previous.release_id,
+                "candidate_release_id": candidate.release_id,
+                "publication_status": "NO_PUBLISH_REQUIRED",
+                "promotion_outcome": "NO_PUBLISH_REQUIRED",
+                "contract_changed_paths": [],
+                "changed_rules": [],
+                "reasons": [
+                    "Verified official source presentation/transport noise only; "
+                    "raw snapshots retained, current fiscal release preserved."
+                ],
+            })
+        print(
+            "Fiscal v1.2: official source transport/presentation noise only; "
+            "no new release or human approval required."
+        )
+        return EXIT_OK
 
     if assessment.outcome == PromotionOutcome.NO_PUBLISH_REQUIRED:
         print("Fiscal v1.2: no semantic/evidence delta; current release preserved byte-for-byte.")
