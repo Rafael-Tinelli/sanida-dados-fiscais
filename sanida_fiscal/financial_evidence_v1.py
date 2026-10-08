@@ -201,9 +201,22 @@ def _verify_archived_financial_provenance(
             raise FinancialEvidenceError(f"{source_id} archived candidate hash invalid")
         snapshot_dir = snapshots / source_id / snapshot_sha[:2]
         matching = sorted(snapshot_dir.glob(f"{snapshot_sha}.*"))
-        if len(matching) != 1:
+        if len(matching) == 1:
+            selected = matching[0]
+        elif len(matching) == 2 and {item.suffix for item in matching} == {".html", ".json"}:
+            # A historical SGS response was stored with both MIME-based extensions.
+            # The alias is safe only when *both* immutable files match the exact
+            # SHA-256 from the published artifact. Never pick one silently when
+            # either alias is missing, corrupted, or unexpectedly named.
+            for item in matching:
+                _verify_file_sha256(
+                    snapshots, str(item.relative_to(snapshots)),
+                    snapshot_sha, f"{source_id}.snapshot_alias",
+                )
+            selected = next(item for item in matching if item.suffix == ".json")
+        else:
             raise FinancialEvidenceError(f"{source_id} archived snapshot is missing or ambiguous")
-        snapshot_path = str(matching[0].relative_to(snapshots))
+        snapshot_path = str(selected.relative_to(snapshots))
         _verify_file_sha256(snapshots, snapshot_path, snapshot_sha, f"{source_id}.snapshot")
         candidate_path = CandidateStore.relative_path(source_id, candidate_sha)
         try:
