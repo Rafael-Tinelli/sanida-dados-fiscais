@@ -189,6 +189,16 @@ def analyze_nonmaterial_refresh(
             return None
         if getattr(old, "snapshot_sha256", None) == getattr(new, "snapshot_sha256", None):
             return None
+        cached = report_by_source.get(old.source_id)
+        if cached is not None:
+            if (
+                cached["previous_snapshot_sha256"] != old.snapshot_sha256
+                or cached["candidate_snapshot_sha256"] != new.snapshot_sha256
+                or cached["previous_snapshot_path"] != old.snapshot_path
+                or cached["candidate_snapshot_path"] != new.snapshot_path
+            ):
+                return None
+            continue
         try:
             before = _verified_snapshot(authority_snapshot_root, old)
             after = _verified_snapshot(authority_snapshot_root, new)
@@ -214,6 +224,8 @@ def analyze_nonmaterial_refresh(
             ),
             "previous_snapshot_sha256": old.snapshot_sha256,
             "candidate_snapshot_sha256": new.snapshot_sha256,
+            "previous_snapshot_path": old.snapshot_path,
+            "candidate_snapshot_path": new.snapshot_path,
             "covered_text_links_sha256": old_id,
             "outside_scope_material_delta": bool(
                 source_id == "PLANALTO_CLT" and full_doc_changed
