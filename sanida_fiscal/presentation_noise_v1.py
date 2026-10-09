@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from hashlib import sha256
 from pathlib import Path
+import re
 from typing import Any
 
 from bs4 import BeautifulSoup
@@ -36,9 +37,79 @@ _CONTENT_CORE_SOURCES = frozenset({
     "RFB_CP_INCIDENCE_TABLE",
 })
 
+# This is a deliberately narrow, legally reviewed excerpt of the CLT, NOT a
+# generic suppression of changes to consolidated legislation. The registered
+# PLANALTO_CLT scope in docs/source-registry-v1.json is arts. 129–147, used
+# for vacation and termination. Art. 148 is the exclusive stop boundary.
+_CLT_SCOPE_ANCHORS = ("art129", "art148")
+_CLT_REQUIRED_ANCHORS = (
+    "art129", "art130", "art131", "art137", "art143", "art145",
+    "art146", "art147", "art148",
+)
+
+
+def _clt_vacation_scope_html(body: bytes) -> bytes | None:
+    """Extract whole article blocks 129–147, preserving links and annotations.
+
+    Require unique, correctly ordered legal anchors in a single document
+    container. Unknown markup, missing/duplicated markers or restructured
+    document boundaries must fail closed rather than silently shrink the scope.
+    """
+    soup = BeautifulSoup(body, "html.parser")
+    markers = {}
+    for marker in _CLT_REQUIRED_ANCHORS:
+        matches = soup.find_all("a", attrs={"name": marker})
+        if len(matches) != 1:
+            return None
+        parent = matches[0].find_parent("p")
+        if parent is None:
+            return None
+        markers[marker] = parent
+    start = markers["art129"]
+    stop = markers["art148"]
+    if start is stop or start.parent is not stop.parent:
+        return None
+
+    section = []
+    reached_stop = False
+    for sibling in [start, *start.next_siblings]:
+        if sibling is stop:
+            reached_stop = True
+            break
+        section.append(str(sibling))
+    if not reached_stop:
+        return None
+    scoped_html = "".join(section)
+    if not (10000 <= len(scoped_html) <= 200000):
+        return None
+
+    # Confirm the expected legal articles remain inside the selected range.
+    # If the source reorders, drops or renumbers a boundary, stop automatically.
+    scoped = BeautifulSoup(scoped_html, "html.parser")
+    positions = []
+    for marker in _CLT_REQUIRED_ANCHORS[:-1]:
+        anchors = scoped.find_all("a", attrs={"name": marker})
+        if len(anchors) != 1:
+            return None
+        token = 'name="' + marker + '"'
+        # Compare ordering based on parsed article anchors, not display text.
+        positions.append(scoped_html.lower().find(token))
+    if any(p < 0 for p in positions) or positions != sorted(positions):
+        return None
+
+    text = scoped.get_text(" ", strip=True)
+    for article in (129, 130, 131, 137, 143, 145, 146, 147):
+        if not re.search(r"\bArt\.\s*" + str(article) + r"\s*[-.]", text, re.I):
+            return None
+    return scoped_html.encode("utf-8")
+
 
 def _material_html_fingerprint(body: bytes, source_id: str) -> str | None:
-    if source_id in _CONTENT_CORE_SOURCES:
+    if source_id == "PLANALTO_CLT":
+        body = _clt_vacation_scope_html(body)
+        if body is None:
+            return None
+    elif source_id in _CONTENT_CORE_SOURCES:
         # On these audited gov.br Plone pages, fiscal content is inside
         # #content-core. Global navigation includes unrelated news and links
         # (e.g., CNIR) which must not create a fiscal publication.
