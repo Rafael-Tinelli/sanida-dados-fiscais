@@ -1,312 +1,83 @@
 {
-  "attempted_at_utc": "2026-10-09T16:34:36.916026Z",
+  "attempted_at_utc": "2026-10-09T18:02:55.729719Z",
   "candidate_release_id": "candidate-v1-2",
-  "changed_rules": [
-    {
-      "candidate_rule_version": "1.0.3",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.2",
-      "rule_id": "irrf.dependent_deduction"
-    },
-    {
-      "candidate_rule_version": "1.0.3",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.2",
-      "rule_id": "irrf.monthly.progressive_table"
-    },
-    {
-      "candidate_rule_version": "1.0.3",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.2",
-      "rule_id": "irrf.reduction.2026"
-    },
-    {
-      "candidate_rule_version": "1.0.3",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.2",
-      "rule_id": "irrf.simplified_monthly_discount"
-    },
-    {
-      "candidate_rule_version": "1.0.4",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.3",
-      "rule_id": "termination.acquired_and_overdue_vacation"
-    },
-    {
-      "candidate_rule_version": "1.0.3",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.2",
-      "rule_id": "termination.partial_output_scope"
-    },
-    {
-      "candidate_rule_version": "1.0.2",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.1",
-      "rule_id": "termination.salary_balance"
-    },
-    {
-      "candidate_rule_version": "1.0.4",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.3",
-      "rule_id": "termination.thirteenth_proportional"
-    },
-    {
-      "candidate_rule_version": "1.0.4",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.3",
-      "rule_id": "termination.vacation_proportional"
-    },
-    {
-      "candidate_rule_version": "1.0.4",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.3",
-      "rule_id": "thirteenth.accrual.twelfths"
-    },
-    {
-      "candidate_rule_version": "1.0.4",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.3",
-      "rule_id": "thirteenth.advance"
-    },
-    {
-      "candidate_rule_version": "1.0.4",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.3",
-      "rule_id": "thirteenth.irrf.reduction.2026"
-    },
-    {
-      "candidate_rule_version": "1.0.4",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.3",
-      "rule_id": "thirteenth.reference_remuneration"
-    },
-    {
-      "candidate_rule_version": "1.0.4",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.3",
-      "rule_id": "thirteenth.variable_remuneration"
-    },
-    {
-      "candidate_rule_version": "1.1.2",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.1.1",
-      "rule_id": "vacation.abono_pecuniario"
-    },
-    {
-      "candidate_rule_version": "1.1.4",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.1.3",
-      "rule_id": "vacation.acquisition_period"
-    },
-    {
-      "candidate_rule_version": "1.0.4",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.3",
-      "rule_id": "vacation.entitlement_days_by_absences"
-    },
-    {
-      "candidate_rule_version": "1.0.3",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.2",
-      "rule_id": "vacation.inss.enjoyed"
-    },
-    {
-      "candidate_rule_version": "1.0.4",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.0.3",
-      "rule_id": "vacation.irrf.reduction.2026"
-    },
-    {
-      "candidate_rule_version": "1.1.2",
-      "change_class": "SOURCE_REFRESH_NO_CHANGE",
-      "changed_paths": [
-        "provenance[0].observed_at_utc",
-        "provenance[0].snapshot_path",
-        "provenance[0].snapshot_sha256",
-        "quality.last_validated_at_utc",
-        "rule_version"
-      ],
-      "occurrence": 0,
-      "previous_rule_version": "1.1.1",
-      "rule_id": "vacation.remuneration_and_constitutional_third"
-    }
-  ],
+  "changed_rules": [],
   "contract_changed_paths": [],
   "contract_schema_version": "1.2.0",
+  "nonmaterial_evidence_audit": {
+    "classification": "VERIFIED_NONMATERIAL_SOURCE_REFRESH",
+    "out_of_scope_legal_sources": [
+      "PLANALTO_CLT"
+    ],
+    "schema_version": "1.0.0",
+    "sources": [
+      {
+        "candidate_snapshot_path": "MTE_TERMINATION_FAQ/d3/d397e30db20b5ee3697840292896d611e07e97938a02c9e4939140e66116e376.html",
+        "candidate_snapshot_sha256": "d397e30db20b5ee3697840292896d611e07e97938a02c9e4939140e66116e376",
+        "comparison_scope": "OFFICIAL_CONTENT_CORE",
+        "covered_text_links_sha256": "fbc9357807d17c7192b20523ec6819f72621169c533893c907481f8416aaf47e",
+        "outside_scope_material_delta": false,
+        "previous_snapshot_path": "MTE_TERMINATION_FAQ/af/af97a38840f693df3c5e8cd1517f077549655a6663004941173163ddcf336dcc.html",
+        "previous_snapshot_sha256": "af97a38840f693df3c5e8cd1517f077549655a6663004941173163ddcf336dcc",
+        "source_id": "MTE_TERMINATION_FAQ"
+      },
+      {
+        "candidate_snapshot_path": "PLANALTO_CLT/40/40c93eb082edb4fa1559d9aacb22297e5423100db14a3d1f9b1ca0ef789ce0e3.html",
+        "candidate_snapshot_sha256": "40c93eb082edb4fa1559d9aacb22297e5423100db14a3d1f9b1ca0ef789ce0e3",
+        "comparison_scope": "CLT_ARTICLES_129_147",
+        "covered_text_links_sha256": "262ab2f8fb630cf63966d07933d4d4cd1d164209de74f1e92b0f0b8cc8d4e128",
+        "outside_scope_material_delta": true,
+        "previous_snapshot_path": "PLANALTO_CLT/9f/9f9e535624098bf086652169adfe149fe1f1b4bbacd9b916cfd4b18d65c60dc4.html",
+        "previous_snapshot_sha256": "9f9e535624098bf086652169adfe149fe1f1b4bbacd9b916cfd4b18d65c60dc4",
+        "source_id": "PLANALTO_CLT"
+      },
+      {
+        "candidate_snapshot_path": "PLANALTO_DECRETO_10854_2021/fa/fa3f72f6fae6ee6ae6220d10387fb4329c227c61aded7abc722b8c8692bcea27.html",
+        "candidate_snapshot_sha256": "fa3f72f6fae6ee6ae6220d10387fb4329c227c61aded7abc722b8c8692bcea27",
+        "comparison_scope": "FULL_VISIBLE_TEXT_AND_LINKS",
+        "covered_text_links_sha256": "0f2bf55bd3cb7ee20619f4a5015ab8541762ce0959bb71da9727d3473a92ef00",
+        "outside_scope_material_delta": false,
+        "previous_snapshot_path": "PLANALTO_DECRETO_10854_2021/17/17e2f9f9f01d1c54abbcb7384ec946f8e58e8848a1080ff7bc2f5f5ebbae53d1.html",
+        "previous_snapshot_sha256": "17e2f9f9f01d1c54abbcb7384ec946f8e58e8848a1080ff7bc2f5f5ebbae53d1",
+        "source_id": "PLANALTO_DECRETO_10854_2021"
+      },
+      {
+        "candidate_snapshot_path": "PLANALTO_LEI_15270_2025/62/62873a3e6ed6468ebabaf47285add79d142020a26096a414dbbcbe5453b97eb4.html",
+        "candidate_snapshot_sha256": "62873a3e6ed6468ebabaf47285add79d142020a26096a414dbbcbe5453b97eb4",
+        "comparison_scope": "FULL_VISIBLE_TEXT_AND_LINKS",
+        "covered_text_links_sha256": "88721f308e7f46dcbf659e507c619800aab3865c1a75145e9eb93d323f7b342b",
+        "outside_scope_material_delta": false,
+        "previous_snapshot_path": "PLANALTO_LEI_15270_2025/3c/3c0fff76f9c7b2dba8675d56fb864b8c8f70f8f232aa320028818bc01ebdea11.html",
+        "previous_snapshot_sha256": "3c0fff76f9c7b2dba8675d56fb864b8c8f70f8f232aa320028818bc01ebdea11",
+        "source_id": "PLANALTO_LEI_15270_2025"
+      },
+      {
+        "candidate_snapshot_path": "RFB_CP_INCIDENCE_TABLE/54/54a021fe31bbd693c2fbf3dd2e00f8173e5c3cb1eba459b1b6d945a877321b06.html",
+        "candidate_snapshot_sha256": "54a021fe31bbd693c2fbf3dd2e00f8173e5c3cb1eba459b1b6d945a877321b06",
+        "comparison_scope": "OFFICIAL_CONTENT_CORE",
+        "covered_text_links_sha256": "3c388b14a2561fe5af3c3abba667b3d40a96f42d861fa2dd359df5e1c4ed6d14",
+        "outside_scope_material_delta": false,
+        "previous_snapshot_path": "RFB_CP_INCIDENCE_TABLE/b8/b8ad0e5da5079ca78b9e78bddef029be65abdc2c22b55f91845d3bd5683830be.html",
+        "previous_snapshot_sha256": "b8ad0e5da5079ca78b9e78bddef029be65abdc2c22b55f91845d3bd5683830be",
+        "source_id": "RFB_CP_INCIDENCE_TABLE"
+      },
+      {
+        "candidate_snapshot_path": "RFB_IRRF_TABLE_CURRENT/5a/5a0e3c3b97b7f48f286b6c1316cc87e6fbf0cd4ab3f3d1886c172b6d9cb11c2e.html",
+        "candidate_snapshot_sha256": "5a0e3c3b97b7f48f286b6c1316cc87e6fbf0cd4ab3f3d1886c172b6d9cb11c2e",
+        "comparison_scope": "OFFICIAL_CONTENT_CORE",
+        "covered_text_links_sha256": "7eba28dc5093f9020f0dbbb2519fad5c8ef697e402ddbe62acf1b15c8d19f492",
+        "outside_scope_material_delta": false,
+        "previous_snapshot_path": "RFB_IRRF_TABLE_CURRENT/35/3518438a94a7b74e2be144c7e4401173e674e5649219ebc909e9baccfaef4b7f.html",
+        "previous_snapshot_sha256": "3518438a94a7b74e2be144c7e4401173e674e5649219ebc909e9baccfaef4b7f",
+        "source_id": "RFB_IRRF_TABLE_CURRENT"
+      }
+    ]
+  },
   "previous_release_id": "fiscal-v1-sha256-a720ba6ccf9683371c0bc8e6dad868f4267ba42bac00935c7efbc2c5cbeea648",
-  "promotion_outcome": "REVIEW_REQUIRED",
-  "publication_status": "REVIEW_REQUIRED",
+  "promotion_outcome": "NO_PUBLISH_REQUIRED",
+  "publication_status": "NO_PUBLISH_REQUIRED",
   "reasons": [
-    "termination.acquired_and_overdue_vacation: source refresh on structural rule requires human review",
-    "termination.partial_output_scope: source refresh on structural rule requires human review",
-    "termination.salary_balance: source refresh on structural rule requires human review",
-    "termination.thirteenth_proportional: source refresh on structural rule requires human review",
-    "termination.vacation_proportional: source refresh on structural rule requires human review",
-    "thirteenth.accrual.twelfths: source refresh on structural rule requires human review",
-    "thirteenth.advance: source refresh on structural rule requires human review",
-    "thirteenth.irrf.reduction.2026: automatic promotion requires parser-backed hashed evidence",
-    "thirteenth.reference_remuneration: source refresh on structural rule requires human review",
-    "thirteenth.variable_remuneration: source refresh on structural rule requires human review",
-    "vacation.abono_pecuniario: source refresh on structural rule requires human review",
-    "vacation.acquisition_period: source refresh on structural rule requires human review",
-    "vacation.entitlement_days_by_absences: source refresh on structural rule requires human review",
-    "vacation.inss.enjoyed: source refresh on structural rule requires human review",
-    "vacation.irrf.reduction.2026: automatic promotion requires parser-backed hashed evidence",
-    "vacation.remuneration_and_constitutional_third: source refresh on structural rule requires human review"
+    "All covered normative provisions, parameters, and evidence identities are unchanged; out-of-scope legal annotations are separately recorded, and raw snapshots retained."
   ],
-  "review_issue_action": "UPSERT_REQUIRED",
-  "review_key": "7397b71e7ccc06788a39eb509f142605d0153a884bda78b6196a64ecaa648f55",
   "schema_version": "1.0.0"
 }
