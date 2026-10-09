@@ -72,7 +72,7 @@ def test_out_of_scope_legal_text_does_not_trigger_fiscal_release() -> None:
     source = NEW.read_bytes()
     before = _material_html_fingerprint(source, "PLANALTO_CLT")
     soup = BeautifulSoup(source, "html.parser")
-    changed = _changed_article(soup, "art790")
+    changed = _changed_article(soup, "art790.")
     assert canonical_html_review_fingerprint(source) != canonical_html_review_fingerprint(changed.encode("utf-8"))
     assert _material_html_fingerprint(changed.encode("utf-8"), "PLANALTO_CLT") == before
 
