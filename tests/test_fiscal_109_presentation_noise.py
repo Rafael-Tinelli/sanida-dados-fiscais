@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 from sanida_fiscal.contract_v1_2 import FiscalContractV12
 from sanida_fiscal.presentation_noise_v1 import (
     _material_html_fingerprint,
+    analyze_nonmaterial_refresh,
     is_presentation_only_refresh,
 )
 from sanida_fiscal.semantic_diff_v1 import PromotionOutcome, assess_promotion
@@ -19,6 +20,7 @@ EVIDENCE = ROOT / "evidence/fiscal-authority-v1"
 RELEASE = ROOT / "releases/fiscal-v1/releases/fiscal-v1-sha256-a720ba6ccf9683371c0bc8e6dad868f4267ba42bac00935c7efbc2c5cbeea648.json"
 REVIEW = ROOT / "tests/fixtures/fiscal_review_109_noise.json"
 REVIEW_111 = ROOT / "tests/fixtures/fiscal_review_111_noise.json"
+REVIEW_114 = ROOT / "tests/fixtures/fiscal_review_114_scoped_clt.json"
 
 
 def _archived_case(review_path: Path):
@@ -27,6 +29,7 @@ def _archived_case(review_path: Path):
     assert packet["review_key"] in {
         "79fe2476621a293163e876d5be8356a40def06511e1b3d0bee80852b75dc1c14",
         "96415528f583833d0cd4b5fa04daee0da3c1a34d0800de9e416b4bc63d551037",
+        "7397b71e7ccc06788a39eb509f142605d0153a884bda78b6196a64ecaa648f55",
     }
 
     previous = FiscalContractV12.model_validate(original)
@@ -56,7 +59,7 @@ def _issue_109_contracts():
 
 @pytest.mark.parametrize(
     ("source", "expected_rules", "expected_reasons"),
-    [(REVIEW, 16, 15), (REVIEW_111, 20, 16)],
+    [(REVIEW, 16, 15), (REVIEW_111, 20, 16), (REVIEW_114, 20, 16)],
 )
 def test_review_is_verified_transport_noise_without_release(
     source: Path, expected_rules: int, expected_reasons: int
@@ -71,6 +74,17 @@ def test_review_is_verified_transport_noise_without_release(
         assessment=assessment,
         authority_snapshot_root=EVIDENCE,
     )
+    audit = analyze_nonmaterial_refresh(
+        previous=previous, candidate=candidate, assessment=assessment,
+        authority_snapshot_root=EVIDENCE,
+    )
+    assert audit is not None
+    assert audit["out_of_scope_legal_sources"] == (
+        ["PLANALTO_CLT"] if source == REVIEW_114 else []
+    )
+    assert len(audit["sources"]) == len({
+        entry["evidence_after"][0]["source_id"] for entry in packet["rules"]
+    })
 
 
 def test_material_change_in_a_fiscal_parameter_is_never_suppressed() -> None:

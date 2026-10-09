@@ -38,7 +38,7 @@ from sanida_fiscal.review_evidence_identity_v1 import (
     build_review_identity_candidate,
 )
 from sanida_fiscal.semantic_diff_v1 import PromotionOutcome, assess_promotion
-from sanida_fiscal.presentation_noise_v1 import is_presentation_only_refresh
+from sanida_fiscal.presentation_noise_v1 import analyze_nonmaterial_refresh
 
 
 TEMPLATE = ROOT / "contracts/examples/fiscal-contract-v1.example.json"
@@ -245,21 +245,19 @@ def main() -> int:
     # changing any legal content. Preserve the current published release rather
     # than bumping rule versions or asking a human to approve transport noise.
     # Explicit owner approvals still use the original fail-closed publication gate.
-    if (
-        args.human_approval_reference is None
-        and args.expected_review_key is None
-        and is_presentation_only_refresh(
-            previous=previous,
-            candidate=candidate,
-            assessment=assessment,
+    nonmaterial_audit = None
+    if args.human_approval_reference is None and args.expected_review_key is None:
+        nonmaterial_audit = analyze_nonmaterial_refresh(
+            previous=previous, candidate=candidate, assessment=assessment,
             authority_snapshot_root=AUTHORITY_EVIDENCE_ROOT,
         )
-    ):
+    if nonmaterial_audit is not None:
         existing = _load_optional(STATE_PATH)
         if not (
             existing is not None
             and existing.get("publication_status") == "NO_PUBLISH_REQUIRED"
             and existing.get("previous_release_id") == previous.release_id
+            and existing.get("nonmaterial_evidence_audit") == nonmaterial_audit
         ):
             _write_state({
                 "schema_version": "1.0.0",
@@ -271,15 +269,24 @@ def main() -> int:
                 "promotion_outcome": "NO_PUBLISH_REQUIRED",
                 "contract_changed_paths": [],
                 "changed_rules": [],
+                "nonmaterial_evidence_audit": nonmaterial_audit,
                 "reasons": [
-                    "Verified official source presentation/transport noise only; "
-                    "raw snapshots retained, current fiscal release preserved."
+                    "All covered normative provisions, parameters, and evidence "
+                    "identities are unchanged; out-of-scope legal annotations "
+                    "are separately recorded, and raw snapshots retained."
                 ],
             })
-        print(
-            "Fiscal v1.2: official source transport/presentation noise only; "
-            "no new release or human approval required."
-        )
+        if nonmaterial_audit["out_of_scope_legal_sources"]:
+            print(
+                "Fiscal v1.2: legal annotations OUTSIDE registered calculator "
+                "scope (CLT arts. 129–147), preserved in evidence audit; "
+                "no new release or human approval required."
+            )
+        else:
+            print(
+                "Fiscal v1.2: official source transport/presentation noise only; "
+                "no new release or human approval required."
+            )
         return EXIT_OK
 
     if assessment.outcome == PromotionOutcome.NO_PUBLISH_REQUIRED:
