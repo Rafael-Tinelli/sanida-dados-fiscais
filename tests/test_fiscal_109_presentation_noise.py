@@ -82,7 +82,9 @@ def test_review_is_verified_transport_noise_without_release(
     assert audit["out_of_scope_legal_sources"] == (
         ["PLANALTO_CLT"] if source == REVIEW_114 else []
     )
-    assert len(audit["sources"]) in (6, 7)
+    assert len(audit["sources"]) == len({
+        entry["evidence_after"][0]["source_id"] for entry in packet["rules"]
+    })
 
 
 def test_material_change_in_a_fiscal_parameter_is_never_suppressed() -> None:
