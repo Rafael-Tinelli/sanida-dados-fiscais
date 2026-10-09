@@ -42,9 +42,10 @@ _CONTENT_CORE_SOURCES = frozenset({
 # PLANALTO_CLT scope in docs/source-registry-v1.json is arts. 129–147, used
 # for vacation and termination. Art. 148 is the exclusive stop boundary.
 _CLT_SCOPE_ANCHORS = ("art129", "art148")
-_CLT_REQUIRED_ANCHORS = (
-    "art129", "art130", "art131", "art137", "art143", "art145",
-    "art146", "art147", "art148",
+# The source contains one named marker per article in this interval except
+# art. 144, which lacks a standalone named anchor in the archived CLT HTML.
+_CLT_REQUIRED_ANCHORS = tuple(
+    f"art{n}" for n in range(129, 149) if n != 144
 )
 
 
