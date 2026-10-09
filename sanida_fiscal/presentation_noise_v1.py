@@ -135,23 +135,23 @@ def _verified_snapshot(root: Path, observation: Any) -> bytes:
     return raw
 
 
-def is_presentation_only_refresh(
+def analyze_nonmaterial_refresh(
     *,
     previous: Any,
     candidate: Any,
     assessment: Any,
     authority_snapshot_root: Path,
-) -> bool:
-    """True only if *every* delta is source transport/presentation noise.
+) -> dict[str, Any] | None:
+    """Evidence report only when every delta is proven nonmaterial to consumers.
 
     Never permit an automatic parameter, legal-text, version-of-parser, effective
     date, rule inventory or contract-level change through this branch.
     Raw evidence is independently hash-verified for old and new observations.
     """
     if previous is None or assessment.outcome != PromotionOutcome.REVIEW_REQUIRED:
-        return False
+        return None
     if assessment.diff.contract_changed_paths:
-        return False
+        return None
 
     old_rules = {rule.rule_id: rule for rule in previous.rules}
     new_rules = {rule.rule_id: rule for rule in candidate.rules}
@@ -161,12 +161,13 @@ def is_presentation_only_refresh(
         or len(old_rules) != 32
         or set(old_rules) != set(new_rules)
     ):
-        return False
+        return None
 
     changed = [item for item in assessment.diff.rule_diffs if item.changed]
     if not changed:
-        return False
+        return None
 
+    report_by_source: dict[str, dict[str, Any]] = {}
     for item in changed:
         if (
             item.change_class.value != "SOURCE_REFRESH_NO_CHANGE"
@@ -174,28 +175,71 @@ def is_presentation_only_refresh(
             or not set(item.changed_paths).issubset(_NOISE_ONLY_PATHS)
             or "provenance[0].snapshot_sha256" not in item.changed_paths
         ):
-            return False
+            return None
         old_prov = old_rules[item.rule_id].provenance
         new_prov = new_rules[item.rule_id].provenance
         if len(old_prov) != 1 or len(new_prov) != 1:
-            return False
+            return None
         old, new = old_prov[0], new_prov[0]
         for field in ("source_id", "parser_id", "parser_version", "role",
                       "retrieval_method", "status"):
             if getattr(old, field, None) != getattr(new, field, None):
-                return False
+                return None
         if getattr(old, "status", None) != getattr(new, "status", None):
-            return False
+            return None
         if getattr(old, "snapshot_sha256", None) == getattr(new, "snapshot_sha256", None):
-            return False
+            return None
         try:
             before = _verified_snapshot(authority_snapshot_root, old)
             after = _verified_snapshot(authority_snapshot_root, new)
             old_id = _material_html_fingerprint(before, old.source_id)
             new_id = _material_html_fingerprint(after, new.source_id)
         except (OSError, ValueError, ReviewEvidenceIdentityError):
-            return False
+            return None
         if old_id is None or new_id is None or old_id != new_id:
-            return False
+            return None
 
-    return True
+        source_id = old.source_id
+        full_doc_changed = (
+            canonical_html_review_fingerprint(before)
+            != canonical_html_review_fingerprint(after)
+        )
+        report_by_source[source_id] = {
+            "source_id": source_id,
+            "comparison_scope": (
+                "CLT_ARTICLES_129_147"
+                if source_id == "PLANALTO_CLT"
+                else ("OFFICIAL_CONTENT_CORE" if source_id in _CONTENT_CORE_SOURCES
+                      else "FULL_VISIBLE_TEXT_AND_LINKS")
+            ),
+            "previous_snapshot_sha256": old.snapshot_sha256,
+            "candidate_snapshot_sha256": new.snapshot_sha256,
+            "covered_text_links_sha256": old_id,
+            "outside_scope_material_delta": bool(
+                source_id == "PLANALTO_CLT" and full_doc_changed
+            ),
+        }
+
+    report = sorted(report_by_source.values(), key=lambda obj: obj["source_id"])
+    return {
+        "schema_version": "1.0.0",
+        "classification": "VERIFIED_NONMATERIAL_SOURCE_REFRESH",
+        "sources": report,
+        "out_of_scope_legal_sources": [
+            item["source_id"] for item in report if item["outside_scope_material_delta"]
+        ],
+    }
+
+
+def is_presentation_only_refresh(
+    *,
+    previous: Any,
+    candidate: Any,
+    assessment: Any,
+    authority_snapshot_root: Path,
+) -> bool:
+    """Compatibility predicate; see analyze_nonmaterial_refresh for audit data."""
+    return analyze_nonmaterial_refresh(
+        previous=previous, candidate=candidate, assessment=assessment,
+        authority_snapshot_root=authority_snapshot_root,
+    ) is not None
