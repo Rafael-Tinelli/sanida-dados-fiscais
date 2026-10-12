@@ -1,5 +1,5 @@
 {
-  "attempted_at_utc": "2026-10-11T15:57:42.753221Z",
+  "attempted_at_utc": "2026-10-12T19:19:00.668839Z",
   "candidate_release_id": "candidate-v1-2",
   "changed_rules": [],
   "contract_changed_paths": [],
@@ -12,16 +12,6 @@
     "schema_version": "1.0.0",
     "sources": [
       {
-        "candidate_snapshot_path": "ESOCIAL_WEB_MEI_2026/5f/5ff2f677b30d979ccea268a4471220c31a318685d52d51b641ca97b89b85b8f9.html",
-        "candidate_snapshot_sha256": "5ff2f677b30d979ccea268a4471220c31a318685d52d51b641ca97b89b85b8f9",
-        "comparison_scope": "FULL_VISIBLE_TEXT_AND_LINKS",
-        "covered_text_links_sha256": "2fcc5d5425c6b9729f578f987da3469e1d3ee3d912ffba111c0e1ad4382e53c6",
-        "outside_scope_material_delta": false,
-        "previous_snapshot_path": "ESOCIAL_WEB_MEI_2026/6f/6f8d842d51ba1af31068a7a3384ef3031efd474be22f134e60052d174f194e8d.html",
-        "previous_snapshot_sha256": "6f8d842d51ba1af31068a7a3384ef3031efd474be22f134e60052d174f194e8d",
-        "source_id": "ESOCIAL_WEB_MEI_2026"
-      },
-      {
         "candidate_snapshot_path": "INSS_TABLE_CURRENT/81/8170126220dbfe6988e4dbd2a77dbd66b6802fd89c447bc0dae2b327494f9aba.html",
         "candidate_snapshot_sha256": "8170126220dbfe6988e4dbd2a77dbd66b6802fd89c447bc0dae2b327494f9aba",
         "comparison_scope": "FULL_VISIBLE_TEXT_AND_LINKS",
@@ -32,8 +22,8 @@
         "source_id": "INSS_TABLE_CURRENT"
       },
       {
-        "candidate_snapshot_path": "MTE_TERMINATION_FAQ/d3/d397e30db20b5ee3697840292896d611e07e97938a02c9e4939140e66116e376.html",
-        "candidate_snapshot_sha256": "d397e30db20b5ee3697840292896d611e07e97938a02c9e4939140e66116e376",
+        "candidate_snapshot_path": "MTE_TERMINATION_FAQ/06/0674eacb8cbed0e62e09454a296e46185463463f7d9cca539856bb3dcba06454.html",
+        "candidate_snapshot_sha256": "0674eacb8cbed0e62e09454a296e46185463463f7d9cca539856bb3dcba06454",
         "comparison_scope": "OFFICIAL_CONTENT_CORE",
         "covered_text_links_sha256": "fbc9357807d17c7192b20523ec6819f72621169c533893c907481f8416aaf47e",
         "outside_scope_material_delta": false,
@@ -42,8 +32,8 @@
         "source_id": "MTE_TERMINATION_FAQ"
       },
       {
-        "candidate_snapshot_path": "PLANALTO_CLT/a4/a4a65b80799e6fc21bd5708debf16e2692659301ac937e6a95824a2e2a6251f6.html",
-        "candidate_snapshot_sha256": "a4a65b80799e6fc21bd5708debf16e2692659301ac937e6a95824a2e2a6251f6",
+        "candidate_snapshot_path": "PLANALTO_CLT/7f/7fe79df6189b882f64bf8d45fadcd00dd7a53f914acd650dd5b7d31497f1e934.html",
+        "candidate_snapshot_sha256": "7fe79df6189b882f64bf8d45fadcd00dd7a53f914acd650dd5b7d31497f1e934",
         "comparison_scope": "CLT_ARTICLES_129_147",
         "covered_text_links_sha256": "262ab2f8fb630cf63966d07933d4d4cd1d164209de74f1e92b0f0b8cc8d4e128",
         "outside_scope_material_delta": true,
@@ -52,8 +42,8 @@
         "source_id": "PLANALTO_CLT"
       },
       {
-        "candidate_snapshot_path": "PLANALTO_DECRETO_10854_2021/ea/eadc7554da48b89e4c87338ef0b3aa90ccf0018400f8e95fa947d247213c115b.html",
-        "candidate_snapshot_sha256": "eadc7554da48b89e4c87338ef0b3aa90ccf0018400f8e95fa947d247213c115b",
+        "candidate_snapshot_path": "PLANALTO_DECRETO_10854_2021/e0/e09e4cd5a1c74033444bf28f4eab977badd0e3b3abd66026d6178eb052399558.html",
+        "candidate_snapshot_sha256": "e09e4cd5a1c74033444bf28f4eab977badd0e3b3abd66026d6178eb052399558",
         "comparison_scope": "FULL_VISIBLE_TEXT_AND_LINKS",
         "covered_text_links_sha256": "0f2bf55bd3cb7ee20619f4a5015ab8541762ce0959bb71da9727d3473a92ef00",
         "outside_scope_material_delta": false,
@@ -62,8 +52,8 @@
         "source_id": "PLANALTO_DECRETO_10854_2021"
       },
       {
-        "candidate_snapshot_path": "PLANALTO_LEI_15270_2025/26/26b709f281f838c144a39f9b15e6918961518b4f65cccdb7a65064cb5174c7c4.html",
-        "candidate_snapshot_sha256": "26b709f281f838c144a39f9b15e6918961518b4f65cccdb7a65064cb5174c7c4",
+        "candidate_snapshot_path": "PLANALTO_LEI_15270_2025/ae/ae1afbfd87de2bfa274103aa054049e27a17ddf79ef5264fd00c9f0213c4c343.html",
+        "candidate_snapshot_sha256": "ae1afbfd87de2bfa274103aa054049e27a17ddf79ef5264fd00c9f0213c4c343",
         "comparison_scope": "FULL_VISIBLE_TEXT_AND_LINKS",
         "covered_text_links_sha256": "88721f308e7f46dcbf659e507c619800aab3865c1a75145e9eb93d323f7b342b",
         "outside_scope_material_delta": false,
