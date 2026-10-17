@@ -1,5 +1,5 @@
 {
-  "attempted_at_utc": "2026-10-16T14:14:56.112959Z",
+  "attempted_at_utc": "2026-10-17T13:11:28.061282Z",
   "candidate_release_id": "candidate-v1-2",
   "changed_rules": [
     {
@@ -336,6 +336,6 @@
     "vacation.remuneration_and_constitutional_third: source refresh on structural rule requires human review"
   ],
   "review_issue_action": "UPSERT_REQUIRED",
-  "review_key": "5c2b60a53e86eea61121ef06f932d83f87ab2fae75e9f1954582c3d297ba18df",
+  "review_key": "d6ff4ba74e61f4b23f3d4d2b5eaea13929bece2fb54d1e0432c2eb0204cfd00d",
   "schema_version": "1.0.0"
 }
