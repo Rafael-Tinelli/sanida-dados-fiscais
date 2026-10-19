@@ -1,6 +1,6 @@
 {
   "consecutive_parser_failures": 6,
-  "consecutive_source_failures": 1,
+  "consecutive_source_failures": 2,
   "etag": null,
   "last_candidate_path": "BCB_SELIC_META_SGS_432/44/4485cf55281a466fe024e9cdcb4e7dfd4912b0e2f69371fdaadc5fb14d2070ba.json",
   "last_candidate_sha256": "4485cf55281a466fe024e9cdcb4e7dfd4912b0e2f69371fdaadc5fb14d2070ba",
@@ -9,7 +9,7 @@
   "last_collection_status": "SOURCE_UNAVAILABLE",
   "last_http_status": null,
   "last_modified": null,
-  "last_observed_at_utc": "2026-10-19T05:15:03Z",
+  "last_observed_at_utc": "2026-10-19T10:56:51Z",
   "last_parse_status": "PARSER_INCOMPATIBLE",
   "last_parsed_at_utc": "2026-10-18T06:32:55Z",
   "last_parsed_snapshot_path": "BCB_SELIC_META_SGS_432/24/2445daac6de5e5b3a732cf610b55ae56bfb2635b3832448ac0f6c29d57b14c2f.json",
