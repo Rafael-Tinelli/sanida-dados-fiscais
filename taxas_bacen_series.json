@@ -1,12 +1,12 @@
 {
   "schema_version": "1.0.0",
   "meta": {
-    "generated_at_utc": "2026-10-20T01:51:49Z",
+    "generated_at_utc": "2026-10-21T01:38:18Z",
     "timezone": "America/Sao_Paulo",
     "window": {
       "months": 120,
       "start_date": "2016-11-01",
-      "end_date": "2026-10-19"
+      "end_date": "2026-10-20"
     },
     "methodology": {
       "selic_monthly": "last_SGS_432_observation_in_calendar_month_percent_per_year",
@@ -21,8 +21,8 @@
         "collection_mode": "chunked_12_months_v1",
         "parser_id": "bcb_selic_meta_sgs432_history_v1",
         "parser_version": "1.0.0",
-        "observed_at_utc": "2026-10-20T01:51:49Z",
-        "observation_count": 3640,
+        "observed_at_utc": "2026-10-21T01:38:18Z",
+        "observation_count": 3641,
         "segment_count": 10,
         "reused_segment_count": 9,
         "segments": [
@@ -172,19 +172,19 @@
           },
           {
             "source_id": "BCB_SELIC_META_SGS_432",
-            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?dataInicial=01%2F11%2F2025&dataFinal=19%2F10%2F2026&formato=json",
+            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?dataInicial=01%2F11%2F2025&dataFinal=20%2F10%2F2026&formato=json",
             "http_code": 200,
-            "snapshot_sha256": "fbc087d27c662149d5c238c1478cecb9eecfb15f03c522635b6dee7b147ee4e0",
-            "candidate_sha256": "abe08dbf88f16d49380b9aaaa003d4dd6532be0fa2d665457efec8a6752cac55",
+            "snapshot_sha256": "e1cee029bc22897d3006f6768cdfe9a98e92bd356841cbed753a384c35c65de1",
+            "candidate_sha256": "7b5f7ae45d7233d456b73abd52dff2d7cab86e431b7751020ebbc08352b4f369",
             "parser_id": "bcb_selic_meta_sgs432_history_v1",
             "parser_version": "1.0.0",
-            "observed_at_utc": "2026-10-20T01:51:49Z",
-            "observation_count": 353,
-            "candidate_path": "BCB_SELIC_META_SGS_432/ab/abe08dbf88f16d49380b9aaaa003d4dd6532be0fa2d665457efec8a6752cac55.json",
-            "snapshot_path": "BCB_SELIC_META_SGS_432/fb/fbc087d27c662149d5c238c1478cecb9eecfb15f03c522635b6dee7b147ee4e0.json",
+            "observed_at_utc": "2026-10-21T01:38:18Z",
+            "observation_count": 354,
+            "candidate_path": "BCB_SELIC_META_SGS_432/7b/7b5f7ae45d7233d456b73abd52dff2d7cab86e431b7751020ebbc08352b4f369.json",
+            "snapshot_path": "BCB_SELIC_META_SGS_432/e1/e1cee029bc22897d3006f6768cdfe9a98e92bd356841cbed753a384c35c65de1.json",
             "reused_immutable_segment": false,
             "start_date": "2025-11-01",
-            "end_date": "2026-10-19"
+            "end_date": "2026-10-20"
           }
         ]
       },
@@ -193,8 +193,8 @@
         "collection_mode": "chunked_12_months_v1",
         "parser_id": "bcb_cdi_daily_sgs12_history_v1",
         "parser_version": "1.0.0",
-        "observed_at_utc": "2026-10-20T01:51:49Z",
-        "observation_count": 2499,
+        "observed_at_utc": "2026-10-21T01:38:18Z",
+        "observation_count": 2500,
         "segment_count": 10,
         "reused_segment_count": 9,
         "segments": [
@@ -344,24 +344,24 @@
           },
           {
             "source_id": "BCB_CDI_DAILY_SGS_12",
-            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?dataInicial=01%2F11%2F2025&dataFinal=19%2F10%2F2026&formato=json",
+            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados?dataInicial=01%2F11%2F2025&dataFinal=20%2F10%2F2026&formato=json",
             "http_code": 200,
-            "snapshot_sha256": "8ae158563f14a35aa1640ddca13f9ce50cd8eff7ed472dcf0d9251042c825fa9",
-            "candidate_sha256": "11755a7eef634422dd98f4fdf22aa884ceaca92c6e7d98f8a58186c166eb1bac",
+            "snapshot_sha256": "60fb06d0289bc702d59c6f716c083db6a5dd50dbb1750c033a5330e4b61c0857",
+            "candidate_sha256": "1ff1e6badd24df0b71d2804e66e8487b7bcb672442697e7e2b38c7e4bb1de3f7",
             "parser_id": "bcb_cdi_daily_sgs12_history_v1",
             "parser_version": "1.0.0",
-            "observed_at_utc": "2026-10-20T01:51:49Z",
-            "observation_count": 239,
-            "candidate_path": "BCB_CDI_DAILY_SGS_12/11/11755a7eef634422dd98f4fdf22aa884ceaca92c6e7d98f8a58186c166eb1bac.json",
-            "snapshot_path": "BCB_CDI_DAILY_SGS_12/8a/8ae158563f14a35aa1640ddca13f9ce50cd8eff7ed472dcf0d9251042c825fa9.json",
+            "observed_at_utc": "2026-10-21T01:38:18Z",
+            "observation_count": 240,
+            "candidate_path": "BCB_CDI_DAILY_SGS_12/1f/1ff1e6badd24df0b71d2804e66e8487b7bcb672442697e7e2b38c7e4bb1de3f7.json",
+            "snapshot_path": "BCB_CDI_DAILY_SGS_12/60/60fb06d0289bc702d59c6f716c083db6a5dd50dbb1750c033a5330e4b61c0857.json",
             "reused_immutable_segment": false,
             "start_date": "2025-11-01",
-            "end_date": "2026-10-19"
+            "end_date": "2026-10-20"
           }
         ]
       }
     },
-    "latest_cdi_observation_age_calendar_days": 3,
+    "latest_cdi_observation_age_calendar_days": 1,
     "max_latest_cdi_observation_age_calendar_days": 7,
     "errors": [],
     "warnings": []
@@ -1679,13 +1679,13 @@
     {
       "month": "2026-10",
       "month_complete": false,
-      "selic_observation_date": "2026-10-19",
+      "selic_observation_date": "2026-10-20",
       "selic_annual_rate_pct": 13.75,
-      "cdi_observation_date": "2026-10-16",
+      "cdi_observation_date": "2026-10-19",
       "cdi_daily_rate_pct": 0.050788,
       "cdi_annualized_rate_pct": 13.65,
-      "cdi_month_return_pct": 0.560089,
-      "cdi_observation_count": 11
+      "cdi_month_return_pct": 0.611161,
+      "cdi_observation_count": 12
     }
   ]
 }
