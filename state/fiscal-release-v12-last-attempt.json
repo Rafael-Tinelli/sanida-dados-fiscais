@@ -1,5 +1,5 @@
 {
-  "attempted_at_utc": "2026-10-29T16:24:30.333914Z",
+  "attempted_at_utc": "2026-10-30T16:13:44.973056Z",
   "previous_release_id": "fiscal-v1-sha256-a720ba6ccf9683371c0bc8e6dad868f4267ba42bac00935c7efbc2c5cbeea648",
   "promotion_outcome": "BLOCKED_BEFORE_DIFF",
   "reasons": [
