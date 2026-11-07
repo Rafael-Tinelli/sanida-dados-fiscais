@@ -1,7 +1,7 @@
 {
   "schema_version": "2.2.0",
   "meta": {
-    "generated_at_utc": "2026-11-06T16:48:20Z",
+    "generated_at_utc": "2026-11-07T15:42:25Z",
     "sources": {
       "irrf": {
         "source_id": "RFB_IRRF_TABLE_CURRENT",
@@ -12,36 +12,36 @@
         "candidate_sha256": "787ecdf33486305d7da8f0117c5943a563c68386593cbac415567e7ce6e8b10d",
         "parser_id": "rfb_irrf_table_v1",
         "parser_version": "1.1.0",
-        "observed_at_utc": "2026-11-06T16:48:20Z"
+        "observed_at_utc": "2026-11-07T15:42:25Z"
       },
       "inss": {
         "source_id": "INSS_TABLE_CURRENT",
         "url": "https://www.gov.br/inss/pt-br/direitos-e-deveres/inscricao-e-contribuicao/tabela-de-contribuicao-mensal",
         "http_code": 200,
         "collection_status": "COLLECTED",
-        "snapshot_sha256": "10048cc43744e44a290665d685b27d82ad38161d9f7da2edc5fecf35197240e2",
+        "snapshot_sha256": "49f972871c55e48fb29bc2eca3bf67e14ae1738929a50ad8f8596e9549637975",
         "candidate_sha256": "1836a09ba4520d61e2d6c6677ee6b34fac640a4bdfc94aa243827272b5a63fc5",
         "parser_id": "inss_employee_table_v1",
         "parser_version": "1.1.0",
-        "observed_at_utc": "2026-11-06T16:48:20Z"
+        "observed_at_utc": "2026-11-07T15:42:25Z"
       },
       "taxas": {
         "origin": "local_file",
         "origin_ref": "taxas_bacen.json",
         "schema_version": "1.4.0",
-        "generated_at_utc": "2026-11-06T14:57:26Z",
+        "generated_at_utc": "2026-11-07T13:29:44Z",
         "source_meta": {
           "selic": {
             "source_id": "BCB_SELIC_META_SGS_432",
-            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?formato=json&dataInicial=06%2F10%2F2026&dataFinal=06%2F11%2F2026",
+            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?formato=json&dataInicial=07%2F10%2F2026&dataFinal=07%2F11%2F2026",
             "http_code": 200,
             "collection_status": "COLLECTED",
-            "snapshot_sha256": "b9788bf2e3145a66fa155d4b34bc08363aa3b6d3c558f5e63228638fe12fa598",
-            "candidate_sha256": "e3b8f4c23f020de7b3123020c19cbbeac8534fad6617350e983e5686514aed99",
+            "snapshot_sha256": "c160c92deb2fc9b3052e1ddbb765951147085617eb89c529e2732ae2639f13f9",
+            "candidate_sha256": "90492a7dc8e59de6b6c0165738483555bda0afc6b78ddd2489b6c80c5fdeb9fe",
             "parser_id": "bcb_selic_meta_sgs432_v1",
             "parser_version": "1.1.0",
-            "observed_at_utc": "2026-11-06T14:57:26Z",
-            "source_observation_date": "2026-11-06",
+            "observed_at_utc": "2026-11-07T13:29:44Z",
+            "source_observation_date": "2026-11-07",
             "series_code": 432,
             "source_value_pct": "13.75",
             "source_unit": "percent_per_year",
@@ -56,7 +56,7 @@
             "candidate_sha256": "e86f4907b09c93f00d04a8faa5f0ffe2f679535d7523747f520cb95d36719b18",
             "parser_id": "bcb_cdi_daily_sgs12_v1",
             "parser_version": "1.0.0",
-            "observed_at_utc": "2026-11-06T14:57:26Z",
+            "observed_at_utc": "2026-11-07T13:29:44Z",
             "source_observation_date": "2026-11-05",
             "series_code": 12,
             "source_value_pct": "0.050788",
