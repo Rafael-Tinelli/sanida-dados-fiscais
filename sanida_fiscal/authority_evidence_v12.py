@@ -337,6 +337,28 @@ def _collect_same_source_with_requests(
     raise AssertionError("requests authority collector loop ended unexpectedly")
 
 
+def _is_planalto_access_denied_html(body: bytes, media_type: str | None) -> bool:
+    """Recognize a Planalto denial page, not generic HTML or legal prose."""
+    if "pdf" in (media_type or "").lower():
+        return False
+    sample = body[: 64 * 1024]
+    if b"<" not in sample or b">" not in sample:
+        return False
+    soup = BeautifulSoup(sample, "html.parser")
+    title = soup.title.get_text(" ", strip=True) if soup.title else ""
+    title = unicodedata.normalize("NFKD", title)
+    title = "".join(ch for ch in title if not unicodedata.combining(ch))
+    title = " ".join(title.lower().split())
+    visible = _normalize_visible_text(sample, media_type)
+    return (
+        "esta requisicao foi bloqueada" in visible
+        or (
+            title in {"acesso negado", "acesso negado!", "access denied"}
+            and ("bloque" in visible or "denied" in visible)
+        )
+    )
+
+
 def _collect_authority_source(
     *,
     source_id: str,
@@ -348,27 +370,60 @@ def _collect_authority_source(
     headers: Mapping[str, str],
 ) -> CollectionResult:
     result = collector.collect(source, observed_at_utc=observed_at_utc)
-    should_fallback_transport = (
-        source_id in REQUESTS_TRANSPORT_FALLBACK_SOURCE_IDS
-        and result.status == CollectionStatus.SOURCE_UNAVAILABLE
+    if source_id not in REQUESTS_TRANSPORT_FALLBACK_SOURCE_IDS:
+        return result
+
+    transport_error = (
+        result.status == CollectionStatus.SOURCE_UNAVAILABLE
         and result.failure_kind == FailureKind.NETWORK_ERROR
         and result.error_detail in REQUESTS_TRANSPORT_FALLBACK_ERRORS
     )
-    if not should_fallback_transport:
+    # The site can return a 200 HTML denial or reject an identifiable client
+    # while remaining readable to conventional browsers.
+    rejected_http = (
+        result.status == CollectionStatus.SOURCE_UNAVAILABLE
+        and result.failure_kind == FailureKind.HTTP_CLIENT_ERROR
+        and result.http_status in {403, 406}
+    )
+    rejected_html = (
+        result.status == CollectionStatus.COLLECTED
+        and result.snapshot is not None
+        and _is_planalto_access_denied_html(
+            store.read(result.snapshot), result.snapshot.media_type
+        )
+    )
+    if not (transport_error or rejected_http or rejected_html):
         return result
 
-    fallback_headers = (
-        PLANALTO_BROWSER_HEADERS
-        if source_id in PLANALTO_BROWSER_FALLBACK_SOURCE_IDS
-        else headers
-    )
-    return _collect_same_source_with_requests(
+    # One extra attempt only, using the same registered official URL. Never
+    # rotate proxies, bypass challenges or retry a 429 response.
+    fallback = _collect_same_source_with_requests(
         source=source,
         store=store,
         observed_at_utc=observed_at_utc,
-        retry_policy=retry_policy,
-        headers=fallback_headers,
+        retry_policy=RetryPolicy(
+            max_attempts=1, timeout_seconds=retry_policy.timeout_seconds
+        ),
+        headers=PLANALTO_BROWSER_HEADERS,
     )
+    if (
+        fallback.status == CollectionStatus.COLLECTED
+        and fallback.snapshot is not None
+        and _is_planalto_access_denied_html(
+            store.read(fallback.snapshot), fallback.snapshot.media_type
+        )
+    ):
+        return CollectionResult(
+            source_id=source.source_id,
+            source_url=source.url,
+            observed_at_utc=observed_at_utc,
+            status=CollectionStatus.SOURCE_UNAVAILABLE,
+            attempts=result.attempts + fallback.attempts,
+            http_status=fallback.http_status,
+            failure_kind=FailureKind.HTTP_CLIENT_ERROR,
+            error_detail="planalto_access_denied_html",
+        )
+    return fallback
 
 
 def _normalize_visible_text(raw: bytes, media_type: str | None) -> str:
