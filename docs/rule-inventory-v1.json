@@ -122,6 +122,7 @@
       "applies_to": "taxable_income_subject_to_monthly_incidence_before_irrf_deductions",
       "source_ids": [
         "PLANALTO_LEI_15270_2025",
+        "CAMARA_LEI_15270_2025",
         "RFB_IRRF_TABLE_2026",
         "RFB_IRRF_EXAMPLES_2026",
         "RFB_IN_1500_2014"
@@ -159,7 +160,9 @@
       "applies_to": "thirteenth_entitlement",
       "source_ids": [
         "PLANALTO_LEI_4090_1962",
-        "PLANALTO_DECRETO_10854_2021"
+        "CAMARA_LEI_4090_1962",
+        "PLANALTO_DECRETO_10854_2021",
+        "CAMARA_DECRETO_10854_2021"
       ],
       "phase1_status": "closed",
       "current_state": "basic_logic_present",
@@ -176,6 +179,7 @@
       "applies_to": "thirteenth_gross_reference",
       "source_ids": [
         "PLANALTO_DECRETO_10854_2021",
+        "CAMARA_DECRETO_10854_2021",
         "MTE_TERMINATION_FAQ"
       ],
       "phase1_status": "closed",
@@ -192,7 +196,8 @@
       "rule_class": "structural_rule",
       "applies_to": "variable_component_of_thirteenth",
       "source_ids": [
-        "PLANALTO_DECRETO_10854_2021"
+        "PLANALTO_DECRETO_10854_2021",
+        "CAMARA_DECRETO_10854_2021"
       ],
       "phase1_status": "closed",
       "current_state": "current_ui_is_approximation",
@@ -208,7 +213,9 @@
       "applies_to": "first_installment_of_thirteenth",
       "source_ids": [
         "PLANALTO_LEI_4749_1965",
-        "PLANALTO_DECRETO_10854_2021"
+        "CAMARA_LEI_4749_1965",
+        "PLANALTO_DECRETO_10854_2021",
+        "CAMARA_DECRETO_10854_2021"
       ],
       "phase1_status": "closed",
       "current_state": "oversimplified",
@@ -258,7 +265,8 @@
       "rule_class": "parameterizable_rule",
       "applies_to": "thirteenth_taxable_income_before_irrf_deductions",
       "source_ids": [
-        "PLANALTO_LEI_15270_2025"
+        "PLANALTO_LEI_15270_2025",
+        "CAMARA_LEI_15270_2025"
       ],
       "phase1_status": "closed",
       "current_state": "defect_shared_with_A01",
@@ -392,6 +400,7 @@
       "applies_to": "taxable_vacation_income_subject_to_separate_monthly_irrf_assessment_before_deductions",
       "source_ids": [
         "PLANALTO_LEI_15270_2025",
+        "CAMARA_LEI_15270_2025",
         "RFB_IN_1500_2014",
         "RFB_QA_IRPF_2026",
         "ESOCIAL_TABLES_S13_NT07_2026"
@@ -474,7 +483,9 @@
       "applies_to": "termination_thirteenth_entitlement",
       "source_ids": [
         "PLANALTO_LEI_4090_1962",
+        "CAMARA_LEI_4090_1962",
         "PLANALTO_DECRETO_10854_2021",
+        "CAMARA_DECRETO_10854_2021",
         "MTE_TERMINATION_FAQ"
       ],
       "phase1_status": "closed",
