@@ -249,7 +249,7 @@ def validate_source_registry() -> set[str]:
         require(isinstance(url, str) and url.startswith("https://"), f"{source_id}: URL oficial inválida")
         host = (urlparse(url).hostname or "").lower()
         require(
-            host.endswith("gov.br") or host == "planalto.gov.br",
+            host.endswith("gov.br") or host == "planalto.gov.br" or host == "www2.camara.leg.br",
             f"{source_id}: host não oficial no registro canônico: {host}",
         )
         require(isinstance(source.get("covers"), list), f"{source_id}: covers deve ser lista")
