@@ -20,7 +20,7 @@ jobs:
         run: python -m pip install --quiet -r requirements-dev.txt
       - name: Probe four official Cámara sources using fiscal collector
         timeout-minutes: 4
-        run: python scripts/diagnose_remaining_planalto_20261111.py
+        run: PYTHONPATH=. python scripts/diagnose_remaining_planalto_20261111.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
