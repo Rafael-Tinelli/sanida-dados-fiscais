@@ -49,7 +49,7 @@ ARTICLE_NUMBERS = (129, 130, 134, 137, 143, 146, 147)
 def normalize(value: str) -> str:
     value = unicodedata.normalize("NFKD", value)
     value = "".join(ch for ch in value if not unicodedata.combining(ch))
-    return re.sub(r"\\s+", " ", value.lower()).strip()
+    return re.sub(r"\s+", " ", value.lower()).strip()
 
 
 def diagnose(source: str, status: int | None, final_url: str, raw: bytes, content_type: str) -> dict:
@@ -71,7 +71,7 @@ def diagnose(source: str, status: int | None, final_url: str, raw: bytes, conten
     markers = all(fragment in visible for fragment in (
         "consolidacao das leis do trabalho", "decreto-lei", "5.452"))
     articles = [num for num in ARTICLE_NUMBERS
-                if re.search(r"\\bart\\.\\s*" + str(num) + r"\\b", visible)]
+                if re.search(r"\bart\.\s*" + str(num) + r"\b", visible)]
     legal_source = source in {"planalto", "planalto_query", "camara_html"}
     official_domain = urlparse(final_url).hostname in {
         "www.planalto.gov.br", "www2.camara.leg.br"
