@@ -1,4 +1,4 @@
-name: Probe CLT official access (read-only)
+name: Probe official fiscal authorities (read-only)
 on:
   push:
     branches:
@@ -8,78 +8,23 @@ permissions:
   contents: read
 
 jobs:
-  validate-camara-collector:
+  probe:
     runs-on: ubuntu-latest
     timeout-minutes: 7
     steps:
       - uses: actions/checkout@v5
-        with:
-          ref: fix/camara-clt-official-source-20261111
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - name: Install declared dependencies
         run: python -m pip install --quiet -r requirements-dev.txt
-      - name: Validate actual collector against updated Câmara source
+      - name: Probe four official Cámara sources using fiscal collector
         timeout-minutes: 4
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          from datetime import datetime, timezone
-          from tempfile import TemporaryDirectory
-          from hashlib import sha256
-          from sanida_fiscal.authority_evidence_v12 import (
-              AUTHORITY_HEADERS, _validate_authority_identity, select_authority_sources
-          )
-          from sanida_fiscal.sources_v1 import (
-              CollectionStatus, HttpCollectorV1, RetryPolicy, SnapshotStore, load_source_registry
-          )
-
-          registry = Path("docs/source-registry-v1.json")
-          inventory = Path("docs/rule-inventory-v1.json")
-          chosen = select_authority_sources(
-              source_registry_path=registry, rule_inventory_path=inventory
-          )
-          camara_rules = sorted(k for k, v in chosen.items() if v == "CAMARA_CLT_ATUALIZADA")
-          assert len(camara_rules) == 6, camara_rules
-          source = load_source_registry(registry)["CAMARA_CLT_ATUALIZADA"]
-          meta = next(
-              row for row in json.loads(registry.read_text())["sources"]
-              if row["source_id"] == source.source_id
-          )
-          with TemporaryDirectory() as work:
-              store = SnapshotStore(Path(work))
-              collection = HttpCollectorV1(
-                  snapshot_store=store, retry_policy=RetryPolicy(
-                      max_attempts=1, timeout_seconds=30
-                  ), headers=AUTHORITY_HEADERS,
-              ).collect(source, observed_at_utc=datetime.now(timezone.utc))
-              assert collection.status == CollectionStatus.COLLECTED, collection
-              assert collection.snapshot is not None
-              payload = store.read(collection.snapshot)
-              _validate_authority_identity(
-                  source_id=source.source_id, metadata=meta,
-                  body=payload, media_type=collection.snapshot.media_type
-              )
-              assert source.url == collection.snapshot.source_url
-              assert sha256(payload).hexdigest() == collection.snapshot.sha256
-              report = {
-                  "result": "PASS", "source_id": source.source_id,
-                  "source_url": source.url, "http_status": collection.http_status,
-                  "bytes": len(payload), "sha256": collection.snapshot.sha256,
-                  "selected_rule_ids": camara_rules,
-              }
-          print("ACTUAL_COLLECTOR", json.dumps(report, ensure_ascii=False))
-          Path(".validation").mkdir(exist_ok=True)
-          Path(".validation/camara-clt-collector.json").write_text(
-              json.dumps(report, ensure_ascii=False, indent=2) + "\n"
-          )
-          PY
+        run: python scripts/diagnose_remaining_planalto_20261111.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: camara-clt-real-collector
-          path: .validation/camara-clt-collector.json
+          name: official-remaining-authorities
+          path: .validation/remaining-planalto-sources.json
           if-no-files-found: warn
           retention-days: 7
