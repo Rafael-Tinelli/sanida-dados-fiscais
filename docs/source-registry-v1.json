@@ -166,6 +166,40 @@
       "notes": "Fonte operacional estável do INSS. O runtime extrai e valida o ano de referência declarado pela própria página; nenhum artigo anual é usado como fallback."
     },
     {
+      "source_id": "CAMARA_CLT_ATUALIZADA",
+      "authority": "Câmara dos Deputados / Centro de Documentação e Informação",
+      "role": "normative_primary",
+      "url": "https://www2.camara.leg.br/legin/fed/declei/1940-1949/decreto-lei-5452-1-maio-1943-415500-normaatualizada-pe.html",
+      "machine_readability": "html",
+      "covers": [
+        "vacation.acquisition_period",
+        "vacation.entitlement_days_by_absences",
+        "vacation.remuneration_and_constitutional_third",
+        "vacation.abono_pecuniario",
+        "termination.vacation_proportional",
+        "termination.acquired_and_overdue_vacation"
+      ],
+      "notes": "Texto atualizado oficial da CLT na Câmara. Fonte substituta autenticada; o snapshot conserva fonte, URL, data e SHA-256 próprios. Não atribuir sua proveniência ao Planalto.",
+      "identity_marker_groups": [
+        [
+          "consolidacao das leis do trabalho"
+        ],
+        [
+          "decreto-lei",
+          "5.452"
+        ],
+        [
+          "art. 129",
+          "art. 130",
+          "art. 134",
+          "art. 137",
+          "art. 143",
+          "art. 146",
+          "art. 147"
+        ]
+      ]
+    },
+    {
       "source_id": "PLANALTO_CLT",
       "authority": "Presidência da República / Planalto",
       "role": "normative_primary",
