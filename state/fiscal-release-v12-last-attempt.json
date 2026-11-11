@@ -1,9 +1,9 @@
 {
-  "attempted_at_utc": "2026-11-11T17:53:08.876492Z",
+  "attempted_at_utc": "2026-11-11T19:52:11.278035Z",
   "previous_release_id": "fiscal-v1-sha256-a720ba6ccf9683371c0bc8e6dad868f4267ba42bac00935c7efbc2c5cbeea648",
   "promotion_outcome": "BLOCKED_BEFORE_DIFF",
   "reasons": [
-    "PLANALTO_CLT: official source unavailable: planalto_access_denied_html"
+    "PLANALTO_DECRETO_10854_2021: official source unavailable: planalto_access_denied_html"
   ],
   "schema_version": "1.0.0"
 }
