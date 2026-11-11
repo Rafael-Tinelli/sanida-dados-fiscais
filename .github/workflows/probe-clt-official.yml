@@ -1,0 +1,33 @@
+name: Probe CLT official access (read-only)
+on:
+  push:
+    branches:
+      - probe/planalto-diagnostics-20261111
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install diagnostic tools
+        run: |
+          python -m pip install --quiet requests httpx[http2] beautifulsoup4 selenium
+      - name: Compare official CLT transports and sources
+        timeout-minutes: 7
+        run: python scripts/diagnose_planalto_access_20261111.py
+      - name: Upload read-only diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clt-source-diagnostic
+          path: .validation/planalto-access-diagnostic.json
+          if-no-files-found: warn
+          retention-days: 7
