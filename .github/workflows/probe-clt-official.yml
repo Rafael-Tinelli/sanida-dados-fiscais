@@ -1,4 +1,5 @@
-name: Probe official fiscal authorities (read-only)
+name: Probe fiscal collection end-to-end (read-only)
+
 on:
   push:
     branches:
@@ -8,23 +9,66 @@ permissions:
   contents: read
 
 jobs:
-  probe:
+  full-authority-collection:
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: fix/fiscal-all-planalto-official-sources-20261111
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - name: Install declared dependencies
         run: python -m pip install --quiet -r requirements-dev.txt
-      - name: Probe four official Cámara sources using fiscal collector
-        timeout-minutes: 4
-        run: PYTHONPATH=. python scripts/diagnose_remaining_planalto_20261111.py
+      - name: Collect every selected legal and fiscal source
+        timeout-minutes: 8
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from tempfile import TemporaryDirectory
+          import json
+          from sanida_fiscal.authority_evidence_v12 import (
+              collect_authority_evidence, select_authority_sources
+          )
+          from sanida_fiscal.sources_v1 import RetryPolicy
+
+          registry=Path('docs/source-registry-v1.json')
+          inventory=Path('docs/rule-inventory-v1.json')
+          report={}
+          selected=select_authority_sources(
+              source_registry_path=registry, rule_inventory_path=inventory
+          )
+          report['selected_source_ids']=sorted(set(selected.values()))
+          report['selected_rule_count']=len(selected)
+          assert not any(x.startswith('PLANALTO_') for x in selected.values())
+          try:
+              with TemporaryDirectory() as tmp:
+                  collection=collect_authority_evidence(
+                      source_registry_path=registry,
+                      rule_inventory_path=inventory,
+                      snapshot_root=Path(tmp),
+                      observed_at_utc=datetime.now(timezone.utc),
+                      retry_policy=RetryPolicy(max_attempts=2,timeout_seconds=25),
+                  )
+                  report['status']='PASS'
+                  report['collected_source_ids']=sorted(collection.evidence_by_source)
+                  report['normalized_source_ids']=sorted(collection.normalized_candidates)
+                  assert len(collection.selected_source_by_rule)==30
+          except Exception as exc:
+              report.update(status='FAIL',error_type=type(exc).__name__,error=str(exc))
+          output=Path('.validation/full-authority-collection.json')
+          output.parent.mkdir(exist_ok=True)
+          output.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('E2E_AUTHORITY',json.dumps(report,ensure_ascii=False),flush=True)
+          if report['status']!='PASS':
+              raise SystemExit(1)
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: official-remaining-authorities
-          path: .validation/remaining-planalto-sources.json
+          name: full-authority-collection
+          path: .validation/full-authority-collection.json
           if-no-files-found: warn
           retention-days: 7
