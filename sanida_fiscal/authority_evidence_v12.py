@@ -80,6 +80,12 @@ PARSER_BINDINGS = {
 
 
 PREFERRED_RULE_SOURCES = {
+    "thirteenth.accrual.twelfths": "CAMARA_DECRETO_10854_2021",
+    "thirteenth.reference_remuneration": "CAMARA_DECRETO_10854_2021",
+    "thirteenth.variable_remuneration": "CAMARA_DECRETO_10854_2021",
+    "thirteenth.advance": "CAMARA_DECRETO_10854_2021",
+    "termination.thirteenth_proportional": "CAMARA_DECRETO_10854_2021",
+    "thirteenth.irrf.reduction.2026": "CAMARA_LEI_15270_2025",
     "vacation.acquisition_period": "CAMARA_CLT_ATUALIZADA",
     "vacation.entitlement_days_by_absences": "CAMARA_CLT_ATUALIZADA",
     "vacation.remuneration_and_constitutional_third": "CAMARA_CLT_ATUALIZADA",
@@ -96,7 +102,7 @@ PREFERRED_RULE_SOURCES = {
     "thirteenth.irrf.exclusive_assessment": "ESOCIAL_TABLES_S13_NT07_2026",
     "vacation.irrf.separate_assessment": "RFB_QA_IRPF_2026",
     "vacation.abono.ir_exemption": "RFB_QA_IRPF_2026",
-    "vacation.irrf.reduction.2026": "PLANALTO_LEI_15270_2025",
+    "vacation.irrf.reduction.2026": "CAMARA_LEI_15270_2025",
     "vacation.abono_constitutional_third.ir_incidence": "RFB_SCI_COSIT_8_2015",
 }
 
