@@ -274,7 +274,8 @@
       "rule_class": "structural_rule",
       "applies_to": "vacation_entitlement_period",
       "source_ids": [
-        "PLANALTO_CLT"
+        "PLANALTO_CLT",
+        "CAMARA_CLT_ATUALIZADA"
       ],
       "phase1_status": "closed",
       "current_state": "defect_A02_in_H29",
@@ -289,7 +290,8 @@
       "rule_class": "structural_rule",
       "applies_to": "vacation_entitled_days",
       "source_ids": [
-        "PLANALTO_CLT"
+        "PLANALTO_CLT",
+        "CAMARA_CLT_ATUALIZADA"
       ],
       "phase1_status": "closed",
       "current_state": "not_modeled",
@@ -306,6 +308,7 @@
       "applies_to": "vacation_remuneration",
       "source_ids": [
         "PLANALTO_CLT",
+        "CAMARA_CLT_ATUALIZADA",
         "RFB_QA_IRPF_2026"
       ],
       "phase1_status": "closed",
@@ -321,7 +324,8 @@
       "rule_class": "structural_rule",
       "applies_to": "vacation_entitled_days",
       "source_ids": [
-        "PLANALTO_CLT"
+        "PLANALTO_CLT",
+        "CAMARA_CLT_ATUALIZADA"
       ],
       "phase1_status": "closed",
       "current_state": "defect",
@@ -487,6 +491,7 @@
       "applies_to": "current_vacation_acquisition_period_at_termination",
       "source_ids": [
         "PLANALTO_CLT",
+        "CAMARA_CLT_ATUALIZADA",
         "MTE_TERMINATION_FAQ"
       ],
       "phase1_status": "closed",
@@ -503,6 +508,7 @@
       "applies_to": "completed_vacation_acquisition_periods",
       "source_ids": [
         "PLANALTO_CLT",
+        "CAMARA_CLT_ATUALIZADA",
         "MTE_TERMINATION_FAQ"
       ],
       "phase1_status": "closed",
