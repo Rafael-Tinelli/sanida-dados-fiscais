@@ -15,6 +15,34 @@
   },
   "sources": [
     {
+      "authority": "Câmara dos Deputados / Centro de Documentação e Informação",
+      "role": "normative_primary",
+      "machine_readability": "html",
+      "source_id": "CAMARA_LEI_15270_2025",
+      "url": "https://www2.camara.leg.br/legin/fed/lei/2025/lei-15270-26-novembro-2025-798354-publicacaooriginal-177117-pl.html",
+      "covers": [
+        "irrf.reduction.2026",
+        "thirteenth.irrf.reduction.2026"
+      ],
+      "notes": "Publicação original oficial da Lei 15.270/2025; NÃO é texto consolidado, exigindo conferência de alterações posteriores.",
+      "identity_marker_groups": [
+        [
+          "lei",
+          "15.270"
+        ],
+        [
+          "2025"
+        ],
+        [
+          "art. 3",
+          "2026",
+          "5.000",
+          "7.350",
+          "decimo terceiro salario"
+        ]
+      ]
+    },
+    {
       "source_id": "PLANALTO_LEI_15270_2025",
       "authority": "Presidência da República / Planalto",
       "role": "normative_primary",
@@ -223,6 +251,32 @@
       ]
     },
     {
+      "authority": "Câmara dos Deputados / Centro de Documentação e Informação",
+      "role": "normative_primary",
+      "machine_readability": "html",
+      "source_id": "CAMARA_LEI_4090_1962",
+      "url": "https://www2.camara.leg.br/legin/fed/lei/1960-1969/lei-4090-13-julho-1962-353863-normaatualizada-pl.html",
+      "covers": [
+        "thirteenth.accrual.twelfths",
+        "termination.thirteenth_proportional"
+      ],
+      "notes": "Texto atualizado oficial da Lei 4.090/1962. Fonte autorizada para conferência; URL e SHA-256 próprios.",
+      "identity_marker_groups": [
+        [
+          "lei",
+          "4.090"
+        ],
+        [
+          "1962"
+        ],
+        [
+          "1/12",
+          "15 (quinze)",
+          "art. 3"
+        ]
+      ]
+    },
+    {
       "source_id": "PLANALTO_LEI_4090_1962",
       "authority": "Presidência da República / Planalto",
       "role": "normative_primary",
@@ -235,6 +289,33 @@
       "notes": "13º: 1/12 por mês; fração igual ou superior a 15 dias conta como mês integral."
     },
     {
+      "authority": "Câmara dos Deputados / Centro de Documentação e Informação",
+      "role": "normative_primary",
+      "machine_readability": "html",
+      "source_id": "CAMARA_LEI_4749_1965",
+      "url": "https://www2.camara.leg.br/legin/fed/lei/1960-1969/lei-4749-12-agosto-1965-377862-publicacaooriginal-1-pl.html",
+      "covers": [
+        "thirteenth.advance"
+      ],
+      "notes": "Publicação original oficial da Lei 4.749/1965; NÃO é texto consolidado, exigindo conferência de alterações posteriores.",
+      "identity_marker_groups": [
+        [
+          "lei",
+          "4.749"
+        ],
+        [
+          "1965"
+        ],
+        [
+          "art. 2",
+          "fevereiro",
+          "novembro",
+          "ferias",
+          "janeiro"
+        ]
+      ]
+    },
+    {
       "source_id": "PLANALTO_LEI_4749_1965",
       "authority": "Presidência da República / Planalto",
       "role": "normative_primary",
@@ -244,6 +325,35 @@
         "thirteenth.advance"
       ],
       "notes": "Adiantamento entre fevereiro e novembro: metade do salário recebido no mês anterior; pagamento nas férias se requerido em janeiro."
+    },
+    {
+      "authority": "Câmara dos Deputados / Centro de Documentação e Informação",
+      "role": "normative_primary",
+      "machine_readability": "html",
+      "source_id": "CAMARA_DECRETO_10854_2021",
+      "url": "https://www2.camara.leg.br/legin/fed/decret/2021/decreto-10854-10-novembro-2021-791950-normaatualizada-pe.html",
+      "covers": [
+        "thirteenth.reference_remuneration",
+        "thirteenth.variable_remuneration",
+        "thirteenth.advance",
+        "termination.thirteenth_proportional"
+      ],
+      "notes": "Texto atualizado oficial do Decreto 10.854/2021, arts. 76–82. Fonte própria da Câmara; nunca atribuir ao Planalto.",
+      "identity_marker_groups": [
+        [
+          "decreto",
+          "10.854"
+        ],
+        [
+          "2021"
+        ],
+        [
+          "art. 76",
+          "art. 78",
+          "art. 80",
+          "art. 82"
+        ]
+      ]
     },
     {
       "source_id": "PLANALTO_DECRETO_10854_2021",
