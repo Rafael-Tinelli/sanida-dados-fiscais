@@ -80,6 +80,12 @@ PARSER_BINDINGS = {
 
 
 PREFERRED_RULE_SOURCES = {
+    "vacation.acquisition_period": "CAMARA_CLT_ATUALIZADA",
+    "vacation.entitlement_days_by_absences": "CAMARA_CLT_ATUALIZADA",
+    "vacation.remuneration_and_constitutional_third": "CAMARA_CLT_ATUALIZADA",
+    "vacation.abono_pecuniario": "CAMARA_CLT_ATUALIZADA",
+    "termination.vacation_proportional": "CAMARA_CLT_ATUALIZADA",
+    "termination.acquired_and_overdue_vacation": "CAMARA_CLT_ATUALIZADA",
     "inss.employee.progressive_table": INSS_SOURCE_ID,
     "thirteenth.inss.separate_assessment": INSS_SOURCE_ID,
     "irrf.monthly.progressive_table": RFB_SOURCE_ID,
