@@ -1,5 +1,7 @@
 {
-  "attempted_at_utc": "2026-11-11T23:38:34.979817Z",
+  "approval_mode": "HUMAN_REVIEWED",
+  "approval_reference": "issue#127@comment#6810572667@actor:Rafael-Tinelli@review:68847263fcbd2f51a8483151073f579d317d2dc5bc5e1b94327f88867b0e1c16",
+  "attempted_at_utc": "2026-11-12T00:22:05.479730Z",
   "candidate_release_id": "candidate-v1-2",
   "changed_rules": [
     {
@@ -340,9 +342,21 @@
   ],
   "contract_changed_paths": [],
   "contract_schema_version": "1.2.0",
+  "manifest": {
+    "artifact": "releases/fiscal-v1-sha256-3e7e4f8a7031484e4944150b363d739feef852a1b5abbe90b4e6c0e7449c2e94.json",
+    "artifact_sha256": "255cd033d475b4fc6b91c1f4ff703917fa6bd4f46a726c9834e48ceda15eb3ac",
+    "contract_api_version": "1.2.0",
+    "contract_id": "br.sanida.fiscal",
+    "published_at_utc": "2026-11-12T00:22:05.479730Z",
+    "release_id": "fiscal-v1-sha256-3e7e4f8a7031484e4944150b363d739feef852a1b5abbe90b4e6c0e7449c2e94",
+    "schema_version": "1.0.0",
+    "schema_version_contract": "1.2.0",
+    "supersedes_release_id": "fiscal-v1-sha256-a720ba6ccf9683371c0bc8e6dad868f4267ba42bac00935c7efbc2c5cbeea648"
+  },
   "previous_release_id": "fiscal-v1-sha256-a720ba6ccf9683371c0bc8e6dad868f4267ba42bac00935c7efbc2c5cbeea648",
   "promotion_outcome": "REVIEW_REQUIRED",
-  "publication_status": "REVIEW_REQUIRED",
+  "publication_status": "PUBLISHED",
+  "published_release_id": "fiscal-v1-sha256-3e7e4f8a7031484e4944150b363d739feef852a1b5abbe90b4e6c0e7449c2e94",
   "reasons": [
     "technical.contract_vigency_and_quality: source refresh on structural rule requires human review",
     "termination.acquired_and_overdue_vacation: source refresh on structural rule requires human review",
@@ -363,7 +377,6 @@
     "vacation.irrf.reduction.2026: automatic promotion requires parser-backed hashed evidence",
     "vacation.remuneration_and_constitutional_third: source refresh on structural rule requires human review"
   ],
-  "review_issue_action": "UPSERT_REQUIRED",
   "review_key": "68847263fcbd2f51a8483151073f579d317d2dc5bc5e1b94327f88867b0e1c16",
   "schema_version": "1.0.0"
 }
