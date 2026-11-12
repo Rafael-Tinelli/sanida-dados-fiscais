@@ -1,7 +1,7 @@
 {
   "schema_version": "1.4.0",
   "meta": {
-    "generated_at_utc": "2026-11-12T08:14:05Z",
+    "generated_at_utc": "2026-11-12T16:53:43Z",
     "sources": {
       "selic": {
         "source_id": "BCB_SELIC_META_SGS_432",
@@ -12,7 +12,7 @@
         "candidate_sha256": "e31517afb5ca82f7dc3d99fd831fb4d57ab6a55a222491352bb71aeece212fd4",
         "parser_id": "bcb_selic_meta_sgs432_v1",
         "parser_version": "1.1.0",
-        "observed_at_utc": "2026-11-12T08:14:05Z",
+        "observed_at_utc": "2026-11-12T16:53:43Z",
         "source_observation_date": "2026-11-12",
         "series_code": 432,
         "source_value_pct": "13.75",
@@ -24,12 +24,12 @@
         "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados/ultimos/1?formato=json",
         "http_code": 200,
         "collection_status": "COLLECTED",
-        "snapshot_sha256": "819816ae3548f468a8de6a93ae5aed75f480eef27d9c5a436001db7b0f82411b",
-        "candidate_sha256": "b0a896b9a5f37f3567afc6b64b03856c154a43304469b6c63d4942d1dedae106",
+        "snapshot_sha256": "d1f9e7236c5552866cbcdc64776485953bb67836bbaf7529ae4da505bd1ebdce",
+        "candidate_sha256": "394b8b71beaa4fb8727b8e415f004d24ad7007c9ee935bdf087a3fc69077179c",
         "parser_id": "bcb_cdi_daily_sgs12_v1",
         "parser_version": "1.0.0",
-        "observed_at_utc": "2026-11-12T08:14:05Z",
-        "source_observation_date": "2026-11-10",
+        "observed_at_utc": "2026-11-12T16:53:43Z",
+        "source_observation_date": "2026-11-11",
         "series_code": 12,
         "source_value_pct": "0.050788",
         "source_unit": "percent_per_business_day",
