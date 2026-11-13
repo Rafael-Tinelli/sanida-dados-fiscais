@@ -1,5 +1,5 @@
 {
-  "attempted_at_utc": "2026-11-12T17:44:13.325219Z",
+  "attempted_at_utc": "2026-11-13T17:22:39.295902Z",
   "candidate_release_id": "candidate-v1-2",
   "changed_rules": [],
   "contract_changed_paths": [],
@@ -20,8 +20,8 @@
         "source_id": "ESOCIAL_WEB_MEI_2026"
       },
       {
-        "candidate_snapshot_path": "RFB_CP_INCIDENCE_TABLE/36/36e5138a5fc786161dd311a46d7c4c4ddd6aaf0d6109abe5a068d657da282e79.html",
-        "candidate_snapshot_sha256": "36e5138a5fc786161dd311a46d7c4c4ddd6aaf0d6109abe5a068d657da282e79",
+        "candidate_snapshot_path": "RFB_CP_INCIDENCE_TABLE/3f/3f7e581166ce20128370f05b3f1509f739e02b52abd38c84e65b261d74cd838b.html",
+        "candidate_snapshot_sha256": "3f7e581166ce20128370f05b3f1509f739e02b52abd38c84e65b261d74cd838b",
         "comparison_scope": "OFFICIAL_CONTENT_CORE",
         "covered_text_links_sha256": "3c388b14a2561fe5af3c3abba667b3d40a96f42d861fa2dd359df5e1c4ed6d14",
         "outside_scope_material_delta": false,
