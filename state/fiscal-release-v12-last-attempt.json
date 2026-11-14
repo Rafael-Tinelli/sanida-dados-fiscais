@@ -1,51 +1,9 @@
 {
-  "attempted_at_utc": "2026-11-13T17:22:39.295902Z",
-  "candidate_release_id": "candidate-v1-2",
-  "changed_rules": [],
-  "contract_changed_paths": [],
-  "contract_schema_version": "1.2.0",
-  "nonmaterial_evidence_audit": {
-    "classification": "VERIFIED_NONMATERIAL_SOURCE_REFRESH",
-    "out_of_scope_legal_sources": [],
-    "schema_version": "1.0.0",
-    "sources": [
-      {
-        "candidate_snapshot_path": "ESOCIAL_WEB_MEI_2026/1f/1f2792d2839fdba4b35728e3f7fa7409af4cd51835d5b1f3399866ed839791b9.html",
-        "candidate_snapshot_sha256": "1f2792d2839fdba4b35728e3f7fa7409af4cd51835d5b1f3399866ed839791b9",
-        "comparison_scope": "FULL_VISIBLE_TEXT_AND_LINKS",
-        "covered_text_links_sha256": "cc5d1139ed27a9397786170918bd4d899da79ccc3a382c30547b1f60bae42ccf",
-        "outside_scope_material_delta": false,
-        "previous_snapshot_path": "ESOCIAL_WEB_MEI_2026/6d/6d67cefa95e494b83935ca781dfecd0285d85e125bdaa9c80ade541663b2a3c7.html",
-        "previous_snapshot_sha256": "6d67cefa95e494b83935ca781dfecd0285d85e125bdaa9c80ade541663b2a3c7",
-        "source_id": "ESOCIAL_WEB_MEI_2026"
-      },
-      {
-        "candidate_snapshot_path": "RFB_CP_INCIDENCE_TABLE/3f/3f7e581166ce20128370f05b3f1509f739e02b52abd38c84e65b261d74cd838b.html",
-        "candidate_snapshot_sha256": "3f7e581166ce20128370f05b3f1509f739e02b52abd38c84e65b261d74cd838b",
-        "comparison_scope": "OFFICIAL_CONTENT_CORE",
-        "covered_text_links_sha256": "3c388b14a2561fe5af3c3abba667b3d40a96f42d861fa2dd359df5e1c4ed6d14",
-        "outside_scope_material_delta": false,
-        "previous_snapshot_path": "RFB_CP_INCIDENCE_TABLE/28/28f38037772837d656b9da574ec01350dc292120581f6233a3f49e6ba746956e.html",
-        "previous_snapshot_sha256": "28f38037772837d656b9da574ec01350dc292120581f6233a3f49e6ba746956e",
-        "source_id": "RFB_CP_INCIDENCE_TABLE"
-      },
-      {
-        "candidate_snapshot_path": "RFB_IRRF_TABLE_CURRENT/38/3895732ecffb30be025ea7eeda088a5dfc58c42b32e8fd5abcc974292ff0ee65.html",
-        "candidate_snapshot_sha256": "3895732ecffb30be025ea7eeda088a5dfc58c42b32e8fd5abcc974292ff0ee65",
-        "comparison_scope": "OFFICIAL_CONTENT_CORE",
-        "covered_text_links_sha256": "7eba28dc5093f9020f0dbbb2519fad5c8ef697e402ddbe62acf1b15c8d19f492",
-        "outside_scope_material_delta": false,
-        "previous_snapshot_path": "RFB_IRRF_TABLE_CURRENT/eb/eb64b80c768199be685b6ed1688d221d6cbee61dd71c308ec493c41dd97255c1.html",
-        "previous_snapshot_sha256": "eb64b80c768199be685b6ed1688d221d6cbee61dd71c308ec493c41dd97255c1",
-        "source_id": "RFB_IRRF_TABLE_CURRENT"
-      }
-    ]
-  },
+  "attempted_at_utc": "2026-11-14T16:06:01.318917Z",
   "previous_release_id": "fiscal-v1-sha256-3e7e4f8a7031484e4944150b363d739feef852a1b5abbe90b4e6c0e7449c2e94",
-  "promotion_outcome": "NO_PUBLISH_REQUIRED",
-  "publication_status": "NO_PUBLISH_REQUIRED",
+  "promotion_outcome": "BLOCKED_BEFORE_DIFF",
   "reasons": [
-    "All covered normative provisions, parameters, and evidence identities are unchanged; out-of-scope legal annotations are separately recorded, and raw snapshots retained."
+    "CAMARA_CLT_ATUALIZADA: official source unavailable: ConnectTimeout"
   ],
   "schema_version": "1.0.0"
 }
