@@ -1,7 +1,7 @@
 {
   "schema_version": "2.2.0",
   "meta": {
-    "generated_at_utc": "2026-11-14T15:51:14Z",
+    "generated_at_utc": "2026-11-15T16:24:49Z",
     "sources": {
       "irrf": {
         "source_id": "RFB_IRRF_TABLE_CURRENT",
@@ -12,7 +12,7 @@
         "candidate_sha256": "787ecdf33486305d7da8f0117c5943a563c68386593cbac415567e7ce6e8b10d",
         "parser_id": "rfb_irrf_table_v1",
         "parser_version": "1.1.0",
-        "observed_at_utc": "2026-11-14T15:51:14Z"
+        "observed_at_utc": "2026-11-15T16:24:49Z"
       },
       "inss": {
         "source_id": "INSS_TABLE_CURRENT",
@@ -23,25 +23,25 @@
         "candidate_sha256": "1836a09ba4520d61e2d6c6677ee6b34fac640a4bdfc94aa243827272b5a63fc5",
         "parser_id": "inss_employee_table_v1",
         "parser_version": "1.1.0",
-        "observed_at_utc": "2026-11-14T15:51:14Z"
+        "observed_at_utc": "2026-11-15T16:24:49Z"
       },
       "taxas": {
         "origin": "local_file",
         "origin_ref": "taxas_bacen.json",
         "schema_version": "1.4.0",
-        "generated_at_utc": "2026-11-14T10:59:22Z",
+        "generated_at_utc": "2026-11-15T15:36:41Z",
         "source_meta": {
           "selic": {
             "source_id": "BCB_SELIC_META_SGS_432",
-            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?formato=json&dataInicial=14%2F10%2F2026&dataFinal=14%2F11%2F2026",
+            "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?formato=json&dataInicial=15%2F10%2F2026&dataFinal=15%2F11%2F2026",
             "http_code": 200,
             "collection_status": "COLLECTED",
-            "snapshot_sha256": "ebfad0a0a7e63b35b11d4c6a0be696084f7534384bf7e88fefe690873eab6468",
-            "candidate_sha256": "fef08559473b35027c81efb40d2fb7362b060bcdf52b36ec111dfdba92dff7bf",
+            "snapshot_sha256": "54cb56b3e30e0bcfd5dbcdade9087b9c6a6da1dfd16eddb0c3c00dc06b294166",
+            "candidate_sha256": "ca4faa9cbeb149ab36792fedfd6dc80626b53fc0d551aa4711924b6265b489cf",
             "parser_id": "bcb_selic_meta_sgs432_v1",
             "parser_version": "1.1.0",
-            "observed_at_utc": "2026-11-14T10:59:22Z",
-            "source_observation_date": "2026-11-14",
+            "observed_at_utc": "2026-11-15T15:36:41Z",
+            "source_observation_date": "2026-11-15",
             "series_code": 432,
             "source_value_pct": "13.75",
             "source_unit": "percent_per_year",
@@ -56,7 +56,7 @@
             "candidate_sha256": "0184c695916199f5229ea0c17567b117411e2f59d195b9276d5a36a18b0c9303",
             "parser_id": "bcb_cdi_daily_sgs12_v1",
             "parser_version": "1.0.0",
-            "observed_at_utc": "2026-11-14T10:59:22Z",
+            "observed_at_utc": "2026-11-15T15:36:41Z",
             "source_observation_date": "2026-11-12",
             "series_code": 12,
             "source_value_pct": "0.050788",
