@@ -1,9 +1,9 @@
 {
-  "attempted_at_utc": "2026-11-15T16:35:01.199729Z",
+  "attempted_at_utc": "2026-11-16T19:51:14.412493Z",
   "previous_release_id": "fiscal-v1-sha256-3e7e4f8a7031484e4944150b363d739feef852a1b5abbe90b4e6c0e7449c2e94",
   "promotion_outcome": "BLOCKED_BEFORE_DIFF",
   "reasons": [
-    "CAMARA_CLT_ATUALIZADA: official source unavailable: http_404"
+    "CAMARA_CLT_ATUALIZADA: official source unavailable: http_502"
   ],
   "schema_version": "1.0.0"
 }
