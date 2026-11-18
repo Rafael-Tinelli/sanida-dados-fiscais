@@ -1,5 +1,5 @@
 {
-  "attempted_at_utc": "2026-11-17T18:44:53.747983Z",
+  "attempted_at_utc": "2026-11-18T18:23:36.604112Z",
   "candidate_release_id": "candidate-v1-2",
   "changed_rules": [],
   "contract_changed_paths": [],
@@ -30,8 +30,8 @@
         "source_id": "MTE_TERMINATION_FAQ"
       },
       {
-        "candidate_snapshot_path": "RFB_CP_INCIDENCE_TABLE/8b/8bf6d3c43da542aa39e4fceae8bcc8eac3a1477e64e3ba7a168e8a5e163eab3c.html",
-        "candidate_snapshot_sha256": "8bf6d3c43da542aa39e4fceae8bcc8eac3a1477e64e3ba7a168e8a5e163eab3c",
+        "candidate_snapshot_path": "RFB_CP_INCIDENCE_TABLE/fe/fe6760e26d094f3ebe7e3afec95e51b897c775e5cd30513a9fe7ddcb5d3ce2c7.html",
+        "candidate_snapshot_sha256": "fe6760e26d094f3ebe7e3afec95e51b897c775e5cd30513a9fe7ddcb5d3ce2c7",
         "comparison_scope": "OFFICIAL_CONTENT_CORE",
         "covered_text_links_sha256": "3c388b14a2561fe5af3c3abba667b3d40a96f42d861fa2dd359df5e1c4ed6d14",
         "outside_scope_material_delta": false,
@@ -40,8 +40,8 @@
         "source_id": "RFB_CP_INCIDENCE_TABLE"
       },
       {
-        "candidate_snapshot_path": "RFB_IRRF_TABLE_CURRENT/30/30fa43f25a4687906ce562d83391fe06b3c756f23e204b6640af5ab1dce4c7b5.html",
-        "candidate_snapshot_sha256": "30fa43f25a4687906ce562d83391fe06b3c756f23e204b6640af5ab1dce4c7b5",
+        "candidate_snapshot_path": "RFB_IRRF_TABLE_CURRENT/1b/1b4d9e131cbba1399acd7c94e10c9854218eb31d68dfa7e2eac0a6ec77ffbabc.html",
+        "candidate_snapshot_sha256": "1b4d9e131cbba1399acd7c94e10c9854218eb31d68dfa7e2eac0a6ec77ffbabc",
         "comparison_scope": "OFFICIAL_CONTENT_CORE",
         "covered_text_links_sha256": "7eba28dc5093f9020f0dbbb2519fad5c8ef697e402ddbe62acf1b15c8d19f492",
         "outside_scope_material_delta": false,
