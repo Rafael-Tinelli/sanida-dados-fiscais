@@ -1,5 +1,5 @@
 {
-  "attempted_at_utc": "2026-11-18T18:23:36.604112Z",
+  "attempted_at_utc": "2026-11-19T18:39:44.534527Z",
   "candidate_release_id": "candidate-v1-2",
   "changed_rules": [],
   "contract_changed_paths": [],
@@ -40,8 +40,8 @@
         "source_id": "RFB_CP_INCIDENCE_TABLE"
       },
       {
-        "candidate_snapshot_path": "RFB_IRRF_TABLE_CURRENT/1b/1b4d9e131cbba1399acd7c94e10c9854218eb31d68dfa7e2eac0a6ec77ffbabc.html",
-        "candidate_snapshot_sha256": "1b4d9e131cbba1399acd7c94e10c9854218eb31d68dfa7e2eac0a6ec77ffbabc",
+        "candidate_snapshot_path": "RFB_IRRF_TABLE_CURRENT/30/30fa43f25a4687906ce562d83391fe06b3c756f23e204b6640af5ab1dce4c7b5.html",
+        "candidate_snapshot_sha256": "30fa43f25a4687906ce562d83391fe06b3c756f23e204b6640af5ab1dce4c7b5",
         "comparison_scope": "OFFICIAL_CONTENT_CORE",
         "covered_text_links_sha256": "7eba28dc5093f9020f0dbbb2519fad5c8ef697e402ddbe62acf1b15c8d19f492",
         "outside_scope_material_delta": false,
