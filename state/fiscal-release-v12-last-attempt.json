@@ -1,5 +1,5 @@
 {
-  "attempted_at_utc": "2026-11-19T18:39:44.534527Z",
+  "attempted_at_utc": "2026-11-20T18:00:02.756379Z",
   "candidate_release_id": "candidate-v1-2",
   "changed_rules": [],
   "contract_changed_paths": [],
@@ -18,6 +18,16 @@
         "previous_snapshot_path": "CAMARA_LEI_15270_2025/5e/5ef299f1300f427141b90cd5ddddad2e09467fcbfea615ca5bcf2317b6d6379d.html",
         "previous_snapshot_sha256": "5ef299f1300f427141b90cd5ddddad2e09467fcbfea615ca5bcf2317b6d6379d",
         "source_id": "CAMARA_LEI_15270_2025"
+      },
+      {
+        "candidate_snapshot_path": "ESOCIAL_WEB_MEI_2026/1f/1f2792d2839fdba4b35728e3f7fa7409af4cd51835d5b1f3399866ed839791b9.html",
+        "candidate_snapshot_sha256": "1f2792d2839fdba4b35728e3f7fa7409af4cd51835d5b1f3399866ed839791b9",
+        "comparison_scope": "FULL_VISIBLE_TEXT_AND_LINKS",
+        "covered_text_links_sha256": "cc5d1139ed27a9397786170918bd4d899da79ccc3a382c30547b1f60bae42ccf",
+        "outside_scope_material_delta": false,
+        "previous_snapshot_path": "ESOCIAL_WEB_MEI_2026/6d/6d67cefa95e494b83935ca781dfecd0285d85e125bdaa9c80ade541663b2a3c7.html",
+        "previous_snapshot_sha256": "6d67cefa95e494b83935ca781dfecd0285d85e125bdaa9c80ade541663b2a3c7",
+        "source_id": "ESOCIAL_WEB_MEI_2026"
       },
       {
         "candidate_snapshot_path": "MTE_TERMINATION_FAQ/1c/1c65224b920eac02491322baa8a444ce60418f209fca4f1fa57d09b26e029f3c.html",
@@ -40,8 +50,8 @@
         "source_id": "RFB_CP_INCIDENCE_TABLE"
       },
       {
-        "candidate_snapshot_path": "RFB_IRRF_TABLE_CURRENT/30/30fa43f25a4687906ce562d83391fe06b3c756f23e204b6640af5ab1dce4c7b5.html",
-        "candidate_snapshot_sha256": "30fa43f25a4687906ce562d83391fe06b3c756f23e204b6640af5ab1dce4c7b5",
+        "candidate_snapshot_path": "RFB_IRRF_TABLE_CURRENT/1b/1b4d9e131cbba1399acd7c94e10c9854218eb31d68dfa7e2eac0a6ec77ffbabc.html",
+        "candidate_snapshot_sha256": "1b4d9e131cbba1399acd7c94e10c9854218eb31d68dfa7e2eac0a6ec77ffbabc",
         "comparison_scope": "OFFICIAL_CONTENT_CORE",
         "covered_text_links_sha256": "7eba28dc5093f9020f0dbbb2519fad5c8ef697e402ddbe62acf1b15c8d19f492",
         "outside_scope_material_delta": false,
