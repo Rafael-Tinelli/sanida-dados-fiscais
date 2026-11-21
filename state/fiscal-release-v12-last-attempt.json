@@ -1,71 +1,9 @@
 {
-  "attempted_at_utc": "2026-11-20T18:00:02.756379Z",
-  "candidate_release_id": "candidate-v1-2",
-  "changed_rules": [],
-  "contract_changed_paths": [],
-  "contract_schema_version": "1.2.0",
-  "nonmaterial_evidence_audit": {
-    "classification": "VERIFIED_NONMATERIAL_SOURCE_REFRESH",
-    "out_of_scope_legal_sources": [],
-    "schema_version": "1.0.0",
-    "sources": [
-      {
-        "candidate_snapshot_path": "CAMARA_LEI_15270_2025/a3/a3b3798b0b0d44451fc7922fa4ee63a7b2686c7c58c8c6b81baaf0450f3d11f9.html",
-        "candidate_snapshot_sha256": "a3b3798b0b0d44451fc7922fa4ee63a7b2686c7c58c8c6b81baaf0450f3d11f9",
-        "comparison_scope": "FULL_VISIBLE_TEXT_AND_LINKS",
-        "covered_text_links_sha256": "b7e908aa04878f42caf8f2ddb0a700355860463e0a8f48654760c14330c74788",
-        "outside_scope_material_delta": false,
-        "previous_snapshot_path": "CAMARA_LEI_15270_2025/5e/5ef299f1300f427141b90cd5ddddad2e09467fcbfea615ca5bcf2317b6d6379d.html",
-        "previous_snapshot_sha256": "5ef299f1300f427141b90cd5ddddad2e09467fcbfea615ca5bcf2317b6d6379d",
-        "source_id": "CAMARA_LEI_15270_2025"
-      },
-      {
-        "candidate_snapshot_path": "ESOCIAL_WEB_MEI_2026/1f/1f2792d2839fdba4b35728e3f7fa7409af4cd51835d5b1f3399866ed839791b9.html",
-        "candidate_snapshot_sha256": "1f2792d2839fdba4b35728e3f7fa7409af4cd51835d5b1f3399866ed839791b9",
-        "comparison_scope": "FULL_VISIBLE_TEXT_AND_LINKS",
-        "covered_text_links_sha256": "cc5d1139ed27a9397786170918bd4d899da79ccc3a382c30547b1f60bae42ccf",
-        "outside_scope_material_delta": false,
-        "previous_snapshot_path": "ESOCIAL_WEB_MEI_2026/6d/6d67cefa95e494b83935ca781dfecd0285d85e125bdaa9c80ade541663b2a3c7.html",
-        "previous_snapshot_sha256": "6d67cefa95e494b83935ca781dfecd0285d85e125bdaa9c80ade541663b2a3c7",
-        "source_id": "ESOCIAL_WEB_MEI_2026"
-      },
-      {
-        "candidate_snapshot_path": "MTE_TERMINATION_FAQ/1c/1c65224b920eac02491322baa8a444ce60418f209fca4f1fa57d09b26e029f3c.html",
-        "candidate_snapshot_sha256": "1c65224b920eac02491322baa8a444ce60418f209fca4f1fa57d09b26e029f3c",
-        "comparison_scope": "OFFICIAL_CONTENT_CORE",
-        "covered_text_links_sha256": "fbc9357807d17c7192b20523ec6819f72621169c533893c907481f8416aaf47e",
-        "outside_scope_material_delta": false,
-        "previous_snapshot_path": "MTE_TERMINATION_FAQ/fe/feeb761d79a7138f7e7ca88045252a0c8c6f3efe7d675aa12530a096ac176899.html",
-        "previous_snapshot_sha256": "feeb761d79a7138f7e7ca88045252a0c8c6f3efe7d675aa12530a096ac176899",
-        "source_id": "MTE_TERMINATION_FAQ"
-      },
-      {
-        "candidate_snapshot_path": "RFB_CP_INCIDENCE_TABLE/fe/fe6760e26d094f3ebe7e3afec95e51b897c775e5cd30513a9fe7ddcb5d3ce2c7.html",
-        "candidate_snapshot_sha256": "fe6760e26d094f3ebe7e3afec95e51b897c775e5cd30513a9fe7ddcb5d3ce2c7",
-        "comparison_scope": "OFFICIAL_CONTENT_CORE",
-        "covered_text_links_sha256": "3c388b14a2561fe5af3c3abba667b3d40a96f42d861fa2dd359df5e1c4ed6d14",
-        "outside_scope_material_delta": false,
-        "previous_snapshot_path": "RFB_CP_INCIDENCE_TABLE/28/28f38037772837d656b9da574ec01350dc292120581f6233a3f49e6ba746956e.html",
-        "previous_snapshot_sha256": "28f38037772837d656b9da574ec01350dc292120581f6233a3f49e6ba746956e",
-        "source_id": "RFB_CP_INCIDENCE_TABLE"
-      },
-      {
-        "candidate_snapshot_path": "RFB_IRRF_TABLE_CURRENT/1b/1b4d9e131cbba1399acd7c94e10c9854218eb31d68dfa7e2eac0a6ec77ffbabc.html",
-        "candidate_snapshot_sha256": "1b4d9e131cbba1399acd7c94e10c9854218eb31d68dfa7e2eac0a6ec77ffbabc",
-        "comparison_scope": "OFFICIAL_CONTENT_CORE",
-        "covered_text_links_sha256": "7eba28dc5093f9020f0dbbb2519fad5c8ef697e402ddbe62acf1b15c8d19f492",
-        "outside_scope_material_delta": false,
-        "previous_snapshot_path": "RFB_IRRF_TABLE_CURRENT/eb/eb64b80c768199be685b6ed1688d221d6cbee61dd71c308ec493c41dd97255c1.html",
-        "previous_snapshot_sha256": "eb64b80c768199be685b6ed1688d221d6cbee61dd71c308ec493c41dd97255c1",
-        "source_id": "RFB_IRRF_TABLE_CURRENT"
-      }
-    ]
-  },
+  "attempted_at_utc": "2026-11-21T16:56:43.321206Z",
   "previous_release_id": "fiscal-v1-sha256-3e7e4f8a7031484e4944150b363d739feef852a1b5abbe90b4e6c0e7449c2e94",
-  "promotion_outcome": "NO_PUBLISH_REQUIRED",
-  "publication_status": "NO_PUBLISH_REQUIRED",
+  "promotion_outcome": "BLOCKED_BEFORE_DIFF",
   "reasons": [
-    "All covered normative provisions, parameters, and evidence identities are unchanged; out-of-scope legal annotations are separately recorded, and raw snapshots retained."
+    "ESOCIAL_TABLES_S13_NT07_2026: official source unavailable: ConnectError"
   ],
   "schema_version": "1.0.0"
 }
