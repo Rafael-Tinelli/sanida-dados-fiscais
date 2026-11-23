@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
 import shutil
 
+from jsonschema import Draft202012Validator
 import pytest
 
 from scripts.run_phase7_c72_operational_e2e import run_operational_e2e
@@ -114,3 +117,37 @@ def test_c72_fails_closed_without_valid_last_good_and_feeds_all_consumers_after_
         "H28": current,
         "H29": current,
     }
+
+
+def test_c72_rest_wire_json_matches_immutable_schema_and_source_across_paths() -> None:
+    result, scenarios = _scenarios()
+    root = Path(__file__).resolve().parents[1]
+    store = root / "releases/fiscal-v1"
+    schema = json.loads((root / "contracts/fiscal-contract-v1.2.schema.json").read_text(encoding="utf-8"))
+    validator = Draft202012Validator(schema)
+
+    for scenario_name, release_id in (
+        ("transient_cache", result["previous_release_id"]),
+        ("source_outage_last_good", result["previous_release_id"]),
+        ("recovery_to_successor", result["current_release_id"]),
+        ("post_recovery_last_good", result["current_release_id"]),
+    ):
+        rest = scenarios[scenario_name]["rest"]
+        assert rest["kind"] == "response", scenario_name
+        assert rest["release_id"] == release_id, scenario_name
+        assert rest["header_release_id"] == release_id, scenario_name
+        assert rest["cache_control"] == "public, max-age=600, s-maxage=600"
+
+        # Validate what the REST layer serializes, not the pre-serialization
+        # associative PHP array that happens to pass the plugin's checks.
+        wire = json.loads(rest["wire_json"])
+        expected = json.loads(
+            (store / "releases" / f"{release_id}.json").read_text(encoding="utf-8")
+        )
+        assert wire == expected, scenario_name
+        assert list(validator.iter_errors(wire)) == [], scenario_name
+        assert len(wire["rules"]) == 32
+        for rule in wire["rules"]:
+            competence = rule["competence"]
+            assert isinstance(competence["context_overrides"], dict)
+            assert isinstance(competence["context_rule_specific_keys"], dict)

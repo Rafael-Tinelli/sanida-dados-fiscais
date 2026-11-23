@@ -124,9 +124,10 @@ function c72_rest_summary($response){
   }
   return [
     'kind' => 'response',
-    'release_id' => $response->data['release_id'] ?? null,
+    'release_id' => is_object($response->data) ? ($response->data->release_id ?? null) : ($response->data['release_id'] ?? null),
     'header_release_id' => $response->headers['X-Sanida-Fiscal-Release'] ?? null,
     'cache_control' => $response->headers['Cache-Control'] ?? null,
+    'wire_json' => wp_json_encode($response->data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
   ];
 }
 
@@ -168,7 +169,9 @@ $out['scenarios']['cold_predecessor'] = [
 // 2. Shared transient must suppress network I/O until expiry and identify itself as cache.
 c72_clear_calls();
 $cached = $runtime->package();
+$cachedRest = $runtime->rest();
 $out['scenarios']['transient_cache'] = [
+  'rest' => c72_rest_summary($cachedRest),
   'valid' => $runtime->valid($cached),
   'release_id' => c72_release_id($cached),
   'origin' => c72_origin($cached),
@@ -182,7 +185,9 @@ c72_expire_transient();
 c72_plan($currentUrl, [[ 'error' => 'simulated current.json outage' ]]);
 c72_clear_calls();
 $outageFallback = $runtime->package();
+$outageRest = $runtime->rest();
 $out['scenarios']['source_outage_last_good'] = [
+  'rest' => c72_rest_summary($outageRest),
   'valid' => $runtime->valid($outageFallback),
   'release_id' => c72_release_id($outageFallback),
   'origin' => c72_origin($outageFallback),
@@ -259,7 +264,9 @@ c72_expire_transient();
 c72_plan($currentUrl, [[ 'error' => 'simulated post-recovery outage' ]]);
 c72_clear_calls();
 $postRecoveryFallback = $runtime->package();
+$postRecoveryRest = $runtime->rest();
 $out['scenarios']['post_recovery_last_good'] = [
+  'rest' => c72_rest_summary($postRecoveryRest),
   'valid' => $runtime->valid($postRecoveryFallback),
   'release_id' => c72_release_id($postRecoveryFallback),
   'origin' => c72_origin($postRecoveryFallback),

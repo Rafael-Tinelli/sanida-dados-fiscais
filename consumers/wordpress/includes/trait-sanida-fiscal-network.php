@@ -38,10 +38,20 @@ trait Sanida_Fiscais_Fiscal_Network_Trait {
       );
     }
 
-    $release = $package['release'];
+    // The validated artifact is the wire contract. Associative PHP arrays lose
+    // the distinction between empty JSON objects ({}) and arrays ([]).
+    $release = json_decode($package['artifact_body']);
+    if (json_last_error() !== JSON_ERROR_NONE || !is_object($release)) {
+      return new WP_Error(
+        'sfa_fiscal_release_unavailable',
+        'Release fiscal canônica indisponível.',
+        ['status' => 503]
+      );
+    }
+
     $res = rest_ensure_response($release);
     $res->header('Cache-Control', 'public, max-age=600, s-maxage=600');
-    $res->header('X-Sanida-Fiscal-Release', (string)$release['release_id']);
+    $res->header('X-Sanida-Fiscal-Release', (string)$package['release']['release_id']);
     return $res;
   }
 
