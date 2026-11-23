@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
+import re
 from typing import Any, Mapping
 
 from .contract_v1 import FiscalContractV1
@@ -437,12 +438,74 @@ def _build_missing_rule(
     return result
 
 
+def _assert_parameter_source_vigency(
+    rules: Mapping[str, Mapping[str, Any]],
+    payload: Mapping[str, Any],
+    *,
+    source_id: str,
+    date_field: str,
+    rule_ids: tuple[str, ...],
+) -> None:
+    """Block a parsed parameter table from being backdated to a prior rule year.
+
+    Official RFB/INSS parsers provide both the reference year and effective date.
+    Legacy synthetic test candidates may omit both, but a partially populated
+    source date is never accepted. This guard does not invent a 2027 successor.
+    """
+    if date_field not in payload and "reference_year" not in payload:
+        return
+    raw_date = payload.get(date_field)
+    reference_year = payload.get("reference_year")
+    if not isinstance(raw_date, str) or not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", raw_date):
+        raise ReleaseAssemblyError(f"{source_id}: missing or invalid {date_field}")
+    try:
+        effective_date = date.fromisoformat(raw_date)
+    except ValueError as exc:
+        raise ReleaseAssemblyError(f"{source_id}: invalid {date_field}") from exc
+    if (
+        not isinstance(reference_year, int)
+        or isinstance(reference_year, bool)
+        or reference_year != effective_date.year
+    ):
+        raise ReleaseAssemblyError(f"{source_id}: reference_year conflicts with {date_field}")
+
+    for rule_id in rule_ids:
+        vigency = rules[rule_id].get("vigency")
+        declared = vigency.get("effective_from") if isinstance(vigency, Mapping) else None
+        if declared != raw_date:
+            raise ReleaseAssemblyError(
+                f"{source_id}: {rule_id} vigency effective_from={declared!r} "
+                f"conflicts with parsed {date_field}={raw_date!r}; review required"
+            )
+
+
 def _hydrate_parameter_rules(
     rules: dict[str, dict[str, Any]],
     candidates: Mapping[str, NormalizedSourceCandidate],
 ) -> None:
     rfb = _parsed_payload(candidates, RFB_SOURCE_ID)
     inss = _parsed_payload(candidates, INSS_SOURCE_ID)
+
+    _assert_parameter_source_vigency(
+        rules,
+        rfb,
+        source_id=RFB_SOURCE_ID,
+        date_field="monthly_effective_from",
+        rule_ids=(
+            "irrf.monthly.progressive_table",
+            "irrf.dependent_deduction",
+            "irrf.simplified_monthly_discount",
+            "irrf.reduction.2026",
+            "vacation.irrf.reduction.2026",
+        ),
+    )
+    _assert_parameter_source_vigency(
+        rules,
+        inss,
+        source_id=INSS_SOURCE_ID,
+        date_field="effective_from",
+        rule_ids=("inss.employee.progressive_table",),
+    )
 
     monthly = rules["irrf.monthly.progressive_table"]
     rows = rfb.get("monthly_table")
