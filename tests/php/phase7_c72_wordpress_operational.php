@@ -124,7 +124,7 @@ function c72_rest_summary($response){
   }
   return [
     'kind' => 'response',
-    'release_id' => $response->data['release_id'] ?? null,
+    'release_id' => is_object($response->data) ? ($response->data->release_id ?? null) : ($response->data['release_id'] ?? null),
     'header_release_id' => $response->headers['X-Sanida-Fiscal-Release'] ?? null,
     'cache_control' => $response->headers['Cache-Control'] ?? null,
     'wire_json' => wp_json_encode($response->data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
