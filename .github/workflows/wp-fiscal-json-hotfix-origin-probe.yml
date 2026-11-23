@@ -1,0 +1,107 @@
+name: WordPress fiscal JSON hotfix - origin REST contract probe
+
+on:
+  push:
+    branches:
+      - deploy/wp-fiscal-rest-json-20261123
+    paths:
+      - '.github/workflows/wp-fiscal-json-hotfix-origin-probe.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  origin-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TARGET: /home1/sanid210/public_html/blog/wp-content/plugins/sanida-fiscais-auto/includes/trait-sanida-fiscal-network.php
+      WP_ROOT: /home1/sanid210/public_html/blog
+      NEW_SHA: 5694d2350cefdd4720fb325c98c73d4df3c275602de1e9b86041cac824df61a0
+      SSH_PORT: '2222'
+    steps:
+      - uses: actions/checkout@v5
+      - name: Configure existing strict-host-key SSH
+        shell: bash
+        env:
+          REMOTE_HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          REMOTE_USER: ${{ secrets.V2_HOSTGATOR_USER }}
+          SSH_KEY: ${{ secrets.V2_HOSTGATOR_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.V2_HOSTGATOR_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          for item in REMOTE_HOST REMOTE_USER SSH_KEY KNOWN_HOSTS; do
+            if [ -z "${!item:-}" ]; then exit 2; fi
+          done
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$HOME/.ssh/id_ed25519" >/dev/null
+      - name: Call production WordPress REST callbacks on origin
+        shell: bash
+        env:
+          REMOTE_HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          REMOTE_USER: ${{ secrets.V2_HOSTGATOR_USER }}
+        run: |
+          set -euo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/id_ed25519" \
+            -o BatchMode=yes -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o UpdateHostKeys=no \
+            -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no \
+            "$REMOTE_USER@$REMOTE_HOST" \
+            bash -s -- "$WP_ROOT" "$TARGET" "$NEW_SHA" <<'REMOTE' > "$RUNNER_TEMP/origin-result.json"
+          set -euo pipefail
+          export WP_ROOT="$1"
+          target="$2"; expected="$3"
+          [ -f "$target" ] && [ ! -L "$target" ] || exit 10
+          [ "$(sha256sum "$target" | cut -d' ' -f1)" = "$expected" ] || exit 11
+          php -d display_errors=0 -d log_errors=1 <<'PHP'
+          <?php
+          define('WP_USE_THEMES', false);
+          $_SERVER['HTTP_HOST'] = 'sanida.com.br';
+          $_SERVER['SERVER_NAME'] = 'sanida.com.br';
+          $_SERVER['HTTPS'] = 'on';
+          require getenv('WP_ROOT') . '/wp-load.php';
+          $routes = ['release' => '/sfa/v1/fiscal-release', 'health' => '/sfa/v1/fiscal-health', 'legacy' => '/sfa/v1/folha'];
+          $result = [];
+          foreach ($routes as $name => $route) {
+            $response = rest_do_request(new WP_REST_Request('GET', $route));
+            $result[$name] = ['status' => $response->get_status(), 'data' => $response->get_data(), 'headers' => $response->get_headers()];
+          }
+          echo wp_json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+          PHP
+          REMOTE
+      - name: Validate REST JSON types, schema and release identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -q 'jsonschema>=4.25,<5'
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from jsonschema import Draft202012Validator
+          root=Path('.')
+          probe=json.loads((Path(os.environ['RUNNER_TEMP'])/'origin-result.json').read_text())
+          pointer=json.loads((root/'releases/fiscal-v1/current.json').read_text())
+          expected=json.loads((root/'releases/fiscal-v1'/pointer['artifact']).read_text())
+          schema=json.loads((root/'contracts/fiscal-contract-v1.2.schema.json').read_text())
+          release=probe['release']
+          health=probe['health']
+          legacy=probe['legacy']
+          assert release['status']==200, f"ORIGIN_RELEASE_HTTP={release['status']}"
+          wire=release['data']
+          errors=list(Draft202012Validator(schema).iter_errors(wire))
+          assert not errors, f'ORIGIN_SCHEMA_ERRORS={len(errors)}'
+          assert wire==expected, 'ORIGIN_STRUCTURAL_MISMATCH'
+          assert release['headers']['X-Sanida-Fiscal-Release']==pointer['release_id'], 'ORIGIN_RELEASE_HEADER_MISMATCH'
+          assert health['status']==200 and health['data']['status']=='healthy', 'ORIGIN_HEALTH_FAIL'
+          assert health['data']['release_id']==pointer['release_id'], 'ORIGIN_HEALTH_RELEASE_MISMATCH'
+          assert legacy['status']==410, 'ORIGIN_LEGACY_HTTP_MISMATCH'
+          print('ORIGIN_REST_CONTRACT=PASS')
+          print('ORIGIN_SCHEMA_ERRORS=0')
+          print('ORIGIN_RULES='+str(len(wire['rules'])))
+          print('ORIGIN_HEALTH=healthy')
+          print('ORIGIN_LEGACY_HTTP=410')
+          PY
