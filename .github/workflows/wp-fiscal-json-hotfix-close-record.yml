@@ -1,0 +1,86 @@
+name: WordPress fiscal JSON hotfix - close scoped journal
+on:
+  push:
+    branches: [deploy/wp-fiscal-rest-json-20261123]
+    paths: ['.github/workflows/wp-fiscal-json-hotfix-close-record.yml']
+permissions:
+  contents: read
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Configure existing HostGator SSH
+        shell: bash
+        env:
+          REMOTE_HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          REMOTE_USER: ${{ secrets.V2_HOSTGATOR_USER }}
+          SSH_KEY: ${{ secrets.V2_HOSTGATOR_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.V2_HOSTGATOR_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          for item in REMOTE_HOST REMOTE_USER SSH_KEY KNOWN_HOSTS; do
+            [ -n "${!item:-}" ] || { echo "Missing $item"; exit 2; }
+          done
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$HOME/.ssh/id_ed25519" >/dev/null
+      - name: Validate installed bytes and close journal without production writes
+        shell: bash
+        env:
+          REMOTE_HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          REMOTE_USER: ${{ secrets.V2_HOSTGATOR_USER }}
+        run: |
+          set -euo pipefail
+          ssh -p 2222 -i "$HOME/.ssh/id_ed25519" \
+            -o BatchMode=yes -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o UpdateHostKeys=no \
+            -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no \
+            "$REMOTE_USER@$REMOTE_HOST" bash -s <<'REMOTE'
+          set -euo pipefail
+          umask 077
+          journal=/home1/sanid210/c74-deployments/wp-fiscal-rest-json-607dab21-20261123
+          target=/home1/sanid210/public_html/blog/wp-content/plugins/sanida-fiscais-auto/includes/trait-sanida-fiscal-network.php
+          expected_before=68851b5ed5064141fcdd9123a45dfbf9c5f41dcea8596b7f9c8939fc383c80c5
+          expected_after=5694d2350cefdd4720fb325c98c73d4df3c275602de1e9b86041cac824df61a0
+          [ -f "$target" ] && [ ! -L "$target" ]
+          [ "$(sha256sum "$target" | cut -d' ' -f1)" = "$expected_after" ] || { echo "BLOCKED_INSTALLED_SHA"; exit 10; }
+          [ "$(sha256sum "$journal/backup.php" | cut -d' ' -f1)" = "$expected_before" ] || { echo "BLOCKED_BACKUP_SHA"; exit 11; }
+          grep -qx 'STATUS=APPLIED_ORIGIN_HEALTHY_PENDING_EXTERNAL' "$journal/status" || { echo "BLOCKED_UNEXPECTED_JOURNAL_STATUS"; exit 12; }
+          [ ! -e "$journal/closure-128.json" ] || { echo "BLOCKED_SINGLE_USE_CLOSURE"; exit 13; }
+          php -l "$target"
+          cat > "$journal/.closure-128.json.tmp" <<'JSON'
+          {
+            "record_type": "wp_fiscal_json_hotfix_closure",
+            "evidence_date": "2026-11-23",
+            "pull_request": 128,
+            "merged_commit": "607dab21c9471a8a8a7f1437df43b96bbe059d81",
+            "installed_file_sha256": "5694d2350cefdd4720fb325c98c73d4df3c275602de1e9b86041cac824df61a0",
+            "backup_file_sha256": "68851b5ed5064141fcdd9123a45dfbf9c5f41dcea8596b7f9c8939fc383c80c5",
+            "origin_proof_workflow_run": 45156986840,
+            "origin_full_schema_errors": 0,
+            "origin_rule_count": 32,
+            "origin_structurally_equals_canonical": true,
+            "public_evidence_source": "operator PowerShell output in conversation; not collected by GitHub runner",
+            "public_observations": [
+              {"url": "https://sanida.com.br/blog/wp-json/sfa/v1/fiscal-release", "http_status": 200, "rules": 32, "type_errors": 0, "cf_ray": "a5ef8d8f3f0aa263-VIX"},
+              {"url": "https://sanida.com.br/blog/wp-json/sfa/v1/fiscal-release?verificacao=607dab21", "http_status": 200, "rules": 32, "type_errors": 0, "cf_ray": "a5ef8d92eb89002b-VIX"}
+            ],
+            "public_release_id": "fiscal-v1-sha256-3e7e4f8a7031484e4944150b363d739feef852a1b5abbe90b4e6c0e7449c2e94",
+            "public_full_json_schema_or_hash_verified": false,
+            "scope": "external type correctness for two competence fields in all 32 rules",
+            "status": "APPLIED_PUBLIC_TYPES_VERIFIED"
+          }
+          JSON
+          python3 -m json.tool "$journal/.closure-128.json.tmp" >/dev/null
+          mv "$journal/.closure-128.json.tmp" "$journal/closure-128.json"
+          cp -p "$journal/status" "$journal/status.pre-closure-128"
+          printf 'STATUS=APPLIED_PUBLIC_TYPES_VERIFIED\nSOURCE_COMMIT=607dab21c9471a8a8a7f1437df43b96bbe059d81\nEXTERNAL_FULL_SCHEMA_HASH_VERIFIED=false\nEVIDENCE_FILE=closure-128.json\n' > "$journal/status"
+          echo "CLOSURE_RECORD=PASS"
+          echo "CLOSURE_STATUS=APPLIED_PUBLIC_TYPES_VERIFIED"
+          echo "CLOSURE_SHA256=$(sha256sum "$journal/closure-128.json" | cut -d' ' -f1)"
+          echo "INSTALLED_SHA256=$(sha256sum "$target" | cut -d' ' -f1)"
+          REMOTE
