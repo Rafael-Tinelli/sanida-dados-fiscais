@@ -1,0 +1,85 @@
+name: WordPress fiscal JSON hotfix - read-only preflight
+
+on:
+  push:
+    branches:
+      - deploy/wp-fiscal-rest-json-20261123
+    paths:
+      - '.github/workflows/wp-fiscal-json-hotfix-preflight.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wp-fiscal-json-hotfix-preflight
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      FIX_COMMIT: 607dab21c9471a8a8a7f1437df43b96bbe059d81
+      FILE: consumers/wordpress/includes/trait-sanida-fiscal-network.php
+      REMOTE_PATH: /home1/sanid210/public_html/blog/wp-content/plugins/sanida-fiscais-auto/includes/trait-sanida-fiscal-network.php
+      SSH_PORT: '2222'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Verify exact merged source and PHP syntax (no remote writes)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "${FIX_COMMIT}:${FILE}" > "$RUNNER_TEMP/fiscal-network.php"
+          cmp "$RUNNER_TEMP/fiscal-network.php" "$FILE"
+          php -l "$RUNNER_TEMP/fiscal-network.php"
+          echo "SOURCE_SHA256=$(sha256sum "$RUNNER_TEMP/fiscal-network.php" | cut -d' ' -f1)" >> "$GITHUB_STEP_SUMMARY"
+          echo "SOURCE_COMMIT=$FIX_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+      - name: Confirm existing HostGator SSH credentials
+        shell: bash
+        env:
+          REMOTE_HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          REMOTE_USER: ${{ secrets.V2_HOSTGATOR_USER }}
+          SSH_KEY: ${{ secrets.V2_HOSTGATOR_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.V2_HOSTGATOR_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          for item in REMOTE_HOST REMOTE_USER SSH_KEY KNOWN_HOSTS; do
+            if [ -z "${!item:-}" ]; then
+              echo "HostGator credential unavailable: $item" >&2
+              exit 2
+            fi
+          done
+          echo "Credential presence: OK" >> "$GITHUB_STEP_SUMMARY"
+      - name: Read-only HostGator file preflight
+        shell: bash
+        env:
+          REMOTE_HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          REMOTE_USER: ${{ secrets.V2_HOSTGATOR_USER }}
+          SSH_KEY: ${{ secrets.V2_HOSTGATOR_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.V2_HOSTGATOR_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$HOME/.ssh/id_ed25519" >/dev/null
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/id_ed25519" \
+            -o BatchMode=yes -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o UpdateHostKeys=no \
+            -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no \
+            -o ConnectTimeout=20 "$REMOTE_USER@$REMOTE_HOST" \
+            bash -s -- "$REMOTE_PATH" <<'REMOTE'
+          set -euo pipefail
+          target="$1"
+          [ -f "$target" ] && [ ! -L "$target" ] || { echo "TARGET_INVALID"; exit 3; }
+          [ -w "$target" ] && [ -w "$(dirname "$target")" ] || { echo "TARGET_NOT_WRITABLE"; exit 4; }
+          php -l "$target"
+          echo "TARGET_SHA256=$(sha256sum "$target" | cut -d' ' -f1)"
+          echo "TARGET_SIZE=$(wc -c < "$target")"
+          grep -q 'function rest_get_fiscal_release' "$target" || { echo "UNEXPECTED_PLUGIN_FILE"; exit 5; }
+          echo "HOST_READONLY_PREFLIGHT=PASS"
+          REMOTE
