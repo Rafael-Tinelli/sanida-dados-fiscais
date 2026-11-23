@@ -23,7 +23,7 @@ from sanida_fiscal.publication_v1 import (
     NoPublicationRequired,
     prepare_published_release,
 )
-from sanida_fiscal.release_assembler_v12 import assemble_candidate_v12
+from sanida_fiscal.release_assembler_v12 import ReleaseAssemblyError, assemble_candidate_v12
 from sanida_fiscal.rfb_irrf_v1 import (
     PARSER_ID as RFB_PARSER_ID,
     PARSER_VERSION as RFB_PARSER_VERSION,
@@ -351,3 +351,74 @@ def test_v12_governance_registry_builds_hash_addressed_internal_evidence(tmp_pat
     for observation in evidence.values():
         assert observation.role == "internal_governance"
         assert (tmp_path / "governance" / observation.snapshot_path).is_file()
+
+
+@pytest.mark.parametrize("reference_date", [
+    datetime(2026, 12, 31, 12, 0, tzinfo=timezone.utc),
+    datetime(2027, 1, 1, 12, 0, tzinfo=timezone.utc),
+])
+@pytest.mark.parametrize(
+    ("source_id", "date_field"),
+    [
+        ("RFB_IRRF_TABLE_CURRENT", "monthly_effective_from"),
+        ("INSS_TABLE_CURRENT", "effective_from"),
+    ],
+)
+def test_v12_rejects_2027_parameters_assigned_to_2026_rules(
+    source_id: str, date_field: str, reference_date: datetime
+) -> None:
+    normalized = _normalized_candidates(observed_at=reference_date)
+    original = normalized[source_id]
+    payload = deepcopy(original.payload)
+    assert payload is not None and payload["reference_year"] == 2026
+    payload["reference_year"] = 2027
+    payload[date_field] = "2027-01-01"
+    normalized[source_id] = original.model_copy(update={"payload": payload})
+
+    # The old 2026 rule must not absorb 2027 values, even when the new
+    # official table is seen before the turn of the year.
+    with pytest.raises(ReleaseAssemblyError, match=r"vigency .*2027-01-01"):
+        _assemble(
+            previous=_published_bootstrap(),
+            observed_at=reference_date,
+            normalized=normalized,
+        )
+
+
+def test_v12_2026_dates_preserve_existing_candidate_at_year_end() -> None:
+    candidate = _assemble(observed_at=datetime(2026, 12, 31, 12, tzinfo=timezone.utc))
+    indexed = {rule.rule_id: rule for rule in candidate.rules}
+    for rule_id in (
+        "irrf.monthly.progressive_table",
+        "irrf.dependent_deduction",
+        "irrf.simplified_monthly_discount",
+        "irrf.reduction.2026",
+        "vacation.irrf.reduction.2026",
+        "inss.employee.progressive_table",
+    ):
+        assert indexed[rule_id].vigency.effective_from.isoformat() == "2026-01-01"
+
+
+@pytest.mark.parametrize(
+    ("source_id", "date_field"),
+    [
+        ("RFB_IRRF_TABLE_CURRENT", "monthly_effective_from"),
+        ("INSS_TABLE_CURRENT", "effective_from"),
+    ],
+)
+def test_v12_rejects_inconsistent_or_partial_source_vigency_markers(
+    source_id: str, date_field: str
+) -> None:
+    for mutate, error in (
+        ({"reference_year": 2027}, "reference_year conflicts"),
+        ({date_field: "2027-01-01"}, "reference_year conflicts"),
+        ({date_field: None}, "missing or invalid"),
+    ):
+        normalized = _normalized_candidates()
+        original = normalized[source_id]
+        payload = deepcopy(original.payload)
+        assert payload is not None
+        payload.update(mutate)
+        normalized[source_id] = original.model_copy(update={"payload": payload})
+        with pytest.raises(ReleaseAssemblyError, match=error):
+            _assemble(normalized=normalized)
