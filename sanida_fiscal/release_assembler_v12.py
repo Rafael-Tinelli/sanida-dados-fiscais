@@ -456,7 +456,7 @@ def _assert_parameter_source_vigency(
         return
     raw_date = payload.get(date_field)
     reference_year = payload.get("reference_year")
-    if not isinstance(raw_date, str) or not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", raw_date):
+    if not isinstance(raw_date, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw_date):
         raise ReleaseAssemblyError(f"{source_id}: missing or invalid {date_field}")
     try:
         effective_date = date.fromisoformat(raw_date)
