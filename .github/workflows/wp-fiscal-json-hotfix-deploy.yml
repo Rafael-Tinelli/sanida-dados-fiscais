@@ -1,0 +1,208 @@
+name: WordPress fiscal JSON hotfix - controlled single-file deploy
+
+on:
+  push:
+    branches:
+      - deploy/wp-fiscal-rest-json-20261123
+    paths:
+      - '.github/workflows/wp-fiscal-json-hotfix-deploy.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wp-fiscal-json-hotfix-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      FIX_COMMIT: 607dab21c9471a8a8a7f1437df43b96bbe059d81
+      FILE: consumers/wordpress/includes/trait-sanida-fiscal-network.php
+      TARGET: /home1/sanid210/public_html/blog/wp-content/plugins/sanida-fiscais-auto/includes/trait-sanida-fiscal-network.php
+      JOURNAL: /home1/sanid210/c74-deployments/wp-fiscal-rest-json-607dab21-20261123
+      EXPECTED_PRE_SHA: 68851b5ed5064141fcdd9123a45dfbf9c5f41dcea8596b7f9c8939fc383c80c5
+      SSH_PORT: '2222'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Pin merged source and check syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "${FIX_COMMIT}:${FILE}" > "$RUNNER_TEMP/fiscal-network.php"
+          cmp "$RUNNER_TEMP/fiscal-network.php" "$FILE"
+          php -l "$RUNNER_TEMP/fiscal-network.php"
+          echo "NEW_SHA=$(sha256sum "$RUNNER_TEMP/fiscal-network.php" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+          echo "SOURCE_COMMIT=${FIX_COMMIT}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Configure existing verified SSH credentials
+        shell: bash
+        env:
+          REMOTE_HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          REMOTE_USER: ${{ secrets.V2_HOSTGATOR_USER }}
+          SSH_KEY: ${{ secrets.V2_HOSTGATOR_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.V2_HOSTGATOR_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          for item in REMOTE_HOST REMOTE_USER SSH_KEY KNOWN_HOSTS; do
+            if [ -z "${!item:-}" ]; then echo "Credential missing: $item" >&2; exit 2; fi
+          done
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
+          ssh-keygen -y -f "$HOME/.ssh/id_ed25519" >/dev/null
+      - name: Verify unchanged production baseline and save exact backup before writing
+        shell: bash
+        env:
+          REMOTE_HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          REMOTE_USER: ${{ secrets.V2_HOSTGATOR_USER }}
+        run: |
+          set -euo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/id_ed25519" \
+            -o BatchMode=yes -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o UpdateHostKeys=no \
+            -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no \
+            "$REMOTE_USER@$REMOTE_HOST" \
+            bash -s -- "$TARGET" "$JOURNAL" "$EXPECTED_PRE_SHA" "$FIX_COMMIT" <<'REMOTE'
+          set -euo pipefail
+          umask 077
+          target="$1"; journal="$2"; expected="$3"; commit="$4"
+          [ -f "$target" ] && [ ! -L "$target" ] || { echo "BLOCKED_INVALID_TARGET"; exit 10; }
+          [ -w "$target" ] && [ -w "$(dirname "$target")" ] || { echo "BLOCKED_NOT_WRITABLE"; exit 11; }
+          [ "$(sha256sum "$target" | cut -d' ' -f1)" = "$expected" ] || { echo "BLOCKED_BASELINE_DRIFT"; exit 12; }
+          php -l "$target"
+          if [ -e "$journal" ]; then echo "BLOCKED_SINGLE_USE_JOURNAL_EXISTS"; exit 13; fi
+          mkdir -p "$(dirname "$journal")"
+          mkdir -m 700 "$journal"
+          cp -p -- "$target" "$journal/backup.php"
+          [ "$(sha256sum "$journal/backup.php" | cut -d' ' -f1)" = "$expected" ] || { echo "BLOCKED_BACKUP_SHA"; exit 14; }
+          printf 'STATUS=BACKED_UP\nSOURCE_COMMIT=%s\nBEFORE_SHA256=%s\n' "$commit" "$expected" > "$journal/state"
+          echo "BACKUP_VERIFIED=PASS"
+          REMOTE
+      - name: Stage exact source outside production root
+        shell: bash
+        env:
+          REMOTE_HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          REMOTE_USER: ${{ secrets.V2_HOSTGATOR_USER }}
+        run: |
+          set -euo pipefail
+          scp -P "$SSH_PORT" -i "$HOME/.ssh/id_ed25519" \
+            -o BatchMode=yes -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o UpdateHostKeys=no \
+            -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no \
+            "$RUNNER_TEMP/fiscal-network.php" "$REMOTE_USER@$REMOTE_HOST:$JOURNAL/candidate.php"
+      - name: Atomic single-file update with fail-closed rollback
+        shell: bash
+        env:
+          REMOTE_HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          REMOTE_USER: ${{ secrets.V2_HOSTGATOR_USER }}
+        run: |
+          set -euo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/id_ed25519" \
+            -o BatchMode=yes -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o UpdateHostKeys=no \
+            -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no \
+            "$REMOTE_USER@$REMOTE_HOST" \
+            bash -s -- "$TARGET" "$JOURNAL" "$EXPECTED_PRE_SHA" "$NEW_SHA" <<'REMOTE'
+          set -eEuo pipefail
+          umask 077
+          target="$1"; journal="$2"; before="$3"; after="$4"
+          backup="$journal/backup.php"
+          candidate="$journal/candidate.php"
+          [ -f "$backup" ] && [ ! -L "$backup" ] || exit 21
+          [ -f "$candidate" ] && [ ! -L "$candidate" ] || exit 22
+          [ "$(sha256sum "$backup" | cut -d' ' -f1)" = "$before" ] || exit 23
+          [ "$(sha256sum "$candidate" | cut -d' ' -f1)" = "$after" ] || exit 24
+          [ -f "$target" ] && [ ! -L "$target" ] || exit 25
+          [ "$(sha256sum "$target" | cut -d' ' -f1)" = "$before" ] || exit 26
+          php -l "$candidate"
+          dir="$(dirname "$target")"
+          tmp="$(mktemp "$dir/.sfa-json-hotfix-XXXXXXXX")"
+          applied=0
+          trap 'rm -f -- "$tmp"' EXIT
+          rollback() {
+            local rc=$?
+            trap - ERR
+            if [ "$applied" -eq 1 ]; then
+              local rb
+              rb="$(mktemp "$dir/.sfa-json-rollback-XXXXXXXX")"
+              cp -- "$backup" "$rb"
+              chmod --reference="$backup" "$rb"
+              mv -f -- "$rb" "$target"
+              [ "$(sha256sum "$target" | cut -d' ' -f1)" = "$before" ] || echo "ROLLBACK_VERIFICATION_FAILED"
+              printf 'STATUS=ROLLBACK_APPLIED\n' > "$journal/status"
+              echo "ROLLBACK_APPLIED"
+            fi
+            exit "$rc"
+          }
+          trap rollback ERR
+          cp -- "$candidate" "$tmp"
+          chmod --reference="$target" "$tmp"
+          [ "$(sha256sum "$tmp" | cut -d' ' -f1)" = "$after" ]
+          applied=1
+          mv -f -- "$tmp" "$target"
+          [ "$(sha256sum "$target" | cut -d' ' -f1)" = "$after" ]
+          php -l "$target"
+          printf 'STATUS=APPLIED_ORIGIN_HEALTHY_PENDING_EXTERNAL\nBEFORE_SHA256=%s\nAFTER_SHA256=%s\n' "$before" "$after" > "$journal/status"
+          trap - ERR
+          echo "ATOMIC_SINGLE_FILE_DEPLOY=PASS"
+          echo "ORIGIN_SHA256=$after"
+          REMOTE
+          echo "ORIGIN_WRITE=PASS" >> "$GITHUB_STEP_SUMMARY"
+      - name: Validate public fiscal REST JSON against canonical release
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -q 'jsonschema>=4.25,<5'
+          curl -fsSL --max-time 30 -H 'Accept: application/json' \
+            -A 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36' \
+            "https://sanida.com.br/blog/wp-json/sfa/v1/fiscal-release?sfa_hotfix=607dab21" > "$RUNNER_TEMP/public-release.json"
+          curl -fsSL --max-time 30 -H 'Accept: application/json' \
+            -A 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36' \
+            "https://sanida.com.br/blog/wp-json/sfa/v1/fiscal-health?sfa_hotfix=607dab21" > "$RUNNER_TEMP/public-health.json"
+          python - <<'PY'
+          import json, pathlib
+          from jsonschema import Draft202012Validator
+          root=pathlib.Path('.')
+          pointer=json.loads((root/'releases/fiscal-v1/current.json').read_text())
+          expected=json.loads((root/'releases/fiscal-v1'/pointer['artifact']).read_text())
+          actual=json.loads((pathlib.Path(__import__('os').environ['RUNNER_TEMP'])/'public-release.json').read_text())
+          health=json.loads((pathlib.Path(__import__('os').environ['RUNNER_TEMP'])/'public-health.json').read_text())
+          schema=json.loads((root/'contracts/fiscal-contract-v1.2.schema.json').read_text())
+          errors=list(Draft202012Validator(schema).iter_errors(actual))
+          assert not errors, f'PUBLIC_SCHEMA_ERRORS={len(errors)}'
+          assert actual == expected, 'PUBLIC_STRUCTURAL_MISMATCH'
+          assert health.get('status') == 'healthy', f'PUBLIC_HEALTH_STATUS={health.get("status")}'
+          assert health.get('release_id') == pointer['release_id'], 'HEALTH_RELEASE_MISMATCH'
+          assert actual['release_id'] == pointer['release_id'], 'PUBLIC_RELEASE_MISMATCH'
+          assert len(actual['rules']) == 32, 'PUBLIC_RULE_COUNT_MISMATCH'
+          print('PUBLIC_REST_CONTRACT=PASS')
+          print('PUBLIC_SCHEMA_ERRORS=0')
+          print('PUBLIC_RULES=32')
+          print('PUBLIC_HEALTH=healthy')
+          PY
+      - name: Record external proof in HostGator journal
+        if: success()
+        shell: bash
+        env:
+          REMOTE_HOST: ${{ secrets.V2_HOSTGATOR_HOST }}
+          REMOTE_USER: ${{ secrets.V2_HOSTGATOR_USER }}
+        run: |
+          set -euo pipefail
+          ssh -p "$SSH_PORT" -i "$HOME/.ssh/id_ed25519" \
+            -o BatchMode=yes -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o UpdateHostKeys=no \
+            -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no \
+            "$REMOTE_USER@$REMOTE_HOST" bash -s -- "$JOURNAL" "$NEW_SHA" <<'REMOTE'
+          set -euo pipefail
+          journal="$1"; after="$2"
+          grep -q '^STATUS=APPLIED_ORIGIN_HEALTHY_PENDING_EXTERNAL$' "$journal/status"
+          grep -q "^AFTER_SHA256=$after$" "$journal/status"
+          printf 'STATUS=APPLIED_EXTERNALLY_HEALTHY\nAFTER_SHA256=%s\n' "$after" > "$journal/status"
+          echo "EXTERNAL_PROOF=PASS"
+          REMOTE
