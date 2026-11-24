@@ -1,0 +1,29 @@
+name: Diagnostic - eSocial connectivity only (read-only)
+
+on:
+  push:
+    branches:
+      - diagnostics/esocial-connectivity-20261124
+    paths:
+      - .github/workflows/diagnose-esocial-connectivity.yml
+      - ops/diagnostics/probe_esocial_connectivity.py
+
+permissions:
+  contents: read
+
+jobs:
+  esocial-transport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install existing production transport dependencies only
+        run: python -m pip install -r requirements.txt
+      - name: Probe DNS TCP TLS and client HTTP transports (no publication)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python ops/diagnostics/probe_esocial_connectivity.py
