@@ -1,6 +1,6 @@
 {
   "consecutive_parser_failures": 0,
-  "consecutive_source_failures": 5,
+  "consecutive_source_failures": 6,
   "etag": null,
   "last_candidate_path": "INSS_TABLE_CURRENT/18/1836a09ba4520d61e2d6c6677ee6b34fac640a4bdfc94aa243827272b5a63fc5.json",
   "last_candidate_sha256": "1836a09ba4520d61e2d6c6677ee6b34fac640a4bdfc94aa243827272b5a63fc5",
@@ -9,7 +9,7 @@
   "last_collection_status": "SOURCE_UNAVAILABLE",
   "last_http_status": null,
   "last_modified": null,
-  "last_observed_at_utc": "2026-11-25T19:21:44Z",
+  "last_observed_at_utc": "2026-11-26T19:04:54Z",
   "last_parse_status": "PARSED",
   "last_parsed_at_utc": "2026-11-20T17:51:27Z",
   "last_parsed_snapshot_path": "INSS_TABLE_CURRENT/e1/e101b063af2722590662d796c3370bcb8b6a73554951adac52e5cd6052c7d9f9.html",
