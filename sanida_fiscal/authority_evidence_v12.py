@@ -6,9 +6,11 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 import re
+import ssl
 from typing import Any, Mapping
 import unicodedata
 
+import httpx
 import requests
 from bs4 import BeautifulSoup
 from pypdf import PdfReader
@@ -139,6 +141,10 @@ PLANALTO_BROWSER_FALLBACK_SOURCE_IDS = frozenset(
 )
 REQUESTS_TRANSPORT_FALLBACK_SOURCE_IDS = PLANALTO_BROWSER_FALLBACK_SOURCE_IDS
 REQUESTS_TRANSPORT_FALLBACK_ERRORS = frozenset({"RemoteProtocolError"})
+
+# Only this registered eSocial authority has a TLS 1.3 reset reproduced on
+# GitHub runners, while verified TLS 1.2 succeeded (25 Nov 2026).
+ESOCIAL_TLS12_FALLBACK_SOURCE_ID = "ESOCIAL_TABLES_S13_NT07_2026"
 
 
 @dataclass(frozen=True)
@@ -371,6 +377,27 @@ def _is_planalto_access_denied_html(body: bytes, media_type: str | None) -> bool
     )
 
 
+def _collect_esocial_with_tls12(
+    *,
+    source: SourceSpec,
+    store: SnapshotStore,
+    observed_at_utc: datetime,
+    timeout_seconds: float,
+    headers: Mapping[str, str],
+) -> CollectionResult:
+    """One verified TLS 1.2 request to the SAME official URL, without proxies."""
+    context = ssl.create_default_context()
+    context.minimum_version = ssl.TLSVersion.TLSv1_2
+    context.maximum_version = ssl.TLSVersion.TLSv1_2
+    transport = httpx.HTTPTransport(verify=context, trust_env=False)
+    return HttpCollectorV1(
+        snapshot_store=store,
+        retry_policy=RetryPolicy(max_attempts=1, timeout_seconds=timeout_seconds),
+        transport=transport,
+        headers=headers,
+    ).collect(source, observed_at_utc=observed_at_utc)
+
+
 def _collect_authority_source(
     *,
     source_id: str,
@@ -382,6 +409,32 @@ def _collect_authority_source(
     headers: Mapping[str, str],
 ) -> CollectionResult:
     result = collector.collect(source, observed_at_utc=observed_at_utc)
+    if (
+        source_id == ESOCIAL_TLS12_FALLBACK_SOURCE_ID
+        and source.source_id == source_id
+        and result.status == CollectionStatus.SOURCE_UNAVAILABLE
+        and result.failure_kind == FailureKind.NETWORK_ERROR
+        and result.error_detail == "ConnectError"
+        and result.http_status is None
+    ):
+        # The standard collector has already exhausted its retries. Only a
+        # pre-HTTP connection failure triggers this extra attempt; 403/406,
+        # 429, timeouts, parser errors and all other sources are untouched.
+        fallback = _collect_esocial_with_tls12(
+            source=source,
+            store=store,
+            observed_at_utc=observed_at_utc,
+            timeout_seconds=retry_policy.timeout_seconds,
+            headers=headers,
+        )
+        print(
+            "ESOCIAL_TLS12_FALLBACK="
+            + ("COLLECTED" if fallback.status == CollectionStatus.COLLECTED else "BLOCKED")
+            + f"; primary={result.error_detail}; "
+            + f"fallback={fallback.error_detail or fallback.status.value}; "
+            + f"http_status={fallback.http_status or 'none'}"
+        )
+        return fallback.model_copy(update={"attempts": result.attempts + fallback.attempts})
     if source_id not in REQUESTS_TRANSPORT_FALLBACK_SOURCE_IDS:
         return result
 
