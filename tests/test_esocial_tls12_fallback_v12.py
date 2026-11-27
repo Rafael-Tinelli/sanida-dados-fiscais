@@ -16,10 +16,11 @@ from sanida_fiscal.sources_v1 import (
     RetryPolicy,
     SnapshotStore,
     SourceSpec,
+    load_source_registry,
 )
 
 NOW = datetime(2026, 11, 25, 20, 0, tzinfo=timezone.utc)
-SOURCE_ID = authority.ESOCIAL_TLS12_FALLBACK_SOURCE_ID
+SOURCE_ID = "ESOCIAL_TABLES_S13_NT07_2026"
 SOURCE_URL = (
     "https://www.gov.br/esocial/pt-br/documentacao-tecnica/"
     "leiautes-esocial-versao-s-1-3-nt-07-2026/tabelas.html"
@@ -30,6 +31,17 @@ SOURCE = SourceSpec(
     role="official_operational",
     machine_readability="html_table",
 )
+MEI_SOURCE_ID = "ESOCIAL_WEB_MEI_2026"
+MEI_SOURCE = load_source_registry(Path("docs/source-registry-v1.json"))[MEI_SOURCE_ID]
+
+
+@pytest.fixture(params=[SOURCE, MEI_SOURCE], ids=["tables", "manual-mei"])
+def authorized_source(request):
+    return request.param
+
+
+def test_esocial_tls12_allowlist_is_explicit_and_matches_registered_sources():
+    assert authority.ESOCIAL_TLS12_FALLBACK_SOURCE_IDS == frozenset({SOURCE_ID, MEI_SOURCE_ID})
 
 
 class Primary:
@@ -95,7 +107,7 @@ def _stub_transport(monkeypatch, handler):
 
 
 def test_esocial_connect_error_retries_same_official_url_once_with_verified_tls12(
-    monkeypatch, tmp_path, capsys
+    monkeypatch, tmp_path, capsys, authorized_source
 ):
     body = b"<html><body>eSocial Tabela 03 Tabela 19 Tabela 21</body></html>"
     requests_seen = []
@@ -106,20 +118,22 @@ def test_esocial_connect_error_retries_same_official_url_once_with_verified_tls1
 
     context_seen = _stub_transport(monkeypatch, handler)
     primary = Primary()
-    result, store = _collect(SOURCE, primary, tmp_path)
+    result, store = _collect(authorized_source, primary, tmp_path)
 
     assert primary.calls == 1
     assert context_seen == ["TLS12"]
-    assert requests_seen == [(SOURCE_URL, authority.AUTHORITY_HEADERS["User-Agent"])]
+    assert requests_seen == [(authorized_source.url, authority.AUTHORITY_HEADERS["User-Agent"])]
     assert result.status == CollectionStatus.COLLECTED
     assert result.attempts == 4  # 3 standard attempts + exactly 1 fallback
     assert result.http_status == 200
     assert result.snapshot is not None
-    assert result.source_url == SOURCE_URL
-    assert result.snapshot.source_url == SOURCE_URL
+    assert result.source_url == authorized_source.url
+    assert result.snapshot.source_url == authorized_source.url
     assert result.snapshot.sha256 == sha256(body).hexdigest()
     assert store.read(result.snapshot) == body
-    assert "ESOCIAL_TLS12_FALLBACK=COLLECTED" in capsys.readouterr().out
+    log = capsys.readouterr().out
+    assert "ESOCIAL_TLS12_FALLBACK=COLLECTED" in log
+    assert f"source_id={authorized_source.source_id}" in log
 
 
 @pytest.mark.parametrize(
@@ -135,7 +149,7 @@ def test_esocial_connect_error_retries_same_official_url_once_with_verified_tls1
     ],
 )
 def test_esocial_only_connect_error_without_http_response_triggers_fallback(
-    monkeypatch, tmp_path, kind, detail, http_status
+    monkeypatch, tmp_path, kind, detail, http_status, authorized_source
 ):
     monkeypatch.setattr(
         authority.httpx,
@@ -143,19 +157,19 @@ def test_esocial_only_connect_error_without_http_response_triggers_fallback(
         lambda **kwargs: pytest.fail("TLS12 transport must not be constructed"),
     )
     result, _ = _collect(
-        SOURCE, Primary(failure_kind=kind, error_detail=detail, http_status=http_status), tmp_path
+        authorized_source, Primary(failure_kind=kind, error_detail=detail, http_status=http_status), tmp_path
     )
     assert result.status == CollectionStatus.SOURCE_UNAVAILABLE
     assert result.error_detail == detail
     assert result.attempts == 3
 
 
-@pytest.mark.parametrize("source_id", ["ESOCIAL_WEB_MEI_2026", "RFB_QA_IRPF_2026", "INSS_TABLE_CURRENT"])
+@pytest.mark.parametrize("source_id", ["ESOCIAL_UNREGISTERED", "RFB_QA_IRPF_2026", "INSS_TABLE_CURRENT"])
 def test_other_authorities_do_not_retry_tls12(monkeypatch, tmp_path, source_id):
     monkeypatch.setattr(
         authority.httpx,
         "HTTPTransport",
-        lambda **kwargs: pytest.fail("TLS12 is restricted to one source ID"),
+        lambda **kwargs: pytest.fail("TLS12 is restricted to the two explicitly authorized source IDs"),
     )
     source = SOURCE.model_copy(update={"source_id": source_id})
     result, _ = _collect(source, Primary(), tmp_path)
@@ -190,10 +204,10 @@ def test_esocial_url_cannot_be_substituted_with_other_authority_id(monkeypatch, 
     ],
 )
 def test_esocial_tls12_http_rejection_is_fail_closed(
-    monkeypatch, tmp_path, capsys, response, expected_kind, expected_detail
+    monkeypatch, tmp_path, capsys, response, expected_kind, expected_detail, authorized_source
 ):
     seen = _stub_transport(monkeypatch, lambda req: response)
-    result, _ = _collect(SOURCE, Primary(), tmp_path)
+    result, _ = _collect(authorized_source, Primary(), tmp_path)
     assert seen == ["TLS12"]
     assert result.status == CollectionStatus.SOURCE_UNAVAILABLE
     assert result.snapshot is None
@@ -201,16 +215,18 @@ def test_esocial_tls12_http_rejection_is_fail_closed(
     assert result.http_status == response.status_code
     assert result.failure_kind == expected_kind
     assert result.error_detail == expected_detail
-    assert "ESOCIAL_TLS12_FALLBACK=BLOCKED" in capsys.readouterr().out
+    log = capsys.readouterr().out
+    assert "ESOCIAL_TLS12_FALLBACK=BLOCKED" in log
+    assert f"source_id={authorized_source.source_id}" in log
     assert list((tmp_path / "snapshots").rglob("*")) == [] if (tmp_path / "snapshots").exists() else True
 
 
-def test_esocial_tls12_network_failure_is_fail_closed_without_snapshot(monkeypatch, tmp_path):
+def test_esocial_tls12_network_failure_is_fail_closed_without_snapshot(monkeypatch, tmp_path, authorized_source):
     def reset(req):
         raise httpx.ConnectError("[Errno 104] Connection reset by peer", request=req)
 
     seen = _stub_transport(monkeypatch, reset)
-    result, store = _collect(SOURCE, Primary(), tmp_path)
+    result, store = _collect(authorized_source, Primary(), tmp_path)
     assert seen == ["TLS12"]
     assert result.status == CollectionStatus.SOURCE_UNAVAILABLE
     assert result.snapshot is None
@@ -220,7 +236,7 @@ def test_esocial_tls12_network_failure_is_fail_closed_without_snapshot(monkeypat
     assert not store.root.exists()
 
 
-def test_esocial_successful_first_attempt_does_not_use_tls12(monkeypatch, tmp_path):
+def test_esocial_successful_first_attempt_does_not_use_tls12(monkeypatch, tmp_path, authorized_source):
     monkeypatch.setattr(
         authority.httpx,
         "HTTPTransport",
@@ -233,6 +249,6 @@ def test_esocial_successful_first_attempt_does_not_use_tls12(monkeypatch, tmp_pa
         transport=httpx.MockTransport(lambda req: httpx.Response(200, content=body)),
         headers=authority.AUTHORITY_HEADERS,
     )
-    result, _ = _collect(SOURCE, primary, tmp_path)
+    result, _ = _collect(authorized_source, primary, tmp_path)
     assert result.status == CollectionStatus.COLLECTED
     assert result.attempts == 1
