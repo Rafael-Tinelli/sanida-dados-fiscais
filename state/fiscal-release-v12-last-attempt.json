@@ -1,9 +1,9 @@
 {
-  "attempted_at_utc": "2026-11-26T19:16:30.576249Z",
+  "attempted_at_utc": "2026-11-27T19:10:27.232030Z",
   "previous_release_id": "fiscal-v1-sha256-3e7e4f8a7031484e4944150b363d739feef852a1b5abbe90b4e6c0e7449c2e94",
   "promotion_outcome": "BLOCKED_BEFORE_DIFF",
   "reasons": [
-    "ESOCIAL_WEB_MEI_2026: official source unavailable: ConnectError"
+    "INSS_TABLE_CURRENT: official source unavailable: ConnectError"
   ],
   "schema_version": "1.0.0"
 }
