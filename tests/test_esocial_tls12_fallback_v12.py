@@ -32,16 +32,41 @@ SOURCE = SourceSpec(
     machine_readability="html_table",
 )
 MEI_SOURCE_ID = "ESOCIAL_WEB_MEI_2026"
-MEI_SOURCE = load_source_registry(Path("docs/source-registry-v1.json"))[MEI_SOURCE_ID]
+EXPECTED_IDS = frozenset({
+    SOURCE_ID,
+    MEI_SOURCE_ID,
+    "INSS_TABLE_CURRENT",
+    "MTE_TERMINATION_FAQ",
+    "RFB_CP_INCIDENCE_TABLE",
+    "RFB_IRRF_TABLE_CURRENT",
+    "RFB_QA_IRPF_2026",
+})
+REGISTRY_PATH = Path("docs/source-registry-v1.json")
+REGISTRY = load_source_registry(REGISTRY_PATH)
 
 
-@pytest.fixture(params=[SOURCE, MEI_SOURCE], ids=["tables", "manual-mei"])
+@pytest.fixture(params=sorted(EXPECTED_IDS))
 def authorized_source(request):
-    return request.param
+    return authority.resolve_source_for_reference_year(
+        REGISTRY[request.param], source_id=request.param, reference_year=NOW.year
+    )
 
 
-def test_esocial_tls12_allowlist_is_explicit_and_matches_registered_sources():
-    assert authority.ESOCIAL_TLS12_FALLBACK_SOURCE_IDS == frozenset({SOURCE_ID, MEI_SOURCE_ID})
+def test_govbr_tls12_allowlist_is_explicit_and_matches_registered_sources():
+    assert authority.GOVBR_TLS12_FALLBACK_SOURCE_IDS == EXPECTED_IDS
+    required = set(authority.select_authority_sources(
+        source_registry_path=REGISTRY_PATH,
+        rule_inventory_path=Path("docs/rule-inventory-v1.json"),
+    ).values()) | set(authority.PARSER_BINDINGS)
+    assert EXPECTED_IDS == {
+        source_id for source_id in required
+        if REGISTRY[source_id].url.startswith("https://www.gov.br/")
+    }
+    assert "RFB_IRRF_EXAMPLES_2026" not in EXPECTED_IDS
+
+
+def _log_prefix(source):
+    return "ESOCIAL_TLS12_FALLBACK" if source.source_id.startswith("ESOCIAL_") else "GOVBR_TLS12_FALLBACK"
 
 
 class Primary:
@@ -106,7 +131,7 @@ def _stub_transport(monkeypatch, handler):
     return seen
 
 
-def test_esocial_connect_error_retries_same_official_url_once_with_verified_tls12(
+def test_govbr_connect_error_retries_same_official_url_once_with_verified_tls12(
     monkeypatch, tmp_path, capsys, authorized_source
 ):
     body = b"<html><body>eSocial Tabela 03 Tabela 19 Tabela 21</body></html>"
@@ -132,7 +157,7 @@ def test_esocial_connect_error_retries_same_official_url_once_with_verified_tls1
     assert result.snapshot.sha256 == sha256(body).hexdigest()
     assert store.read(result.snapshot) == body
     log = capsys.readouterr().out
-    assert "ESOCIAL_TLS12_FALLBACK=COLLECTED" in log
+    assert f"{_log_prefix(authorized_source)}=COLLECTED" in log
     assert f"source_id={authorized_source.source_id}" in log
 
 
@@ -148,7 +173,7 @@ def test_esocial_connect_error_retries_same_official_url_once_with_verified_tls1
         (FailureKind.NETWORK_ERROR, "ConnectError", 503),
     ],
 )
-def test_esocial_only_connect_error_without_http_response_triggers_fallback(
+def test_govbr_only_connect_error_without_http_response_triggers_fallback(
     monkeypatch, tmp_path, kind, detail, http_status, authorized_source
 ):
     monkeypatch.setattr(
@@ -164,12 +189,12 @@ def test_esocial_only_connect_error_without_http_response_triggers_fallback(
     assert result.attempts == 3
 
 
-@pytest.mark.parametrize("source_id", ["ESOCIAL_UNREGISTERED", "RFB_QA_IRPF_2026", "INSS_TABLE_CURRENT"])
+@pytest.mark.parametrize("source_id", ["ESOCIAL_UNREGISTERED", "RFB_IRRF_EXAMPLES_2026", "CAMARA_CLT_ATUALIZADA"])
 def test_other_authorities_do_not_retry_tls12(monkeypatch, tmp_path, source_id):
     monkeypatch.setattr(
         authority.httpx,
         "HTTPTransport",
-        lambda **kwargs: pytest.fail("TLS12 is restricted to the two explicitly authorized source IDs"),
+        lambda **kwargs: pytest.fail("TLS12 is restricted to the seven explicitly authorized source IDs"),
     )
     source = SOURCE.model_copy(update={"source_id": source_id})
     result, _ = _collect(source, Primary(), tmp_path)
@@ -177,7 +202,7 @@ def test_other_authorities_do_not_retry_tls12(monkeypatch, tmp_path, source_id):
     assert result.error_detail == "ConnectError"
 
 
-def test_esocial_url_cannot_be_substituted_with_other_authority_id(monkeypatch, tmp_path):
+def test_govbr_url_cannot_be_substituted_with_other_authority_id(monkeypatch, tmp_path):
     monkeypatch.setattr(
         authority.httpx,
         "HTTPTransport",
@@ -203,7 +228,7 @@ def test_esocial_url_cannot_be_substituted_with_other_authority_id(monkeypatch, 
         (httpx.Response(429, content=b"slow down"), FailureKind.HTTP_SERVER_ERROR, "http_429"),
     ],
 )
-def test_esocial_tls12_http_rejection_is_fail_closed(
+def test_govbr_tls12_http_rejection_is_fail_closed(
     monkeypatch, tmp_path, capsys, response, expected_kind, expected_detail, authorized_source
 ):
     seen = _stub_transport(monkeypatch, lambda req: response)
@@ -216,12 +241,12 @@ def test_esocial_tls12_http_rejection_is_fail_closed(
     assert result.failure_kind == expected_kind
     assert result.error_detail == expected_detail
     log = capsys.readouterr().out
-    assert "ESOCIAL_TLS12_FALLBACK=BLOCKED" in log
+    assert f"{_log_prefix(authorized_source)}=BLOCKED" in log
     assert f"source_id={authorized_source.source_id}" in log
     assert list((tmp_path / "snapshots").rglob("*")) == [] if (tmp_path / "snapshots").exists() else True
 
 
-def test_esocial_tls12_network_failure_is_fail_closed_without_snapshot(monkeypatch, tmp_path, authorized_source):
+def test_govbr_tls12_network_failure_is_fail_closed_without_snapshot(monkeypatch, tmp_path, authorized_source):
     def reset(req):
         raise httpx.ConnectError("[Errno 104] Connection reset by peer", request=req)
 
@@ -236,7 +261,7 @@ def test_esocial_tls12_network_failure_is_fail_closed_without_snapshot(monkeypat
     assert not store.root.exists()
 
 
-def test_esocial_successful_first_attempt_does_not_use_tls12(monkeypatch, tmp_path, authorized_source):
+def test_govbr_successful_first_attempt_does_not_use_tls12(monkeypatch, tmp_path, authorized_source):
     monkeypatch.setattr(
         authority.httpx,
         "HTTPTransport",
