@@ -1,4 +1,4 @@
-name: Diagnostic - eSocial Manual Web MEI HTTPX TLS 1.2 versus 1.3
+name: Diagnostic - remaining fiscal gov.br sources TLS comparison
 
 on:
   push:
@@ -11,70 +11,66 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: b55f32b950cb51b4e7d0efce87cf57f997cec2cc
+          persist-credentials: false
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-      - name: Install production HTTPX
-        run: python -m pip install -r requirements-sources.txt
-      - name: Exercise identical official URL and SNI with isolated TLS contexts
+      - name: Install production dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Compare verified TLS versions for all five remaining required sources
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json, socket, ssl, httpx, time
+          import hashlib, json, socket, ssl, httpx, time
+          from datetime import datetime, timezone
           from pathlib import Path
           from urllib.parse import urlsplit
+          from sanida_fiscal.authority_evidence_v12 import AUTHORITY_HEADERS, select_authority_sources, PARSER_BINDINGS
+          from sanida_fiscal.sources_v1 import load_source_registry
+          from sanida_fiscal.source_catalog_v1 import resolve_source_for_reference_year
 
-          sources=json.loads(Path("docs/source-registry-v1.json").read_text("utf-8"))["sources"]
-          url=next(s["url"] for s in sources if s["source_id"]=="ESOCIAL_WEB_MEI_2026")
-          host=urlsplit(url).hostname
-          assert host=="www.gov.br"
-          ips=sorted({item[4][0] for item in socket.getaddrinfo(host,443,type=socket.SOCK_STREAM) if item[0]==socket.AF_INET})
-          print("SOURCE_ID=ESOCIAL_WEB_MEI_2026",flush=True)
-          print("HOST="+host,flush=True)
-          print("IPV4_CANDIDATES="+",".join(ips),flush=True)
+          path=Path("docs/source-registry-v1.json")
+          registry=load_source_registry(path)
+          required=set(select_authority_sources(source_registry_path=path,rule_inventory_path=Path("docs/rule-inventory-v1.json")).values()) | set(PARSER_BINDINGS)
+          ids=sorted(s for s in required if urlsplit(registry[s].url).hostname=="www.gov.br" and s not in {"ESOCIAL_TABLES_S13_NT07_2026","ESOCIAL_WEB_MEI_2026"})
+          assert ids==["INSS_TABLE_CURRENT","MTE_TERMINATION_FAQ","RFB_CP_INCIDENCE_TABLE","RFB_IRRF_TABLE_CURRENT","RFB_QA_IRPF_2026"], ids
+          year=datetime.now(timezone.utc).year
           print("HTTPX_VERSION="+httpx.__version__,flush=True)
           print("OPENSSL_VERSION="+ssl.OPENSSL_VERSION,flush=True)
-          print("TRANSPORT=HTTPX, trust_env=False, HTTP/1.1, verified hostname",flush=True)
-          def probe(name, version):
-              ctx=ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+          print("IPV4_CANDIDATES="+",".join(sorted({x[4][0] for x in socket.getaddrinfo("www.gov.br",443,type=socket.SOCK_STREAM) if x[0]==socket.AF_INET})),flush=True)
+          def probe(source_id, url, variant, version):
+              ctx=ssl.create_default_context()
               ctx.minimum_version=version
               ctx.maximum_version=version
-              ctx.load_default_certs()
               started=time.monotonic()
+              result={"source_id":source_id,"variant":variant}
               try:
-                  with httpx.Client(
-                      verify=ctx,trust_env=False,http2=False,
-                      follow_redirects=False,timeout=12.0
-                  ) as client:
-                      response=client.get(url, headers={
-                          "User-Agent":"Sanida-Esocial-Transport-Diagnosis/1.0",
-                          "Accept":"text/html",
-                      })
-                      result={"variant":name,"ok":True,"http_status":response.status_code,
-                              "body_bytes":len(response.content),
-                              "duration_seconds":round(time.monotonic()-started,2)}
+                  with httpx.Client(verify=ctx,trust_env=False,http2=False,follow_redirects=True,timeout=15.0) as client:
+                      response=client.get(url,headers=AUTHORITY_HEADERS)
+                      result.update(ok=True,http_status=response.status_code,body_bytes=len(response.content),sha256=hashlib.sha256(response.content).hexdigest(),media_type=response.headers.get("content-type"),final_url=str(response.url),redirects=len(response.history))
               except Exception as exc:
                   errors=[]
                   current=exc
                   seen=set()
                   while current is not None and id(current) not in seen and len(errors)<6:
                       seen.add(id(current))
-                      errors.append({"type":type(current).__name__,"text":str(current)[:180],
-                                     "errno":getattr(current,"errno",None)})
+                      errors.append({"type":type(current).__name__,"text":str(current)[:180],"errno":getattr(current,"errno",None)})
                       current=current.__cause__ or current.__context__
-                  result={"variant":name,"ok":False,"errors":errors,
-                          "duration_seconds":round(time.monotonic()-started,2)}
+                  result.update(ok=False,errors=errors)
+              result["duration_seconds"]=round(time.monotonic()-started,2)
               print("PROBE="+json.dumps(result,sort_keys=True,ensure_ascii=False),flush=True)
-          for name, version in (
-              ("tls13_a",ssl.TLSVersion.TLSv1_3),
-              ("tls12_a",ssl.TLSVersion.TLSv1_2),
-              ("tls13_b",ssl.TLSVersion.TLSv1_3),
-              ("tls12_b",ssl.TLSVersion.TLSv1_2),
-          ):
-              probe(name,version)
+              return result
+          for source_id in ids:
+              source=resolve_source_for_reference_year(registry[source_id],source_id=source_id,reference_year=year)
+              assert urlsplit(source.url).scheme=="https" and urlsplit(source.url).hostname=="www.gov.br"
+              print("SOURCE="+source_id+" "+source.url,flush=True)
+              for variant,version in (("tls13_a",ssl.TLSVersion.TLSv1_3),("tls12_a",ssl.TLSVersion.TLSv1_2),("tls13_b",ssl.TLSVersion.TLSv1_3),("tls12_b",ssl.TLSVersion.TLSv1_2)):
+                  probe(source_id,source.url,variant,version)
           print("DIAGNOSTIC_COMPLETE=TRUE",flush=True)
           PY
