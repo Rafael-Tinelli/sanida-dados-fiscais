@@ -142,9 +142,11 @@ PLANALTO_BROWSER_FALLBACK_SOURCE_IDS = frozenset(
 REQUESTS_TRANSPORT_FALLBACK_SOURCE_IDS = PLANALTO_BROWSER_FALLBACK_SOURCE_IDS
 REQUESTS_TRANSPORT_FALLBACK_ERRORS = frozenset({"RemoteProtocolError"})
 
-# Only this registered eSocial authority has a TLS 1.3 reset reproduced on
-# GitHub runners, while verified TLS 1.2 succeeded (25 Nov 2026).
-ESOCIAL_TLS12_FALLBACK_SOURCE_ID = "ESOCIAL_TABLES_S13_NT07_2026"
+# Explicitly authorized eSocial sources with reproduced TLS 1.3 resets and
+# successful verified TLS 1.2 requests on GitHub runners (25–26 Nov 2026).
+ESOCIAL_TLS12_FALLBACK_SOURCE_IDS = frozenset(
+    {"ESOCIAL_TABLES_S13_NT07_2026", "ESOCIAL_WEB_MEI_2026"}
+)
 
 
 @dataclass(frozen=True)
@@ -410,7 +412,7 @@ def _collect_authority_source(
 ) -> CollectionResult:
     result = collector.collect(source, observed_at_utc=observed_at_utc)
     if (
-        source_id == ESOCIAL_TLS12_FALLBACK_SOURCE_ID
+        source_id in ESOCIAL_TLS12_FALLBACK_SOURCE_IDS
         and source.source_id == source_id
         and result.status == CollectionStatus.SOURCE_UNAVAILABLE
         and result.failure_kind == FailureKind.NETWORK_ERROR
@@ -433,6 +435,7 @@ def _collect_authority_source(
             + f"; primary={result.error_detail}; "
             + f"fallback={fallback.error_detail or fallback.status.value}; "
             + f"http_status={fallback.http_status or 'none'}"
+            + f"; source_id={source_id}"
         )
         return fallback.model_copy(update={"attempts": result.attempts + fallback.attempts})
     if source_id not in REQUESTS_TRANSPORT_FALLBACK_SOURCE_IDS:
