@@ -142,10 +142,19 @@ PLANALTO_BROWSER_FALLBACK_SOURCE_IDS = frozenset(
 REQUESTS_TRANSPORT_FALLBACK_SOURCE_IDS = PLANALTO_BROWSER_FALLBACK_SOURCE_IDS
 REQUESTS_TRANSPORT_FALLBACK_ERRORS = frozenset({"RemoteProtocolError"})
 
-# Explicitly authorized eSocial sources with reproduced TLS 1.3 resets and
-# successful verified TLS 1.2 requests on GitHub runners (25–26 Nov 2026).
-ESOCIAL_TLS12_FALLBACK_SOURCE_IDS = frozenset(
-    {"ESOCIAL_TABLES_S13_NT07_2026", "ESOCIAL_WEB_MEI_2026"}
+# Required gov.br authorities with reproduced TLS 1.3 resets and verified
+# TLS 1.2 success on GitHub runners (25–27 Nov 2026; runs 45688171066,
+# 45919446166 and 46056489836). Keep this list explicit: not a global policy.
+GOVBR_TLS12_FALLBACK_SOURCE_IDS = frozenset(
+    {
+        "ESOCIAL_TABLES_S13_NT07_2026",
+        "ESOCIAL_WEB_MEI_2026",
+        "INSS_TABLE_CURRENT",
+        "MTE_TERMINATION_FAQ",
+        "RFB_CP_INCIDENCE_TABLE",
+        "RFB_IRRF_TABLE_CURRENT",
+        "RFB_QA_IRPF_2026",
+    }
 )
 
 
@@ -379,7 +388,7 @@ def _is_planalto_access_denied_html(body: bytes, media_type: str | None) -> bool
     )
 
 
-def _collect_esocial_with_tls12(
+def _collect_govbr_with_tls12(
     *,
     source: SourceSpec,
     store: SnapshotStore,
@@ -412,7 +421,7 @@ def _collect_authority_source(
 ) -> CollectionResult:
     result = collector.collect(source, observed_at_utc=observed_at_utc)
     if (
-        source_id in ESOCIAL_TLS12_FALLBACK_SOURCE_IDS
+        source_id in GOVBR_TLS12_FALLBACK_SOURCE_IDS
         and source.source_id == source_id
         and result.status == CollectionStatus.SOURCE_UNAVAILABLE
         and result.failure_kind == FailureKind.NETWORK_ERROR
@@ -422,7 +431,7 @@ def _collect_authority_source(
         # The standard collector has already exhausted its retries. Only a
         # pre-HTTP connection failure triggers this extra attempt; 403/406,
         # 429, timeouts, parser errors and all other sources are untouched.
-        fallback = _collect_esocial_with_tls12(
+        fallback = _collect_govbr_with_tls12(
             source=source,
             store=store,
             observed_at_utc=observed_at_utc,
@@ -430,7 +439,7 @@ def _collect_authority_source(
             headers=headers,
         )
         print(
-            "ESOCIAL_TLS12_FALLBACK="
+            ("ESOCIAL_TLS12_FALLBACK=" if source_id.startswith("ESOCIAL_") else "GOVBR_TLS12_FALLBACK=")
             + ("COLLECTED" if fallback.status == CollectionStatus.COLLECTED else "BLOCKED")
             + f"; primary={result.error_detail}; "
             + f"fallback={fallback.error_detail or fallback.status.value}; "
